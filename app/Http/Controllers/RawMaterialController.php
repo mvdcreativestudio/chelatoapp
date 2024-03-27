@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\RawMaterial; // Importa el modelo de Materias Primas.
-use App\Repositories\RawMaterialRepository; // Importa el repositorio para las operaciones de base de datos.
-use App\Http\Requests\StoreRawMaterialRequest; // Importa la clase Request para validación al crear.
-use App\Http\Requests\UpdateRawMaterialRequest; // Importa la clase Request para validación al actualizar.
-use Illuminate\Http\RedirectResponse; // Importa la clase para respuestas de redirección.
-use Illuminate\View\View; // Importa la clase para retornar vistas.
+use App\Models\RawMaterial;
+use App\Repositories\RawMaterialRepository;
+use App\Http\Requests\StoreRawMaterialRequest;
+use App\Http\Requests\UpdateRawMaterialRequest;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class RawMaterialController extends Controller
 {
@@ -25,6 +26,18 @@ class RawMaterialController extends Controller
      */
     public function __construct(RawMaterialRepository $rawMaterialRepository)
     {
+        $this->middleware(['check_permission:access_raw-materials', 'user_has_store'])->only(
+            [
+                'index',
+                'create',
+                'store',
+                'show',
+                'edit',
+                'update',
+                'destroy'
+            ]
+        );
+
         $this->rawMaterialRepository = $rawMaterialRepository;
     }
 
@@ -35,15 +48,20 @@ class RawMaterialController extends Controller
      */
     public function index(): View
     {
+        if (!auth()->user()->store_id) {
+            session()->flash('error', 'No se puede acceder a las materias primas sin una tienda asignada.');
+            return view('raw-materials.index');
+        }
+
         $rawMaterials = $this->rawMaterialRepository->getAll();
-    
+
         $quantityByUnitOfMeasure = $rawMaterials
                                     ->groupBy('unit_of_measure')
                                     ->map(function ($item) {
                                         return $item->count();
                                     });
-    
-    
+
+
         return view('raw-materials.index', compact('rawMaterials', 'quantityByUnitOfMeasure'));
     }
 
@@ -67,8 +85,12 @@ class RawMaterialController extends Controller
      */
     public function store(StoreRawMaterialRequest $request): RedirectResponse
     {
-        $this->rawMaterialRepository->create($request->validated());
-        return redirect()->route('raw-materials.index')->with('success', 'Raw material created successfully.');
+        try {
+            $this->rawMaterialRepository->create($request->validated());
+            return redirect()->route('raw-materials.index')->with('success', 'Materia prima creada correctamente.');
+        } catch (ModelNotFoundException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
     }
 
     /**
@@ -105,7 +127,7 @@ class RawMaterialController extends Controller
     public function update(UpdateRawMaterialRequest $request, RawMaterial $rawMaterial): RedirectResponse
     {
         $this->rawMaterialRepository->update($rawMaterial, $request->validated());
-        return redirect()->route('raw-materials.index')->with('success', 'Raw material updated successfully.');
+        return redirect()->route('raw-materials.index')->with('success', 'Materia prima actualizada correctamente.');
     }
 
     /**
@@ -117,6 +139,6 @@ class RawMaterialController extends Controller
     public function destroy(RawMaterial $rawMaterial): RedirectResponse
     {
         $this->rawMaterialRepository->delete($rawMaterial);
-        return redirect()->route('raw-materials.index')->with('success', 'Raw material deleted successfully.');
+        return redirect()->route('raw-materials.index')->with('success', 'Materia prima eliminada correctamente.');
     }
 }

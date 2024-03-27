@@ -18,6 +18,18 @@ class RawMaterial extends Model
     */
     public function store()
     {
-      return $this->belongsTo(\App\Models\Store::class);
+      return $this->belongsTo(Store::class);
+    }
+
+    /**
+     * Obtiene las ordenes de compra asociadas a la materia prima.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    */
+    public function supplierOrders()
+    {
+      return $this->belongsToMany(SupplierOrder::class, 'supplier_order_raw_materials')
+          ->withPivot('quantity')
+          ->withTimestamps();
     }
 }

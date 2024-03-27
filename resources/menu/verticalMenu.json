@@ -13,6 +13,18 @@
       "url": "/raw-materials"
     },
     {
+      "name": "Proveedores",
+      "icon": "menu-icon tf-icons bx bx-user",
+      "slug": "suppliers",
+      "url": "/suppliers"
+    },
+    {
+      "name": "Ordenes de Compra",
+      "icon": "menu-icon tf-icons bx bx-shopping-bag",
+      "slug": "supplier-orders",
+      "url": "/supplier-orders"
+    },
+    {
       "name": "Stock",
       "icon": "menu-icon tf-icons bx bx-package",
       "slug": "stock",
@@ -21,12 +33,7 @@
     {
       "name": "Contabilidad",
       "icon": "menu-icon tf-icons bx bx-dollar",
-      "slug": [
-        "accounting",
-        "receipts",
-        "entries"
-      ],
-
+      "slug": "accounting",
       "submenu": [
         {
           "url": "/invoices",
@@ -106,6 +113,12 @@
       "icon": "menu-icon tf-icons bx bx-store-alt",
       "slug": "stores",
       "url": "/stores"
+    },
+    {
+      "name": "Roles",
+      "icon": "menu-icon tf-icons bx bx-user",
+      "slug": "roles",
+      "url": "/roles"
     }
   ]
 }

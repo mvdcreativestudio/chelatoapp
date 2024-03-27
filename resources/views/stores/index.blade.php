@@ -93,6 +93,13 @@
   </div>
 </div>
 
+@if (session('success'))
+<div class="alert alert-success mt-3 mb-3">
+  {{ session('success') }}
+</div>
+@endif
+
+
 <div class="card">
   <div class="card-header">
     <h5 class="card-title">Tiendas</h5>

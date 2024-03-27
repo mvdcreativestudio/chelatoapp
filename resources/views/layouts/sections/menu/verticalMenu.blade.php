@@ -25,6 +25,11 @@ $configData = Helper::appClasses();
   <ul class="menu-inner py-1">
     @foreach ($menuData[0]->menu as $menu)
 
+    {{-- Checkeo si el usuario tiene los permisos en base al slug del menu --}}
+    @cannot ('access_' . $menu->slug)
+      @continue
+    @endcan
+
     {{-- adding active and open class if child is active --}}
 
     {{-- menu headers --}}

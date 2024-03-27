@@ -225,6 +225,9 @@
 }
 
 
+tr.odd {
+  border-bottom: 0.5px solid var(--bs-table-border-color);
+}
 
 
 /* Backoffice - Products */

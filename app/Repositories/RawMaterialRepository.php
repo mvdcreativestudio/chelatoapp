@@ -6,6 +6,7 @@ use App\Models\RawMaterial;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile as HttpUploadedFile;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class RawMaterialRepository
 {
@@ -16,7 +17,23 @@ class RawMaterialRepository
      */
     public function getAll(): Collection
     {
-        return RawMaterial::all();
+      if (auth()->user() && auth()->user()->can('view_all_raw-materials')) {
+          return RawMaterial::with('store')->get();
+      } else {
+          $storeId = auth()->user()->store_id;
+          return RawMaterial::where('store_id', $storeId)->get();
+      }
+    }
+
+    /**
+     * Busca Materia Primas por el store_id
+     *
+     * @param int $store_id
+     * @return Collection
+    */
+    public function findByStoreId($store_id): Collection
+    {
+        return RawMaterial::where('store_id', $store_id)->get();
     }
 
     /**
@@ -43,7 +60,7 @@ class RawMaterialRepository
             unset($data['image']);
         }
 
-        $data['store_id'] = auth()->user()->store_id;
+        $data['store_id'] = auth()->user()->store_id ?? throw new ModelNotFoundException('No se puede crear una materia prima sin una tienda asignada.');
 
         return RawMaterial::create($data);
     }

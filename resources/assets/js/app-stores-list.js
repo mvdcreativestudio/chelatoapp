@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', function () {
                   <a class="dropdown-item" href="${storeEdit.replace(':id', row.id)}">
                     <i class="bx bx-pencil"></i> Editar
                   </a>
+                  <a class="dropdown-item" href="${storeManageUsers.replace(':id', row.id)}">
+                    <i class="bx bx-group"></i> Usuarios
+                  </a>
                   <form class="delete-form-${row.id}" action="${storeDelete.replace(':id', row.id)}" method="POST">
                     <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
                     <input type="hidden" name="_method" value="DELETE">

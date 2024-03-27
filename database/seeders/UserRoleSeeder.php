@@ -13,6 +13,6 @@ class UserRoleSeeder extends Seeder
     public function run()
     {
         // Crea el rol 'user'
-        Role::create(['name' => 'user']);
+        Role::create(['name' => 'Usuario', 'guard_name' => 'web']);
     }
 }

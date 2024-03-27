@@ -1,32 +1,42 @@
 document.addEventListener('DOMContentLoaded', function () {
-  var dt_raw_materials_table = $('.datatables-raw-materials');
+  var dt_suppliers_table = $('.datatables-suppliers');
 
-  var rawMaterialAdd = window.rawMaterialAdd;
-  var rawMaterialEdit = window.rawMaterialEditTemplate;
-  var rawMaterialDelete = window.rawMaterialDeleteTemplate;
-  var baseUrlAsset = window.baseUrlAsset;
-  var hasViewAllRawMaterialsPermission = window.hasViewAllRawMaterialsPermission;
+  var supplierAdd = window.supplierAdd;
+  var supplierEdit = window.supplierEditTemplate;
+  var supplierDelete = window.supplierDeleteTemplate;
+  var hasViewAllSuppliersPermission = window.hasViewAllSuppliersPermission;
 
-  var columns = [{ data: 'image_url' }, { data: 'name' }, { data: 'description' }, { data: 'unit_of_measure' }];
+  var columns = [
+    { data: 'name' },
+    { data: 'phone' },
+    { data: 'email' },
+    { data: 'city' },
+    { data: 'state' },
+    { data: 'country' },
+    { data: 'doc_type' },
+    { data: 'doc_number' }
+  ];
 
-  if (hasViewAllRawMaterialsPermission) {
+  if (hasViewAllSuppliersPermission) {
     columns.push({ data: 'store', searchable: true, orderable: true });
   }
 
-  var columnsDefs = [
+  columns.push({ data: null, orderable: false, searchable: false });
+
+  var columnDefs = [
     {
       targets: 0,
-      searchable: false,
-      orderable: false,
-      render: function (data, type, row) {
-        var imageUrl = baseUrlAsset + '/' + data;
-        return `<img src="${imageUrl}" alt="Imagen" class="img-fluid rounded" style="max-width: 60px; height: auto;">`;
+      searchable: true,
+      responsivePriority: 1,
+      orderable: true,
+      render: function (data, type, row, meta) {
+        return '<span>' + data + '</span>';
       }
     },
     {
       targets: 1,
       searchable: true,
-      responsivePriority: 1,
+      responsivePriority: 2,
       orderable: true,
       render: function (data, type, row, meta) {
         return '<span>' + data + '</span>';
@@ -38,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
       responsivePriority: 3,
       orderable: true,
       render: function (data, type, row, meta) {
-        return data && data.length > 50 ? '<span>' + data.substr(0, 50) + '...' + '</span>' : data;
+        return '<span>' + data + '</span>';
       }
     },
     {
@@ -51,21 +61,56 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     {
-      targets: hasViewAllRawMaterialsPermission ? 5 : 4,
-      searchable: false,
+      targets: 4,
+      searchable: true,
       responsivePriority: 5,
-      orderable: false,
+      orderable: true,
       render: function (data, type, row, meta) {
+        return '<span>' + data + '</span>';
+      }
+    },
+    {
+      targets: 5,
+      searchable: true,
+      responsivePriority: 6,
+      orderable: true,
+      render: function (data, type, row, meta) {
+        return '<span>' + data + '</span>';
+      }
+    },
+    {
+      targets: 6,
+      searchable: true,
+      responsivePriority: 7,
+      orderable: true,
+      render: function (data, type, row, meta) {
+        return '<span>' + data + '</span>';
+      }
+    },
+    {
+      targets: 7,
+      searchable: true,
+      responsivePriority: 8,
+      orderable: true,
+      render: function (data, type, row, meta) {
+        return '<span>' + data + '</span>';
+      }
+    },
+    {
+      targets: hasViewAllSuppliersPermission ? 9 : 8,
+      render: function (data, type, row) {
+        var editUrl = supplierEdit.replace(':id', row.id);
+        var deleteUrl = supplierDelete.replace(':id', row.id);
         return `
             <div class="dropdown">
               <button class="btn btn-icon btn-icon-only" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <i class="bx bx-dots-horizontal-rounded"></i>
               </button>
               <div class="dropdown-menu dropdown-menu-end">
-                <a class="dropdown-item" href="${rawMaterialEdit.replace(':id', row.id)}">
+                <a class="dropdown-item" href="${editUrl}">
                   <i class="bx bx-pencil"></i> Editar
                 </a>
-                <form class="delete-form-${row.id}" action="${rawMaterialDelete.replace(':id', row.id)}" method="POST">
+                <form class="delete-form-${row.id}" action="${deleteUrl}" method="POST">
                   <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
                   <input type="hidden" name="_method" value="DELETE">
                   <div class="dropdown-item text-danger delete-button" style="cursor: pointer;">
@@ -79,24 +124,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   ];
 
-  if (hasViewAllRawMaterialsPermission) {
-    columnsDefs.push({
-      targets: 4,
+  if (hasViewAllSuppliersPermission) {
+    columnDefs.push({
+      targets: 8,
       render: function (data, type, row) {
         return row.store ? row.store.name : 'Tienda sin nombre';
       }
     });
   }
 
-  if (dt_raw_materials_table.length) {
-    dt_raw_materials_table.DataTable({
-      data: rawMaterials,
+  if (dt_suppliers_table.length) {
+    dt_suppliers_table.DataTable({
+      data: suppliers,
       columns: columns,
-      columnDefs: columnsDefs,
+      columnDefs: columnDefs,
       language: {
         searchPlaceholder: 'Buscar...',
         sLengthMenu: '_MENU_',
-        info: 'Mostrando _START_ a _END_ de _TOTAL_ Materias Primas',
+        info: 'Mostrando _START_ a _END_ de _TOTAL_ Proveedores',
         paginate: {
           first: 'Primero',
           last: 'Último',
@@ -113,8 +158,8 @@ document.addEventListener('DOMContentLoaded', function () {
         loadingRecords: 'Cargando...',
         processing: 'Procesando...',
         search: '',
-        infoFiltered: '(filtrado de un total de _MAX_ Materias Primas)',
-        infoEmpty: 'Mostrando 0 a 0 de 0 Materias Primas'
+        infoFiltered: '(filtrado de un total de _MAX_ Proveedores)',
+        infoEmpty: 'Mostrando 0 a 0 de 0 Proveedores'
       },
       dom:
         '<"card-header d-flex border-top rounded-0 flex-wrap py-md-0"' +
@@ -130,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
           text: '<i class="bx bx-plus me-0 me-sm-1"></i><span class="d-none d-sm-inline-block">Crear</span>',
           className: 'btn btn-primary ml-3',
           action: function () {
-            window.location.href = rawMaterialAdd;
+            window.location.href = supplierAdd;
           }
         }
       ]
@@ -144,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function () {
   $('div.dataTables_filter input').addClass('form-control');
   $('div.dataTables_length select').addClass('form-select');
 
-  $('.delete-button').click(function () {
+  dt_suppliers_table.on('click', '.delete-button', function () {
     var form = $(this).closest('form');
     if (confirm('¿Estás seguro de querer eliminar este elemento?')) {
       form.submit();

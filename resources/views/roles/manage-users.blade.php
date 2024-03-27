@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Administrar Usuarios de la Tienda - ' . $store->name)
+@section('title', "Gestionar Usuarios del Rol - {$role->name}")
 
 @section('vendor-style')
 @vite(['resources/assets/vendor/libs/select2/select2.scss'])
@@ -20,13 +20,14 @@ $(document).ready(function() {
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Tiendas /</span> Administrar Usuarios
+  <span class="text-muted fw-light">Roles /</span> Gestionar Usuarios
 </h4>
 
 <div class="card mb-4">
   <div class="card-body">
-    <h5 class="card-title">Agregar usuarios a {{ $store->name }}:</h5>
-    <form action="{{ route('stores.associateUser', $store) }}" method="POST">
+    <h5 class="card-title">Agregar usuarios al rol {{ $role->name }}:</h5>
+    @if ($unassociatedUsers->isNotEmpty())
+    <form action="{{ route('roles.associateUser', $role) }}" method="POST">
       @csrf
       <div class="mb-3">
         <label for="user_id" class="form-label">Usuarios Disponibles</label>
@@ -41,6 +42,9 @@ $(document).ready(function() {
       </div>
       <button type="submit" class="btn btn-primary">Asociar Usuario</button>
     </form>
+    @else
+    <p>No hay usuarios disponibles para asociar.</p>
+    @endif
     @if (session('success'))
       <div class="alert alert-success mt-3">
         {{ session('success') }}
@@ -58,7 +62,7 @@ $(document).ready(function() {
 
 <div class="card">
   <div class="card-body">
-    <h5 class="card-title">Usuarios asociados a {{ $store->name }}: </h5>
+    <h5 class="card-title">Usuarios asociados al rol {{ $role->name }}:</h5>
     <table class="table">
       <thead>
         <tr>
@@ -73,8 +77,9 @@ $(document).ready(function() {
           <td>{{ $user->name }}</td>
           <td>{{ $user->email }}</td>
           <td>
-            <form action="{{ route('stores.disassociateUser', ['store' => $store, 'user_id' => $user->id]) }}" method="POST">
+            <form action="{{ route('roles.disassociateUser', ['role' => $role]) }}" method="POST">
               @csrf
+              <input type="hidden" name="user_id" value="{{ $user->id }}">
               <button type="submit" class="btn btn-danger btn-sm">Desasociar</button>
             </form>
           </td>
