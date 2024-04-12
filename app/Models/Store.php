@@ -36,4 +36,15 @@ class Store extends Model
     {
         return $this->hasOne(MercadoPagoAccount::class);
     }
+
+    /**
+     * Obtiene los numeros de telefono asociados a la tienda.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+    */
+    public function phoneNumber(): HasOne
+    {
+        return $this->hasOne(PhoneNumber::class);
+    }
 }
+

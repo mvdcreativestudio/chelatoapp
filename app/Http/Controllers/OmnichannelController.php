@@ -45,6 +45,8 @@ class OmnichannelController extends Controller
 
         $phoneNumber = $userStore->phoneNumber;
 
+        dd($phoneNumber);
+
         if (!$phoneNumber) {
             return view('omnichannel.chats')->with('error', 'Tu tienda no tiene un número de teléfono asociado.');
         }
