@@ -9,7 +9,7 @@ class RawMaterial extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'image_url', 'unit_of_measure', 'store_id'];
+    protected $fillable = ['name', 'description', 'image_url', 'unit_of_measure', 'store_id', 'stock'];
 
     /**
      * Obtiene la tienda a la que pertenece la materia prima.
@@ -28,7 +28,7 @@ class RawMaterial extends Model
     */
     public function supplierOrders()
     {
-      return $this->belongsToMany(SupplierOrder::class, 'supplier_order_raw_materials')
+      return $this->belongsToMany(SupplierOrder::class, 'supplier_order_raw_material')
           ->withPivot('quantity')
           ->withTimestamps();
     }

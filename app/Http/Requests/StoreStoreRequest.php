@@ -27,7 +27,6 @@ class StoreStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'phone' => 'string|max:255',
             'address' => 'string|max:255',
             'email' => 'required|email|unique:stores,email',
             'rut' => 'required|string|max:255|unique:stores,rut',

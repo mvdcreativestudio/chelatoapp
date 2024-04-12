@@ -23,10 +23,10 @@ document.addEventListener('DOMContentLoaded', function () {
               <a class="dropdown-item role-edit-modal" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#editRoleModal" data-role-id="${row.id}" data-role-name="${row.name}">
                 <i class="bx bx-edit"></i> Editar
               </a>
-              <a class="dropdown-item" href="/roles/${row.id}/manage-users">
+              <a class="dropdown-item" href="roles/${row.id}/manage-users">
                 <i class="bx bx-group"></i> Gestionar Usuarios
               </a>
-              <a class="dropdown-item" href="/roles/${row.id}/manage-permissions">
+              <a class="dropdown-item" href="roles/${row.id}/manage-permissions">
                 <i class="bx bx-lock"></i> Gestionar Permisos
               </a>
             </div>

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Repositories\SupplierOrderRepository;
 use App\Repositories\SupplierRepository;
 use App\Repositories\RawMaterialRepository;
 use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\StoreSupplierOrderRequest;
+use App\Http\Requests\UpdateSupplierOrderRequest;
 use Illuminate\View\View;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SupplierOrderController extends Controller
 {
@@ -76,13 +78,13 @@ class SupplierOrderController extends Controller
     /**
      * Almacena una nueva orden de compra en la base de datos.
      *
-     * @param  Request $request
+     * @param  StoreSupplierOrderRequest $request
      * @return RedirectResponse
     */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreSupplierOrderRequest $request): RedirectResponse
     {
         $this->supplierOrderRepository->create($request->all());
-        return redirect()->route('supplier-orders.index');
+        return redirect()->route('supplier-orders.index')->with('success', 'Orden creada correctamente.');
     }
 
     /**
@@ -106,21 +108,28 @@ class SupplierOrderController extends Controller
     public function edit($id): View
     {
         $supplierOrder = $this->supplierOrderRepository->findById($id);
-        return view('supplier-orders.edit', compact('supplierOrder'));
+
+        $store_id = auth()->user()->store_id;
+
+        $suppliers = $this->supplierRepository->findByStoreId($store_id);
+        $rawMaterials = $this->rawMaterialRepository->findByStoreId($store_id);
+
+        return view('supplier-orders.edit', compact('supplierOrder', 'suppliers', 'rawMaterials'));
     }
 
-    /**
-     * Actualiza una orden de compra específica en la base de datos.
-     *
-     * @param  Request $request
-     * @param  int $id
-     * @return RedirectResponse
-    */
-    public function update(Request $request, $id): RedirectResponse
-    {
-        $this->supplierOrderRepository->update($id, $request->all());
-        return redirect()->route('supplier-orders.index');
-    }
+      /**
+       * Actualiza una orden de compra específica en la base de datos.
+       *
+       * @param  UpdateSupplierOrderRequest $request
+       * @param  int $id
+       * @return RedirectResponse
+      */
+      public function update(UpdateSupplierOrderRequest $request, $id): RedirectResponse
+      {
+          $this->supplierOrderRepository->update($id, $request->all());
+          return redirect()->route('supplier-orders.index')->with('success', 'Orden actualizada correctamente.');
+      }
+
 
     /**
      * Elimina una orden de compra específica de la base de datos.
@@ -131,6 +140,20 @@ class SupplierOrderController extends Controller
     public function destroy($id): RedirectResponse
     {
         $this->supplierOrderRepository->delete($id);
-        return redirect()->route('supplier-orders.index');
+        return redirect()->route('supplier-orders.index')->with('success', 'Orden eliminada correctamente.');
+    }
+
+    /**
+     * Genera un PDF para una orden de compra específica.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function generatePdf(int $id)
+    {
+        $order = $this->supplierOrderRepository->findOrderDetailsForPdf($id);
+
+        $pdf = Pdf::loadView('supplier-orders.pdf', compact('order'));
+        return $pdf->download('supplier_order_'.$id.'.pdf');
     }
 }

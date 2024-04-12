@@ -11,7 +11,12 @@ document.addEventListener('DOMContentLoaded', function () {
       data: stores,
       columns: [
         { data: 'name' },
-        { data: 'phone' },
+        {
+          data: 'phone_number',
+          render: function (data, type, row) {
+            return data.phone_number ? data.phone_number : 'Sin teléfono asociado';
+          }
+        },
         { data: 'email' },
         { data: 'address' },
         { data: 'rut' },

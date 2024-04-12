@@ -46,12 +46,42 @@
 @endif
 
 @if ($errors->any())
+@foreach ($errors->all() as $error)
+  <div class="alert alert-danger">
+    {{ $error }}
+  </div>
+@endforeach
+@endif
+
+@if ($errors->any())
   @foreach ($errors->all() as $error)
     <div class="alert alert-danger mt-3 mb-3">
       {{ $error }}
     </div>
   @endforeach
 @endif
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row gy-4 gy-sm-1">
+      <div class="col-sm-6 col-lg-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-2">Roles</h6>
+                        <h4>{{ isset($roles) ? $roles->count() : 0}}</h4>
+                    </div>
+                    <div class="avatar">
+                        <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-user bx-sm"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="card">
   <div class="card-header">

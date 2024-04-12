@@ -26,7 +26,6 @@
     window.storeManageUsersTemplate = "{{ route('stores.manageUsers', ':id') }}";
     window.csrfToken = "{{ csrf_token() }}";
     var stores = @json($stores);
-    console.log(stores)
 </script>
 @vite(['resources/assets/js/app-stores-list.js'])
 @endsection
@@ -97,6 +96,14 @@
 <div class="alert alert-success mt-3 mb-3">
   {{ session('success') }}
 </div>
+@endif
+
+@if ($errors->any())
+@foreach ($errors->all() as $error)
+  <div class="alert alert-danger">
+    {{ $error }}
+  </div>
+@endforeach
 @endif
 
 

@@ -25,12 +25,6 @@
                         <input type="text" class="form-control" id="store-name" name="name" required placeholder="Nombre de la tienda" value="{{ $store->name }}">
                     </div>
 
-                    <!-- Teléfono -->
-                    <div class="mb-3">
-                        <label class="form-label" for="store-phone">Teléfono</label>
-                        <input type="text" class="form-control" id="store-phone" name="phone" required placeholder="Teléfono de la tienda" value="{{ $store->phone }}">
-                    </div>
-
                     <!-- Dirección -->
                     <div class="mb-3">
                         <label class="form-label" for="store-address">Dirección</label>

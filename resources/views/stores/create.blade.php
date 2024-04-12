@@ -8,48 +8,35 @@
 </h4>
 
 <div class="app-ecommerce">
-    <!-- Formulario para agregar tienda -->
     <form action="{{ route('stores.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
     <div class="row">
-        <!-- Columna de información de la tienda -->
         <div class="col-12">
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">Información de la Tienda</h5>
                 </div>
                 <div class="card-body">
-                    <!-- Nombre -->
                     <div class="mb-3">
                         <label class="form-label" for="store-name">Nombre</label>
                         <input type="text" class="form-control" id="store-name" name="name" required placeholder="Nombre de la tienda">
                     </div>
 
-                    <!-- Teléfono -->
-                    <div class="mb-3">
-                        <label class="form-label" for="store-phone">Teléfono</label>
-                        <input type="text" class="form-control" id="store-phone" name="phone" required placeholder="Teléfono de la tienda">
-                    </div>
-
-                    <!-- Dirección -->
                     <div class="mb-3">
                         <label class="form-label" for="store-address">Dirección</label>
                         <input type="text" class="form-control" id="store-address" name="address" required placeholder="Dirección de la tienda">
                     </div>
 
-                    <!-- Email -->
                     <div class="mb-3">
                         <label class="form-label" for="store-email">Email</label>
                         <input type="email" class="form-control" id="store-email" name="email" required placeholder="Email de la tienda">
                     </div>
 
-                    <!-- RUT -->
                     <div class="mb-3">
                         <label class="form-label" for="store-rut">RUT</label>
                         <input type="text" class="form-control" id="store-rut" name="rut" required placeholder="RUT de la tienda">
                     </div>
 
-                    <!-- Estado -->
                     <div class="mb-3">
                         <label class="form-label" for="store-status">Estado</label>
                         <select class="form-select" id="store-status" name="status" required>
@@ -68,7 +55,6 @@
                 </div>
             </div>
 
-            <!-- Botones -->
             <div class="d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary">Guardar Tienda</button>
             </div>

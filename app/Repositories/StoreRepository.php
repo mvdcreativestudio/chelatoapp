@@ -15,7 +15,7 @@ class StoreRepository
      */
     public function getAll(): Collection
     {
-      return Store::withCount('users')->get();
+      return Store::withCount('users')->with('phoneNumber')->get();
     }
 
     /**

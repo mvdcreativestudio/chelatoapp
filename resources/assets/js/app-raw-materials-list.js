@@ -5,9 +5,16 @@ document.addEventListener('DOMContentLoaded', function () {
   var rawMaterialEdit = window.rawMaterialEditTemplate;
   var rawMaterialDelete = window.rawMaterialDeleteTemplate;
   var baseUrlAsset = window.baseUrlAsset;
+  var originUrlAsset = window.originUrlAsset;
   var hasViewAllRawMaterialsPermission = window.hasViewAllRawMaterialsPermission;
 
-  var columns = [{ data: 'image_url' }, { data: 'name' }, { data: 'description' }, { data: 'unit_of_measure' }];
+  var columns = [
+    { data: 'image_url' },
+    { data: 'name' },
+    { data: 'description' },
+    { data: 'unit_of_measure' },
+    { data: 'stock' }
+  ];
 
   if (hasViewAllRawMaterialsPermission) {
     columns.push({ data: 'store', searchable: true, orderable: true });
@@ -19,6 +26,9 @@ document.addEventListener('DOMContentLoaded', function () {
       searchable: false,
       orderable: false,
       render: function (data, type, row) {
+        if (!data) {
+          return `<img src="${originUrlAsset}/noimage.jpg" alt="Imagen por defecto" class="img-fluid rounded" style="max-width: 60px; height: auto;">`;
+        }
         var imageUrl = baseUrlAsset + '/' + data;
         return `<img src="${imageUrl}" alt="Imagen" class="img-fluid rounded" style="max-width: 60px; height: auto;">`;
       }
@@ -51,9 +61,18 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     {
-      targets: hasViewAllRawMaterialsPermission ? 5 : 4,
-      searchable: false,
+      targets: 4,
+      searchable: true,
       responsivePriority: 5,
+      orderable: true,
+      render: function (data, type, row, meta) {
+        return '<span>' + data + '</span>';
+      }
+    },
+    {
+      targets: hasViewAllRawMaterialsPermission ? 6 : 5,
+      searchable: false,
+      responsivePriority: 6,
       orderable: false,
       render: function (data, type, row, meta) {
         return `
@@ -81,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (hasViewAllRawMaterialsPermission) {
     columnsDefs.push({
-      targets: 4,
+      targets: 5,
       render: function (data, type, row) {
         return row.store ? row.store.name : 'Tienda sin nombre';
       }

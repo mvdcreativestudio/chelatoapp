@@ -61,7 +61,7 @@
     {
       "name": "E-Commerce",
       "icon": "menu-icon tf-icons bx bx-world",
-      "slug": ["orders", "products", "marketing", "settings", "product-categories"],
+      "slug": "ecommerce",
       "submenu": [
         {
           "url": "orders",

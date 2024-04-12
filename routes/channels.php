@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -15,4 +16,15 @@ use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
+});
+
+/**
+ * Obtiene los canales a través de los cuales se transmitirá el evento.
+ *
+ * @param User $user
+ * @param string $phoneId
+ * @return \Illuminate\Broadcasting\Channel|array
+*/
+Broadcast::channel('messages.{phoneId}', function (User $user, string $phoneId): bool {
+  return $user->store->phoneNumber->phone_id === $phoneId;
 });

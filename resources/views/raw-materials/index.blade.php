@@ -21,6 +21,7 @@
 @section('page-script')
 <script type="text/javascript">
     window.baseUrlAsset = "{{ asset('storage/assets/img/raw_materials/') }}";
+    window.originUrlAsset = "{{ asset('storage/assets/img/') }}";
     window.rawMaterialAdd = "{{ route('raw-materials.create') }}";
     window.rawMaterialEditTemplate = "{{ route('raw-materials.edit', ':id') }}";
     window.rawMaterialDeleteTemplate = "{{ route('raw-materials.destroy', ':id') }}";
@@ -86,6 +87,14 @@
 </div>
 @endif
 
+@if ($errors->any())
+@foreach ($errors->all() as $error)
+  <div class="alert alert-danger">
+    {{ $error }}
+  </div>
+@endforeach
+@endif
+
 <div class="card">
   <div class="card-header">
     <h5 class="card-title">Materias Primas</h5>
@@ -104,6 +113,7 @@
           <th>Nombre</th>
           <th>Descripción</th>
           <th>Unidad de Medida</th>
+          <th>Stock</th>
           @if(auth()->user()->can('view_all_raw-materials'))
             <th>Tienda</th>
           @endif

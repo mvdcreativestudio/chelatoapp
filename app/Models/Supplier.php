@@ -20,4 +20,14 @@ class Supplier extends Model
     {
       return $this->belongsTo(Store::class);
     }
+
+    /**
+     * Obtiene las ordenes de compra asociadas al proveedor.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+    */
+    public function supplierOrders()
+    {
+      return $this->hasMany(SupplierOrder::class);
+    }
 }

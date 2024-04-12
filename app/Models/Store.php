@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Store extends Model
 {
@@ -29,5 +30,15 @@ class Store extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
+    }
+
+    /**
+     * Obtiene los numeros de telefono asociados a la tienda.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+    */
+    public function phoneNumber(): HasOne
+    {
+        return $this->hasOne(PhoneNumber::class);
     }
 }
