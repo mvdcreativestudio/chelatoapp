@@ -9,6 +9,8 @@ use App\Http\Requests\UpdateStoreRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+
 
 class StoreController extends Controller
 {
@@ -50,19 +52,29 @@ class StoreController extends Controller
         return view('stores.create');
     }
 
-    /**
-     * Almacena una nueva tienda en la base de datos.
-     *
-     * Aquí es donde se utiliza StoreStoreRequest para validar la solicitud antes de proceder.
-     *
-     * @param  StoreStoreRequest  $request
-     * @return RedirectResponse
-     */
     public function store(StoreStoreRequest $request): RedirectResponse
     {
-        $this->storeRepository->create($request->validated());
+        // Primero, crea la tienda sin los datos de MercadoPago
+        $storeData = $request->validated();
+        unset($storeData['mercadoPagoPublicKey'], $storeData['mercadoPagoAccessToken'], $storeData['mercadoPagoSecretKey'], $storeData['accepts_mercadopago']);
+        $store = $this->storeRepository->create($storeData);
+
+        // Luego, si se ha indicado que la tienda acepta MercadoPago, crea la cuenta de MercadoPago asociada
+        if ($request->boolean('accepts_mercadopago')) {
+            $mercadoPagoData = [
+                'store_id' => $store->id, // Asume que el método create del repositorio devuelve el modelo de tienda creado
+                'public_key' => $request->input('mercadoPagoPublicKey'),
+                'access_token' => $request->input('mercadoPagoAccessToken'),
+                'secret_key' => $request->input('mercadoPagoSecretKey'),
+            ];
+
+            // Asegúrate de tener un método para crear la cuenta de MercadoPago en el repositorio o en el modelo de la tienda
+            $store->mercadoPagoAccount()->create($mercadoPagoData);
+        }
+
         return redirect()->route('stores.index')->with('success', 'Tienda creada con éxito.');
     }
+
 
     /**
      * Muestra una tienda específica.
@@ -97,9 +109,27 @@ class StoreController extends Controller
      */
     public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
     {
-        $this->storeRepository->update($store, $request->validated());
+        // Actualizar datos generales de la tienda
+        $storeData = $request->validated();
+        $this->storeRepository->update($store, Arr::except($storeData, ['mercadoPagoPublicKey', 'mercadoPagoAccessToken', 'mercadoPagoSecretKey', 'accepts_mercadopago']));
+
+        // Manejar activación/desactivación y actualización de datos de MercadoPago
+        if ($request->boolean('accepts_mercadopago')) {
+            $mercadoPagoData = [
+                'public_key' => $request->input('mercadoPagoPublicKey'),
+                'access_token' => $request->input('mercadoPagoAccessToken'),
+                'secret_key' => $request->input('mercadoPagoSecretKey'),
+            ];
+            // Crear o actualizar la cuenta MercadoPago
+            $store->mercadoPagoAccount()->updateOrCreate(['store_id' => $store->id], $mercadoPagoData);
+        } else {
+            // Si se desactiva MercadoPago, eliminar la vinculación (si existe)
+            $store->mercadoPagoAccount()->delete();
+        }
+
         return redirect()->route('stores.index')->with('success', 'Tienda actualizada con éxito.');
     }
+
 
     /**
      * Cambia el estado de la tienda.

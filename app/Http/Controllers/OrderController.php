@@ -3,15 +3,24 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Repositories\OrderRepository;
+use Yajra\DataTables\Facades\DataTables;
 use App\Models\Order;
 
 class OrderController extends Controller
 {
+    protected $orderRepository;
+
+    public function __construct(OrderRepository $orderRepository)
+    {
+        $this->orderRepository = $orderRepository;
+    }
 
     public function index()
     {
-        $orders = Order::all();
-        return view('content.e-commerce.backoffice.orders.orders', compact('orders'));
+        return view('content.e-commerce.backoffice.orders.orders', [
+            'orders' => $this->orderRepository->getAllOrders()
+        ]);
     }
 
     public function create()
@@ -19,53 +28,89 @@ class OrderController extends Controller
         return view('content.e-commerce.backoffice.orders.add-order');
     }
 
-    public function store()
+    public function store(Request $request)
     {
-        $order = new Order;
+        $validatedData = $request->validate([
+            'name' => 'required|max:255',
+            'lastname' => 'required|max:255',
+            'address' => 'required',
+            'phone' => 'required',
+            'email' => 'required|email',
+            'payment_method' => 'required',
+        ]);
 
-        $order->date = request('date');
-        $order->origin = request('origin');
-        $order->client_id = request('client_id');
-        $order->store_id = request('store_id');
-        $order->products = request('products');
-        $order->subtotal = request('subtotal');
-        $order->tax = request('tax');
-        $order->shipping = request('shipping');
-        $order->coupon_id = request('coupon_id');
-        $order->coupon_amount = request('coupon_amount');
-        $order->discount = request('discount');
-        $order->total = request('total');
-        $order->payment_status = request('payment_status');
-        $order->shipping_status = request('shipping_status');
-        $order->payment_method = request('payment_method');
-        $order->shipping_method = request('shipping_method');
-        $order->shipping_tracking = request('shipping_tracking');
-        $order->save();
+        $clientData = $this->extractClientData($validatedData);
+        $orderData = $this->prepareOrderData($validatedData['payment_method']);
 
-        // Asociar productos, si existen en la petición
-        if (isset($validatedData['products'])) {
-          foreach ($validatedData['products'] as $productData) {
-              $order->products()->attach($productData['id'], [
-                  'quantity' => $productData['quantity'],
-                  'price' => $productData['price']
-              ]);
-          }
-      }
-
-      return redirect('/orders')->with('success', 'Order created successfully.');
+        try {
+            $order = $this->orderRepository->createOrder($clientData, $orderData, session('cart', []));
+            session()->forget('cart');
+            return redirect()->route('checkout.index')->with('success', 'Pedido realizado con éxito. ID de orden: ' . $order->id);
+        } catch (\Exception $e) {
+            return back()->withErrors('Error al procesar el pedido. Por favor, intente nuevamente.')->withInput();
+        }
     }
 
-    public function edit()
+    public function show(Order $order)
     {
-        return view('orders.edit');
+        $order = $this->orderRepository->loadOrderRelations($order);
+        return view('content.e-commerce.backoffice.orders.show-order', compact('order'));
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $this->orderRepository->destroyOrder($id);
+            return response()->json(['success' => true, 'message' => 'Pedido eliminado correctamente.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al eliminar el pedido.'], 400);
+        }
     }
 
 
-    public function delete()
+    public function datatable()
     {
-        $order = Order::find(request('id'));
-        $order->delete();
+        return $this->orderRepository->getOrdersForDataTable();
+    }
 
-        return redirect('/orders');
+    public function orderProductsDatatable(Order $order)
+    {
+        return $this->orderRepository->getOrderProductsForDataTable($order);
+    }
+
+    private function extractClientData($validatedData)
+    {
+        return [
+            'name' => $validatedData['name'],
+            'lastname' => $validatedData['lastname'],
+            'type' => 'individual',
+            'state' => 'Montevideo',
+            'country' => 'Uruguay',
+            'address' => $validatedData['address'],
+            'phone' => $validatedData['phone'],
+            'email' => $validatedData['email'],
+        ];
+    }
+
+    private function prepareOrderData($paymentMethod)
+    {
+        $subtotal = array_reduce(session('cart', []), function ($carry, $item) {
+            return $carry + ($item['price'] ?? $item['old_price']) * $item['quantity'];
+        }, 0);
+
+        return [
+            'date' => now(),
+            'time' => now()->format('H:i:s'),
+            'origin' => 'ecommerce',
+            'store_id' => 1,
+            'subtotal' => $subtotal,
+            'tax' => 0,
+            'shipping' => session('costoEnvio', 0),
+            'total' => $subtotal + session('costoEnvio', 0),
+            'payment_status' => 'pending',
+            'shipping_status' => 'pending',
+            'payment_method' => $paymentMethod,
+            'shipping_method' => 'peya',
+        ];
     }
 }

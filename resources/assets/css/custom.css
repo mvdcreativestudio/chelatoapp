@@ -1,4 +1,7 @@
 /* Generales */
+:root {
+  --primary-color: #181818;  /* Azul Bootstrap por defecto */
+}
 
 /* Fonts */
 
@@ -19,6 +22,7 @@
 .font-white {
   color: white !important;
 }
+
 
 /* Spinner */
 
@@ -50,6 +54,29 @@
   color: white !important;
 }
 
+/* Paginación DataTables */
+
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+  padding: 5px 10px;
+  color: var(--primary-color) !important; /* Bootstrap primary color */
+  background-color: #ffffff;
+  border: 1px solid #dee2e6; /* Matches Bootstrap's default styling */
+  cursor: pointer;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current,
+.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+  color: #ffffff !important;
+  background-color: var(--primary-color) !important; /* Highlighted with Bootstrap primary color */
+  border: 0px;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+  background-color: var(--primary-color);
+  color: white!important;
+}
+
+
 /* Home */
 
 .vendors-container {
@@ -58,6 +85,52 @@
 
 .custom-option-title {
   color: #181818 !important;
+}
+
+.quienes-somos-home {
+  background-color: #181818;
+  color: #181818;
+  height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0px 40px 0px;
+  background-image: url('/public/assets/img/front-pages/homepage/background-wall.jpeg');
+  background-size: cover;
+}
+
+.quienes-somos-container {
+  align-items: center;
+}
+
+.homepage-img-container {
+  overflow: hidden;
+  position: relative;
+}
+
+.homepage-quienes-somos-img {
+  max-height: auto;
+  max-width: 600px;
+}
+
+.servicios-home {
+  background-color: #181818;
+  color: white;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url('/public/assets/img/front-pages/homepage/background-wall-dark.jpeg');
+  background-size: cover;
+}
+
+.servicios-container {
+  align-items: center;
+}
+
+.homepage-servicios-img {
+  width: auto;
+  height: 40vh;
 }
 
 /* Footer */
@@ -181,6 +254,10 @@
 }
 
 /* Store */
+
+.store-category-title {
+  text-transform: uppercase;
+}
 
 .category-card-text {
   position: absolute;

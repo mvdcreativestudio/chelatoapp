@@ -13,6 +13,7 @@ class Product extends Model
         'name',
         'description',
         'type',
+        'max_flavors',
         'old_price',
         'price',
         'discount',
@@ -47,6 +48,9 @@ class Product extends Model
                 ->withTimestamps();
     }
 
-
+    public function flavors()
+    {
+        return $this->belongsToMany(Flavor::class, 'product_flavor')->withTimestamps();
+    }
 
 }

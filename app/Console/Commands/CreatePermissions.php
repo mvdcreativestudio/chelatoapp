@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+
 
 class CreatePermissions extends Command
 {
@@ -19,7 +21,7 @@ class CreatePermissions extends Command
      *
      * @var string
      */
-    protected $description = 'Crea permisos basados en los módulos del CRM - MDV';
+    protected $description = 'Crea permisos basados en los módulos del CRM - MVD';
 
     public function __construct()
     {
@@ -84,28 +86,28 @@ class CreatePermissions extends Command
             ]
         ];
 
-        foreach ($modulesJson['menu'] as $module) {
-            $permissionName = 'access_' . $module['slug'];
+         // Asegurar que el rol de administrador existe
+         $adminRole = Role::firstOrCreate(['name' => 'Administrador']);
 
-            if (array_key_exists('view_all', $module) && $module['view_all']) {
-                $viewAllPermissioNName = 'view_all_' . $module['slug'];
-            }
+         foreach ($modulesJson['menu'] as $module) {
+             $permissionName = 'access_' . $module['slug'];
+             $viewAllPermissionName = $module['view_all'] ? 'view_all_' . $module['slug'] : null;
 
-            if (!Permission::where('name', $permissionName)->exists()) {
-                Permission::create(['name' => $permissionName]);
-                $this->info('Permiso creado: ' . $permissionName);
-            } else {
-                $this->info('El permiso ya existe: ' . $permissionName);
-            }
+             // Crear o obtener el permiso
+             $permission = Permission::firstOrCreate(['name' => $permissionName]);
+             $this->info('Permiso asegurado: ' . $permissionName);
 
-            if (isset($viewAllPermissioNName) && !Permission::where('name', $viewAllPermissioNName)->exists()) {
-                Permission::create(['name' => $viewAllPermissioNName]);
-                $this->info('Permiso creado: ' . $viewAllPermissioNName);
-            } elseif (isset($viewAllPermissioNName)) {
-                $this->info('El permiso ya existe: ' . $viewAllPermissioNName);
-            }
-        }
+             // Asignar el permiso al rol de administrador
+             $adminRole->givePermissionTo($permission);
 
-        $this->info('Todos los permisos han sido creados.');
+             if ($viewAllPermissionName) {
+                 $viewAllPermission = Permission::firstOrCreate(['name' => $viewAllPermissionName]);
+                 $this->info('Permiso de visualización total asegurado: ' . $viewAllPermissionName);
+                 // Asignar el permiso de visualización total al rol de administrador
+                 $adminRole->givePermissionTo($viewAllPermission);
+             }
+         }
+
+         $this->info('Todos los permisos han sido creados y asignados al rol de administrador.');
     }
 }

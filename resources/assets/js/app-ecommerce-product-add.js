@@ -5,6 +5,7 @@
 
 //Javascript to handle the e-commerce product add page
 
+
 (function () {
   document.addEventListener('DOMContentLoaded', function () {
     const commentEditorElement = document.querySelector('.comment-editor');
@@ -37,9 +38,6 @@
   });
 
 
-  // previewTemplate: Updated Dropzone default previewTemplate
-
-  // ! Don't change it unless you really know what you are doing
 
   const previewTemplate = `<div class="dz-preview dz-file-preview">
 <div class="dz-details">
@@ -166,5 +164,28 @@ document.addEventListener('DOMContentLoaded', function () {
           history.back();
       }
   });
+
+  $(document).ready(function() {
+    // Función para manejar la visibilidad del contenedor de sabores
+    function toggleFlavorsContainer() {
+      var productType = $('#productType').val();
+      if (productType === 'configurable') {
+        $('#flavorsContainer').show();
+        $('#flavorsQuantityContainer').show();
+      } else {
+        $('#flavorsContainer').hide();
+        $('#flavorsQuantityContainer').hide();
+      }
+    }
+
+    // Llamada inicial para establecer la visibilidad correcta al cargar la página
+    toggleFlavorsContainer();
+
+    // Controlador de eventos para cuando cambia la selección del tipo de producto
+    $('#productType').change(function() {
+      toggleFlavorsContainer();
+    });
+  });
+
 });
 

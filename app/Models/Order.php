@@ -10,7 +10,7 @@ class Order extends Model
     use HasFactory;
 
     // Definir los atributos que se pueden asignar en masa
-    protected $fillable = ['date', 'origin', 'client_id', 'store_id', 'products', 'subtotal', 'tax', 'shipping', 'coupon_id', 'coupon_amount', 'discount', 'total', 'payment_status', 'shipping_status', 'payment_method', 'shipping_method'];
+    protected $fillable = ['date', 'time', 'origin', 'client_id', 'store_id', 'subtotal', 'tax', 'shipping', 'coupon_id', 'coupon_amount', 'discount', 'total', 'payment_status', 'shipping_status', 'payment_method', 'shipping_method'];
 
 
     // Relación con Client

@@ -2,6 +2,12 @@
 
 @section('title', 'Editar Tienda')
 
+@section('page-script')
+@vite([
+  'resources/assets/js/custom-js/edit-store.js'
+])
+@endsection
+
 @section('content')
 <h4 class="py-3 mb-4">
     <span class="text-muted fw-light">Tiendas /</span> Editar Tienda
@@ -51,6 +57,40 @@
                             <option value="0" {{ $store->status == 'inactivo' ? 'selected' : '' }}>Inactivo</option>
                         </select>
                     </div>
+
+                    <!-- Acepta MercadoPago Switch -->
+                    <div class="mb-3">
+                      <div class="form-check form-switch">
+                          <!-- Campo oculto para asegurar que un valor falso se envíe si el checkbox no está marcado -->
+                          <input type="hidden" name="accepts_mercadopago" value="0">
+                          <input class="form-check-input" type="checkbox" id="mercadoPagoSwitch" name="accepts_mercadopago" value="1" {{ $store->mercadoPagoAccount ? 'checked' : '' }}>
+                          <label class="form-check-label" for="mercadoPagoSwitch">Acepta MercadoPago</label>
+                        </div>
+                    </div>
+
+
+                    <!-- Campos MercadoPago (ocultos por defecto) -->
+                    <div id="mercadoPagoFields" style="display: none;">
+                      <!-- Public Key -->
+                      <div class="mb-3">
+                          <label class="form-label" for="mercadoPagoPublicKey">Public Key</label>
+                          <input type="text" class="form-control" id="mercadoPagoPublicKey" name="mercadoPagoPublicKey" placeholder="Public Key de MercadoPago" value="{{ $store->mercadoPagoAccount->public_key ?? '' }}">
+                      </div>
+
+                      <!-- Access Token -->
+                      <div class="mb-3">
+                          <label class="form-label" for="mercadoPagoAccessToken">Access Token</label>
+                          <input type="text" class="form-control" id="mercadoPagoAccessToken" name="mercadoPagoAccessToken" placeholder="Access Token de MercadoPago" value="{{ $store->mercadoPagoAccount->access_token ?? '' }}">
+                      </div>
+
+                      <!-- Secret Key -->
+                      <div class="mb-3">
+                        <label class="form-label" for="mercadoPagoSecretKey">Clave Secreta</label>
+                        <input type="text" class="form-control" id="mercadoPagoSecreyKey" name="mercadoPagoSecretKey" placeholder="Clave secreta de MercadoPago" value="{{ $store->mercadoPagoAccount->secret_key ?? ''}}">
+                      </div>
+                    </div>
+
+
                     @if ($errors->any())
                       @foreach ($errors->all() as $error)
                         <div class="alert alert-danger">

@@ -18,11 +18,11 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products', 'id');
             $table->foreignId('store_id')->constrained();
             $table->integer('subtotal');
-            $table->integer('tax');
+            $table->integer('tax')->nullable();
             $table->integer('shipping');
             $table->foreignId('coupon_id')->constrained();
-            $table->integer('coupon_amount');
-            $table->integer('discount');
+            $table->integer('coupon_amount')->nullable();
+            $table->integer('discount')->nullable();
             $table->integer('total');
             $table->enum('payment_status', ['pending', 'paid', 'failed']);
             $table->enum('shipping_status', ['pending', 'processing', 'shipped', 'delivered']);

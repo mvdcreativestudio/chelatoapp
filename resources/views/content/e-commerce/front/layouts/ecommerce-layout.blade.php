@@ -27,7 +27,7 @@ $customizerHidden = ($customizerHidden ?? '');
 
 <!--/ Content -->
 
-@include('content/e-commerce/front/layouts/footer')
+
 
 @endsection
 

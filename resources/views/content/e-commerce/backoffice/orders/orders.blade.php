@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'E-Commerce - Pedidos')
+@section('title', 'Pedidos')
 
 @section('vendor-style')
 @vite([
@@ -10,6 +10,9 @@
 ])
 @endsection
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/es.min.js"></script>
+
 @section('vendor-script')
 @vite([
   'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js'
@@ -18,7 +21,7 @@
 
 @section('page-script')
 @vite([
-  'resources/assets/js/app-ecommerce-order-list.js'
+  'resources/assets/js/custom-js/app-orders-list.js'
 ])
 @endsection
 
@@ -103,13 +106,12 @@
       <thead>
         <tr>
           <th></th>
-          <th></th>
-          <th>N°</th>
           <th>Fecha</th>
           <th>Cliente</th>
+          <th>Local</th>
+          <th>Importe</th>
           <th>Pago</th>
-          <th>Estado</th>
-          <th>Met. de pago</th>
+          <th>Envío</th>
           <th>Acciones</th>
         </tr>
       </thead>

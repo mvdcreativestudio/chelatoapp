@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->enum('type', ['individual', 'company']);
-            $table->string('rut');
-            $table->string('ci');
+            $table->string('rut')->nullable();
+            $table->string('ci')->nullable();
             $table->string('address');
             $table->string('city');
             $table->string('state');

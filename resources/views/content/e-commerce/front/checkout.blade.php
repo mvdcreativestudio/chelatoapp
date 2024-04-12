@@ -4,7 +4,7 @@ $configData = Helper::appClasses();
 
 @extends('content.e-commerce.front.layouts.ecommerce-layout')
 
-@section('title', 'Payment - Front Pages')
+@section('title', 'Finalizar compra')
 
 <!-- Page Styles -->
 @section('page-style')
@@ -23,6 +23,8 @@ $configData = Helper::appClasses();
   'resources/assets/js/front-page-payment.js'
 ])
 @endsection
+
+
 
 
 @section('content')
@@ -70,7 +72,7 @@ $configData = Helper::appClasses();
                   <label class="form-check-label custom-option-content form-check-input-payment d-flex gap-3 align-items-center" for="customRadioPaypal">
                     <input name="payment_method" class="form-check-input" type="radio" value="efectivo" id="customRadioPaypal" />
                     <span class="custom-option-body">
-                      <img src="{{asset('assets/img/icons/payments/paypal-'.$configData['style'].'.png') }}" alt="paypal" width="58" data-app-light-img="icons/payments/paypal-light.png" data-app-dark-img="icons/payments/paypal-dark.png">
+                      <img src="{{asset('assets/img/icons/payments/cash.png') }}" alt="paypal" width="58">
                       <span class="ms-3">Efectivo</span>
                     </span>
                   </label>
@@ -138,14 +140,18 @@ $configData = Helper::appClasses();
                     <li class="list-group-item p-4">
                       <div class="d-flex gap-3">
                         <div class="flex-shrink-0 d-flex align-items-center">
-                          <img src="{{ asset('assets/img/ecommerce-images/' . $details['image']) }}" alt="{{ $details['name'] }}" class="w-px-100">
+                          <img src="{{ asset($details['image']) }}" alt="{{ $details['name'] }}" class="w-px-100">
                         </div>
                         <div class="flex-grow-1">
                           <div class="row">
                             <div class="col-md-8">
                               <p class=" mb-0"><a href="javascript:void(0)" class="text-body">{{ $details['name'] }}</a></p>
-                              @if ($details['type'] == 'configurable')
-                                <small class="mt-0">Tus sabores aquí</small>
+                              @if (!empty($details['flavors']))
+                              <small class="mt-0">
+                                @foreach($details['flavors'] as $flavor)
+                                  - {{ $flavor['name'] }}
+                                @endforeach
+                              </small>
                               @endif
                               <input type="number" class="form-control form-control-sm w-px-100 mt-2" value="{{ $details['quantity'] }}" min="1" max="5">
                             </div>
@@ -208,6 +214,8 @@ $configData = Helper::appClasses();
     </form>
   </div>
 </section>
+
+
 
 <!-- Modal -->
 @include('_partials/_modals/modal-pricing')

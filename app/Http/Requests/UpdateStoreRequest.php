@@ -25,12 +25,24 @@ class UpdateStoreRequest extends FormRequest
     public function rules(): array
     {
         $store = $this->route('store');
-        return [
+
+        $rules = [
             'name' => 'sometimes|string|max:255',
             'address' => 'sometimes|string|max:255',
             'email' => ['sometimes', 'email', Rule::unique('stores')->ignore($store->id)],
             'rut' => ['sometimes', 'string', Rule::unique('stores')->ignore($store->id)],
             'status' => 'sometimes|boolean',
+            'accepts_mercadopago' => 'required|boolean',
         ];
+
+        if ($this->boolean('accepts_mercadopago')) {
+            $rules += [
+                'mercadoPagoPublicKey' => 'required|string|max:255',
+                'mercadoPagoAccessToken' => 'required|string|max:255',
+            ];
+        }
+
+        return $rules;
     }
+
 }

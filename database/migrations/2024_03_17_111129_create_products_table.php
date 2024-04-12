@@ -14,19 +14,16 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('description');
+            $table->string('description')->nullable();
             $table->enum('type', ['simple', 'configurable']);
             $table->integer('old_price');
-            $table->integer('price');
-            $table->integer('discount');
+            $table->integer('price')->nullable();
+            $table->integer('discount')->nullable();
             $table->string('categories');
-            $table->string('tags');
-            $table->string('atributtes');
-            $table->string('variations');
             $table->string('image');
             $table->foreignId('store_id')->constrained();
             $table->boolean('status');
-            $table->bigInteger('stock');
+            $table->bigInteger('stock')->nullable();
             $table->timestamps();
         });
     }
