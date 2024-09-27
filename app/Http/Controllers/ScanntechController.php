@@ -29,7 +29,7 @@ class ScanntechController extends Controller
     {
         try {
             // Intenta cargar las respuestas desde el archivo de configuración
-            $this->scanntechResponses = config('posResponses.scanntech_responses');
+            $this->scanntechResponses = config('ScanntechResponses.postPurchaseResponses');
 
             // Verifica si la carga falló o no es un array
             if (!is_array($this->scanntechResponses)) {
@@ -109,6 +109,8 @@ class ScanntechController extends Controller
         // Manejo de la respuesta
         if ($response->successful()) {
             $responseCode = $response->json('ResponseCode');
+            \Log::info('Código de respuesta de Scanntech:', ['responseCode' => $responseCode]);
+
 
             // Obtener el mensaje basado en el código de respuesta desde la configuración
             $message = $this->scanntechResponses[$responseCode] ?? 'Código de respuesta no manejado: ' . $responseCode;

@@ -433,8 +433,10 @@ $(document).ready(function () {
                       const responseCode = response.responseCode;
                       showTransactionStatus(responseCode, false, false);
 
-                      if (responseCode === 10 || responseCode === 113) {
+                      if (responseCode === 10 || responseCode === 113 || responseCode === 12) {
                           poll();
+                      } else if (responseCode === 111) {
+                          postOrder();
                       }
                   },
                   error: function (xhr) {
