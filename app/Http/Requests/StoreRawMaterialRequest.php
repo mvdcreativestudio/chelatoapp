@@ -26,6 +26,7 @@ class StoreRawMaterialRequest extends FormRequest
             'description' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'unit_of_measure' => 'required|string|max:255',
+            'stock' => 'required|numeric|min:0',
         ];
     }
 }

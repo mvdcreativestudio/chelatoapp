@@ -84,7 +84,7 @@ return [
     |
     */
 
-  'locale' => 'en',
+  'locale' => 'es',
 
   /*
     |--------------------------------------------------------------------------
@@ -175,6 +175,8 @@ return [
     Spatie\Permission\PermissionServiceProvider::class,
     Laraveles\Spanish\SpanishServiceProvider::class,
     App\Providers\ComposerServiceProvider::class,
+    App\Providers\CompanySettingsServiceProvider::class,
+    Maatwebsite\Excel\ExcelServiceProvider::class,
   ])->toArray(),
 
   /*
@@ -191,6 +193,7 @@ return [
   'aliases' => Facade::defaultAliases()->merge([
     // 'Example' => App\Facades\Example::class,
     'Helper' => App\Helpers\Helpers::class,
+    'Excel' => Maatwebsite\Excel\Facades\Excel::class,
   ])->toArray(),
 
 ];

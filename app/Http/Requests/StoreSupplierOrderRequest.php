@@ -27,6 +27,7 @@ class StoreSupplierOrderRequest extends FormRequest
           'shipping_status' => 'required|string',
           'payment_status' => 'required|string',
           'payment' => 'required|numeric|min:0',
+          'payment_method' => 'required|string',
           'notes' => 'nullable|string',
           'raw_material_id.*' => 'required|distinct|exists:raw_materials,id',
           'quantity.*' => 'required|numeric|min:1'
@@ -45,6 +46,8 @@ class StoreSupplierOrderRequest extends FormRequest
             'raw_material_id.*.distinct' => 'Las materias primas duplicadas no están permitidas.',
             'raw_material_id.*.exists' => 'La materia prima seleccionada no es válida.',
             'quantity.*.required' => 'La cantidad es obligatoria.',
+            'payment.numeric' => 'El pago debe ser un número.',
+            'payment.min' => 'El pago no puede ser negativo.',
             'quantity.*.numeric' => 'La cantidad debe ser un número.',
             'quantity.*.min' => 'La cantidad debe ser al menos 1.',
         ];

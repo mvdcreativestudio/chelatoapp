@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   var dt_raw_materials_table = $('.datatables-raw-materials');
-
+  console.log('DataTables version:', $.fn.dataTable.version);
   var rawMaterialAdd = window.rawMaterialAdd;
   var rawMaterialEdit = window.rawMaterialEditTemplate;
   var rawMaterialDelete = window.rawMaterialDeleteTemplate;
@@ -8,17 +8,33 @@ document.addEventListener('DOMContentLoaded', function () {
   var originUrlAsset = window.originUrlAsset;
   var hasViewAllRawMaterialsPermission = window.hasViewAllRawMaterialsPermission;
 
+  // Logging rawMaterials to ensure data is loaded correctly
+  console.log('rawMaterials data:', rawMaterials);
+
   var columns = [
     { data: 'image_url' },
     { data: 'name' },
     { data: 'description' },
     { data: 'unit_of_measure' },
-    { data: 'stock' }
+    { data: 'total_stock' }
   ];
 
+
   if (hasViewAllRawMaterialsPermission) {
-    columns.push({ data: 'store', searchable: true, orderable: true });
-  }
+    columns.push({
+        data: 'stores',
+        render: function(data, type, row) {
+            // Aquí mostramos el stock de cada tienda
+            var storeStocks = data.map(function(store) {
+                return `${store.name}: ${store.pivot.stock} kg`;
+            }).join('<br>'); // Esto lo separa en diferentes líneas
+
+            return storeStocks;
+        },
+        searchable: true,
+        orderable: true
+    });
+}
 
   var columnsDefs = [
     {
@@ -26,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
       searchable: false,
       orderable: false,
       render: function (data, type, row) {
+        console.log('Rendering image for row:', row);
         if (!data) {
           return `<img src="${originUrlAsset}/noimage.jpg" alt="Imagen por defecto" class="img-fluid rounded" style="max-width: 60px; height: auto;">`;
         }
@@ -39,6 +56,7 @@ document.addEventListener('DOMContentLoaded', function () {
       responsivePriority: 1,
       orderable: true,
       render: function (data, type, row, meta) {
+        console.log('Rendering name for row:', row);
         return '<span>' + data + '</span>';
       }
     },
@@ -48,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
       responsivePriority: 3,
       orderable: true,
       render: function (data, type, row, meta) {
+        console.log('Rendering description for row:', row);
         return data && data.length > 50 ? '<span>' + data.substr(0, 50) + '...' + '</span>' : data;
       }
     },
@@ -57,6 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
       responsivePriority: 4,
       orderable: true,
       render: function (data, type, row, meta) {
+        console.log('Rendering unit of measure for row:', row);
         return '<span>' + data + '</span>';
       }
     },
@@ -66,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
       responsivePriority: 5,
       orderable: true,
       render: function (data, type, row, meta) {
+        console.log('Rendering total stock for row:', row);
         return '<span>' + data + '</span>';
       }
     },
@@ -75,6 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
       responsivePriority: 6,
       orderable: false,
       render: function (data, type, row, meta) {
+        console.log('Rendering actions for row:', row);
         return `
             <div class="dropdown">
               <button class="btn btn-icon btn-icon-only" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -102,13 +124,15 @@ document.addEventListener('DOMContentLoaded', function () {
     columnsDefs.push({
       targets: 5,
       render: function (data, type, row) {
-        return row.store ? row.store.name : 'Tienda sin nombre';
+        console.log('Rendering store name for row:', row);
+        return row.stores && row.stores.length > 0 ? row.stores[0].name : 'Empresa sin nombre';
       }
     });
   }
 
   if (dt_raw_materials_table.length) {
-    dt_raw_materials_table.DataTable({
+    console.log('Initializing DataTable...');
+    var table = dt_raw_materials_table.DataTable({
       data: rawMaterials,
       columns: columns,
       columnDefs: columnsDefs,
@@ -149,10 +173,17 @@ document.addEventListener('DOMContentLoaded', function () {
           text: '<i class="bx bx-plus me-0 me-sm-1"></i><span class="d-none d-sm-inline-block">Crear</span>',
           className: 'btn btn-primary ml-3',
           action: function () {
+            console.log('Creating new raw material...');
             window.location.href = rawMaterialAdd;
           }
         }
       ]
+    });
+
+    $('.toggle-column').on('change', function() {
+      console.log('Toggling column visibility:', $(this).attr('data-column'));
+      var column = table.column($(this).attr('data-column'));
+      column.visible(!column.visible());
     });
   }
 
@@ -165,8 +196,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
   $('.delete-button').click(function () {
     var form = $(this).closest('form');
-    if (confirm('¿Estás seguro de querer eliminar este elemento?')) {
-      form.submit();
-    }
+    console.log('Delete button clicked for form:', form);
+
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción eliminará completamente la materia prima, perdiendo definitivamente sus datos',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar!',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        console.log('Form confirmed for deletion:', form);
+        form.submit();
+      }
+    });
   });
 });

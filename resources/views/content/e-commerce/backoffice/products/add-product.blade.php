@@ -34,10 +34,20 @@
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">E-Commerce /</span><span> Crear producto</span>
+  <span class="text-muted fw-light"></span><span> Crear producto</span>
 </h4>
 
-<div class="app-ecommerce">
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+<div class="app-ecommerce" data-raw-materials='@json($rawMaterials)' data-flavors='@json($flavors)'>
 
   <!-- Add Product -->
 <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
@@ -49,7 +59,7 @@
     </div>
     <div class="d-flex align-content-center flex-wrap gap-3">
       <button type="button" class="btn btn-label-secondary" id="discardButton">Descartar</button>
-      <button type="submit" name="action" value="save_draft" class="btn btn-label-primary">Guardar borrador</button>
+      {{-- <button type="submit" name="action" value="save_draft" class="btn btn-label-primary">Guardar borrador</button> --}}
       <button type="submit" name="action" value="publish" class="btn btn-primary">Publicar</button>
     </div>
 
@@ -67,11 +77,11 @@
         <div class="card-body">
           <div class="mb-3">
             <label class="form-label" for="ecommerce-product-name">Nombre</label>
-            <input type="text" class="form-control" id="ecommerce-product-name" placeholder="Nombre del producto" name="name" aria-label="Nombre del producto">
+            <input type="text" class="form-control" id="ecommerce-product-name" placeholder="Nombre del producto" name="name" aria-label="Nombre del producto" required>
           </div>
           <div class="row mb-3">
             <div class="col"><label class="form-label" for="ecommerce-product-sku">SKU</label>
-              <input type="number" class="form-control" id="ecommerce-product-sku" placeholder="SKU" name="sku" aria-label="SKU"></div>
+              <input type="text" class="form-control" id="ecommerce-product-sku" placeholder="SKU" name="sku" aria-label="SKU"></div>
           </div>
           <!-- Description -->
           <div>
@@ -100,7 +110,7 @@
       </div>
       <!-- /Product Information -->
       <!-- Variants -->
-      <div class="card mb-4">
+      <div class="card mb-4" style="display: none;">
         <div class="card-header">
           <h5 class="card-title mb-0">Tipo de producto y variaciones</h5>
         </div>
@@ -116,13 +126,16 @@
                   </select>
                 </div>
                 <div id="flavorsQuantityContainer" class="mb-3 col-4">
-                  <label class="form-label" for="max-flavors">Sabores</label>
-                  <input type="text" class="form-control" id="max_flavors" placeholder="Cantidad máxima de sabores" name="max_flavors" aria-label="Cantidad máxima de sabores">
+                  <label class="form-label" for="max-flavors">Variaciones</label>
+                  <input type="text" class="form-control" id="max_flavors" placeholder="Cantidad máxima de variaciones" name="max_flavors" aria-label="Cantidad máxima de variaciones">
                 </div>
               </div>
             </div>
             <div id="flavorsContainer" class="mb-3 col-8">
-              <label class="form-label">Sabores disponibles</label>
+              <div class="d-flex justify-content-between">
+                <label class="form-label">Variaciones disponibles</label>
+                <label class="form-label" id="selectAllFlavorsButton">Seleccionar todos</label>
+              </div>
               <select class="select2 form-select variationOptions" multiple="multiple" name="flavors[]">
                 @foreach ($flavors as $flavor)
                   <option value="{{ $flavor->id }}">{{ $flavor->name }}</option>
@@ -133,98 +146,20 @@
         </div>
       </div>
       <!-- /Variants -->
-      <!-- Inventory -->
-      <div class="card mb-4">
+      <!-- Recipe -->
+      <div class="card mb-4" id="recipeCard" style="display: none;">
         <div class="card-header">
-          <h5 class="card-title mb-0">Stock</h5>
+            <h5 class="card-title mb-0">Receta</h5>
         </div>
         <div class="card-body">
-          <div class="row">
-            <!-- Navigation -->
-            <div class="col-12 col-md-4 mx-auto card-separator">
-              <div class="d-flex justify-content-between flex-column mb-3 mb-md-0 pe-md-3">
-                <ul class="nav nav-align-left nav-pills flex-column">
-                  <li class="nav-item">
-                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#restock">
-                      <i class="bx bx-cube me-2"></i>
-                      <span class="align-middle">Restock</span>
-                    </button>
-                  </li>
-                  <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#attributes">
-                      <i class="bx bx-link me-2"></i>
-                      <span class="align-middle">Atributos</span>
-                    </button>
-                  </li>
-                </ul>
-              </div>
+            <div data-repeater-list="recipes">
+                <!-- Elimina los elementos predeterminados aquí -->
             </div>
-            <!-- /Navigation -->
-            <!-- Options -->
-            <div class="col-12 col-md-8 pt-4 pt-md-0">
-              <div class="tab-content p-0 pe-md-5 ps-md-3">
-                <!-- Restock Tab -->
-                <div class="tab-pane fade show active" id="restock" role="tabpanel">
-                  <h5>Opciones</h5>
-                  <label class="form-label" for="ecommerce-product-stock">Agregar a stock</label>
-                  <div class="row mb-3 g-3">
-                    <div class="col-12 col-sm-9">
-                      <input type="number" class="form-control" id="ecommerce-product-stock" placeholder="Cantidad" name="quantity" aria-label="Quantity"></div>
-                    <div class="col-12 col-sm-3">
-                      <button class="btn btn-primary"><i class='bx bx-check me-2'></i>Confirmar</button>
-                    </div>
-                  </div>
-                  <div>
-                    <h6>En stock ahora: <span class="text-muted">54</span></h6>
-                    <h6>Último re-stock: <span class="text-muted">24 de Junio de 2023</span></h6>
-                    <h6>Stock total en el tiempo: <span class="text-muted">2430</span></h6>
-                  </div>
-                </div>
-                <!-- Attributes Tab -->
-                <div class="tab-pane fade" id="attributes" role="tabpanel">
-                  <h5 class="mb-4">Atributos</h5>
-                  <div>
-                    <!-- Fragile Product -->
-                    <div class="form-check mb-3">
-                      <input class="form-check-input" type="checkbox" value="fragile" id="fragile">
-                      <label class="form-check-label" for="fragile">
-                        <span class="mb-0 h6">Producto fragil</span>
-                      </label>
-                    </div>
-                    <!-- Biodegradable -->
-                    <div class="form-check mb-3">
-                      <input class="form-check-input" type="checkbox" value="biodegradable" id="biodegradable">
-                      <label class="form-check-label" for="biodegradable">
-                        <span class="mb-0 h6">Biodegradable</span>
-                      </label>
-                    </div>
-                    <!-- Frozen Product -->
-                    <div class="form-check mb-3">
-                      <input class="form-check-input" type="checkbox" value="frozen" checked>
-                      <label class="form-check-label w-75 pe-5" for="frozen">
-                        <span class="mb-1 h6">Producto congelado</span>
-                        <input type="number" class="form-control" placeholder="Max. allowed Temperature" id="frozen">
-                      </label>
-                    </div>
-                    <!-- Exp Date -->
-                    <div class="form-check mb-4">
-                      <input class="form-check-input" type="checkbox" value="expDate" id="expDate" checked>
-                      <label class="form-check-label w-75 pe-5" for="date-input">
-                        <span class="mb-1 h6">Fecha de vencimiento</span>
-                        <input type="date" class="product-date form-control" id="date-input">
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                <!-- /Attributes Tab -->
-
-              </div>
-            </div>
-            <!-- /Options-->
-          </div>
+            <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
+            <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button>
         </div>
       </div>
-      <!-- /Inventory -->
+      <!-- /Recipe -->
     </div>
     <!-- /Second column -->
 
@@ -232,24 +167,11 @@
     <div class="col-12 col-lg-4">
       <!-- Pricing Card -->
       <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="card-title mb-0">Precio</h5>
-        </div>
         <div class="card-body">
-          <!-- Base Price -->
-          <div class="mb-3">
-            <label class="form-label" for="ecommerce-product-price">Precio normal</label>
-            <input type="number" class="form-control" id="ecommerce-product-price" placeholder="Precio" name="old_price" aria-label="Product price">
-          </div>
-          <!-- Discounted Price -->
-          <div class="mb-3">
-            <label class="form-label" for="ecommerce-product-discount-price">Precio rebajado</label>
-            <input type="number" class="form-control" id="ecommerce-product-discount-price" placeholder="Precio rebajado" name="price" aria-label="Introduzca el precio rebajado">
-          </div>
           <!-- Campo oculto para estado desactivado -->
           <input type="hidden" name="status" value="2">
-          <!-- Instock switch -->
-          <div class="d-flex justify-content-between align-items-center border-top pt-3">
+          <!-- Switch estado -->
+          <div class="d-flex justify-content-between align-items-center mb-3 pb-1">
             <span class="mb-0 h6">Estado</span>
             <div class="w-25 d-flex justify-content-end">
               <label class="switch switch-primary switch-sm me-4 pe-2">
@@ -258,6 +180,23 @@
               </label>
             </div>
           </div>
+
+          <!-- Base Price -->
+          <div class="mb-3">
+            <label class="form-label" for="ecommerce-product-price">Precio normal - <small>IVA INCLUÍDO</small></label></label>
+            <input type="number" min="0" step=".01" class="form-control" id="ecommerce-product-price" placeholder="Precio" name="old_price" aria-label="Product price" required>
+          </div>
+          <!-- Discounted Price -->
+          <div class="mb-3">
+            <label class="form-label" for="ecommerce-product-discount-price">Precio oferta - <small>IVA INCLUÍDO</small></label></label>
+            <input type="number" step=".01" min="0" class="form-control" id="ecommerce-product-discount-price" placeholder="Precio rebajado" name="price" aria-label="Introduzca el precio rebajado">
+          </div>
+          <!-- build_price -->
+          <div class="mb-3">
+            <label class="form-label" for="build_price">Costo</label>
+            <input type="number" step=".01" min="0" class="form-control" id="build_price" placeholder="Introduzca el costo del producto" name="build_price" aria-label="Introduzca costo">
+          <div>
+
         </div>
       </div>
       <!-- /Pricing Card -->
@@ -267,48 +206,76 @@
           <h5 class="card-title mb-0">Organizar</h5>
         </div>
         <div class="card-body">
-          <!-- Vendor -->
-          <div class="mb-3 col ecommerce-select2-dropdown">
-            <label class="form-label mb-1" for="vendor">
-              Local
-            </label>
-            <select id="vendor" class="select2 form-select" data-placeholder="Seleccionar local" name="store_id">
-              <option value="">Seleccionar local</option>
-              @foreach ($stores as $store)
-                <option value="{{ $store->id }}">{{ $store->name }}</option>
-              @endforeach
 
-            </select>
+          <!-- Stock Inicial -->
+          <div class="mb-3" id="stockContainer">
+            <div class="stock-inicial mb-3">
+              <label class="form-label" for="stock">Stock Inicial</label>
+              <input type="number" class="form-control" id="stock" placeholder="Stock Inicial" name="stock" aria-label="Introduzca el stock inicial">
+            </div>
+            <div class="stock-margen">
+              <label class="form-label" for="safety_margin">Margen de Seguridad</label>
+              <input type="number" class="form-control" id="safety_margin" placeholder="¿Cuántas unidades es el minimo por el que desea ser notificado?" name="safety_margin" aria-label="Introduzca el margen de seguridad">
+            </div>
           </div>
+
           <!-- Category -->
           <div class="mb-3 col ecommerce-select2-dropdown">
             <label class="form-label mb-1 d-flex justify-content-between align-items-center" for="category-org">
-              <span>Categoría</span><a href="javascript:void(0);" class="fw-medium">Crear categoría</a>
+              <span>Categoría</span><a href="{{ route('product-categories.index') }}" class="fw-medium">Crear categoría</a>
             </label>
             <select id="category-org" class="select2 form-select" data-placeholder="Seleccione la categoría" name="categories[]" multiple>
               @foreach ($categories as $category)
                 <option value="{{ $category->id }}">{{ $category->name }}</option>
               @endforeach
             </select>
-
           </div>
+
+          <!-- Vendor -->
+          <div class="mb-3 col ecommerce-select2-dropdown">
+            <label class="form-label mb-1" for="vendor">
+              Empresa
+            </label>
+            <select id="vendor" class="select2 form-select" data-placeholder="Seleccionar local" name="store_id" required {{ count($stores) === 1 ? 'disabled' : '' }}>
+              @if(auth()->user()->hasPermissionTo('access_global_products'))
+                @foreach ($stores as $index => $store)
+                  <option value="{{ $store->id }}" {{ $index === 0 ? 'selected' : '' }}>{{ $store->name }}</option>
+                @endforeach
+              @else
+                <option value="{{ auth()->user()->store_id }}" selected>{{ auth()->user()->store->name }}</option>
+              @endif
+            </select>
+
+            @if(count($stores) === 1)
+              <!-- Campo oculto para enviar el valor si solo hay un local disponible -->
+              <input type="hidden" name="store_id" value="{{ $stores->first()->id }}">
+            @endif
+          </div>
+
+          <!-- Código de barras -->
+          <div class="mb-3" id="barCodeContainer">
+            <label class="form-label" for="bar_code">Código de barras</label>
+            <input type="text" class="form-control" id="bar_code" placeholder="Código de barras" name="bar_code" aria-label="Introduzca el código de barras">
+          </div>
+
+
         </div>
       </div>
       <!-- Media -->
       <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0 card-title">Imagen</h5>
-          <a href="javascript:void(0);" class="fw-medium">Agregar imagen desde URL</a>
         </div>
         <div class="card-body">
-          <div class="dz-message needsclick my-5">
-            <p class="fs-4 note needsclick my-2">Arrastre la imagen aquí</p>
-            <small class="text-muted d-block fs-6 my-2">o</small>
-            <span class="note needsclick btn bg-label-primary d-inline" id="btnBrowse">Buscar imagen</span>
+          <div id="existingImage" class="mb-3 text-center"></div>
+          <div class="dropzone dz-clickable" id="dropzone">
+            <div class="dz-message needsclick">
+              <p class="fs-4 note needsclick my-2">Arrastre la imagen aquí</p>
+              <small class="text-muted d-block fs-6 my-2">o</small>
+              <span class="note needsclick btn bg-label-primary d-inline" id="btnBrowse">Buscar imagen</span>
+            </div>
           </div>
-          <div class="fallback">
-            <input name="image" type="file" />
-          </div>
+          <input type="file" name="image" id="productImage" class="d-none">
         </div>
       </div>
       <!-- /Media -->
@@ -319,6 +286,4 @@
   </div>
 </form>
 </div>
-
-
 @endsection

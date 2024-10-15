@@ -13,13 +13,22 @@
     <form action="{{ route('roles.assignPermissions', $role) }}" method="POST">
       @csrf
       <div class="mb-3">
-        @foreach($permissions as $permission)
-          <div class="form-check card p-3 my-3">
-            <div class="px-4">
-              <input class="form-check-input" type="checkbox" value="{{ $permission->name }}" id="perm_{{ $permission->id }}" name="permissions[]" {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
-              <label class="form-check-label" for="perm_{{ $permission->id }}">
-                {{ __('permissions.' . $permission->name) }}
-              </label>
+        @foreach($permissions->groupBy('module') as $module => $modulePermissions)
+          <div class="card my-3">
+            <div class="card-header">
+              <h6>{{ __('modules.' . $module) }}</h6>
+            </div>
+            <div class="card-body">
+              @foreach($modulePermissions as $permission)
+              <div class="col-6 col-md-4 col-lg-3 mb-3">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" value="{{ $permission->name }}" id="perm_{{ $permission->id }}" name="permissions[]" {{ $role->hasPermissionTo($permission->name) ? 'checked' : '' }}>
+                  <label class="form-check-label" for="perm_{{ $permission->id }}">
+                    {{ __('permissions.' . $permission->name) }}
+                  </label>
+                </div>
+              </div>
+            @endforeach
             </div>
           </div>
         @endforeach
@@ -29,4 +38,20 @@
     </form>
   </div>
 </div>
+
+<style>
+  .form-check-label {
+    font-size: 0.875rem;
+  }
+  .form-switch .form-check-input {
+    width: 2rem;
+    height: 1rem;
+    margin-left: -2.5rem;
+  }
+  .form-switch .form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+</style>
+
 @endsection

@@ -18,6 +18,11 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
 
+Broadcast::channel('store.{storeId}', function ($user, $storeId) {
+  return $user->store_id == $storeId;
+});
+
+
 /**
  * Obtiene los canales a través de los cuales se transmitirá el evento.
  *

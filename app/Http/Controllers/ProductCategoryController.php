@@ -2,80 +2,168 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\ProductCategory;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use App\Repositories\ProductCategoryRepository;
+use App\Http\Requests\StoreProductCategoryRequest;
+use App\Http\Requests\UpdateProductCategoryRequest;
+use Illuminate\Http\JsonResponse;
+use App\Models\Store;
+use Illuminate\Http\Request;
 
 class ProductCategoryController extends Controller
 {
-    public function index()
+    /**
+     * El repositorio para las operaciones de categorías de productos.
+     *
+     * @var ProductCategoryRepository
+    */
+    protected $productCategoryRepo;
+
+    /**
+     * Inyecta el repositorio en el controlador.
+     *
+     * @param  ProductCategoryRepository  $productCategoryRepo
+    */
+    public function __construct(ProductCategoryRepository $productCategoryRepo)
     {
-        return view('content.e-commerce.backoffice.product-categories.product-categories');
+        $this->middleware(['check_permission:access_product-categories'])->only([
+            'index', 'create', 'store', 'edit', 'update', 'destroy', 'datatable'
+        ]);
+        $this->productCategoryRepo = $productCategoryRepo;
     }
 
-    public function create()
+    public function index(): View
     {
-        return view('content.e-commerce.backoffice.product-categories.add-category');
+        $stores = Store::all();
+
+        // Obtener las categorías junto con el conteo de productos y el total de stock
+        $data = $this->productCategoryRepo->getCategories();
+
+        // Pasar las variables adicionales a la vista
+        return view('content.e-commerce.backoffice.product-categories.product-categories', [
+            'categories' => $data['categories'],  // Las categorías
+            'totalCategories' => $data['total_categories'],  // Total de categorías
+            'categoryWithMostProducts' => $data['category_with_most_products'],  // Categoría con más productos
+            'categoryWithMostStock' => $data['category_with_most_stock'],  // Categoría con más stock
+            'stores' => $stores,  // Las tiendas
+        ]);
     }
 
-    public function store(Request $request) {
-      $category = new ProductCategory();
-      $category->name = $request->name;
-      $category->slug = $request->slug;
-      $category->description = $request->description;
-      $category->parent_id = $request->parent_id;
-      $category->status = $request->status;
+    /**
+     * Muestra el formulario para crear una nueva categoría de producto.
+     *
+     * @return View
+    */
+    public function create(): View
+    {
+      $stores = Store::all();
+      return view('content.e-commerce.backoffice.product-categories.add-category', compact('stores'));
+    }
 
-      if ($request->hasFile('image')) {
-          $file = $request->file('image');
-          Log::debug('File info:', ['name' => $file->getClientOriginalName(), 'size' => $file->getSize(), 'mime_type' => $file->getMimeType(), 'path' => $file->getRealPath()]);
-
-          // Obtener el nombre original del archivo
-          $filename = time() . '.' . $file->getClientOriginalExtension();
-
-          // Mover el archivo a la nueva ubicación
-          $path = $file->move(public_path('assets/img/ecommerce-images'), $filename);
-
-          // Guardar la ruta en la base de datos
-          $category->image_url = 'assets/img/ecommerce-images/' . $filename;
-      } else {
-          Log::debug('No image file found in the request');
-      }
-
-      $category->save();
-
+    /**
+     * Almacena una nueva categoría de producto en la base de datos.
+     *
+     * @param StoreProductCategoryRequest $request
+     * @return RedirectResponse
+    */
+    public function store(StoreProductCategoryRequest $request): RedirectResponse
+    {
+      $this->productCategoryRepo->store($request);
       return redirect()->route('product-categories.index')->with('success', 'Categoría creada correctamente.');
     }
 
-
-    public function edit(ProductCategory $category)
+    /**
+     * Muestra el formulario para editar una categoría de producto.
+     *
+     * @param ProductCategory $category
+     * @return View
+    */
+    public function edit(ProductCategory $category): View
     {
-        return view('content.e-commerce.backoffice.product-categories.edit-category', compact('category'));
+      return view('content.e-commerce.backoffice.product-categories.edit-category', compact('category'));
     }
 
-    public function update(Request $request, ProductCategory $category)
+    /**
+     * Actualiza una categoría de producto en la base de datos.
+     *
+     * @param UpdateProductCategoryRequest $request
+     * @param ProductCategory $category
+     * @return RedirectResponse
+    */
+    public function update(UpdateProductCategoryRequest $request, ProductCategory $category): RedirectResponse
     {
-        $category->name = $request->name;
-        $category->slug = $request->slug;
-        $category->description = $request->description;
-        $category->image_url = $request->image_url;
-        $category->parent_id = $request->parent_id;
-        $category->status = $request->status;
-        $category->save();
-        return redirect()->route('product-categories.index')->with('success', 'Categoría actualizada correctamente.');
+      $this->productCategoryRepo->update($request, $category);
+      return redirect()->route('product-categories.index')->with('success', 'Categoría actualizada correctamente.');
     }
 
-    public function destroy(ProductCategory $category)
+
+    /**
+     * Actualiza una categoría de producto en la base de datos dado un ID.
+     *
+     * @param UpdateProductCategoryRequest $request
+     * @param int $id
+     * @return JsonResponse
+    */
+    public function updateSelected(UpdateProductCategoryRequest $request, int $id): JsonResponse
     {
-        $category->delete();
+      $this->productCategoryRepo->updateSelected($request, $id);
+      return response()->json(['success' => 'Categoría actualizada correctamente.']);
+    }
+
+
+    /**
+     * Encuentra una categoría dada un ID.
+     *
+     * @param int $id
+    */
+    public function getSelected($id)
+    {
+      $category = $this->productCategoryRepo->getSelected($id);
+
+      if($category)
+      {
+        return response()->json($category);
+      } else {
+        return response()->json(['error' => 'Categoría no encontrada'], 404);
+      }
+    }
+
+    /**
+     * Elimina una categoría de producto de la base de datos.
+     *
+     * @param ProductCategory $category
+     * @return RedirectResponse
+    */
+    public function destroy(ProductCategory $category): RedirectResponse
+    {
+      $this->productCategoryRepo->destroy($category);
+      return redirect()->route('product-categories.index')->with('success', 'Categoría eliminada correctamente.');
+    }
+
+    /**
+     * Elimina una categoría dado un ID.
+     *
+     * @param ProductCategory $category
+     * @return RedirectResponse
+    */
+    public function deleteSelected($id): RedirectResponse
+    {
+      if($this->productCategoryRepo->deleteSelected($id)){
         return redirect()->route('product-categories.index')->with('success', 'Categoría eliminada correctamente.');
+      }
+      return redirect()->route('product-categories.index')->with('error', 'No se ha podido eliminar la categoría.');
     }
 
-    public function datatable()
+    /**
+     * Obtiene los datos de las categorías de productos para DataTables.
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function datatable(Request $request): mixed
     {
-        $query = ProductCategory::select(['id', 'name', 'slug', 'description', 'image_url', 'parent_id', 'status']);
-        return DataTables::of($query)
-            ->make(true);
+        return $this->productCategoryRepo->datatable($request);
     }
 }

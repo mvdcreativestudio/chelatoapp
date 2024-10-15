@@ -4,25 +4,25 @@
 <!-- Enlace al JS de Tagify -->
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
 
-<!-- Modal para Agregar Múltiples Sabores -->
+<!-- Modal para Agregar Múltiples Variaciones -->
 <div class="modal fade" id="addMultipleFlavorsModal" tabindex="-1" aria-labelledby="addMultipleFlavorsModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="addMultipleFlavorsModalLabel">Agregar Múltiples Sabores</h5>
+        <h5 class="modal-title" id="addMultipleFlavorsModalLabel">Agregar Múltiples Variaciones</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form id="addMultipleFlavorsForm">
           <div class="mb-3">
-            <label for="tagifyFlavorNames" class="form-label">Nombres de Sabores</label>
-            <input type="text" class="form-control tagify" id="tagifyFlavorNames" name="flavorNames" placeholder="Añade sabores" required>
+            <label for="tagifyFlavorNames" class="form-label">Nombres de Variaciones</label>
+            <input type="text" class="form-control tagify" id="tagifyFlavorNames" name="flavorNames" placeholder="Añade variaciones" required>
           </div>
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <button type="button" class="btn btn-primary" onclick="submitMultipleFlavors()">Guardar Sabores</button>
+        <button type="button" class="btn btn-primary" onclick="submitMultipleFlavors()">Guardar Variaciones</button>
       </div>
     </div>
   </div>
@@ -64,7 +64,7 @@
                       });
                   });
               } else {
-                  throw new Error(data.message || 'Error al guardar los sabores.');
+                  throw new Error(data.message || 'Error al guardar los variaciones.');
               }
           })
           .catch((error) => {

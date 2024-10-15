@@ -71,7 +71,10 @@ $(function () {
                   if (data === null) {
                       return 'Sin expiración';
                   } else {
-                    return moment(data).locale('es').format('DD/MM/YYYY');
+                    var currentDate = moment().startOf('day');
+                    var dueDate = moment(data).startOf('day');
+                    var dateClass = dueDate.isBefore(currentDate) ? 'text-danger' : 'text-success';
+                    return '<span class="' + dateClass + '">' + moment(data).locale('es').format('DD/MM/YYYY') + '</span>';
                 }
               },
             },
@@ -91,9 +94,10 @@ $(function () {
                       '<div class="d-flex justify-content-center align-items-center">' +
                       '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
                       '<div class="dropdown-menu dropdown-menu-end m-0">' +
-                      '<a href="' + baseUrl + 'coupons/' + full['id'] + '/show" class="dropdown-item">Ver</a>' +
+                      '<a href="javascript:void(0);" class="dropdown-item detail-record" data-id="' + full['id'] + '">Ver</a>' +
                       '<a href="javascript:void(0);" class="dropdown-item edit-record" data-id="' + full['id'] + '">Editar</a>' +
                       '<a href="javascript:void(0);" class="dropdown-item delete-record" data-id="' + full['id'] + '">Eliminar</a>' +
+                      
                       '</div>' +
                       '</div>'
                   );
@@ -127,6 +131,11 @@ $(function () {
           },
           renderer: "bootstrap"
       });
+
+      $('.toggle-column').on('change', function() {
+        var column = dt_coupons.column($(this).attr('data-column'));
+        column.visible(!column.visible());
+    });
 
       $('.dataTables_length label select').addClass('form-select form-select-sm');
       $('.dataTables_filter label input').addClass('form-control');
@@ -199,27 +208,76 @@ $(function () {
       });
   }
 
+
+  //Ver detalles del cupón.
+
+  $('.datatables-coupons tbody').on('click', '.detail-record', function () {
+    var recordId = $(this).data('id'); 
+
+    var $couponExpiryInput = $('#detailCouponModal #couponExpiry'); 
+
+    $.ajax({
+        url: 'coupons/' + recordId, 
+        type: 'GET',
+        success: function (response) {
+            console.log('Detalles del cupon:', response); 
+            
+            $('#detailCouponModal #couponCode').val(response.code);
+            $('#detailCouponModal #couponType').val(response.type);
+            $('#detailCouponModal #couponAmount').val(response.amount);
+
+            if (response.due_date) {
+                var dueDate = response.due_date.split(' ')[0];
+                $('#detailCouponModal #couponExpiry').val(dueDate);
+            } else {
+                $('#detailCouponModal #couponExpiry').val('');
+            }
+            $('#detailCouponModal').modal('show'); // Asegúrate de que el ID es del modal contenedor
+        },
+        error: function (xhr) {
+            console.error('Error al obtener los detalles del cupón:', xhr);
+        }
+    });
+});
+
+  // Enviar FORM de edicion del cupon.
+
   $('#editCouponModal').on('click', '#updateCouponBtn', function () {
     var recordId = $(this).data('id');
     console.log('recordId:', recordId);
     submitEditCoupon(recordId); //
   });
 
+  // Abrir FORM para editar el cupon.
+  
   $('.datatables-coupons tbody').on('click', '.edit-record', function () {
-    var recordId = $(this).data('id'); // Obtenemos el ID del cupón
-    $('#updateCouponBtn').attr('data-id', recordId); // Asignamos el ID del cupón al botón de "Actualizar Cupón"
-    // Aquí puedes realizar cualquier acción necesaria antes de abrir el modal de edición, como cargar los datos del cupón en el formulario de edición
+    var recordId = $(this).data('id'); // Obtener el ID del cupón
+    $('#updateCouponBtn').attr('data-id', recordId); // Asignar el ID del cupón al botón de "Actualizar Cupón"
+
+    // Acceder al input de fecha de expiración del modal de edición
+    var $couponExpiryInput = $('#editCouponModal #couponExpiry'); 
+
+    // Realizar la solicitud Ajax para obtener los detalles del cupón
     $.ajax({
         url: 'coupons/' + recordId, // Reemplaza 'coupons/' por la ruta correcta para obtener los detalles del cupón
         type: 'GET',
         success: function (response) {
             // Llenar los campos del formulario de edición con los detalles del cupón obtenidos de la base de datos
+            console.log('Response:', response); // Añadir log para verificar la respuesta
+            
             $('#editCouponModal #couponCode').val(response.code);
             $('#editCouponModal #couponType').val(response.type);
             $('#editCouponModal #couponAmount').val(response.amount);
-            $('#editCouponModal #couponExpiry').val(response.due_date);
-            // Otros campos pueden ser llenados de manera similar
-            // Luego, abrimos el modal de edición
+
+            // Verificar si existe fecha de expiración antes de intentar dividirla
+            if (response.due_date) {
+                var dueDate = response.due_date.split(' ')[0];
+                $('#editCouponModal #couponExpiry').val(dueDate);
+            } else {
+                // Si no hay fecha de expiración, dejar el campo vacío o manejarlo según sea necesario
+                $('#editCouponModal #couponExpiry').val('');
+            }
+
             $('#editCouponModal').modal('show');
         },
         error: function (xhr) {
@@ -227,8 +285,10 @@ $(function () {
             // Manejar el error si es necesario
         }
     });
-  });
+});
 
+
+// POST para editar el cupon en la base de datos.
 
   function submitEditCoupon(recordId) {
     var formData = {
@@ -253,7 +313,8 @@ $(function () {
                 icon: 'success',
                 title: 'Cupón actualizado',
                 text: 'El cupón ha sido actualizado correctamente.'
-            });
+            }).then((result) => {window.location.reload();});    
+            
         },
         error: function (xhr) {
             console.error('Error al actualizar el cupón:', xhr);
@@ -266,11 +327,6 @@ $(function () {
         }
     });
   }
-
-
-
-
-
 
 
   $('#deleteSelected').on('click', function () {
@@ -405,9 +461,12 @@ $(function () {
                 icon: 'success',
                 title: 'Cupón Agregado',
                 text: response.message
-            });
+            }).then((result) => {window.location.reload();});       
         },
         error: function (xhr) {
+            
+            $('#addCouponModal').modal('hide'); 
+
             var errorMessage = xhr.responseJSON && xhr.responseJSON.errors
                 ? Object.values(xhr.responseJSON.errors).flat().join('\n')
                 : 'Error desconocido al guardar.';

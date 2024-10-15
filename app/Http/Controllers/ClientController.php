@@ -2,100 +2,138 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Client;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-
-
+use App\Http\Requests\StoreClientRequest;
+use App\Http\Requests\UpdateClientRequest;
+use App\Repositories\ClientRepository;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
+use App\Models\CompanySettings;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 
 class ClientController extends Controller
 {
-    public function index() {
-        return view('content.clients.clients');
+    /**
+     * El repositorio de clientes.
+     *
+     * @var ClientRepository
+     */
+    protected ClientRepository $clientRepository;
+
+    /**
+     * Constructor para inyectar el repositorio.
+     *
+     * @param ClientRepository $clientRepository
+     */
+    public function __construct(ClientRepository $clientRepository)
+    {
+        $this->clientRepository = $clientRepository;
     }
 
+    /**
+     * Muestra la página de lista de clientes.
+     *
+     * @return View
+     */
+    public function index(): View
+    {
+      $companySettings = CompanySettings::first();
+      $store = Auth::user()->store_id;
+      return view('content.clients.clients', compact('companySettings', 'store'));
+    }
 
-    public function store(Request $request) {
-      // Validación de los datos recibidos del formulario
-      $validatedData = $request->validate([
-          'name' => 'required|string|max:255',
-          'type' => 'nullable|string|max:255',
-          'rut' => 'nullable|string|max:255',
-          'ci' => 'nullable|string|max:255',
-          'address' => 'nullable|string|max:255',
-          'city' => 'nullable|string|max:255',
-          'state' => 'nullable|string|max:255',
-          'country' => 'nullable|string|max:255',
-          'phone' => 'nullable|string|max:255',
-          'email' => 'required|string|email|max:255',
-          'website' => 'nullable|url|max:255',
-          'logo' => 'nullable|string|max:255',
-      ]);
+    /**
+     * Almacena un nuevo cliente en la base de datos.
+     *
+     * @param StoreClientRequest $request
+     * @return RedirectResponse
+     */
+    public function store(StoreClientRequest $request): RedirectResponse
+    {
+        try {
+            $validatedData = $request->validated();
 
-      // Crear y almacenar el nuevo cliente con los datos validados
-      $client = new Client();
-      $client->name = $validatedData['name'];
-      $client->type = $validatedData['type'];
-      $client->rut = $validatedData['rut'];
-      $client->ci = $validatedData['ci'];
-      $client->address = $validatedData['address'];
-      $client->city = $validatedData['city'];
-      $client->state = $validatedData['state'];
-      $client->country = $validatedData['country'];
-      $client->phone = $validatedData['phone'];
-      $client->email = $validatedData['email'];
-      $client->website = $validatedData['website'];
-      $client->logo = $validatedData['logo'];
-      $client->save();
+            $companySettings = CompanySettings::first();
+            if ($companySettings->clients_has_store == 1) {
+                $validatedData['store_id'] = Auth::user()->store_id;
+            }
 
-      // Redireccionar al usuario a la lista de clientes con un mensaje de éxito
-      return redirect()->route('clients.index')->with('success', 'Cliente creado correctamente.');
-  }
+            $this->clientRepository->createClient($validatedData);
+            return redirect()->route('clients.index')->with('success', 'Cliente creado correctamente.');
+        } catch (\Throwable $th) {
+            return redirect()->route('clients.index')->with('error', 'Error al crear el cliente.');
+        }
+    }
 
-
-    public function show($id) {
-        $client = Client::find($id);
+    /**
+     * Muestra los detalles de un cliente específico.
+     *
+     * @param int $id
+     * @return View
+     */
+    public function show(int $id): View
+    {
+        $client = $this->clientRepository->getClientById($id);
         return view('content.clients.show', compact('client'));
     }
 
-    public function edit($id) {
-        $client = Client::find($id);
+    /**
+     * Muestra el formulario para editar un cliente existente.
+     *
+     * @param int $id
+     * @return View
+     */
+    public function edit(int $id): View
+    {
+        $client = $this->clientRepository->getClientById($id);
+
+        $orders = $client->orders;
+
         return view('content.clients.edit', compact('client'));
     }
 
-    public function update(Request $request, $id) {
-        $client = Client::find($id);
-        $client->name = $request->name;
-        $client->type = $request->type;
-        $client->rut = $request->rut;
-        $client->ci = $request->ci;
-        $client->address = $request->address;
-        $client->city = $request->city;
-        $client->state = $request->state;
-        $client->country = $request->country;
-        $client->phone = $request->phone;
-        $client->email = $request->email;
-        $client->website = $request->website;
-        $client->logo = $request->logo;
-        $client->save();
-        return redirect()->route('clients.index');
-    }
-
-    public function destroy($id) {
-        $client = Client::find($id);
-        $client->delete();
-        return redirect()->route('clients.index');
-    }
-
-
-    public function datatable()
+    /**
+     * Actualiza un cliente existente en la base de datos.
+     *
+     * @param UpdateClientRequest $request
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function update(UpdateClientRequest $request, int $id): JsonResponse
     {
-        $query = Client::select(['id', 'name', 'type', 'rut', 'ci', 'address', 'city', 'state', 'country', 'phone', 'email', 'website', 'logo']);
-        return DataTables::of($query)
-            ->make(true);
+      \Log::info('Datos recibidos en la actualización:', $request->all());
+
+        try {
+            $validatedData = $request->validated();
+            $client = $this->clientRepository->updateClient($id, $validatedData);
+            return response()->json(['success' => true, 'message' => 'Cliente actualizado correctamente.', 'client' => $client]);
+        } catch (\Exception $e) {
+            // Captura el error completo en los logs para obtener más detalles
+            \Log::error('Error al actualizar cliente: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json(['success' => false, 'message' => 'Error al actualizar el cliente: ' . $e->getMessage()], 500);
+        }
     }
 
 
+    /**
+     * Elimina un cliente específico de la base de datos.
+     *
+     * @param int $id
+     * @return RedirectResponse
+     */
+    public function destroy(int $id): RedirectResponse
+    {
+        $this->clientRepository->deleteClient($id);
+        return redirect()->route('clients.index');
+    }
+
+    /**
+     * Obtiene los datos para mostrar en la tabla de clientes.
+     *
+     * @return mixed
+     */
+    public function datatable(): mixed
+    {
+        return $this->clientRepository->getClientsForDatatable();
+    }
 }

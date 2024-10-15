@@ -102,7 +102,7 @@
                                                   <input type="hidden" name="phone_id" value="{{ $phone['id'] }}">
                                                   <input type="hidden" name="phone_number" value="{{ $phone['display_phone_number'] }}">
                                                   <select name="store_id" class="form-control mr-2 select2" required style="border-radius: 5px 0px 0px 5px;">
-                                                      <option value="">Seleccionar Tienda</option>
+                                                      <option value="">Seleccionar Empresa</option>
                                                       @foreach($storesNotAssociated as $store)
                                                           <option value="{{ $store->id }}">{{ $store->name }}</option>
                                                       @endforeach

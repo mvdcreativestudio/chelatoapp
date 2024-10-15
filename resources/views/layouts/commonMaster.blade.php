@@ -24,7 +24,7 @@ $contentLayout = (isset($container) ? (($container === 'container-xxl') ? "layou
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/favicon.ico') }}" />
 
-
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
   <!-- Include Styles -->
   <!-- $isFront is used to append the front layout styles only on the front layout otherwise the variable will be blank -->

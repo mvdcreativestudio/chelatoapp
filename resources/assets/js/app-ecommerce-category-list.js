@@ -1,149 +1,202 @@
-/**
- * App eCommerce Category List
- */
-
 'use strict';
 
-// Comment editor
-
-const commentEditor = document.querySelector('.comment-editor');
-
-if (commentEditor) {
-  new Quill(commentEditor, {
-    modules: {
-      toolbar: '.comment-toolbar'
-    },
-    placeholder: 'Ingrese la descripción de la categoría',
-    theme: 'snow'
-  });
-}
-
-// Datatable (jquery)
-
 $(function () {
-  let borderColor, bodyBg, headingColor;
+    // Inicialización de select2 para dropdowns dentro del offcanvas
+    var select2 = $('.select2');
+    if (select2.length) {
+        select2.each(function () {
+            var $this = $(this);
+            $this.wrap('<div class="position-relative"></div>').select2({
+                dropdownParent: $this.parent(),
+                placeholder: $this.data('placeholder') // Dynamic placeholder
+            });
+        });
+    }
 
-  if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-  } else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
-  }
+    // Generación automática de slug en el frontend
+    $('#ecommerce-category-title').on('input', function () {
+        const slugField = $('#ecommerce-category-slug');
+        const slug = $(this).val().toLowerCase().replace(/[^\w\s]+/g, '').replace(/\s+/g, '-');
+        slugField.val(slug);
+    });
 
-  // Variable declaration for category list table
-  var dt_category_list_table = $('.datatables-category-list');
+    // Guardar nueva categoría
+    $('#eCommerceCategoryListForm').submit(function(event) {
+        event.preventDefault();
 
-  //select2 for dropdowns in offcanvas
+        var statusValue = $('#statusSwitch').is(':checked') ? '1' : '0';
+        $('input[name="status"]').val(statusValue);
 
-  var select2 = $('.select2');
-  if (select2.length) {
-    select2.each(function () {
-      var $this = $(this);
-      $this.wrap('<div class="position-relative"></div>').select2({
-        dropdownParent: $this.parent(),
-        placeholder: $this.data('placeholder') //for dynamic placeholder
+        this.submit();
+    });
+
+    // Función para generar tarjetas de categorías
+    function generateCategoryCards(categories) {
+      const categoryContainer = $('#category-list-container');
+      categoryContainer.empty(); // Limpiar el contenedor antes de agregar nuevas tarjetas
+
+      console.log(categories);
+
+      if (categories.length === 0) {
+          categoryContainer.html(`
+              <div class="alert alert-info text-center w-100">
+                  <i class="bx bx-info-circle"></i> No existen categorías disponibles.
+              </div>
+          `);
+      } else {
+          categories.forEach(category => {
+              const statusClass = category.status === '1' ? 'bg-success' : 'bg-danger';
+              const statusText = category.status === '1' ? 'Activo' : 'Inactivo';
+
+              // Asegúrate de usar "products_sum_stock" en lugar de "stock_count"
+              const stockCount = category.products_sum_stock ?? 0;
+
+
+
+              const card = `
+                  <div class="col">
+                      <div class="card h-100 category-card">
+                          <div class="card-body category-card-body">
+                              <h5 class="category-title">${category.name}</h5>
+                              <p class="category-status text-muted small"><span class="badge ${statusClass}">${statusText}</span></p>
+                              <p class="category-product-count text-muted small">Productos: ${category.product_count}</p>
+                              <p class="category-product-count text-muted small">Stock Total: ${stockCount}</p>
+                              <div class="d-flex justify-content-end category-card-actions">
+                                  <a href="javascript:void(0);" class="btn btn-sm btn-primary edit-record me-2" data-id="${category.id}">Editar</a>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              `;
+              categoryContainer.append(card);
+          });
+      }
+    }
+
+
+
+    // Cargar categorías desde la ruta product-categories/datatable
+    function fetchCategories(search = '') {
+      $.ajax({
+          url: 'product-categories/datatable',
+          method: 'GET',
+          data: { search: search }, // Enviar el término de búsqueda al backend
+          success: function(response) {
+              const categories = response.data;
+              generateCategoryCards(categories);
+          },
+          error: function() {
+              $('#category-list-container').html(`
+                  <div class="alert alert-danger text-center w-100">
+                      <i class="bx bx-error"></i> Error al cargar las categorías. Intente nuevamente.
+                  </div>
+              `);
+          }
       });
+    }
+
+
+    // Evento para buscar categorías
+    $('#searchCategory').on('input', function () {
+        const searchQuery = $(this).val(); // Obtener el valor del input de búsqueda
+        fetchCategories(searchQuery); // Llamar a la función fetchCategories con el término de búsqueda
     });
-  }
 
-  // Customers List Datatable
+    // Cargar datos en el formulario de edición
+    $(document).on('click', '.edit-record', function () {
+        var recordId = $(this).data('id');
 
-  if (dt_category_list_table.length) {
-    var dt_category = dt_category_list_table.DataTable({
-      ajax: 'product-categories/datatable',
-      columns: [
-        // columns according to JSON
-        { data: 'id' },
-        { data: 'name' },
-        { data: 'description' },
-        { data: 'status'},
-        { data: '' }
-      ],
-      columnDefs: [
-        {
-          // Actions
-          targets: -1,
-          title: 'Acciones',
-          searchable: false,
-          orderable: false,
-          render: function (data, type, full, meta) {
-            return (
-              '<div class="d-flex align-items-sm-center justify-content-sm-center">' +
-              '<button class="btn btn-sm btn-icon delete-record me-2"><i class="bx bx-trash"></i></button>' +
-              '<button class="btn btn-sm btn-icon"><i class="bx bx-edit"></i></button>' +
-              '</div>'
-            );
-          }
-        }
-      ],
-      order: [2, 'desc'], //set any columns order asc/desc
-      dom:
-        '<"card-header d-flex flex-wrap py-0"' +
-        '<"me-5 ms-n2 pe-5"f>' +
-        '<"d-flex justify-content-start justify-content-md-end align-items-baseline"<"dt-action-buttons d-flex align-items-start align-items-md-center justify-content-sm-center mb-3 mb-sm-0 gap-3"lB>>' +
-        '>t' +
-        '<"row mx-2"' +
-        '<"col-sm-12 col-md-6"i>' +
-        '<"col-sm-12 col-md-6"p>' +
-        '>',
-      lengthMenu: [7, 10, 20, 50, 70, 100], //for length of menu
-      language: {
-        search: '',
-        searchPlaceholder: 'Buscar categoría...',
-        sLengthMenu: '_MENU_',
-        info: 'Mostrando _START_ a _END_ de _TOTAL_ categorías',
-        infoFiltered: "filtrados de _MAX_ categorías",
-        paginate: {
-          first: '<<',
-          last: '>>',
-          next: '>',
-          previous: '<'
-        },
-      },
-      // Button for offcanvas
-      buttons: [
-        {
-          text: '<i class="bx bx-plus me-0 me-sm-1"></i>Crear categoría',
-          className: 'add-new btn btn-primary ms-2',
-          attr: {
-            'data-bs-toggle': 'offcanvas',
-            'data-bs-target': '#offcanvasEcommerceCategoryList'
-          }
-        }
-      ],
+        $.ajax({
+            url: 'product-categories/' + recordId + '/get-selected',
+            type: 'GET',
+            success: function (data) {
+                $('#edit_ecommerce-category-title').val(data.name);
+                $('#edit_ecommerce-category-slug').val(data.slug);
+                $('#edit_ecommerce-category-parent-category').val(data.parent_id).trigger('change');
+                $('#edit-statusSwitch').prop('checked', data.status == '1');
+
+                $('#editCategoryButton').data('id', recordId);
+
+                var editOffcanvas = new bootstrap.Offcanvas(document.getElementById('offcanvasEcommerceCategoryEdit'));
+                editOffcanvas.show();
+            },
+            error: function () {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al cargar la categoría',
+                    text: 'No se pudo cargar la categoría. Intente nuevamente.'
+                });
+            }
+        });
     });
-    $('.dataTables_length').addClass('mt-0 mt-md-3 me-3');
-    $('.dt-buttons > .btn-group > button').removeClass('btn-secondary');
-    $('.dt-buttons').addClass('d-flex flex-wrap');
-    $('.dataTables_length label select').addClass('form-select form-select-sm');
-    $('.dataTables_filter label input').addClass('form-control');
-  }
 
-  // Delete Record
-  $('.datatables-category-list tbody').on('click', '.delete-record', function () {
-    dt_category.row($(this).parents('tr')).remove().draw();
-  });
+    // POST para actualizar la categoría
+    function submitEditProductCategory(recordId) {
+        var formData = new FormData();
 
-  // Filter form control to default size
-  // ? setTimeout used for multilingual table initialization
-  setTimeout(() => {
-    $('.dataTables_filter .form-control').removeClass('form-control-sm');
-    $('.dataTables_length .form-select').removeClass('form-select-sm');
-  }, 300);
+        formData.append('name', $('#edit_ecommerce-category-title').val());
+        formData.append('slug', $('#edit_ecommerce-category-slug').val());
+        formData.append('store_id', $('#edit_ecommerce-category-store').val());
+        formData.append('parent_id', $('#edit_ecommerce-category-parent-category').val());
+        formData.append('status', $('#edit-statusSwitch').is(':checked') ? 1 : 0);
+
+        var imageFile = $('#edit_ecommerce-category-image')[0].files[0];
+        if (imageFile) {
+            formData.append('image', imageFile);
+        }
+
+        formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+        $.ajax({
+            url: `product-categories/${recordId}/update-selected`,
+            method: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function () {
+                $('#offcanvasEcommerceCategoryEdit').offcanvas('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Categoría actualizada',
+                    text: 'La categoría ha sido actualizada correctamente.'
+                }).then(() => fetchCategories());
+            },
+            error: function () {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al actualizar la categoría',
+                    text: 'No se pudo actualizar la categoría. Intente nuevamente.'
+                });
+            }
+        });
+    }
+
+    // Asociar el clic del botón para editar la categoría
+    $(document).on('click', '#editCategoryButton', function () {
+        var recordId = $(this).data('id');
+        submitEditProductCategory(recordId);
+    });
+
+    // Ajustar el estado del switch en creación
+    var statusSwitch = document.getElementById('statusSwitch');
+    if (statusSwitch) {
+        statusSwitch.value = statusSwitch.checked ? '1' : '0';
+
+        statusSwitch.addEventListener('change', function() {
+            this.value = this.checked ? '1' : '0';
+        });
+    }
+
+    // Ajustar el estado del switch en edición
+    var editStatusSwitch = document.getElementById('edit-statusSwitch');
+    if (editStatusSwitch) {
+        editStatusSwitch.value = editStatusSwitch.checked ? '1' : '0';
+
+        editStatusSwitch.addEventListener('change', function() {
+            this.value = this.checked ? '1' : '0';
+        });
+    }
+
+    // Cargar categorías al cargar la página
+    fetchCategories();
 });
-
-// Switch de estado de la categoría
-document.addEventListener('DOMContentLoaded', function () {
-  var statusSwitch = document.getElementById('statusSwitch');
-
-  // Asegura que el valor inicial sea "1" cuando el switch está activado por defecto
-  statusSwitch.value = statusSwitch.checked ? '1' : '2';
-
-  statusSwitch.addEventListener('change', function() {
-    this.value = this.checked ? '1' : '2';
-  });
-});
-

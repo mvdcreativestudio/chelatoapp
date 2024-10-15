@@ -1,156 +1,312 @@
 {
   "menu": [
     {
+      "id": "tour-inicio",
       "name": "Inicio",
       "icon": "menu-icon tf-icons bx bx-home-circle",
       "slug": "dashboard",
-      "url": "/"
+      "url": "/admin"
     },
     {
-      "name": "Materias Primas",
-      "icon": "menu-icon tf-icons bx bx-box",
-      "slug": "raw-materials",
-      "url": "/raw-materials"
-    },
-    {
-      "name": "Proveedores",
-      "icon": "menu-icon tf-icons bx bx-user",
-      "slug": "suppliers",
-      "url": "/suppliers"
-    },
-    {
-      "name": "Ordenes de Compra",
-      "icon": "menu-icon tf-icons bx bx-shopping-bag",
-      "slug": "supplier-orders",
-      "url": "/supplier-orders"
-    },
-    {
-      "name": "Stock",
-      "icon": "menu-icon tf-icons bx bx-package",
-      "slug": "stock",
-      "url": "/stock"
-    },
-    {
-      "name": "Contabilidad",
-      "icon": "menu-icon tf-icons bx bx-dollar",
-      "slug": "accounting",
-      "url": "/accounting",
+      "id": "tour-punto-de-venta",
+      "name": "Punto de Venta",
+      "icon": "menu-icon tf-icons bx bx-home-circle",
+      "slug": "point-of-sale",
+      "url": "/admin/points-of-sales",
       "submenu": [
         {
-          "name": "Facturas",
-          "slug": "invoices",
-          "url": "/invoices"
+          "id": "tour-cajas-registradoras",
+          "name": "Cajas Registradoras",
+          "icon": "menu-icon tf-icons bx bx-cart",
+          "slug": "cash-registers",
+          "url": "/admin/points-of-sales"
         },
         {
-          "name": "Recibos",
-          "slug": "receipts",
-          "url": "/receipts"
-        },
-        {
-          "name": "Asientos",
-          "slug": "entries",
-          "url": "/entries"
+          "id": "tour-punto-de-venta",
+          "name": "Ver Punto de Venta",
+          "icon": "menu-icon tf-icons bx bx-home-circle",
+          "slug": "point-of-sale",
+          "url": "/admin/pdv/front"
         }
       ]
     },
     {
+      "id": "tour-ventas",
+      "name": "Ventas",
+      "icon": "menu-icon tf-icons bx bx-cart",
+      "slug": "orders",
+      "url": "/admin/orders"
+    },
+    {
+      "id": "tour-clientes",
       "name": "Clientes",
       "icon": "menu-icon tf-icons bx bx-user",
       "slug": "clients",
-      "url": "/clients"
+      "url": "/admin/clients"
     },
     {
-      "name": "E-Commerce",
-      "icon": "menu-icon tf-icons bx bx-world",
-      "slug": "ecommerce",
-      "url": "/ecommerce",
-      "slug": "ecommerce",
+      "id": "tour-productos",
+      "name": "Productos",
+      "icon": "menu-icon tf-icons bx bx-box",
+      "slug": "products",
       "submenu": [
         {
-          "name": "Pedidos",
-          "slug": "orders",
-          "url": "orders"
-        },
-        {
+          "id": "tour-productos",
           "name": "Productos",
+          "icon": "menu-icon tf-icons bx bx-box",
           "slug": "products",
-          "url": "products"
+          "url": "/admin/products"
         },
         {
-          "url": "product-flavors",
-          "name": "Sabores",
-          "slug": "product-flavors"
+          "id": "stock",
+          "name": "Stock",
+          "icon": "menu-icon tf-icons bx bx-border-all",
+          "slug": "stock",
+          "url": "/admin/products/stock"
         },
         {
+          "id": "tour-productos-compuestos",
+          "name": "Productos Compuestos",
+          "icon": "menu-icon tf-icons bx bx-box",
+          "slug": "composite-products",
+          "url": "/admin/composite-products"
+        },
+        {
+          "id": "tour-categorias",
           "name": "Categorías",
+          "icon": "menu-icon tf-icons bx bx-list-ul",
           "slug": "product-categories",
-          "url": "product-categories"
+          "url": "/admin/product-categories"
         },
         {
-          "name": "Marketing",
-          "slug": "marketing",
-          "url": "marketing"
+          "id": "tour-productos-crear-en-masa",
+          "name": "Crear en Masa",
+          "icon": "menu-icon tf-icons bx bx-plus",
+          "slug": "bulk-products",
+          "url": "/admin/products/add"
         },
         {
-          "name": "Configuración",
-          "slug": "settings",
-          "url": "/ecommerce/settings"
+          "id": "tour-productos-editar-en-masa",
+          "name": "Editar en Masa",
+          "icon": "menu-icon tf-icons bx bx-edit",
+          "slug": "bulk-products",
+          "url": "/admin/products/edit"
         }
       ]
     },
     {
-      "name": "Marketing",
-      "icon": "menu-icon tf-icons bx bx-coffee",
+      "id": "tour-tiendas",
+      "name": "Empresas",
+      "icon": "menu-icon tf-icons bx bx-store-alt",
+      "slug": "stores",
+      "url": "/admin/stores"
+    },
+    {
+      "id": "tour-gestion-proveedores",
+      "name": "Fabricación",
+      "icon": "menu-icon tf-icons bx bx-briefcase",
+      "slug": "manufacturing",
+      "submenu": [
+        {
+          "id": "tour-variaciones",
+          "name": "Variaciones",
+          "icon": "menu-icon tf-icons bx bx-lemon",
+          "slug": "product-flavors",
+          "url": "/admin/product-flavors"
+        },
+        {
+          "id": "tour-materias-primas",
+          "name": "Materias Primas",
+          "icon": "menu-icon tf-icons bx bx-box",
+          "slug": "raw-materials",
+          "url": "/admin/raw-materials"
+        },
+        {
+          "id": "productions",
+          "name": "Elaboraciones",
+          "icon": "menu-icon tf-icons bx bx-bowl-rice",
+          "slug": "productions",
+          "url": "/admin/productions"
+        },
+        {
+          "id": "tour-proveedores",
+          "name": "Proveedores",
+          "icon": "menu-icon tf-icons bx bx-group",
+          "slug": "suppliers",
+          "url": "/admin/suppliers"
+        },
+        {
+          "id": "tour-ordenes-de-compra",
+          "name": "Ordenes de Compra",
+          "icon": "menu-icon tf-icons bx bx-receipt",
+          "slug": "supplier-orders",
+          "url": "/admin/supplier-orders"
+        }
+      ]
+    },
+    {
+      "id": "tour-contabilidad",
+      "name": "Contabilidad",
+      "icon": "menu-icon tf-icons bx bx-dollar",
       "slug": "accounting",
+      "url": "/admin/accounting",
       "submenu": [
         {
-          "url": "/marketing/coupons",
-          "name": "Cupones",
-          "slug": "coupons"
-        }
-      ]
-    },
-    {
-      "name": "Omnicanalidad",
-      "icon": "menu-icon tf-icons bx bx-network-chart",
-      "slug": "omnichannel",
-      "url": "/omnichannel",
-      "submenu": [
-        {
-          "name": "Chats",
-          "slug": "chats",
-          "url": "/omnichannel"
+          "id": "tour-facturas",
+          "name": "Facturación",
+          "icon": "menu-icon tf-icons bx bx-file",
+          "slug": "invoices",
+          "url": "/admin/invoices",
+          "submenu": [
+            {
+              "id": "tour-facturas",
+              "name": "Facturas Emitidas",
+              "icon": "menu-icon tf-icons bx bx-file",
+              "slug": "invoices",
+              "url": "/admin/invoices"
+            },
+            {
+              "id": "tour-facturas-recibidas",
+              "name": "CFE Recibidos",
+              "icon": "menu-icon tf-icons bx bx-file",
+              "slug": "received-documents",
+              "url": "/admin/received-cfes"
+            }
+          ]
         },
         {
-          "name": "Configuración",
-          "slug": "settings",
-          "url": "/omnichannel/settings"
+          "id": "tour-asientos",
+          "name": "Asientos",
+          "icon": "menu-icon tf-icons bx bx-book",
+          "slug": "entries",
+          "url": "/admin/entries",
+          "submenu": [
+            {
+              "id": "tour-asientos",
+              "name": "Ver Asientos",
+              "icon": "menu-icon tf-icons bx bx-book",
+              "slug": "entries",
+              "url": "/admin/entries"
+            },
+            {
+              "id": "tour-asientos-tipos",
+              "name": "Tipo de Asiento",
+              "icon": "menu-icon tf-icons bx bx-book",
+              "slug": "entry-types",
+              "url": "/admin/entry-types"
+            },
+            {
+              "id": "tour-asientos-cuentas",
+              "name": "Cuentas Contables",
+              "icon": "menu-icon tf-icons bx bx-book",
+              "slug": "entry-accounts",
+              "url": "/admin/entry-accounts"
+            }
+
+          ]
+        },
+        {
+          "id": "tour-documentos-recibidos",
+          "name": "Recibidos",
+          "icon": "menu-icon tf-icons bx bx-file",
+          "slug": "received-documents",
+          "url": "/admin/received-cfes"
+        },
+        {
+          "id": "tour-gastos",
+          "name": "Gastos",
+          "icon": "menu-icon tf-icons bx bx-dollar",
+          "slug": "expenses",
+          "url": "/admin/expenses"
+        },
+        {
+          "id": "tour-ingresos",
+          "name": "Ingresos",
+          "icon": "menu-icon tf-icons bx bx-line-chart",
+          "slug": "incomes",
+          "url": "/admin/incomes"
+        },
+        {
+          "id": "tour-cuentas-corrientes",
+          "name": "Cuentas Corrientes",
+          "icon": "menu-icon tf-icons bx bx-dollar",
+          "slug": "current-accounts",
+          "url": "/admin/current-accounts"
         }
       ]
     },
     {
+      "id": "tour-marketing",
+      "name": "Marketing y Canales",
+      "icon": "menu-icon tf-icons bx bx-coffee",
+      "slug": "marketing",
+      "submenu": [
+        {
+          "id": "tour-cupones",
+          "url": "/admin/marketing/coupons",
+          "name": "Cupones",
+          "icon": "menu-icon tf-icons bx bx-gift",
+          "slug": "coupons"
+        },
+        {
+          "id": "tour-omnicanalidad",
+          "name": "Omnicanalidad",
+          "icon": "menu-icon tf-icons bx bx-network-chart",
+          "slug": "omnichannel",
+          "url": "/admin/omnichannel",
+          "submenu": [
+            {
+              "id": "tour-chats-omnicanalidad",
+              "name": "Chats",
+              "icon": "menu-icon tf-icons bx bx-chat",
+              "slug": "chats",
+              "url": "/admin/omnichannel"
+            },
+            {
+              "id": "tour-configuracion-omnicanalidad",
+              "name": "Configuración",
+              "icon": "menu-icon tf-icons bx bx-cog",
+              "slug": "settings",
+              "url": "/admin/omnichannel/settings"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tour-datacenter",
       "name": "Datacenter",
       "icon": "menu-icon tf-icons bx bx-line-chart",
       "slug": "datacenter",
-      "url": "/datacenter"
+      "url": "/admin/datacenter-sales"
     },
     {
-      "name": "CRM",
-      "icon": "menu-icon tf-icons bx bx-group",
-      "slug": "crm",
-      "url": "/crm"
-    },
-    {
-      "name": "Tiendas",
-      "icon": "menu-icon tf-icons bx bx-store-alt",
-      "slug": "stores",
-      "url": "/stores"
-    },
-    {
-      "name": "Roles",
+      "name": "Usuarios",
       "icon": "menu-icon tf-icons bx bx-user",
-      "slug": "roles",
-      "url": "/roles"
+      "slug": "users",
+      "submenu": [
+        {
+          "id": "tour-users",
+          "name": "Cuentas",
+          "icon": "menu-icon tf-icons bx bx-user",
+          "slug": "user-accounts",
+          "url": "/admin/users"
+        },
+        {
+          "id": "tour-roles",
+          "name": "Roles",
+          "icon": "menu-icon tf-icons bx bx-world",
+          "slug": "roles",
+          "url": "/admin/roles"
+        }
+      ]
+    },
+    {
+      "id": "tour-configuracion",
+      "name": "Configuración",
+      "icon": "menu-icon tf-icons bx bx-cog",
+      "slug": "company_settings",
+      "url": "/admin/company-settings"
     }
   ]
 }

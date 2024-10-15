@@ -49,7 +49,7 @@ class SupplierController extends Controller
     public function index(): View
     {
         $suppliers = $this->supplierRepository->getAll();
-        return view('suppliers.index', compact('suppliers'));
+        return view('suppliers.index', $suppliers);
     }
 
     /**

@@ -4,7 +4,8 @@
 ******************************************************************************/
 
 .menu .app-brand.demo {
-  height: 64px;
+  height: auto;
+  min-height: 60px;
   margin-top: 12px;
 }
 

@@ -13,6 +13,9 @@
 .phpunit.result.cache
 .env
 
+# htaccess
+# .htaccess
+
 docker-compose.override.yml
 
 Homestead.json
@@ -27,3 +30,11 @@ yarn-error.log
 !/public/assets/*
 /public/css
 /public/js
+
+
+.docker/db/
+.docker/logs/
+.docker/phpmyadmin/
+
+martin_mvd
+martin_mvd.pub

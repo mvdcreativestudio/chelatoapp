@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Administrar Usuarios de la Tienda - ' . $store->name)
+@section('title', 'Administrar Usuarios de la Empresa - ' . $store->name)
 
 @section('vendor-style')
 @vite(['resources/assets/vendor/libs/select2/select2.scss'])
@@ -20,7 +20,7 @@ $(document).ready(function() {
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Tiendas /</span> Administrar Usuarios
+  <span class="text-muted fw-light">Empresas /</span> Administrar Usuarios
 </h4>
 
 <div class="card mb-4">

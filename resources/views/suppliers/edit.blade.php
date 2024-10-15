@@ -63,14 +63,27 @@
                 <option value="">Seleccione un tipo de documento</option>
                 <option value="DNI" {{ $supplier->doc_type == 'DNI' ? 'selected' : '' }}>DNI</option>
                 <option value="PASSPORT" {{ $supplier->doc_type == 'PASSPORT' ? 'selected' : '' }}>Pasaporte</option>
+                <option value="RUT" {{ $supplier->doc_type == 'RUT' ? 'selected' : ''}}>RUT</option>
                 <option value="OTHER" {{ $supplier->doc_type == 'OTHER' ? 'selected' : '' }}>Otro</option>
               </select>
             </div>
 
             <div class="mb-3">
-              <label class="form-label mb-0" for="supplier-doc_number">Número de Documento</label>
-              <input type="text" class="form-control" id="supplier-doc_number" name="doc_number" required placeholder="Número de documento del proveedor" value="{{ $supplier->doc_number }}">
+              <label class="form-label mb-0" for="supplier-doc_number">Cedula de Identidad</label>
+              <input type="text" class="form-control" id="supplier-doc_number" name="doc_number" required placeholder="Cedula de identidad del proveedor" value="{{ $supplier->doc_number }}">
             </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="supplier-default_payment_method">Método de pago predefinido</label>
+              <select class="form-select" id="supplier-default_payment_method" name="default_payment_method" required>
+                <option value="">Seleccione un método de pago</option>
+                <option value="cash" {{ $supplier->default_payment_method == 'cash' ? 'selected' : '' }}>Efectivo</option>
+                <option value="credit" {{ $supplier->default_payment_method == 'credit' ? 'selected' : '' }}>Crédito</option>
+                <option value="debit" {{ $supplier->default_payment_method == 'debit' ? 'selected' : '' }}>Débito</option>
+                <option value="check" {{ $supplier->default_payment_method == 'check' ? 'selected' : '' }}>Cheque</option>
+              </select>
+            </div>
+
 
             @if ($errors->any())
               @foreach ($errors->all() as $error)

@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
-
+use App\Models\EcommerceSetting;
 
 class ComposerServiceProvider extends ServiceProvider
 {
@@ -23,7 +23,7 @@ class ComposerServiceProvider extends ServiceProvider
     {
         // Usando Closure
         View::composer('*', function ($view) {
-            $settings = \DB::table('ecommerce_settings')->first();
+            $settings = EcommerceSetting::first();
             $view->with('settings', $settings);
         });
     }

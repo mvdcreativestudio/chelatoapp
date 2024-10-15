@@ -11,7 +11,25 @@ document.addEventListener('DOMContentLoaded', function () {
     { title: 'Proveedor', data: 'supplier.name' },
     { title: 'Fecha de Orden', data: 'order_date' },
     {
-      title: 'Estado de Envío',
+      title: 'Método',
+      data: 'payment_method',
+      render: function(data) {
+          switch(data) {
+              case 'credit':
+                  return 'Crédito';
+              case 'cash':
+                  return 'Efectivo';
+              case 'debit':
+                  return 'Débito';
+              case 'check':
+                  return 'Cheque';
+              default:
+                  return data; // En caso de que haya un valor inesperado
+          }
+      }
+    },
+    {
+      title: 'Envío',
       data: 'shipping_status',
       render: function (data) {
         return data === 'completed'
@@ -31,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
   ];
 
   if (hasViewAllSupplierOrdersPermission) {
-    columns.push({ title: 'Tienda', data: 'store.name' });
+    columns.push({ title: 'Empresa', data: 'store.name' });
   }
 
   columns.push({
@@ -47,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <a class="dropdown-item" href="${supplierOrderEditTemplate.replace(':id', row.id)}">
               <i class="bx bx-pencil"></i> Editar
             </a>
-            <a class="dropdown-item" href="/supplier-orders/${row.id}/pdf" target="_blank">
+            <a class="dropdown-item" href="supplier-orders/${row.id}/pdf" target="_blank">
               <i class="bx bx-file"></i> Descargar PDF
             </a>
             <form class="delete-form-${row.id}" action="${supplierOrderDeleteTemplate.replace(':id', row.id)}" method="POST">
@@ -64,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   if (dtSupplierOrdersTable.length) {
-    dtSupplierOrdersTable.DataTable({
+    var table = dtSupplierOrdersTable.DataTable({
       data: supplierOrders,
       columns: columns,
       dom:
@@ -110,6 +128,10 @@ document.addEventListener('DOMContentLoaded', function () {
         infoEmpty: 'Mostrando 0 a 0 de 0 ordenes'
       }
     });
+    $('.toggle-column').on('change', function() {
+      var column = table.column($(this).attr('data-column'));
+      column.visible(!column.visible());
+  });
   }
 
   $('.dataTables_length').addClass('mt-0 mt-md-3 me-3');
@@ -141,8 +163,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
   dtSupplierOrdersTable.on('click', '.delete-button', function () {
     var form = $(this).closest('form');
-    if (confirm('¿Estás seguro de querer eliminar este elemento?')) {
-      form.submit();
-    }
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción eliminará completamente la orden al proveedor, perdiendo definitivamente sus datos',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar!',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        form.submit();
+      }});
   });
 });

@@ -2,35 +2,35 @@
 
 namespace App\Repositories;
 
-use App\Models\Invoice;
+use App\Models\CFE;
 use Illuminate\Support\Facades\Storage;
 
 class InvoiceRepository
 {
   public function create()
   {
-    return Invoice::create();
+    return CFE::create();
   }
 
-  public function update(Invoice $invoice, array $data): Invoice
+  public function update(CFE $invoice, array $data): bool
   {
     return $invoice->update($data);
   }
 
-  public function delete(Invoice $invoice): void
+  public function delete(CFE $invoice): void
   {
     $invoice->delete();
   }
 
   public function getAll()
   {
-    return Invoice::all();
+    return CFE::all();
   }
 
-  public function findById($id): ?Invoice
+  public function findById($id): ?CFE
   {
-    return Invoice::find($id);
+    return CFE::find($id);
   }
 
-  
+
 }

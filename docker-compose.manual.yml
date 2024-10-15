@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  vite-build:
+    image: node:21
+    container_name: vite_build_container
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: >
+      sh -c "
+      npm install --legacy-peer-deps &&
+      npm run build &&
+      echo 'Build completed' &&
+      exit 0
+      "
+    # Elimina el contenedor después de que el comando se complete
+    restart: "no"
+    # Elimina el contenedor después de que se detenga
+    deploy:
+      restart_policy:
+        condition: none

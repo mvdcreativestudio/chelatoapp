@@ -2,247 +2,434 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Product;
-use App\Models\Store;
-use App\Models\ProductCategory;
-use App\Models\Flavor;
 use App\Http\Requests\StoreFlavorRequest;
-use Yajra\DataTables\DataTables;
+use App\Repositories\ProductRepository;
+use App\Models\ProductCategory;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
+use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
+use App\Http\Requests\SwitchProductStatusRequest;
+use App\Http\Requests\StoreMultipleFlavorsRequest;
+use App\Http\Requests\UpdateFlavorRequest;
+use App\Models\Store;
+use Illuminate\Http\Request;
+use App\Services\ExportService;
+use App\Models\Product;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\GenericExport;
+use App\Imports\ProductsImport;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use App\Exports\ProductTemplateExport;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Validators\ValidationException;
+
+
 
 
 class ProductController extends Controller
 {
+  /**
+   * El repositorio para las operaciones de productos.
+   *
+   * @var ProductRepository
+  */
+  protected $productRepo;
 
-  public function index()
+  /**
+   * Inyecta el repositorio en el controlador.
+   *
+   * @param  ProductRepository  $productRepo
+  */
+  public function __construct(ProductRepository $productRepo)
   {
-      return view('content.e-commerce.backoffice.products.products');
+    $this->middleware(['check_permission:access_products', 'user_has_store'])->only(
+        [
+            'index',
+            'show',
+            'create',
+            'store',
+            'edit',
+            'update',
+            'destroy',
+            'switchStatus',
+            'flavors',
+            'storeFlavor',
+            'storeMultipleFlavors',
+            'editFlavor',
+            'updateFlavor',
+            'destroyFlavor',
+            'switchFlavorStatus'
+        ]
+    );
+
+    $this->productRepo = $productRepo;
   }
 
-  public function create()
+  /**
+   * Muestra una lista de todos los productos.
+   *
+   * @return View
+  */
+  public function index(): View
   {
-    $categories = ProductCategory::all();
-    $stores = Store::all();
-    $flavors = Flavor::all();
-    return view('content.e-commerce.backoffice.products.add-product', compact('stores', 'categories', 'flavors'));
+    if (Auth::user()->can('access_global_products')) {
+      $stores = Store::select('id', 'name')->get();
+      $categories = ProductCategory::select('id', 'name')->get();
+    } else {
+      $stores = Store::select('id', 'name')->where('id', Auth::user()->store_id)->get();
+      $categories = ProductCategory::select('id', 'name')->where('store_id', Auth::user()->store_id)->get();
+    }
+    return view('content.e-commerce.backoffice.products.products', compact('stores', 'categories'));
   }
 
-  public function store(Request $request)
+  /**
+   * Muestra un producto específico.
+   *
+   * @param int $id
+   * @return View
+   */
+  public function show(int $id): View
   {
-    $product = new Product();
-    $product->name = $request->name;
-    $product->sku = $request->sku;
-    $product->description = $request->description;
-    $product->type = $request->type;
-    $product->max_flavors = $request->max_flavors;
-    $product->old_price = $request->old_price;
-    $product->price = $request->price;
-    $product->discount = $request->discount;
-    $product->store_id = $request->store_id;
-    $product->status = $request->status;
-    $product->stock = $request->stock;
+    $product = $this->productRepo->show($id);
+    return view('content.e-commerce.backoffice.products.show-product', $product);
+  }
 
-    // Agregar logs para depuración
-    Log::debug('Request data:', $request->all());
+    /**
+   * Muestra una lista de todos los productos para Stock.
+   *
+   * @return View
+   */
+  public function stock(): View
+  {
+      if (Auth::user()->can('access_global_products')) {
+          $stores = Store::select('id', 'name')->get();
+      } else {
+          $stores = Store::select('id', 'name')->where('id', Auth::user()->store_id)->get();
+      }
 
-    if ($request->hasFile('image')) {
-        $file = $request->file('image');
-        Log::debug('File info:', ['name' => $file->getClientOriginalName(), 'size' => $file->getSize(), 'mime_type' => $file->getMimeType(), 'path' => $file->getRealPath()]);
+      return view('content.e-commerce.backoffice.products.stock', compact('stores'));
+  }
 
-        // Obtener el nombre original del archivo
-        $filename = time() . '.' . $file->getClientOriginalExtension();
 
-        // Mover el archivo a la nueva ubicación
-        $path = $file->move(public_path('assets/img/ecommerce-images'), $filename);
+  /**
+   * Muestra el formulario para crear un nuevo producto.
+   *
+   * @return View
+  */
+  public function create(): View
+  {
+    $product = $this->productRepo->create();
+    return view('content.e-commerce.backoffice.products.add-product', $product);
+  }
 
-        // Guardar la ruta en la base de datos
-        $product->image = 'assets/img/ecommerce-images/' . $filename;
-    } else {
-        Log::debug('No image file found in the request');
-    }
+  /**
+   * Almacena un nuevo producto en la base de datos.
+   *
+   * @param StoreProductRequest $request
+   * @return RedirectResponse
+  */
+  public function store(StoreProductRequest $request): RedirectResponse
+  {
+    $validated = $request->validated();
 
-    // Verificar si se guardará como borrador
-    if ($request->action === 'save_draft') {
-        $product->draft = 1;
-    } else {
-        $product->draft = 0;
-    }
+    $this->productRepo->createProduct($request);
 
-    $product->save();
-
-    // Sincroniza las categorías después de guardar el producto
-    $product->categories()->sync($request->input('categories', []));
-
-    //Manejo de sabores
-    if ($request->filled('flavors')) {
-    $product->flavors()->sync($request->flavors);
-    }
-
-    // Redireccionar al usuario a la lista de clientes con un mensaje de éxito
     return redirect()->route('products.index')->with('success', 'Producto creado correctamente.');
   }
 
-
-  public function datatable()
+  /**
+   * Obtiene los datos de los productos para DataTables.
+   *
+   * @return mixed
+  */
+  public function datatable(Request $request): mixed
   {
-      $query = Product::with(['categories:id,name', 'store:id,name'])
-                      ->select(['id', 'name', 'sku', 'description', 'type', 'old_price', 'price', 'discount', 'image', 'store_id', 'status', 'stock', 'draft'])
-                      ->where('is_trash', '!=', 1);
-
-      return DataTables::of($query)
-          ->addColumn('category', function ($product) {
-              return $product->categories->implode('name', ', ');
-          })
-          ->addColumn('store_name', function ($product) {
-              return $product->store->name;
-          })
-          ->make(true);
+      // Pasa el request al repositorio
+      return $this->productRepo->getProductsForDataTable($request);
   }
 
-
-  public function edit($id)
+  /**
+   * Muestra el formulario para editar un producto.
+   *
+   * @param  int  $id
+   * @return View
+  */
+  public function edit(int $id): View
   {
-    $product = Product::with('categories', 'flavors')->findOrFail($id);
-    $categories = ProductCategory::all();
-    $stores = Store::all();
-    $flavors = Flavor::all();
-
-    return view('content.e-commerce.backoffice.products.edit-product', compact('product', 'stores', 'categories', 'flavors'));
+    $product = $this->productRepo->edit($id);
+    return view('content.e-commerce.backoffice.products.edit-product', $product) ;
   }
 
-
-  public function update(Request $request, $id)
-{
-    $product = Product::findOrFail($id);
-
-    // Actualiza solo los campos necesarios
-    $product->update([
-        'name' => $request->input('name'),
-        'sku' => $request->input('sku'),
-        'description' => $request->input('description'),
-        'type' => $request->input('type'),
-        'max_flavors' => $request->input('max_flavors'),
-        'old_price' => $request->input('old_price'),
-        'price' => $request->input('price'),
-        'discount' => $request->input('discount'),
-        'store_id' => $request->input('store_id'),
-        'status' => $request->input('status'),
-        'stock' => $request->input('stock'),
-    ]);
-
-    // Sincroniza las categorías
-    $product->categories()->sync($request->input('categories', []));
-
-    // Sincroniza los sabores
-    if ($request->filled('flavors')) {
-        $product->flavors()->sync($request->input('flavors', []));
-    }
-
+  /**
+   * Actualiza un producto específico en la base de datos.
+   *
+   * @param UpdateProductRequest $request
+   * @param int $id
+   * @return RedirectResponse
+  */
+  public function update(UpdateProductRequest $request, $id)
+  {
+    $this->productRepo->update($id, $request);
     return redirect()->route('products.index')->with('success', 'Producto actualizado correctamente.');
-}
+  }
 
-
-  public function switchStatus()
+  /**
+    * Cambia el estado de un producto.
+    *
+    * @param SwitchProductStatusRequest $request
+    * @return JsonResponse
+  */
+  public function switchStatus(SwitchProductStatusRequest $request): JsonResponse
   {
-      $product = Product::findOrFail(request('id'));
-      if ($product->status == '1') {
-          $product->status = '2';
+    $this->productRepo->switchProductStatus($request->id);
+    return response()->json(['success' => true, 'message' => 'Estado del producto actualizado correctamente.']);
+  }
+
+  /**
+   * Elimina un producto de la base de datos.
+   *
+   * @param int $id
+   * @return RedirectResponse
+  */
+  public function destroy(int $id): RedirectResponse
+  {
+    $this->productRepo->delete($id);
+    return redirect()->route('products.index')->with('success', 'Producto eliminado correctamente.');
+  }
+
+  /**
+   * Muestra una lista de todos los variaciones.
+   *
+   * @return View
+  */
+  public function flavors(): View
+  {
+    $flavors = $this->productRepo->flavors();
+    return view('content.e-commerce.backoffice.products.flavors', $flavors);
+  }
+
+  /**
+   * Obtiene los datos de los variaciones para DataTables.
+   *
+   * @return mixed
+  */
+  public function flavorsDatatable(): mixed
+  {
+    return $this->productRepo->flavorsDatatable();
+  }
+
+  /**
+   * Almacena un sabor
+   *
+   * @param StoreFlavorRequest $request
+   * @return RedirectResponse
+  */
+  public function storeFlavor(StoreFlavorRequest $request): RedirectResponse
+  {
+    $this->productRepo->storeFlavor($request);
+    return redirect()->route('product-flavors')->with('success', 'Sabor creado correctamente.');
+  }
+
+  /**
+   * Almacena múltiples variaciones
+   *
+   * @param StoreMultipleFlavorsRequest $request
+   * @return JsonResponse
+  */
+  public function storeMultipleFlavors(StoreMultipleFlavorsRequest $request): JsonResponse
+  {
+    $this->productRepo->storeMultipleFlavors($request);
+    return response()->json(['success' => true, 'message' => 'Variaciones múltiples creados correctamente.']);
+  }
+
+  /**
+   * Muestra el formulario para editar un sabor.
+   *
+   * @param  int  $id
+   * @return View
+  */
+  public function editFlavor(int $id): JsonResponse
+  {
+    $flavor = $this->productRepo->editFlavor($id);
+    return response()->json($flavor);
+  }
+
+  /**
+   * Actualiza un sabor específico en la base de datos.
+   *
+   * @param  UpdateFlavorRequest  $request A CAMBIAR JEJEJE
+   * @param  int  $id
+   * @return View
+  */
+  public function updateFlavor(UpdateFlavorRequest $request, int $id): JsonResponse
+  {
+      $flavor = $this->productRepo->updateFlavor($request, $id);
+      return response()->json(['success' => true, 'message' => 'Sabor actualizado con éxito']);
+  }
+
+  /**
+   * Elimina un sabor de la base de datos.
+   *
+   * @param  int  $id
+   * @return JsonResponse
+  */
+  public function destroyFlavor(int $id): JsonResponse
+  {
+    $this->productRepo->destroyFlavor($id);
+    return response()->json(['success' => true, 'message' => 'Sabor eliminado correctamente.']);
+  }
+
+  /**
+   * Cambia el estado de un sabor.
+   *
+   * @param  int  $id
+   * @return JsonResponse
+  */
+  public function switchFlavorStatus(int $id): JsonResponse
+  {
+    $this->productRepo->switchFlavorStatus($id);
+    return response()->json(['success' => true, 'message' => 'Estado del sabor actualizado correctamente.']);
+  }
+
+  /**
+   * Exporta los productos a un archivo de Excel.
+   *
+   * @param Request $request
+   * @return mixed
+   */
+  public function exportToExcel(Request $request)
+  {
+      $filters = $request->all();  // Capturar todos los filtros
+      $products = Product::filterData($filters)->get()->toArray();  // Asegúrate de convertir los datos a array
+
+      return Excel::download(new GenericExport($products), 'productos_filtrados.xlsx');
+  }
+
+  /**
+   * Importa productos desde un archivo de Excel.
+   *
+   * @param Request $request
+   * @return RedirectResponse
+   */
+  public function import(Request $request)
+  {
+      $request->validate([
+          'file' => 'required|mimes:xlsx|max:2048',
+      ]);
+
+      $storeId = Auth::user()->store_id;
+
+      try {
+          $import = new ProductsImport($storeId);
+          Excel::import($import, $request->file('file'));
+
+          $message = "Importación completada. Se procesaron {$import->getRowCount()} filas.";
+          Log::info($message);
+
+          return response()->json([
+              'success' => true,
+              'message' => $message
+          ]);
+      } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+          $failures = $e->failures();
+          $errors = collect($failures)->map(function ($failure) {
+              return "Fila {$failure->row()}: " . implode(', ', $failure->errors());
+          })->filter()->values()->toArray();
+
+          Log::warning('Errores de validación en la importación:', $errors);
+
+          return response()->json([
+              'success' => false,
+              'message' => 'Algunos datos del archivo son inválidos.',
+              'errors' => $errors
+          ], 422);
+      } catch (\Exception $e) {
+          Log::error('Error en importación de productos: ' . $e->getMessage());
+          return response()->json([
+              'success' => false,
+              'message' => 'Hubo un error durante la importación: ' . $e->getMessage()
+          ], 500);
+      }
+  }
+
+  private function isEmptyRow(array $row): bool
+  {
+      return empty(array_filter($row, function ($value) {
+          return $value !== null && $value !== '';
+      }));
+  }
+
+  /**
+   * Muestra el formulario para editar productos en masa.
+   *
+   * @return View
+   */
+  public function editBulk(): View
+  {
+      $data = $this->productRepo->getProductsForBulkEdit();
+      return view('products.editBulk', $data);
+  }
+
+  /**
+   * Actualiza los productos en masa.
+   *
+   * @param Request $request
+   * @return RedirectResponse
+   */
+  public function updateBulk(Request $request): RedirectResponse
+  {
+      $products = $request->input('products');
+      $this->productRepo->updateBulk($products);
+      return redirect()->route('products.editBulk')->with('success', 'Productos actualizados correctamente.');
+  }
+
+  /**
+   * Muestra el formulario para agregar productos en masa.
+   *
+   * @return View
+   */
+  public function addBulk(): View
+  {
+      $stores = $this->productRepo->getStoresForBulkAdd();
+
+      if (Auth::user()->can('access_global_products')) {
+        $categories = ProductCategory::all();
       } else {
-          $product->status = '1';
-      }
-      $product->save();
-
-      return response()->json(['success' => true, 'message' => 'Estado del producto actualizado correctamente.']);
-  }
-
-  public function destroy($id)
-  {
-      $product = Product::findOrFail($id);
-      $product->is_trash = 1;
-      $product->save();
-
-      return response()->json(['success' => true, 'message' => 'Producto eliminado correctamente.']);
-  }
-
-
-  public function flavors()
-  {
-    $flavor = Flavor::all();
-    return view('content.e-commerce.backoffice.products.flavors', compact('flavor'));
-  }
-
-  public function flavorsDatatable()
-  {
-      $flavors = Flavor::all();
-
-      return DataTables::of($flavors)
-          ->addColumn('action', function($flavor){
-              return '<a href="#" class="btn btn-primary btn-sm">Editar</a>';
-          })
-          ->rawColumns(['action'])
-          ->make(true);
-  }
-
-  public function storeFlavors(StoreFlavorRequest $request)
-  {
-      $flavor = new Flavor();
-      $flavor->name = $request->name;
-      $flavor->status = $request->status ?? 'active';
-
-      $flavor->save();
-
-      return redirect()->route('product-flavors')->with('success', 'Sabor creado correctamente.');
-  }
-
-  public function storeMultipleFlavors(Request $request)
-  {
-      $data = json_decode($request->getContent(), true);
-      $names = $data['name'];
-      $status = $data['status'] ?? 'active';  // Asume 'active' si no se especifica
-
-      foreach ($names as $name) {
-          $flavor = new Flavor();
-          $flavor->name = trim($name);
-          $flavor->status = $status;
-          $flavor->save();
+          // Si no tiene el permiso, mostrar solo las categorías asociadas a su empresa
+          $categories = ProductCategory::where('store_id', Auth::user()->store_id)->get();
       }
 
-      return response()->json(['success' => true, 'message' => 'Sabores múltiples creados correctamente.']);
+      return view('products.addBulk', compact('stores', 'categories'));
   }
 
-
-  public function editFlavor($id)
+  /**
+   * Almacena los productos en masa.
+   *
+   * @param Request $request
+   * @return RedirectResponse
+   */
+  public function storeBulk(Request $request): RedirectResponse
   {
-      $flavors = Flavor::findOrFail($id);
-      return view('content.e-commerce.backoffice.products.flavors.edit-flavor', compact('flavors'));
+      $products = $request->input('products');
+      $this->productRepo->storeBulk($products);
+      return redirect()->route('products.addBulk')->with('success', 'Productos agregados correctamente.');
   }
 
-  public function updateFlavor($id)
+  /**
+   * Descarga una plantilla de productos.
+   *
+   * @param Request $request
+   * @return mixed
+   */
+  public function downloadTemplate(Request $request)
   {
-      $flavor = Flavor::findOrFail($id);
-      $flavor->name = request('name');
-      $flavor->save();
+    $storeId = Auth::user()->store_id;
+    $categories = ProductCategory::where('store_id', $storeId)->get();
 
-      return view ('content.e-commerce.backoffice.products.flavors', compact('flavor'))->with('success', 'Sabor actualizado correctamente.');
+    return Excel::download(new ProductTemplateExport($categories, $storeId), 'plantilla_productos.xlsx');
   }
-
-  public function destroyFlavor($id)
-  {
-      $flavor = Flavor::findOrFail($id);
-      $flavor->delete();
-
-      return response()->json(['success' => true, 'message' => 'Sabor eliminado correctamente.']);
-  }
-
-  public function switchFlavorStatus($id)
-  {
-      $flavor = Flavor::findOrFail($id);
-      $flavor->status = $flavor->status === 'active' ? 'inactive' : 'active';
-      $flavor->save();
-
-      return response()->json(['success' => true, 'message' => 'Estado del sabor actualizado correctamente.']);
-  }
-
 
 }

@@ -14,8 +14,11 @@ class StoreFlavorRequest extends FormRequest
     public function rules()
     {
         return [
-          'name' => 'required|string',
-          'status' => 'sometimes|in:active,inactive'
+            'name' => 'required|string',
+            'status' => 'sometimes|in:active,inactive',
+            'recipes' => 'required|array',
+            'recipes.*.raw_material_id' => 'required|exists:raw_materials,id',
+            'recipes.*.quantity' => 'required|integer|min:1'
         ];
     }
 }

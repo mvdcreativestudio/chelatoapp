@@ -128,13 +128,13 @@ document.addEventListener('DOMContentLoaded', function () {
     columnDefs.push({
       targets: 8,
       render: function (data, type, row) {
-        return row.store ? row.store.name : 'Tienda sin nombre';
+        return row.store ? row.store.name : 'Empresa sin nombre';
       }
     });
   }
 
   if (dt_suppliers_table.length) {
-    dt_suppliers_table.DataTable({
+    var table = dt_suppliers_table.DataTable({
       data: suppliers,
       columns: columns,
       columnDefs: columnDefs,
@@ -180,6 +180,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       ]
     });
+    $('.toggle-column').on('change', function() {
+      var column = table.column($(this).attr('data-column'));
+      column.visible(!column.visible());
+  });
   }
 
   $('.dataTables_length').addClass('mt-0 mt-md-3 me-3');
@@ -191,8 +195,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
   dt_suppliers_table.on('click', '.delete-button', function () {
     var form = $(this).closest('form');
-    if (confirm('¿Estás seguro de querer eliminar este elemento?')) {
-      form.submit();
-    }
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción eliminará completamente al proveedor, perdiendo definitivamente sus datos',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar!',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        form.submit();
+      }});
   });
 });

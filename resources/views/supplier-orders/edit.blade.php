@@ -80,21 +80,24 @@
 <script>
 let selectedRawMaterials = [];
 
-function addRawMaterialField(rawMaterialId = null, rawMaterialName = '', quantity = 0) {
+function addRawMaterialField(rawMaterialId = null, rawMaterialName = '', quantity = 0, unitCost = 0) {
   const container = document.getElementById('rawMaterialsFields');
   const newRow = document.createElement('div');
   newRow.className = 'mb-3 row align-items-center';
   newRow.innerHTML = `
-      <div class="col-5">
+      <div class="col-4">
         <select class="form-select raw-material-select" name="raw_material_id[]" required onchange="updateOptions();">
           <option disabled value="" ${!rawMaterialId ? 'selected' : ''}>Seleccione una materia prima</option>
           @foreach($rawMaterials as $material)
-            <option value="{{ $material->id }}" ${rawMaterialId == {{ $material->id }} ? 'selected' : ''}>{{ $material->name }}</option>
+            <option value="{{ $material->id }}" ` + (rawMaterialId == {{ $material->id }} ? 'selected' : '') + `>{{ $material->name }}</option>
           @endforeach
         </select>
       </div>
-      <div class="col">
-        <input type="number" name="quantity[]" class="form-control" placeholder="Cantidad" required min="1" value="${quantity}">
+      <div class="col-3">
+        <input type="number" name="quantity[]" class="form-control" placeholder="Cantidad" required min="1" value="` + quantity + `">
+      </div>
+      <div class="col-3">
+        <input type="number" name="unit_cost[]" class="form-control" placeholder="Costo por unidad" required step="0.01" value="` + unitCost + `">
       </div>
       <div class="col-auto">
         <i class="bx bx-minus-circle" style="font-size: 1.5rem; cursor: pointer;" onclick="removeRawMaterialField(this);"></i>
@@ -109,7 +112,6 @@ function updateOptions() {
     selectedRawMaterials = [];
 
     document.querySelectorAll('.raw-material-select').forEach((select) => {
-      console.log(select.value)
       if (select.value) selectedRawMaterials.push(select.value);
     });
 
@@ -123,7 +125,8 @@ function updateOptions() {
     });
 
     checkAddButtonVisibility();
-  }
+}
+
 function checkAddButtonVisibility() {
     const allSelected = [...document.querySelectorAll('.raw-material-select')].every(select => select.value);
 
@@ -137,8 +140,7 @@ function checkAddButtonVisibility() {
     const addButton = document.querySelector('.add-button');
 
     addButton.style.display = allSelected && selectableOptionsCount > 0 ? 'inline-block' : 'none';
-  }
-
+}
 
 function removeRawMaterialField(element) {
   const row = element.closest('.row');
@@ -150,7 +152,7 @@ function removeRawMaterialField(element) {
 document.addEventListener('DOMContentLoaded', () => {
   // Añade campos de materia prima existentes basados en la orden cargada.
   @foreach($supplierOrder->rawMaterials as $rawMaterial)
-    addRawMaterialField({{ $rawMaterial->id }}, "{{ $rawMaterial->name }}", {{ $rawMaterial->pivot->quantity }});
+    addRawMaterialField({{ $rawMaterial->id }}, "{{ $rawMaterial->name }}", {{ $rawMaterial->pivot->quantity }}, {{ $rawMaterial->pivot->unit_cost }});
   @endforeach
 
   updateOptions();

@@ -11,16 +11,22 @@ class SupplierRepository
     /**
      * Devuelve todos los proveedores.
      *
-     * @return Collection
+     * @return array
      */
-    public function getAll(): Collection
+    public function getAll(): array
     {
-        if (auth()->user() && auth()->user()->can('view_all_suppliers')) {
-          return Supplier::with('store')->get();
+        if (auth()->user()->can('view_all_suppliers')) {
+          $suppliers = Supplier::with('store')->get();
         } else {
           $storeId = auth()->user()->store_id;
-          return Supplier::where('store_id', $storeId)->get();
+          $suppliers = Supplier::where('store_id', $storeId)->get();
         }
+
+        $recentOrders = $suppliers->map(function ($supplier) {
+            return $supplier->orders->sortByDesc('created_at')->first();
+        });
+
+        return compact('suppliers', 'recentOrders');
     }
 
     /**

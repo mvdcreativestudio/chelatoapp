@@ -15,7 +15,7 @@ function GetFilesArray(query) {
  * Js Files
  */
 // Page JS Files
-const pageJsFiles = GetFilesArray('resources/assets/js/*.js');
+const pageJsFiles = GetFilesArray('resources/assets/js/**/*.js');
 
 // Page CSS Files
 const pageCssFiles = GetFilesArray('resources/assets/css/*.css');
@@ -55,6 +55,15 @@ function libsWindowAssignment() {
 }
 
 export default defineConfig({
+  server: {
+    host: '0.0.0.0', // Permitir conexiones desde fuera del contenedor
+    hmr: {
+      host: 'localhost',
+    },
+    watch: {
+      usePolling: true, // Útil para entornos de Docker
+    },
+  },
   plugins: [
     laravel({
       input: [

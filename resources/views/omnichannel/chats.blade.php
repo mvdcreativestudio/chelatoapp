@@ -156,8 +156,8 @@
           </ul>
         </div>
         <!-- Chat message form -->
-        <div class="chat-history-footer" style="display: none;">
-          <div class="chat-history-footer" id="message-form-container">
+        <div class="chat-history-footer" id="message-form-container" style="display: none; margin: 0px;">
+          <div class="chat-history-footer">
             <form class="form-send-message d-flex justify-content-between align-items-center" id="send-message-form">
               <input class="form-control message-input border-0 me-3 shadow-none" placeholder="Escriba su mensaje aquí..." id="message-input">
               <div class="message-actions d-flex align-items-center">

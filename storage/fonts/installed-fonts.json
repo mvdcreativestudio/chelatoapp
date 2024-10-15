@@ -1,0 +1,17 @@
+{
+    "public sans": {
+        "300_italic": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_300_italic_28e4beca77ca0d865d9112a3452a9b3a",
+        "italic": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_italic_18753ef5868eba51010fd4316e46f8ec",
+        "500_italic": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_500_italic_3af0107b6b9337a2ba8bab5c29752dbc",
+        "600_italic": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_600_italic_33359223cf686aee1efb76ef0057f9f3",
+        "bold_italic": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_bold_italic_62ad27b7d54d6e7414598511ea6e0eaa",
+        "300": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_300_a32b0f53d92698effb9f6890ec5dffdc",
+        "normal": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_normal_030fb36d2642b91fe5020e899670e0c4",
+        "500": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_500_f9f62700f16295459f07e4490758a56c",
+        "600": "C:\\laragon\\www\\chelatoapp\\storage\\fonts\/public_sans_600_8570cdb5fbb80ecdad4dd8164ff3b49b",
+        "bold": "public_sans_bold_69a2f1b043a82eb740adaded7887665f"
+    },
+    "lato": {
+        "normal": "lato_normal_1e76f4095824347c5952fde032e6e608"
+    }
+}

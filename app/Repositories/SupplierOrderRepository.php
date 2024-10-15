@@ -10,13 +10,13 @@ use App\Models\RawMaterial;
 class SupplierOrderRepository
 {
     /**
-     * Devuelve todas las ordenes de compra.
+     * Devuelve todas las órdenes de compra.
      *
      * @return \Illuminate\Database\Eloquent\Collection|static[]
-    */
+     */
     public function getAll(): Collection
     {
-        if (auth()->user() && auth()->user()->can('view_all_supplier-orders')) {
+        if (auth()->user()->can('view_all_supplier-orders')) {
             return SupplierOrder::with(['supplier', 'rawMaterials', 'store'])->get();
         } else {
             $storeId = auth()->user()->store_id;
@@ -48,17 +48,43 @@ class SupplierOrderRepository
 
         $order = SupplierOrder::create($data);
 
-        if (isset($data['raw_material_id']) && isset($data['quantity'])) {
+        $totalOrderCost = 0;
+
+        if (isset($data['raw_material_id']) && isset($data['quantity']) && isset($data['unit_cost'])) {
             foreach ($data['raw_material_id'] as $index => $rawMaterialId) {
                 $quantity = $data['quantity'][$index];
+                $unitCost = $data['unit_cost'][$index];
+                $totalCost = $quantity * $unitCost;
+
                 if ($quantity > 0) {
-                    $order->rawMaterials()->attach($rawMaterialId, ['quantity' => $quantity]);
+                    // Agrega la relación en la tabla pivot 'supplier_order_raw_material'
+                    $order->rawMaterials()->attach($rawMaterialId, [
+                        'quantity' => $quantity,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => $totalCost,
+                    ]);
+
+                    // Actualiza el stock en la tabla pivot 'raw_material_store'
+                    if ($order->shipping_status == 'completed') {
+                        $store = auth()->user()->store;
+                        $store->rawMaterials()->updateExistingPivot($rawMaterialId, [
+                            'stock' => \DB::raw('stock + ' . $quantity)
+                        ]);
+                    }
+
+                    // Acumula el total de la orden
+                    $totalOrderCost += $totalCost;
                 }
             }
         }
 
+        // Actualiza el campo 'total' en la tabla supplier_orders
+        $order->update(['total' => $totalOrderCost]);
+
         return $order;
     }
+
+
 
     /**
      * Actualiza una orden de compra existente y ajusta el stock de las materias primas si es necesario.
@@ -80,13 +106,18 @@ class SupplierOrderRepository
         // Obtiene las cantidades actuales de las materias primas antes de cualquier actualización.
         $currentMaterials = $supplierOrder->rawMaterials()->pluck('quantity', 'raw_material_id')->toArray();
 
-        // Verifica si se proporcionaron detalles de materias primas en la actualización.
-        if (!isset($data['raw_material_id']) || !isset($data['quantity']) || count($data['raw_material_id']) == 0 || count($data['quantity']) == 0) {
+        $totalOrderCost = 0;
+
+        if (!isset($data['raw_material_id']) || !isset($data['quantity']) || !isset($data['unit_cost']) ||
+            count($data['raw_material_id']) == 0 || count($data['quantity']) == 0) {
             // Si no se proporcionan materias primas, asume que todas deben eliminarse.
             if ($wasCompleted) {
                 // Decrementa el stock de todas las materias primas si la orden estaba completada.
                 foreach ($currentMaterials as $materialId => $quantity) {
-                    RawMaterial::find($materialId)->decrement('stock', $quantity);
+                    $store = auth()->user()->store;
+                    $store->rawMaterials()->updateExistingPivot($materialId, [
+                        'stock' => \DB::raw('stock - ' . $quantity)
+                    ]);
                     $supplierOrder->rawMaterials()->detach($materialId);
                 }
             }
@@ -95,43 +126,75 @@ class SupplierOrderRepository
 
             foreach ($updatedMaterials as $materialId => $quantity) {
                 $quantity = (int) $quantity;
+                $unitCost = $data['unit_cost'][array_search($materialId, $data['raw_material_id'])];
+                $totalCost = $quantity * $unitCost;
+
+                $store = auth()->user()->store;
 
                 if (isset($currentMaterials[$materialId])) {
                     if ($wasCompleted) {
                         if ($supplierOrder->shipping_status !== 'completed') {
-                          RawMaterial::find($materialId)->decrement('stock', $quantity);
+                            // Si la orden estaba completada pero ya no lo está, decrementa el stock.
+                            $store->rawMaterials()->updateExistingPivot($materialId, [
+                                'stock' => \DB::raw('stock - ' . $quantity)
+                            ]);
                         } else {
-                          $difference = $quantity - $currentMaterials[$materialId];
-                          if ($difference != 0) {
-                              RawMaterial::find($materialId)->increment('stock', $difference);
-                          }
+                            // Si la orden sigue completada, ajusta el stock según la diferencia de cantidades.
+                            $difference = $quantity - $currentMaterials[$materialId];
+                            if ($difference != 0) {
+                                $store->rawMaterials()->updateExistingPivot($materialId, [
+                                    'stock' => \DB::raw('stock + ' . $difference)
+                                ]);
+                            }
                         }
                     } elseif ($supplierOrder->shipping_status == 'completed') {
                         // Si la orden no estaba completada antes pero ahora sí lo está, incrementa el stock.
-                        RawMaterial::find($materialId)->increment('stock', $quantity);
+                        $store->rawMaterials()->updateExistingPivot($materialId, [
+                            'stock' => \DB::raw('stock + ' . $quantity)
+                        ]);
                     }
 
-                    $supplierOrder->rawMaterials()->updateExistingPivot($materialId, ['quantity' => $quantity]);
+                    $supplierOrder->rawMaterials()->updateExistingPivot($materialId, [
+                        'quantity' => $quantity,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => $totalCost,
+                    ]);
                 } else {
-                    $supplierOrder->rawMaterials()->attach($materialId, ['quantity' => $quantity]);
+                    $supplierOrder->rawMaterials()->attach($materialId, [
+                        'quantity' => $quantity,
+                        'unit_cost' => $unitCost,
+                        'total_cost' => $totalCost,
+                    ]);
+
                     if ($supplierOrder->shipping_status == 'completed') {
-                        RawMaterial::find($materialId)->increment('stock', $quantity);
+                        $store->rawMaterials()->updateExistingPivot($materialId, [
+                            'stock' => \DB::raw('stock + ' . $quantity)
+                        ]);
                     }
                 }
+
+                $totalOrderCost += $totalCost;
                 unset($currentMaterials[$materialId]);
             }
 
             // Manejo de materias primas eliminadas.
             foreach ($currentMaterials as $materialId => $quantity) {
                 if ($wasCompleted) {
-                    RawMaterial::find($materialId)->decrement('stock', $quantity);
+                    $store->rawMaterials()->updateExistingPivot($materialId, [
+                        'stock' => \DB::raw('stock - ' . $quantity)
+                    ]);
                 }
                 $supplierOrder->rawMaterials()->detach($materialId);
             }
         }
 
+        // Actualiza el campo 'total' en la tabla supplier_orders
+        $supplierOrder->update(['total' => $totalOrderCost]);
+
         return $supplierOrder;
     }
+
+
 
     /**
      * Elimina una orden de compra y ajusta el stock de las materias primas si la orden está completada.

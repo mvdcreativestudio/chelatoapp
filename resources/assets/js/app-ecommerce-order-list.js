@@ -242,10 +242,21 @@ $(function () {
         '>',
       lengthMenu: [10, 40, 60, 80, 100], //for length of menu
       language: {
-        sLengthMenu: '_MENU_',
         search: '',
-        searchPlaceholder: 'Buscar pedido',
-        info: 'Mostrando _START_ a _END_ de _TOTAL_ pedidos'
+        searchPlaceholder: 'Buscar...',
+        sLengthMenu: '_MENU_',
+        info: 'Mostrando _START_ a _END_ de _TOTAL_ ventas',
+        infoFiltered: "filtradas de _MAX_ ventas",
+        paginate: {
+          first: '<<',
+          last: '>>',
+          next: '>',
+          previous: '<'
+        },
+        pagingType: "full_numbers",
+        emptyTable: 'No hay ventas disponibles',
+        dom: 'Bfrtip',
+        renderer: "bootstrap"
       },
 
     });

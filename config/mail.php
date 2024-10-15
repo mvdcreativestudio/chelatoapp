@@ -59,10 +59,9 @@ return [
         ],
 
         'mailgun' => [
-            'transport' => 'mailgun',
-            // 'client' => [
-            //     'timeout' => 5,
-            // ],
+          'transport' => 'mailgun',
+          'domain' => env('MAILGUN_DOMAIN'),
+          'secret' => env('MAILGUN_SECRET'),
         ],
 
         'sendmail' => [

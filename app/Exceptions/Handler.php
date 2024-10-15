@@ -4,6 +4,8 @@ namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Illuminate\Support\Facades\Redirect;
 
 class Handler extends ExceptionHandler
 {
@@ -26,5 +28,25 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    /**
+     * Maneja las excepciones de la aplicación.
+     * Verifico si la excepción es de tipo NotFoundHttpException y redirijo a la página de inicio.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @param \Throwable $exception
+    */
+    public function render($request, Throwable $exception)
+    {
+        if ($exception instanceof NotFoundHttpException) {
+            if ($request->is('admin/*')) {
+                return Redirect::to('/admin');
+            } else {
+                return Redirect::to('/');
+            }
+        }
+
+        return parent::render($request, $exception);
     }
 }

@@ -18,6 +18,10 @@ class CheckPermission
     public function handle(Request $request, Closure $next, $permission): Response
     {
         if ( !auth()->user() || !auth()->user()->can($permission) ) {
+            // Verifica si la solicitud es AJAX
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permisos para realizar esta acción.'], 403);
+            }
             return redirect()->route('dashboard')->with('error', 'No tienes permisos para realizar esta acción.');
         }
 

@@ -72,7 +72,7 @@ $customizerHidden = 'customizer-hide';
             </span>
             @enderror
           </div>
-        
+
           <div class="mb-3 form-password-toggle">
             <label class="form-label" for="password-confirm">Confirmar contraseña</label>
             <div class="input-group input-group-merge">
@@ -112,7 +112,7 @@ $customizerHidden = 'customizer-hide';
         </p>
 
         <div class="divider my-4">
-          <div class="divider-text">MVD</div>
+          <div class="divider-text">Sumeria</div>
         </div>
       </div>
     </div>

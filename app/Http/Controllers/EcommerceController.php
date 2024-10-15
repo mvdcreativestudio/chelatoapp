@@ -2,68 +2,93 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Product;
-use App\Models\ProductCategory;
-use App\Models\Store;
-use App\Models\Flavor;
-use Illuminate\Support\Facades\Log;
+use App\Repositories\EcommerceRepository;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class EcommerceController extends Controller
 {
-    public function index()
-    {
-      $stores = Store::all();
-      return view('content.e-commerce.front.index', compact('stores'));
+  /**
+   * El repositorio de Ecommerce.
+   *
+   * @var EcommerceRepository
+  */
+  protected $ecommerceRepository;
+
+  /**
+   * Inyecta el repositorio en el controlador.
+   *
+   * @param EcommerceRepository $ecommerceRepository
+  */
+  public function __construct(EcommerceRepository $ecommerceRepository)
+  {
+    $this->middleware('ensure_store_selected')->only('store');
+    $this->middleware('ensure_store_matches')->only('store');
+
+    $this->ecommerceRepository = $ecommerceRepository;
+  }
+
+  /**
+   * Muestra la página de selección de empresa.
+   *
+   * @return View
+  */
+  public function index(): View
+  {
+    $stores = $this->ecommerceRepository->getAllStores();
+    return view('content.e-commerce.front.index', compact('stores'));
+  }
+
+  /**
+   * Muestra la página de una empresa específica.
+   *
+   * @param string $slug
+   * @return RedirectResponse|View
+  */
+  public function store(string $slug): RedirectResponse|View
+  {
+    $result = $this->ecommerceRepository->getStoreData($slug);
+
+    if ($result['status'] === 'error') {
+        return redirect()->route('home')->with('error', $result['message']);
     }
 
-    public function store($storeId)
-    {
-      $store = Store::find($storeId);
+    return view('content.e-commerce.front.store', [
+        'categories' => $result['categories'],
+        'flavors' => $result['flavors'],
+        'store' => $result['store']
+    ]);
+  }
 
-      if (!$store) {
-          return redirect()->route('home')->with('error', 'La tienda no existe.');
-      }
+  /**
+   * Muestra la página de marketing.
+   *
+   * @return View
+  */
+  public function marketing(): View
+  {
+      return view('content.e-commerce.backoffice.marketing');
+  }
 
-      $categories = ProductCategory::whereHas('products', function ($query) use ($storeId) {
-          $query->where('status', '=', 1)->where('store_id', $storeId)->where('is_trash', '!=', 1);
-      })->with(['products' => function ($query) use ($storeId) {
-          $query->where('status', '=', 1)->where('store_id', $storeId)->where('is_trash', '!=', 1);
-      }])->get();
+  /**
+   * Muestra la página de ajustes.
+   *
+   * @return View
+  */
+  public function settings(): View
+  {
+      return view('content.e-commerce.backoffice.settings');
+  }
 
-      // Cargar todos los sabores disponibles
-      $flavors = Flavor::all();
-
-      // Pasar tanto las categorías, los sabores como la tienda a la vista
-      return view('content.e-commerce.front.store', compact('categories', 'flavors', 'store'));
-    }
-
-
-
-    public function marketing()
-    {
-        return view('content.e-commerce.backoffice.marketing');
-    }
-
-    public function settings()
-    {
-        return view('content.e-commerce.backoffice.settings');
-    }
-
-    public function success()
-    {
-        return view('content.e-commerce.front.success');
-    }
-
-    public function failure()
-    {
-        return view('content.e-commerce.front.failure');
-    }
-
-    public function pending()
-    {
-        return view('content.e-commerce.front.pending');
-    }
-
+  /**
+   * Muestra la pagina principal ('/') en base a la empresa o si no tiene ninguna seleccionada
+   *
+   * @return RedirectResponse
+  */
+  public function home(): RedirectResponse
+  {
+    $returnUrl = $this->ecommerceRepository->home();
+    return redirect($returnUrl);
+  }
 
 }

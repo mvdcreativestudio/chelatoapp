@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class Coupon extends Model
 {
@@ -25,6 +27,14 @@ class Coupon extends Model
         return $this->belongsTo(User::class, 'creator_id');
     }
 
+      /**
+     * Relación con las órdenes que utilizan este cupón.
+     *
+     * @return HasMany
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
 }
-
-

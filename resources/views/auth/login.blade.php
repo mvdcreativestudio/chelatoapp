@@ -27,15 +27,14 @@ $customizerHidden = 'customizer-hide';
     <div class="d-flex col-12 col-lg-5 col-xl-4 align-items-center authentication-bg p-sm-5 p-4">
       <div class="w-px-400 mx-auto">
         <!-- Logo -->
-        <div class="app-brand mb-5">
-          <a href="{{url('/')}}" class="app-brand-link gap-2">
-            <span class="app-brand-logo demo">@include('_partials.macros',["width"=>25,"withbg"=>'var(--bs-primary)'])</span>
-            <span class="app-brand-text demo text-body fw-bold">{{config('variables.templateName')}}</span>
+        <div class="row mb-5 text-center">
+          <a href="{{url('/')}}" class="text-center justify-content-center">
+            <img src="{{ asset($companySettings->logo_black) }}" alt="" class="navbar-logo justify-content-center">
           </a>
         </div>
         <!-- /Logo -->
-        <h4 class="mb-2">¡Bienvenido a Chelato!</h4>
-        <p class="mb-4">Por favor, inicia sesión en tu cuenta y comienza la dulce aventura</p>
+        <h4 class="mb-2 text-center">¡Bienvenido a {{$companySettings->name}}!</h4>
+        <p class="mb-4 text-center">Por favor, inicia sesión en tu cuenta</p>
 
         @if (session('status'))
         <div class="alert alert-success mb-1 rounded-0" role="alert">
@@ -86,17 +85,19 @@ $customizerHidden = 'customizer-hide';
           <button class="btn btn-primary d-grid w-100" type="submit">Iniciar sesión</button>
         </form>
 
+        @if($companySettings->allow_registration)
         <p class="text-center">
-          <span>¿Eres nuevo en Chelato?</span>
+          <span>¿Eres nuevo en {{$companySettings->name}}?</span>
           @if (Route::has('register'))
           <a href="{{ route('register') }}">
             <span>Crea una cuenta</span>
           </a>
           @endif
         </p>
+        @endif
 
         <div class="divider my-4">
-          <div class="divider-text">MVD</div>
+          <div class="divider-text">Sumeria</div>
         </div>
 
         <!-- Social login buttons removed -->

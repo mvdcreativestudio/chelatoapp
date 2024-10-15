@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\CompanySettings;
-use App\Models\Invoice;
+use App\Models\CFE;
 use App\Models\Client;
 
 

@@ -50,6 +50,11 @@
                         </select>
                     </div>
 
+                    <div class="mb-3">
+                      <label for="stock" class="form-label">Stock Inicial</label>
+                      <input type="text" class="form-control" id="raw-material-stock" name="stock" placeholder="Introducir stock inicial">
+                    </div>
+
                     <div id="unit_example" class="mt-2 mb-2 text-muted" style="display: none;">
 
                     </div>

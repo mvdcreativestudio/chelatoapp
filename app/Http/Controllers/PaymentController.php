@@ -2,36 +2,42 @@
 
 namespace App\Http\Controllers;
 
+use App\Factories\PaymentServiceFactory;
 use Illuminate\Http\Request;
-use GuzzleHttp\Client;
+use Exception;
 
 class PaymentController extends Controller
 {
-    public function createPreference(Request $request)
+    public function processPayment(Request $request)
     {
-        $client = new Client();
-        $response = $client->request('POST', 'https://api.mercadopago.com/checkout/preferences', [
-            'headers' => [
-                'Authorization' => 'Bearer YOUR_ACCESS_TOKEN',
-                'Content-Type' => 'application/json',
-            ],
-            'json' => [
-                'items' => [
-                    [
-                        'title' => $request->title,
-                        'description' => $request->description,
-                        'quantity' => 1,
-                        'currency_id' => 'ARS',
-                        'unit_price' => $request->price,
-                    ],
-                ],
-            ],
+        $validatedData = $request->validate([
+            'payment_method' => 'required|string',
+            // Añadir validaciones específicas para cada campo necesario
+            'PosID' => 'required|string',
+            'Empresa' => 'required|string',
+            'Local' => 'required|string',
+            'Caja' => 'required|string',
+            'UserId' => 'required|string',
+            'TransactionDateTimeyyyyMMddHHmmssSSS' => 'required|string',
+            'Amount' => 'required|string',
+            'Quotas' => 'required|numeric',
+            'Plan' => 'required|integer',
+            'Currency' => 'required|string',
+            'TaxableAmount' => 'required|string',
+            'InvoiceAmount' => 'required|string',
+            'TaxAmount' => 'required|string',
+            'IVAAmount' => 'required|string',
+            'NeedToReadCard' => 'required|boolean',
         ]);
 
-        $preference = json_decode((string) $response->getBody(), true);
+        try {
+            // Crear el servicio de pago adecuado basado en el método recibido
+            $paymentService = PaymentServiceFactory::create($validatedData['payment_method']);
+            $response = $paymentService->process($validatedData);
 
-        return view('your_payment_view', [
-            'preferenceId' => $preference['id'],
-        ]);
+            return response()->json($response);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

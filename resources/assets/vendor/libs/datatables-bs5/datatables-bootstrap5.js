@@ -19,4 +19,3 @@ $.fn.dataTable.ext.buttons.jszip = JSZip;
 $.fn.dataTable.ext.buttons.pdfMake = pdfMake;
 
 window.JSZip = JSZip;
-console.log('AAAAA');

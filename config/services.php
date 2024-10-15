@@ -34,6 +34,22 @@ return [
     'mercadopago' => [
       'public_key' => env('MERCADOPAGO_PUBLIC_KEY'),
       'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
-  ],
+      'secret_key' => env('MERCADOPAGO_SECRET_KEY'),
+    ],
 
+    'google' => [
+        'maps_api_key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
+
+    'pedidosya' => [
+        'api_key' => env('PEDIDOS_YA_API_KEY'),
+    ],
+
+    'checkout' => [
+        'return_url' => env('CHECKOUT_RETURN_URL'),
+    ],
+
+    'flavorUnit' => [
+        'unit' => 5,
+    ],
 ];

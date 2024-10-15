@@ -3,16 +3,28 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Repositories\EmailNotificationsRepository;
+use App\Services\POS\PosIntegrationInterface;
+use App\Services\POS\ScanntechIntegrationService;
+use App\Services\POS\ScanntechAuthService;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Facades\Log;
 
 class AppServiceProvider extends ServiceProvider
 {
   /**
    * Register any application services.
    */
-  public function register(): void
+  public function register()
   {
-    //
+      $this->app->singleton(EmailNotificationsRepository::class, function ($app) {
+          return new EmailNotificationsRepository();
+      });
+
+      $this->app->bind(PosIntegrationInterface::class, function ($app) {
+        // Aquí puedes añadir lógica para elegir el POS, por ejemplo basándote en el cliente
+        return new ScanntechIntegrationService($app->make(ScanntechAuthService::class));
+      });
   }
 
   /**

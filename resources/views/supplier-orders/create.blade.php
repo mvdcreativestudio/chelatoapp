@@ -45,6 +45,7 @@
             <div class="mb-3">
               <label for="shipping_status" class="form-label">Estado de Envío</label>
               <select class="form-select" id="shipping_status" name="shipping_status" required>
+                <option value="completed">Completado</option>
                 <option value="pending">Pendiente</option>
                 <option value="sending">Enviando</option>
               </select>
@@ -56,6 +57,17 @@
                 <option value="pending">Pendiente</option>
                 <option value="paid">Pagado</option>
                 <option value="delayed">Atrasado</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="payment_method">Método de pago</label>
+              <select class="form-select" id="payment_method" name="payment_method" required>
+                <option value="">Seleccione un método de pago</option>
+                <option value="cash">Efectivo</option>
+                <option value="credit">Crédito</option>
+                <option value="debit">Débito</option>
+                <option value="check">Cheque</option>
               </select>
             </div>
 
@@ -99,7 +111,7 @@
     const newRow = document.createElement('div');
     newRow.className = 'mb-3 row align-items-center';
     newRow.innerHTML = `
-        <div class="col-5">
+        <div class="col-4">
           <select class="form-select raw-material-select" name="raw_material_id[]" required onchange="updateOptions();">
             <option disabled selected value="">Seleccione una materia prima</option>
             @foreach($rawMaterials as $material)
@@ -107,8 +119,11 @@
             @endforeach
           </select>
         </div>
-        <div class="col">
+        <div class="col-3">
           <input type="number" name="quantity[]" class="form-control" placeholder="Cantidad" required min="1">
+        </div>
+        <div class="col-3">
+          <input type="number" name="unit_cost[]" class="form-control" placeholder="Costo por unidad" required step="0.01" min="0">
         </div>
         <div class="col-auto">
           <i class="bx bx-minus-circle" style="font-size: 1.5rem; cursor: pointer;" onclick="removeRawMaterialField(this);"></i>
@@ -116,9 +131,9 @@
     `;
     container.appendChild(newRow);
     updateOptions();
-    // Inmediatamente después de añadir un nuevo campo, revisa las opciones.
     checkAddButtonVisibility();
   }
+
 
   function updateOptions() {
     selectedRawMaterials = [];

@@ -154,6 +154,6 @@ class SupplierOrderController extends Controller
         $order = $this->supplierOrderRepository->findOrderDetailsForPdf($id);
 
         $pdf = Pdf::loadView('supplier-orders.pdf', compact('order'));
-        return $pdf->download('supplier_order_'.$id.'.pdf');
+        return $pdf->stream('supplier_order_'.$id.'.pdf');
     }
 }

@@ -61,13 +61,25 @@
                 <option value="">Seleccione un tipo de documento</option>
                 <option value="DNI">DNI</option>
                 <option value="PASSPORT">Pasaporte</option>
+                <option value="RUT">RUT</option>
                 <option value="OTHER">Otro</option>
               </select>
             </div>
 
             <div class="mb-3">
-              <label class="form-label mb-0" for="supplier-doc_number">Número de Documento</label>
-              <input type="text" class="form-control" id="supplier-doc_number" name="doc_number" required placeholder="Número de documento del proveedor">
+              <label class="form-label mb-0" for="supplier-doc_number">Cedula de Identidad</label>
+              <input type="text" class="form-control" id="supplier-doc_number" name="doc_number" required placeholder="Cedula de identidad del proveedor">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="supplier-default_payment_method">Método de pago predefinido</label>
+              <select class="form-select" id="supplier-default_payment_method" name="default_payment_method" required>
+                <option value="">Seleccione un método de pago</option>
+                <option value="cash">Efectivo</option>
+                <option value="credit">Crédito</option>
+                <option value="debit">Débito</option>
+                <option value="check">Cheque</option>
+              </select>
             </div>
 
             @if ($errors->any())

@@ -85,6 +85,11 @@ document.addEventListener('DOMContentLoaded', function () {
     ]
   });
 
+  $('.toggle-column').on('change', function() {
+    var column = rolesTable.column($(this).attr('data-column'));
+    column.visible(!column.visible());
+});
+
   $('.dataTables_length').addClass('mt-0 mt-md-3 me-3');
   $('.dt-buttons > .btn-group > button').removeClass('btn-secondary');
   $('.dt-buttons').addClass('d-flex flex-wrap');
