@@ -24,9 +24,11 @@
 @vite('resources/assets/js/app-roles-list.js')
 <script type="text/javascript">
   var roles = @json($roles);
-  window.isAdmin = @json(auth()->user()->hasRole('Administrador'));
+  // Verifica si el usuario tiene el permiso 'access_roles'
+  window.isAdmin = @json(auth()->user()->can('access_roles'));
 </script>
 @endsection
+
 
 @section('content')
 <div class="d-flex justify-content-between mb-4">
@@ -157,11 +159,8 @@
       <thead>
         <tr>
           <th>Nombre del Rol</th>
-          <th>Guard Name</th>
           <th>Miembros</th>
-            @if (auth()->user()->hasRole('Administrador'))
           <th>Acciones</th>
-          @endif
         </tr>
       </thead>
       <tbody>

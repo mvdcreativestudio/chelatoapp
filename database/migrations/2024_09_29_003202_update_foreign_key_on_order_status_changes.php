@@ -18,8 +18,11 @@ class UpdateForeignKeyOnOrderStatusChanges extends Migration
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
         Schema::table('order_status_changes', function (Blueprint $table) {
-            // Verificar si la columna 'order_id' existe antes de agregar la clave foránea
+            // Verificar si la columna 'order_id' existe
             if (Schema::hasColumn('order_status_changes', 'order_id')) {
+                // Eliminar la clave foránea existente antes de agregar la nueva
+                $table->dropForeign(['order_id']);
+
                 // Crear la nueva relación de clave foránea con eliminación en cascada
                 $table->foreign('order_id')
                     ->references('id')
@@ -45,14 +48,15 @@ class UpdateForeignKeyOnOrderStatusChanges extends Migration
         Schema::table('order_status_changes', function (Blueprint $table) {
             // Verificar si la columna 'order_id' existe antes de intentar eliminar la clave foránea
             if (Schema::hasColumn('order_status_changes', 'order_id')) {
+                // Eliminar la clave foránea actual
                 $table->dropForeign(['order_id']);
-            }
 
-            // Restaurar la clave foránea sin la opción de eliminación en cascada
-            $table->foreign('order_id')
-                ->references('id')
-                ->on('orders')
-                ->onDelete('restrict');
+                // Restaurar la clave foránea sin la opción de eliminación en cascada
+                $table->foreign('order_id')
+                    ->references('id')
+                    ->on('orders')
+                    ->onDelete('restrict');
+            }
         });
 
         // Volver a habilitar las restricciones de clave foránea

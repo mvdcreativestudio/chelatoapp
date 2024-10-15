@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\ProductTemplateExport;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Validators\ValidationException;
+use App\Models\CompanySettings;
 
 
 
@@ -426,10 +427,26 @@ class ProductController extends Controller
    */
   public function downloadTemplate(Request $request)
   {
-    $storeId = Auth::user()->store_id;
-    $categories = ProductCategory::where('store_id', $storeId)->get();
+      $storeId = Auth::user()->store_id;
+      $settings = CompanySettings::first();
 
-    return Excel::download(new ProductTemplateExport($categories, $storeId), 'plantilla_productos.xlsx');
+      // Verificar el valor de categories_has_store
+      if ($settings->categories_has_store == 1) {
+          // Si categories_has_store es 1, solo tomamos las categorías filtradas por store_id
+          $categories = ProductCategory::where('store_id', $storeId)->get();
+          Log::info('Filtrando categorías por store_id: ' . $storeId);
+      } else {
+          // Si categories_has_store es 0, tomamos todas las categorías (incluso las que tienen store_id null)
+          $categories = ProductCategory::all();
+          Log::info('Tomando todas las categorías, sin filtrar por store_id.');
+      }
+
+      // Log para ver todas las categorías obtenidas
+      Log::info('Categorías recuperadas desde el controlador: ', $categories->toArray());
+
+      return Excel::download(new ProductTemplateExport($categories, $storeId, $settings), 'plantilla_productos.xlsx');
   }
+
+
 
 }

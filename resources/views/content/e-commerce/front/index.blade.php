@@ -65,7 +65,7 @@
                       <span class="custom-option-body">
                         <i class="fa-solid fa-store"></i>
                         <span class="custom-option-title">{{$store->name}}</span>
-                        <small class="text-success">Empresa abierta</small>
+                        <small class="text-success">Tienda abierta</small>
                       </span>
                       <input name="slug" class="form-check-input" type="radio" value="{{ $store->slug }}" id="store{{ $store->id }}" {{ $loop->first ? 'checked' : '' }} />
                     </label>
@@ -78,7 +78,7 @@
                       <span class="custom-option-body">
                         <i class="fa-solid fa-store"></i>
                         <span class="custom-option-title">{{$store->name}}</span>
-                        <small class="text-danger">Empresa cerrada</small>
+                        <small class="text-danger">Tienda cerrada</small>
                       </span>
                     </label>
                   </div>

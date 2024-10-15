@@ -120,7 +120,7 @@
                                             <label class="form-label" for="form-repeater-1-1">Tipo de producto</label>
                                             <select id="productType" class="select2 form-select" name="type">
                                                 <option value="simple" @selected($product->type == 'simple')>Simple</option>
-                                                {{-- <option value="configurable" @selected($product->type == 'configurable')>Variable</option> --}}
+                                                <option value="configurable" @selected($product->type == 'configurable')>Variable</option>
                                             </select>
                                         </div>
                                         <div id="flavorsQuantityContainer" class="mb-3 col-4">

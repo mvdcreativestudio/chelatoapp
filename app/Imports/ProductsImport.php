@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\CompanySettings; // Aseguramos la carga de configuraciones
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -14,7 +15,6 @@ use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Concerns\SkipsOnError;
 use Maatwebsite\Excel\Concerns\SkipsErrors;
 use Maatwebsite\Excel\Concerns\WithBatchInserts;
-use Illuminate\Support\Str;
 use Maatwebsite\Excel\Concerns\SkipsOnFailure;
 use Maatwebsite\Excel\Concerns\SkipsFailures;
 
@@ -25,19 +25,31 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, WithChu
     protected $storeId;
     protected $categoryCache = [];
     protected $rowCount = 0;
+    protected $settings;
 
     public function __construct($storeId)
     {
         $this->storeId = $storeId;
+        $this->settings = CompanySettings::first(); // Obtenemos las configuraciones
         $this->loadCategories();
     }
 
     private function loadCategories()
     {
-        $categories = ProductCategory::where('store_id', $this->storeId)->get();
-        foreach ($categories as $category) {
-            $this->categoryCache[$category->id] = $category->id;
+        if ($this->settings->categories_has_store == 1) {
+            // Filtramos por store_id
+            Log::info('Filtrando categorías por store_id: ' . $this->storeId);
+            $categories = ProductCategory::where('store_id', $this->storeId)->get();
+        } else {
+            // Cargamos todas las categorías
+            Log::info('Cargando todas las categorías, sin filtrar por store_id');
+            $categories = ProductCategory::all();
         }
+
+        foreach ($categories as $category) {
+            $this->categoryCache[$category->id] = $category->id; // Cacheamos las categorías
+        }
+        Log::info('Categorías cargadas: ', $this->categoryCache);
     }
 
     public function model(array $row)
@@ -55,7 +67,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, WithChu
             'description' => $row['descripcion'] ?? null,
             'type' => $row['tipo'] ?? 'simple',
             'old_price' => floatval($row['precio']),
-            'price' => isset($row['precio']) ? floatval($row['precio_oferta']) : null,
+            'price' => isset($row['precio_oferta']) ? floatval($row['precio_oferta']) : null,
             'stock' => isset($row['stock']) ? intval($row['stock']) : 0,
             'store_id' => $this->storeId,
             'image' => $row['imagen'] ?? '/assets/img/ecommerce-images/placeholder.png',
@@ -82,12 +94,15 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, WithChu
 
     private function assignCategory($product, $categoryInput)
     {
-        $categoryId = intval($categoryInput);
-        if (isset($this->categoryCache[$categoryId])) {
+        // Extraemos el ID de la categoría del input que tiene el formato "ID - Nombre"
+        $categoryParts = explode('-', $categoryInput);
+        $categoryId = isset($categoryParts[0]) ? intval($categoryParts[0]) : null;
+
+        if ($categoryId && isset($this->categoryCache[$categoryId])) {
             $product->categories()->sync([$categoryId]);
             Log::info("Categoría asignada al producto {$product->id}: ID {$categoryId}");
         } else {
-            Log::warning("Categoría no encontrada: ID {$categoryId} para el producto: {$product->name}");
+            Log::warning("Categoría no encontrada o inválida: '{$categoryInput}' para el producto: {$product->name}");
         }
     }
 
@@ -104,7 +119,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, WithChu
             'estado' => ['nullable', 'string', Rule::in(['sí', 'si', 'no', 'activo', 'inactivo'])],
             'borrador' => ['nullable', 'string', Rule::in(['sí', 'si', 'no'])],
             'margen_seguridad' => ['nullable', 'numeric', 'min:0'],
-            'categoria' => ['nullable', 'string', 'regex:/^\d+-.+$/'],
+            'categoria' => ['nullable', 'string', 'regex:/^\d+-.+$/'], // Validar el formato de "ID - Nombre"
         ];
     }
 
@@ -128,5 +143,4 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, WithChu
         // Asegurarse de guardar el último producto
         $this->saveCurrentProduct();
     }
-
 }

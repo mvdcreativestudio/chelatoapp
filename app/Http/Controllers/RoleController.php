@@ -36,16 +36,16 @@ class RoleController extends Controller
 
         $this->middleware('check_permission:access_roles')->only(
           [
-            'index',
-            'managePermissions',
-            'assignPermissions',
-            'store',
-            'update',
-            'manageUsers',
-            'associateUser',
-            'disassociateUser'
+              'index',
+              'managePermissions',
+              'assignPermissions',
+              'store',
+              'update',
+              'manageUsers',
+              'associateUser',
+              'disassociateUser'
           ]
-        );
+      );
 
         $this->roleRepo = $roleRepo;
     }

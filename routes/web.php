@@ -44,21 +44,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    if (Auth::check()) {
-        // Si el usuario está autenticado
-        if (Gate::allows('access_open_close_stores')) {
-            // Si el usuario tiene el permiso `access_open_close_stores`
-            return redirect()->route('dashboard');
-        } else {
-            // Si el usuario no tiene el permiso `access_open_close_stores`
-            return redirect()->route('pdv.front');
-        }
-    } else {
-        // Si el usuario no está autenticado, redirigir al login
+// Ruta raíz redirige a la tienda (Shop)
+Route::get('/', [EcommerceController::class, 'index'])->name('shop');
+
+// Redirigir /admin al login si no está autenticado
+Route::get('/admin', function () {
+    if (!Auth::check()) {
         return redirect()->route('login');
     }
-})->name('home');
+    return redirect()->route('dashboard');
+    })->name('admin');
 
 // Middleware de autenticación y verificación de email
 Route::middleware([

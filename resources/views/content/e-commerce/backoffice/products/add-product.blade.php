@@ -110,7 +110,7 @@
       </div>
       <!-- /Product Information -->
       <!-- Variants -->
-      <div class="card mb-4" style="display: none;">
+      <div class="card mb-4" style="">
         <div class="card-header">
           <h5 class="card-title mb-0">Tipo de producto y variaciones</h5>
         </div>
