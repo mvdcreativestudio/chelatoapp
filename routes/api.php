@@ -7,6 +7,7 @@ use App\Http\Controllers\PedidosYaController;
 use App\Http\Controllers\MercadoPagoController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ScanntechController;
+use App\Http\Controllers\PosController;
 
 
 
@@ -46,6 +47,13 @@ Route::get('/scanntech/scanntech_responses', [ScanntechController::class, 'getSc
 Route::get('/scanntech/token', [ScanntechController::class, 'getToken']);
 Route::post('/scanntech/purchase', [ScanntechController::class, 'postPurchase']);
 Route::post('/scanntech/transaction-state', [ScanntechController::class, 'getTransactionState']);
+
+// Pos
+Route::get('/pos/token', [PosController::class, 'getPosToken']);
+Route::get('/pos/responses', [PosController::class, 'getPosResponses']);
+Route::post('/pos/process-transaction', [PosController::class, 'processTransaction']);
+Route::post('/pos/check-transaction-status', [PosController::class, 'checkTransactionStatus']);
+
 
 
 Route::post('/payment/process', [PaymentController::class, 'processPayment']);

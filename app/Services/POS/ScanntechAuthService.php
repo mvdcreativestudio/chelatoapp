@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\POS;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
@@ -28,9 +28,9 @@ class ScanntechAuthService
 
         // Hacer la solicitud para obtener el token
         $response = Http::asForm()->post($this->authUrl, [
-            'client_id' => $this->clientId,
-            'username' => $this->username,
-            'password' => $this->password,
+            'client_id' => 'scannsae-client',
+            'username' => 'mvdstudio',
+            'password' => 'Mvdstudio.2024',
             'grant_type' => 'password',
         ]);
 
