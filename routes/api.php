@@ -12,6 +12,7 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\AccountingController;
 
 
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -46,11 +47,13 @@ Route::post('/pedidos-ya/confirm-order', [PedidosYaController::class, 'confirmOr
 Route::get('/get-pedidosya-key/{store_id}', [PedidosYaController::class, 'getApiKey']);
 
 
+
 // Pos
 Route::get('/pos/token', [PosController::class, 'getPosToken']);
 Route::get('/pos/responses', [PosController::class, 'getPosResponses']);
 Route::post('/pos/process-transaction', [PosController::class, 'processTransaction']);
 Route::post('/pos/check-transaction-status', [PosController::class, 'checkTransactionStatus']);
+
 
 
 

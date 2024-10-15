@@ -13,6 +13,7 @@ use App\Http\Requests\SelectStoreRequest;
 class CartRepository
 {
 
+
   /**
    * Seleccionar una tienda y guardar la información en la sesión.
    *
@@ -24,7 +25,7 @@ class CartRepository
   //   $request->session()->forget(['store', 'cart', 'subtotal']);
 
 
-  
+
     /**
      * Seleccionar una tienda y guardar la información en la sesión.
      *

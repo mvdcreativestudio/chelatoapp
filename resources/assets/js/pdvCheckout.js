@@ -12,6 +12,7 @@ $(document).ready(function () {
   let posResponsesConfig = {};
   $('#client-info').hide();
 
+
   function limitTwoDecimals(event) {
     const input = event.target;
     let value = input.value;
@@ -44,6 +45,7 @@ $(document).ready(function () {
 
   // INTEGRACIÓN POS
 
+
   // Cargar la configuración de respuestas POS desde el backend
   function loadPosResponses() {
     $.ajax({
@@ -52,7 +54,9 @@ $(document).ready(function () {
         dataType: 'json',
         success: function (response) {
             // Almacenar la configuración en la variable global
+
             posResponsesConfig = response;
+
         },
         error: function (xhr, status, error) {
             console.error('Error al cargar la configuración de respuestas:', error);
@@ -187,6 +191,7 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDa
           if (attempts === 1) {
               showTransactionStatus('Transacción en progreso...', false, true);
           }
+
 
           $.ajax({
               url: `${baseUrl}api/pos/check-transaction-status`,
@@ -880,6 +885,7 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDa
   obtenerCashRegisterLogId();
   loadStoreIdFromSession();
 
+
   function postOrder() {
     ocultarError();
 
@@ -1091,6 +1097,7 @@ $.ajax({
             client = null;
             saveClientToSession(client);
 
+
             // Resuelve la promesa si todo fue exitoso
             resolve();
         } catch (error) {
@@ -1114,6 +1121,7 @@ $.ajax({
 
   // Llamar a la función al cargar la página para asegurarse de que el estado inicial es correcto
   toggleCashDetails();
+
 
   $('.btn-success').on('click', function () {
     const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
@@ -1163,4 +1171,5 @@ $.ajax({
     // Mostrar el vuelto formateado
     $('#vuelto').text(`${currencySymbol}${formattedVuelto}`);
   }
+
 });

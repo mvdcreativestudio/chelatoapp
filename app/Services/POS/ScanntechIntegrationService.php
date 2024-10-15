@@ -33,24 +33,29 @@ class ScanntechIntegrationService implements PosIntegrationInterface
             return $response->json();
         }
 
+
         Log::error('Error al procesar la transacción con Scanntech: ' . $response->body());
         return [
             'success' => false,
             'message' => 'Error al procesar la transacción con Scanntech'
         ];
+
     }
 
     public function checkTransactionStatus(array $transactionData): array
     {
         $token = $this->authService->getAccessToken();
 
+
         try {
             Log::info('Enviando solicitud de estado de transacción a Scanntech', $transactionData);
+
 
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Content-Type' => 'application/json',
             ])->post('http://200.40.123.21:35000/rest/v2/getTransactionState', $transactionData);
+
 
             Log::info('Respuesta de Scanntech', [
                 'status_code' => $response->status(),
@@ -84,6 +89,7 @@ class ScanntechIntegrationService implements PosIntegrationInterface
         }
     }
 
+
     public function getResponses($responseCode)
     {
         $responses = Config::get('ScanntechResponses.postPurchaseResponses');
@@ -104,3 +110,4 @@ class ScanntechIntegrationService implements PosIntegrationInterface
         }
     }
 }
+

@@ -37,6 +37,9 @@ class PosController extends Controller
     {
         try {
             $response = $this->posService->checkTransactionStatus($request->all());
+
+            Log::info('Respuesta del servicio POS', $response);
+
             return response()->json($response);
         } catch (\Exception $e) {
             Log::error('Error al consultar el estado de la transacción: ' . $e->getMessage());
