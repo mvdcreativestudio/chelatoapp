@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Enums\Expense\ExpenseStatusEnum;
 use App\Enums\Expense\ExpenseTemporalStatusEnum;
 use App\Helpers\Helpers;
+use App\Models\Currency;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\ExpensePaymentMethod;
@@ -169,10 +170,13 @@ class ExpenseRepository
             'expenses.created_at',
             'suppliers.name as supplier_name',
             'expense_categories.name as category_name',
+            'currencies.name as currency_name',
+            'currencies.symbol as currency_symbol',
             'stores.name as store_name',
         ])
             ->join('suppliers', 'expenses.supplier_id', '=', 'suppliers.id')
             ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
+            ->join('currencies', 'expenses.currency_id', '=', 'currencies.id')
             ->leftJoin('stores', 'expenses.store_id', '=', 'stores.id') // Cambiar a leftJoin para incluir registros con store_id null
             ->orderBy('expenses.created_at', 'desc');
 
@@ -289,5 +293,10 @@ class ExpenseRepository
     public function getExpenseStatus(): array
     {
         return ExpenseStatusEnum::getTranslateds();
+    }
+
+    public function getAllCurrencies(): mixed
+    {
+        return Currency::all();
     }
 }

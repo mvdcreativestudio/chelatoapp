@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
   ];
 
   if (hasViewAllSupplierOrdersPermission) {
-    columns.push({ title: 'Tienda', data: 'store.name' });
+    columns.push({ title: 'Empresa', data: 'store.name' });
   }
 
   columns.push({

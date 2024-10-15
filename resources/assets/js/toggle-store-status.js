@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Estado de la tienda actualizado con éxito:', data);
+        console.log('Estado de la empresa actualizado con éxito:', data);
         // Actualiza el DOM según sea necesario
         const storeCard = document.querySelector(`#store-${storeId}`);
         if (storeCard) {
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Error en la respuesta del servidor:', errorData);
       }
     } catch (error) {
-      console.error('Hubo un problema al intentar cambiar el estado de la tienda:', error);
+      console.error('Hubo un problema al intentar cambiar el estado de la empresa:', error);
     }
   };
 });

@@ -19,7 +19,7 @@ class UpdatePosOrderRequest extends FormRequest
             'cash_register_log_id' => 'required|int',
             'cash_sales' => 'required|int',
             'pos_sales' => 'required|int',
-            'discount' => 'required|int',
+            'discount' => 'required|numeric',
             'client_type' => 'required|string'
         ];
     }

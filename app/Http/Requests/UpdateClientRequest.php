@@ -25,6 +25,7 @@ class UpdateClientRequest extends FormRequest
     {
       return [
           'name' => 'required|string|max:255',
+          'lastname' => 'nullable|string|max:255',
           'type' => 'nullable|string|max:255',
           'rut' => 'nullable|string|max:255',
           'ci' => 'nullable|string|max:255',

@@ -26,14 +26,6 @@ document.addEventListener('DOMContentLoaded', function () {
         { data: 'rut' },
         { data: 'status' },
         {
-          data: 'automatic_billing',
-          render: function (data, type, row) {
-            return data
-              ? '<span class="badge rounded-pill bg-success">Activada</span>'
-              : '<span class="badge rounded-pill bg-danger">Desactivada</span>';
-          }
-        },
-        {
           data: 'users_count',
           render: function (data, type, row) {
             return `<a href="${storeManageUsers.replace(':id', row.id)}">${data}</a>`;
@@ -50,12 +42,12 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         },
         {
-          targets: 8,
+          targets: 7,
           render: function (data, type, row, meta) {
             let actionButton =
               row.status === 1
-                ? "<div class='dropdown-item text-danger delete-button' style='cursor: pointer;'><i class='bx bx-loader-circle'></i> Desactivar Tienda</div>"
-                : "<div class='dropdown-item text-success delete-button' style='cursor: pointer;'><i class='bx bx-loader-circle'></i> Activar Tienda</div>";
+                ? "<div class='dropdown-item text-danger delete-button' style='cursor: pointer;'><i class='bx bx-loader-circle'></i> Desactivar Empresa</div>"
+                : "<div class='dropdown-item text-success delete-button' style='cursor: pointer;'><i class='bx bx-loader-circle'></i> Activar Empresa</div>";
 
             let automaticBillingButton = row.automatic_billing
               ? "<div class='dropdown-item text-danger delete-button' style='cursor: pointer;'><i class='bx bx-file'></i> Desactivar F. Automática</div>"
@@ -75,15 +67,10 @@ document.addEventListener('DOMContentLoaded', function () {
                   <a class="dropdown-item" href="${storeManageHours.replace(':id', row.id)}">
                     <i class="bx bx-time"></i> Modificar Horarios
                   </a>
-                  <form class="delete-form-${row.id}" action="${storeChangeBilling.replace(':id', row.id)}" style="margin-bottom: 0px;" method="POST">
-                    <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
-                    ${automaticBillingButton}
-                  </form>
                   <form class="delete-form-${row.id}" action="${storeChangeStatus.replace(':id', row.id)}" method="POST">
                     <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
                     ${actionButton}
                   </form>
-
                 </div>
               </div>
             `;
@@ -93,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
       language: {
         searchPlaceholder: 'Buscar...',
         sLengthMenu: '_MENU_',
-        info: 'Mostrando _START_ a _END_ de _TOTAL_ tiendas',
+        info: 'Mostrando _START_ a _END_ de _TOTAL_ empresas',
         paginate: {
           first: 'Primero',
           last: 'Último',
@@ -110,8 +97,8 @@ document.addEventListener('DOMContentLoaded', function () {
         loadingRecords: 'Cargando...',
         processing: 'Procesando...',
         search: '',
-        infoFiltered: '(filtrado de un total de _MAX_ tiendas)',
-        infoEmpty: 'Mostrando 0 a 0 de 0 tiendas'
+        infoFiltered: '(filtrado de un total de _MAX_ empresas)',
+        infoEmpty: 'Mostrando 0 a 0 de 0 empresas'
       },
       dom:
         '<"card-header d-flex border-top rounded-0 flex-wrap py-md-0"' +
@@ -149,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var form = $(this).closest('form');
     Swal.fire({
       title: '¿Seguro?',
-      text: 'Estás a punto de cambiar el estado de la tienda',
+      text: 'Estás a punto de cambiar el estado de la empresa',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
@@ -164,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function () {
         /* Read more about handling dismissals below */
         result.dismiss === Swal.DismissReason.cancel
       ) {
-        Swal.fire('Cancelado', 'El estado de la tienda está seguro :)', 'error');
+        Swal.fire('Cancelado', 'El estado de la empresa está seguro :)', 'error');
       }
     });
   });

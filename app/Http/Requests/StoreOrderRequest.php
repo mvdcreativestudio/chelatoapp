@@ -22,8 +22,9 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-          'name' => 'required|max:255',
-          'lastname' => 'required|max:255',
+        // Se desactivó por el cambio en PDV guarde en 'orders', desactivar en caso de que tenga eCommerce.
+          'name' => 'nullable|max:255',
+          'lastname' => 'nullable|max:255',
           'address' => 'required',
           'phone' => 'required',
           'email' => 'required|email',

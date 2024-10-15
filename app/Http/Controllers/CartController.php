@@ -41,7 +41,7 @@ class CartController extends Controller
   }
 
   /**
-   * Seleccionar una tienda.
+   * Seleccionar una empresa.
    *
    * @param SelectStoreRequest $request
    * @return RedirectResponse

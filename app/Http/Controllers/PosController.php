@@ -37,7 +37,9 @@ class PosController extends Controller
     {
         try {
             $response = $this->posService->checkTransactionStatus($request->all());
+
             Log::info('Respuesta del servicio POS', $response);
+
             return response()->json($response);
         } catch (\Exception $e) {
             Log::error('Error al consultar el estado de la transacción: ' . $e->getMessage());
@@ -55,7 +57,7 @@ class PosController extends Controller
     {
         // Fetch the responses from your config file or database
         $responses = config('ScanntechResponses.postPurchaseResponses');
-    
+
         // Ensure you are returning a well-structured JSON response
         return response()->json($responses);
     }

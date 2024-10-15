@@ -22,11 +22,10 @@
   const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
 
   function loadTotalIncomeData() {
-    // Obtener el valor del filtro de tiempo seleccionado
     const timeRange = document.querySelector('select[name="period"]').value;
-    const storeId = document.querySelector('select[name="store_id"]').value; // Agregar esto
+    const storeId = document.querySelector('select[name="store_id"]').value;
 
-    fetch(`/admin/api/monthly-income?time_range=${timeRange}&store_id=${storeId}`) // Incluir store_id en la URL
+    fetch(`/admin/api/monthly-income?time_range=${timeRange}&store_id=${storeId}`)
         .then(response => response.json())
         .then(data => {
         let labels = [];
@@ -35,15 +34,48 @@
         if (timeRange === 'always') {
             labels = data.map(item => `${monthNames[item.month - 1]} ${item.year}`);
             totalIncomes = data.map(item => parseInt(item.total));
-          } else if (timeRange === 'year') {
+        } else if (timeRange === 'year') {
             labels = monthNames; // Asegúrate de que solo se representen los meses
             totalIncomes = Array(12).fill(0);
             data.forEach(item => {
                 const monthIndex = item.month - 1;
                 totalIncomes[monthIndex] = parseInt(item.total);
             });
+        } else if (timeRange === 'month') {
+            // Configuración para "Este Mes"
+            const today = new Date();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}/${today.getMonth() + 1}`);
+            totalIncomes = Array(daysInMonth).fill(0);
+            data.forEach(item => {
+                const dayIndex = item.day - 1;
+                totalIncomes[dayIndex] = parseInt(item.total);
+            });
+        } else if (timeRange === 'week') {
+            // Configuración para "Esta Semana"
+            const today = new Date();
+            labels = Array.from({ length: 7 }, (_, i) => {
+                const date = new Date(today);
+                date.setDate(today.getDate() - (6 - i));
+                return `${date.getDate()}/${date.getMonth() + 1}`;
+            });
+            totalIncomes = Array(7).fill(0);
+            data.forEach(item => {
+                const dateLabel = `${item.day}/${item.month}`;
+                const labelIndex = labels.indexOf(dateLabel);
+                if (labelIndex > -1) {
+                    totalIncomes[labelIndex] = parseInt(item.total);
+                }
+            });
+        } else if (timeRange === 'today') {
+            // Configuración para "Hoy"
+            labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+            totalIncomes = Array(24).fill(0);
+            data.forEach(item => {
+                const hourIndex = item.hour;
+                totalIncomes[hourIndex] = parseInt(item.total);
+            });
         }
-
 
         const totalIncomeConfig = {
           chart: {
@@ -95,14 +127,14 @@
           xaxis: {
             categories: labels,
             labels: {
-              offsetX: 0,
-              rotate: -45,
-              style: {
-                colors: '#757575',
-                fontSize: '13px'
-              }
+                offsetX: 0,
+                rotate: -45, // Mantener los labels rotados si hay muchos días
+                style: {
+                    colors: '#757575',
+                    fontSize: '13px'
+                }
             },
-            tickAmount: labels.length > 12 ? 12 : labels.length,
+            tickAmount: labels.length, // Asegura que se muestre un tick por cada label
           },
           yaxis: {
             labels: {

@@ -44,4 +44,29 @@ class CashRegister extends Model
     {
         return $this->hasMany(CashRegisterLog::class);
     }
+
+    /**
+     * Devuelve el estado de la caja y la clase CSS asociada.
+     *
+     * @return array
+     */
+    public function getEstado()
+    {
+        if (is_null($this->open_time) && is_null($this->close_time)) {
+            return [
+                'estado' => 'No Iniciada',
+                'clase' => 'bg-warning'
+            ];
+        } elseif (is_null($this->close_time)) {
+            return [
+                'estado' => 'Abierta',
+                'clase' => 'bg-success'
+            ];
+        } else {
+            return [
+                'estado' => 'Cerrada',
+                'clase' => 'bg-danger'
+            ];
+        }
+    }
 }

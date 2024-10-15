@@ -2,6 +2,7 @@ $(function () {
   // Variable declaration for table
   var dt_details_table = $('.datatables-order-details');
   var products = window.orderProducts;
+  var currencySymbol = window.currencySymbol;
 
   // E-commerce Products datatable
   if (dt_details_table.length) {
@@ -9,11 +10,15 @@ $(function () {
       data: products,
       columns: [
         {
-          // Image
+          // Imagen del producto
           data: 'image',
           render: function(data, type, full, meta) {
-            var imagePath = '/chelatoapp/public/' + data;
-            return '<img src="' + imagePath + '" style="width: 70px; height: 70px; object-fit: cover; border-radius: 10px;" />';
+            var imagePath = `${baseUrl}${data}`;
+            return `
+              <img src="${imagePath}"
+                   onerror="this.onerror=null; this.src='${baseUrl}admin/default-image.png';"
+                   style="width: 70px; height: 70px; object-fit: cover; border-radius: 10px;" />
+            `;
           }
         },
         {
@@ -24,28 +29,35 @@ $(function () {
               return '<span>' + data + flavors + '</span>';
           }
         },
-        { data: 'price' },
+        {
+          // Precio del producto
+          data: 'price',
+          render: function(data, type, full, meta) {
+            return `${currencySymbol}${parseFloat(data).toFixed(2)}`;
+          }
+        },
         { data: 'quantity' },
         {
+          // Total por producto
           data: null,
           render: function (data, type, row, meta) {
-            return '$' + (row.price * row.quantity);
+            return `${currencySymbol}${(row.price * row.quantity).toFixed(2)}`;
           }
         }
       ],
       columnDefs: [
         {
-          // Price
+          // Renderizar Precio
           targets: 2,
           render: function (data, type, full, meta) {
-            return '$' + data;
+            return `${currencySymbol}${parseFloat(data).toFixed(2)}`;
           }
         },
         {
-          // Total Product
+          // Renderizar Total por Producto
           targets: -1,
           render: function (data, type, full, meta) {
-            return '$' + (full.price * full.quantity);
+            return `${currencySymbol}${(full.price * full.quantity).toFixed(2)}`;
           }
         }
       ],

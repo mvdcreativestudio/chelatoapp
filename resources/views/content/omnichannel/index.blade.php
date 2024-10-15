@@ -207,7 +207,7 @@
               </div>
               <div class="chat-contact-info flex-grow-1 ms-3">
                 <h6 class="m-0">Gastón Dotta</h6>
-                <small class="user-status text-muted">MVD Studio</small>
+                <small class="user-status text-muted">Sumeria</small>
               </div>
             </div>
             <div class="d-flex align-items-center">

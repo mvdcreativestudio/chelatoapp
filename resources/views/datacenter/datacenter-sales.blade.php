@@ -18,18 +18,13 @@
 
 
 @section('page-script')
-
-@vite([
-  'resources/assets/js/datacenter-sales.js',
-  'resources/assets/js/datacenter/expenses/expenses-datacenter-sales.js',
-])
-
 @vite('resources/assets/js/app-datacenter-totalIncomeChart.js')
 @vite('resources/assets/js/app-datacenter-salesByStoreChart.js')
 @vite('resources/assets/js/app-datacenter-paymentMethodsChart.js')
 @vite('resources/assets/js/app-datacenter-averageOrdersByHourChart.js')
-
+@vite('resources/assets/js/app-datacenter-salesBySellerChart.js')
 @endsection
+
 
 
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -45,6 +40,7 @@
 
 <script>
   window.paymentMethodsUrl = '{{ route('datacenter.paymentMethodsData') }}';
+  window.currencySymbol = '{{ $settings->currency_symbol }}';
 </script>
 
 <div class="row sticky-top" style="top: 80px;">
@@ -100,6 +96,7 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
 
 <div class="row">
   <!-- single card  -->
+  @if(auth()->user()->can('view_all_datacenter'))
   <div class="col-12">
     <div class="card mb-4" data-aos="fade-up">
       <div class="card-widget-separator-wrapper">
@@ -107,17 +104,17 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <div class="row gy-4 gy-sm-1">
             <div class="col-sm-6 col-lg-3">
               <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
-                <div>
-                  <h3 class="mb-1">{{ $storesCount }}</h3>
-                  @if ($storesCount == 1)
-                    <p class="mb-0">Local</p>
-                  @else
-                    <p class="mb-0">Locales</p>
-                  @endif
-                </div>
-                <span class="badge bg-label-secondary rounded p-2 me-sm-4">
-                  <i class="bx bx-user bx-sm"></i>
-                </span>
+                  <div>
+                      <h3 class="mb-1">{{ $storesCount }}</h3>
+                    @if ($storesCount == 1)
+                      <p class="mb-0">Local</p>
+                    @else
+                      <p class="mb-0">Locales</p>
+                    @endif
+                  </div>
+                  <span class="badge bg-label-secondary rounded p-2 me-sm-4">
+                    <i class="bx bx-user bx-sm"></i>
+                  </span>
               </div>
               <hr class="d-none d-sm-block d-lg-none me-4">
             </div>
@@ -168,8 +165,60 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
       </div>
     </div>
   </div>
-
-
+  @else
+  <div class="col-12">
+    <div class="card mb-4" data-aos="fade-up">
+      <div class="card-widget-separator-wrapper">
+        <div class="card-body card-widget-separator">
+          <div class="row gy-4 gy-sm-1">
+            <div class="col-sm-12 col-lg-4">
+              <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
+                <div>
+                  <h3 class="mb-1">{{ $registredClients }}</h3>
+                  <p class="mb-0">Clientes registrados</p>
+                </div>
+                <span class="badge bg-label-secondary rounded p-2 me-lg-4">
+                  <i class="bx bx-file bx-sm"></i>
+                </span>
+              </div>
+              <hr class="d-none d-sm-block d-lg-none">
+            </div>
+            <div class="col-sm-12 col-lg-4">
+              <div class="d-flex justify-content-between align-items-start border-end pb-3 pb-sm-0 card-widget-3">
+                <div>
+                  <h3 class="mb-1">{{ $productsCount }}</h3>
+                  @if($productsCount == 1)
+                    <p class="mb-0">Producto</p>
+                  @else
+                    <p class="mb-0">Productos</p>
+                  @endif
+                </div>
+                <span class="badge bg-label-secondary rounded p-2 me-sm-4">
+                  <i class="bx bx-check-double bx-sm"></i>
+                </span>
+              </div>
+            </div>
+            <div class="col-sm-12 col-lg-4">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h3 class="mb-1">{{ $categoriesCount }}</h3>
+                  @if($categoriesCount == 1)
+                    <p class="mb-0">Categoría</p>
+                  @else
+                    <p class="mb-0">Categorías</p>
+                  @endif
+                </div>
+                <span class="badge bg-label-secondary rounded p-2">
+                  <i class="bx bx-error-circle bx-sm"></i>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  @endif
 
   <!-- Card Border Shadow -->
   <div class="col-sm-6 col-lg-3 mb-4">
@@ -179,9 +228,9 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <div class="avatar me-2">
             <span class="avatar-initial rounded bg-label-primary"><i class="bx bx-check"></i></span>
           </div>
-          <h4 class="ms-1 mb-0">{{ $ordersCount['delivered'] }}</h4>
+          <h4 class="ms-1 mb-0">{{ $ordersCount['completed'] }}</h4>
         </div>
-        @if($ordersCount['delivered'] == 1)
+        @if($ordersCount['completed'] == 1)
           <p class="mb-1 fw-medium me-1">Pedido completado</p>
         @else
           <p class="mb-1 fw-medium me-1">Pedidos completados</p>
@@ -222,9 +271,9 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <h4 class="ms-1 mb-0">{{ $ordersCount['cancelled'] }}</h4>
         </div>
         @if($ordersCount['cancelled'] == 1)
-          <p class="mb-1 fw-medium me-1">Pedido cancelado</p>
+          <p class="mb-1 fw-medium me-1">Pedido fallido</p>
         @else
-          <p class="mb-1">Pedidos cancelados</p>
+          <p class="mb-1">Pedidos fallidos</p>
         @endif
         <p class="mb-0">
           {{-- <span class="fw-medium me-1 text-success">+4.3%</span> --}}
@@ -249,9 +298,6 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
     </div>
   </div>
 
-  <!-- Card Sales -->
-  @include('datacenter.sections.expenses.expense-card-sales')
-  <!--/ Card Sales -->
 
   <!-- Total Income -->
   <div class="col-12 mb-4">
@@ -337,179 +383,172 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
   <!--/ Total Income -->
 
 
-  <!-- Card Sales -->
-  @include('datacenter.sections.expenses.expense-graphic-sales')
-  <!--/ Card Sales -->
-
   <div class="col-md-12 col-12 mb-4 order-2 order-xl-0">
-    <div class="card h-100 text-center" data-aos="fade-left" data-aos-anchor="#example-anchor" data-aos-offset="500" data-aos-duration="500">
-        <div class="card-header">
-            <h5 class="card-title text-start pb-4 mb-0">Comparativas</h5>
-            <ul class="nav nav-pills nav- card-header-pills" role="tablist">
+    <div class="card h-100 shadow-sm" data-aos="fade-up">
+        <div class="card-header bg-transparent border-bottom">
+            <h5 class="card-title mb-0">Comparativas de Ventas</h5>
+            <ul class="nav nav-tabs card-header-tabs mt-3" role="tablist">
+                @if(auth()->user()->can('view_all_datacenter'))
                 <li class="nav-item">
-                    <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-browser" aria-controls="navs-pills-browser" aria-selected="true">Locales</button>
+                    <button type="button" class="nav-link active" role="tab" data-bs-toggle="tab" data-bs-target="#tab-locales">
+                        <i class="bx bx-store me-1"></i>Locales
+                    </button>
                 </li>
+                @endif
                 <li class="nav-item">
-                    <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-os" aria-controls="navs-pills-os" aria-selected="false">Productos</button>
+                    <button type="button" class="nav-link {{ auth()->user()->can('view_all_datacenter') ? '' : 'active' }}" role="tab" data-bs-toggle="tab" data-bs-target="#tab-productos">
+                        <i class="bx bx-package me-1"></i>Productos
+                    </button>
                 </li>
+                {{-- <li class="nav-item">
+                    <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#tab-cupones">
+                        <i class="bx bx-purchase-tag me-1"></i>Cupones
+                    </button>
+                </li> --}}
                 <li class="nav-item">
-                    <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-coupons" aria-controls="navs-pills-coupons" aria-selected="false">Cupones</button>
-                </li>
-                <li class="nav-item">
-                    <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-categories" aria-controls="navs-pills-categories" aria-selected="false">Categorías</button>
-                </li>
-                <li class="nav-item">
-                    <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#navs-pills-expenses-suppliers" aria-controls="navs-pills-expenses" aria-selected="false">Gastos</button>
+                    <button type="button" class="nav-link" role="tab" data-bs-toggle="tab" data-bs-target="#tab-categorias">
+                        <i class="bx bx-category me-1"></i>Categorías
+                    </button>
                 </li>
             </ul>
         </div>
-        <div class="tab-content pt-0">
-            <div class="tab-pane fade show active" id="navs-pills-browser" role="tabpanel">
-                <!-- Tabla de ventas por local -->
-                <div class="table-responsive text-start text-nowrap">
-                    <table class="table table-borderless">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Local</th>
-                                <th>Ventas</th>
-                                <th class="w-50">Porcentaje del total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($salesByStore as $index => $store)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar avatar-xm me-2">
-                                            <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($store['store'], 0, 2) }}</span>
+        <div class="card-body">
+            <div class="tab-content">
+                @if(auth()->user()->can('view_all_datacenter'))
+                <div class="tab-pane fade show active" id="tab-locales" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Local</th>
+                                    <th>Ventas</th>
+                                    <th>Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($salesByStore as $index => $store)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar avatar-sm me-2">
+                                                <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($store['store'], 0, 2) }}</span>
+                                            </div>
+                                            <span>{{ $store['store'] }}</span>
                                         </div>
-                                        <span>{{ $store['store'] }}</span>
-                                    </div>
-                                </td>
-                                <td>{{ $settings->currency_symbol }}{{ $store['storeTotal'] }}</td>
-                                <td>
-                                    <div class="d-flex justify-content-between align-items-center gap-3">
-                                        <div class="progress w-100" style="height:10px;">
-                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ $store['percent'] }}%" aria-valuenow="{{ $store['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </td>
+                                    <td>{{ $settings->currency_symbol }}{{ number_format($store['storeTotal'], 2, ',', '.') }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress w-100 me-3" style="height: 8px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $store['percent'] }}%" aria-valuenow="{{ $store['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <span class="text-muted">{{ number_format($store['percent'], 2) }}%</span>
                                         </div>
-                                        <small class="fw-medium">{{ number_format($store['percent'], 2) }}%</small>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <!-- Tab Productos -->
-            <div class="tab-pane fade" id="navs-pills-os" role="tabpanel">
-                <!-- Tabla de Ventas por Producto -->
-                <div class="table-responsive text-start text-nowrap">
-                    <table class="table table-borderless">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Producto</th>
-                                <th>Ventas</th>
-                                <th class="w-50">Porcentaje del total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($salesByProduct as $index => $product)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <span>{{ $product['product'] }}</span>
-                                    </div>
-                                </td>
-                                <td>{{ $settings->currency_symbol }}{{ number_format($product['productTotal'], 2, ',', '.') }}</td>
-                                <td>
-                                    <div class="d-flex justify-content-between align-items-center gap-3">
-                                        <div class="progress w-100" style="height:10px;">
-                                            <div class="progress-bar" role="progressbar" style="width: {{ $product['percent'] }}%" aria-valuenow="{{ $product['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                @endif
+
+                <div class="tab-pane fade {{ auth()->user()->can('view_all_datacenter') ? '' : 'show active' }}" id="tab-productos" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Producto</th>
+                                    <th>Ventas</th>
+                                    <th>Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($salesByProduct as $index => $product)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $product['product'] }} </td>
+                                    <td>{{ $settings->currency_symbol }}{{ number_format($product['productTotal'], 2, ',', '.') }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress w-100 me-3" style="height: 8px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: {{ $product['percent'] }}%" aria-valuenow="{{ $product['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <span class="text-muted">{{ number_format($product['percent'], 2, ',', '.') }}%</span>
                                         </div>
-                                        <small class="fw-medium">{{ number_format($product['percent'], 2, ',', '.') }}%</small>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <!-- Tab Categorías -->
-            <div class="tab-pane fade" id="navs-pills-categories" role="tabpanel">
-                <!-- Tabla de Ventas por Categoría -->
-                <div class="table-responsive text-start text-nowrap">
-                    <table class="table table-borderless">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Categoría</th>
-                                <th>Ventas</th>
-                                <th class="w-50">Porcentaje del total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($salesByCategory as $index => $category)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <span>{{ $category['category'] }}</span>
-                                    </div>
-                                </td>
-                                <td>{{ $settings->currency_symbol }}{{ number_format($category['categoryTotal'], 2, ',', '.') }}</td>
-                                <td>
-                                    <div class="d-flex justify-content-between align-items-center gap-3">
-                                        <div class="progress w-100" style="height:10px;">
-                                            <div class="progress-bar" role="progressbar" style="width: {{ $category['percent'] }}%" aria-valuenow="{{ $category['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+
+                <div class="tab-pane fade" id="tab-categorias" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Categoría</th>
+                                    <th>Ventas</th>
+                                    <th>Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($salesByCategory as $index => $category)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $category['category'] }}</td>
+                                    <td>{{ $settings->currency_symbol }}{{ number_format($category['categoryTotal'], 2, ',', '.') }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress w-100 me-3" style="height: 8px;">
+                                                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ $category['percent'] }}%" aria-valuenow="{{ $category['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <span class="text-muted">{{ number_format($category['percent'], 2, ',', '.') }}%</span>
                                         </div>
-                                        <small class="fw-medium">{{ number_format($category['percent'], 2, ',', '.') }}%</small>
-                                    </div>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
+                {{-- <div class="tab-pane fade" id="tab-cupones" role="tabpanel">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Cupón</th>
+                                    <th>Usos</th>
+                                    <th>Descuento Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($couponUsage as $index => $coupon)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $coupon['code'] }}</td>
+                                    <td>{{ $coupon['uses'] }}</td>
+                                    <td>{{ $settings->currency_symbol }}{{ number_format((float) $coupon['total_discount'], 2, ',', '.') }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div> --}}
             </div>
-            <!-- Tab Cupones -->
-            <div class="tab-pane fade" id="navs-pills-coupons" role="tabpanel">
-                <!-- Tabla de uso de Cupones -->
-                <div class="table-responsive text-start text-nowrap">
-                    <table class="table table-borderless">
-                        <thead>
-                            <tr>
-                                <th>No</th>
-                                <th>Cupón</th>
-                                <th>Usos</th>
-                                <th class="w-50">Monto Total Descuento</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($couponUsage as $index => $coupon)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $coupon['code'] }}</td>
-                                <td>{{ $coupon['uses'] }}</td>
-                                <td>{{ $settings->currency_symbol }}{{ number_format((float) $coupon['total_discount'], 2, ',', '.') }}</td>
-                              </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <!-- Tab Gastos -->
-            @include('datacenter.sections.expenses.expense-table-sales')
         </div>
     </div>
   </div>
 
-  <!-- Gráfica de promedio de pedidos por hora -->
+  <!-- Gráfica de promedio de ventas por hora -->
   <div class="col-12 mb-4 mt-4">
     <div class="card">
       <div class="card-header">
@@ -547,11 +586,25 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           </div>
       </div>
       <div class="card-body">
-          <div id="paymentMethodsChart" style="height: 420px;"></div> <!-- Asegúrate de que tenga dimensiones -->
+          <div id="paymentMethodsChart" style="height: 420px;"></div>
       </div>
     </div>
   </div>
   <!--/ Gráfica métodos de pago -->
+
+  <div class="col-md-4 col-12 mb-4 mt-4">
+    <div class="card" data-aos="zoom-in">
+      <div class="card-header d-flex align-items-center justify-content-between">
+          <div class="card-title mb-0">
+              <h5 class="m-0 me-2">Ventas por Vendedor</h5>
+          </div>
+      </div>
+      <div class="card-body">
+          <div id="salesBySellerChart" style="height: 420px;"></div> <!-- Contenedor para la gráfica -->
+      </div>
+    </div>
+  </div>
+
 
 </div>
 

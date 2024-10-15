@@ -44,9 +44,18 @@
             </select>
           </div>
           <div class="mb-3">
-            <label for="storeIdEdit" class="form-label">Tienda</label>
+            <label for="expenseCurrencyIdEdit" class="form-label">Moneda</label>
+            <select class="form-select" id="expenseCurrencyIdEdit" name="expenseCurrencyIdEdit" required>
+              <option value="" selected disabled>Seleccione una moneda</option>
+              @foreach($currencies as $currency)
+                <option value="{{ $currency->id }}">{{ $currency->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="storeIdEdit" class="form-label">Empresa</label>
             <select class="form-select" id="storeIdEdit" name="store_id" required>
-              <option value="" disabled selected>Seleccione una tienda</option>
+              <option value="" disabled selected>Seleccione una empresa</option>
               @foreach($stores as $store)
                 <option value="{{ $store->id }}">{{ $store->name }}</option>
               @endforeach

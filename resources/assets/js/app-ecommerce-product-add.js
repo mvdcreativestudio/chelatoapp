@@ -2,6 +2,33 @@
 
 (function () {
   document.addEventListener('DOMContentLoaded', function () {
+
+    function limitTwoDecimals(event) {
+      const input = event.target;
+      let value = input.value;
+
+      // Expresión regular que permite números con hasta dos decimales
+      const regex = /^\d+(\.\d{0,2})?$/;
+
+      if (!regex.test(value)) {
+        // Si el valor no coincide con la expresión regular, recortamos a dos decimales
+        input.value = parseFloat(value).toFixed(2);
+      }
+    }
+
+    // Seleccionamos los campos de precio
+    const priceInput = document.getElementById('ecommerce-product-price');
+    const discountPriceInput = document.getElementById('ecommerce-product-discount-price');
+
+    // Si los inputs existen, añadimos el evento input para limitar a dos decimales
+    if (priceInput) {
+      priceInput.addEventListener('input', limitTwoDecimals);
+    }
+
+    if (discountPriceInput) {
+      discountPriceInput.addEventListener('input', limitTwoDecimals);
+    }
+
     const commentEditorElement = document.querySelector('.comment-editor');
 
     if (commentEditorElement) {
@@ -32,11 +59,13 @@
     const stockContainer = document.getElementById('stockContainer');
 
     function toggleFields() {
+      // Oculta del todo los campos de cantidad de sabores. Si trabaja con productos variables, descomentar la primer linea y eliminar la segunda debajo de este comentario
       if (productTypeSelect.value === 'configurable') {
+      // if (productTypeSelect.value === 'configurable' || productTypeSelect.value === 'simple') {
         flavorsQuantityContainer.style.display = 'block';
         flavorsContainer.style.display = 'block';
         recipeCard.style.display = 'none';
-        stockContainer.style.display = 'none';
+        stockContainer.style.display = 'block';
         console.log('Producto configurable');
       } else {
         flavorsQuantityContainer.style.display = 'none';
@@ -385,4 +414,15 @@
       });
     });
   });
+
+  document.getElementById('bar_code').addEventListener('keypress', function(event) {
+    // Si el código de la tecla presionada es 13 (Enter)
+    if (event.keyCode === 13 || event.which === 13) {
+        // Evita que el formulario se envíe
+        event.preventDefault();
+        // Opcional: Puedes hacer algo más aquí, como mover el enfoque a otro campo
+        console.log('Enter presionado en el campo de código de barras.');
+    }
+  });
+
 })();

@@ -3,7 +3,6 @@ $(document).ready(function () {
   // Abrir modal para editar gasto
   $('.datatables-expenses-payments-methods tbody').on('click', '.edit-record', function () {
     var recordId = $(this).data('id');
-    console.log(recordId);
     prepareEditModal(recordId);
   });
   // Manejar el evento submit del formulario para evitar el comportamiento predeterminado
@@ -24,7 +23,6 @@ $(document).ready(function () {
       url: `${baseUrl}admin/expense-payment-methods/${recordId}/edit`,
       type: 'GET',
       success: function (data) {
-        console.log(data);
         // Rellenar los campos del formulario con los datos obtenidos
         $('#amount_paid_edit').val(data.amount_paid);
         $('#payment_date_edit').val(data.payment_date);

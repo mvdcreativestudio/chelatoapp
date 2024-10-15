@@ -75,6 +75,6 @@ class Kernel extends HttpKernel
     'ensure_cart_not_empty' => \App\Http\Middleware\EnsureCartNotEmpty::class,
     'check.store.open' => \App\Http\Middleware\CheckStoreOpen::class,
     'check.open.cash.register' => \App\Http\Middleware\CheckOpenCashRegister::class,
-
+    'ensure_user_can_access_store' => \App\Http\Middleware\EnsureUserCanAccessStore::class,
   ];
 }

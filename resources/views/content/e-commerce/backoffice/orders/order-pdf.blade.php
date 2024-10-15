@@ -76,21 +76,27 @@
         <div class="order-meta">
             <p><strong>Fecha del pedido:</strong> {{ $order->date }}</p>
             <p><strong>Hora del pedido:</strong> {{ $order->time }}</p>
-            <p><strong>Tienda:</strong> {{ $order->store->name }}</p>
+            <p><strong>Empresa:</strong> {{ $order->store->name }}</p>
             <p><strong>Método de pago:</strong>
-                @if($order->payment_method === 'card')
-                    MercadoPago
-                @elseif($order->payment_method === 'efectivo')
-                    Efectivo
-                @endif
+              @if($order->payment_method === 'card')
+              <span class="badge bg-label-primary me-2 ms-2">MercadoPago</span>
+              @elseif($order->payment_method === 'efectivo')
+                <span class="me-2 ms-2">Efectivo</span>
+              @elseif($order->payment_method === 'debit')
+                <span class="me-2 ms-2">Débito</span>
+              @elseif($order->payment_method === 'credit')
+                <span class="me-2 ms-2">Crédito</span>
+              @elseif($order->payment_method === 'internalCredit')
+                <span class="me-2 ms-2">Crédito Interno</span>
+              @endif
             </p>
-            <p><strong>Método de envío:</strong>
+            {{-- <p><strong>Método de envío:</strong>
               @if($order->shipping_method === 'peya')
                   Pedidos Ya
               @elseif($order->shipping_method === 'pickup')
                   Retira en el local
               @endif
-          </p>
+          </p> --}}
             <p><strong>Estado de pago:</strong>
                 @if($order->payment_status === 'paid')
                     Pagado

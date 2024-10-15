@@ -47,9 +47,6 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <div>
-            <h5 class="card-title mb-0">Cajas Registradoras</h5>
-        </div>
-        <div>
             <button id="crear-caja-btn" class="btn btn-primary">Nueva Caja</button>
             <a href="{{ route('pos-orders.index') }}" class="btn btn-secondary">Movimientos</a>
         </div>
@@ -63,65 +60,88 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Tienda</th>
+                    <th>Empresa</th>
                     <th>Usuario</th>
                     <th>Ultima Apertura</th>
                     <th>Ultimo Cierre</th>
-                    <th>Estado</th> <!-- Columna para el estado de la caja -->
+                    <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($cajas as $caja)
-                <tr>
-                    <td>{{ $caja->id }}</td>
-                    <td>{{ $caja->store_name }}</td>
-                    <td>{{ $caja->user_name }}</td>
-                    <td class="text-center">
-                      {{ \Carbon\Carbon::parse($caja->open_time)->translatedFormat('d \d\e F Y') }}<br>
-                      {{ \Carbon\Carbon::parse($caja->open_time)->format('h:i a') }}
-                    </td>
-                    <td class="text-center">
-                      @if($caja->is_open)
-                        <button class="btn btn-primary btn-closed" data-id="{{ $caja->id }}">Cerrar</button>
-                        @else
-                        {{ \Carbon\Carbon::parse($caja->close_time)->translatedFormat('d \d\e F Y') }}<br>
-                        {{ \Carbon\Carbon::parse($caja->close_time)->format('h:i a') }}
-                        @endif
-                    </td>
-                    <td>
-                        @if($caja->is_open)
-                            <span class="badge bg-success">Abierta</span>
-                        @else
-                            <span class="badge bg-danger">Cerrada</span>
-                        @endif
-                    </td>
-                    <td>
-                        <!-- Menú desplegable de tres puntos -->
-                        <div class="dropdown">
-                            <button class="btn btn-link text-muted p-0" type="button" id="dropdownMenuButton{{ $caja->id }}" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton{{ $caja->id }}">
-                                <li>
-                                    <button class="dropdown-item btn-open" data-id="{{ $caja->id }}">Abrir caja</button>
-                                </li>
-                                @hasrole('Administrador')
-                                <li>
-                                    <button class="dropdown-item btn-view" data-id="{{ $caja->id }}" data-store="{{ $caja->store_id }}" data-user="{{ $caja->user_id }}">Ver Detalles</button>
-                                </li>
-                                @endhasrole
-                                <li>
-                                    <button class="dropdown-item btn-edit" data-id="{{ $caja->id }}" data-store="{{ $caja->store_id }}" data-user="{{ $caja->user_id }}">Editar</button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item btn-delete" data-id="{{ $caja->id }}">Eliminar</button>
-                                </li>
-                            </ul>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
+              {{-- @php
+                dd($cajas);
+              @endphp --}}
+              @foreach ($cajas as $caja)
+              <tr>
+                  <td>{{ $caja->id }}</td>
+                  <td>{{ $caja->store_name }}</td>
+                  <td>{{ $caja->user_name }}</td>
+                  <td class="text-center">
+                      @if($caja->open_time)
+                          {{ \Carbon\Carbon::parse($caja->open_time)->translatedFormat('d \d\e F Y') }}<br>
+                          {{ \Carbon\Carbon::parse($caja->open_time)->format('h:i a') }}
+                      @else
+                          <span class="text-muted">N/A</span>
+                      @endif
+                  </td>
+                  <td class="text-center">
+                      @if($caja->close_time)
+                          {{ \Carbon\Carbon::parse($caja->close_time)->translatedFormat('d \d\e F Y') }}<br>
+                          {{ \Carbon\Carbon::parse($caja->close_time)->format('h:i a') }}
+                      @else
+                          <span class="text-muted">N/A</span>
+                      @endif
+                  </td>
+                  <td>
+                      {{-- Utiliza el método del modelo para determinar el estado --}}
+                      <span class="badge {{ $caja->getEstado()['clase'] }}">{{ $caja->getEstado()['estado'] }}</span>
+                  </td>
+                  <td>
+                    @php
+                        // Verifica si hay acciones disponibles para mostrar
+                        $accionesDisponibles = (
+                            $caja->close_time != null ||
+                            auth()->user()->hasRole('Administrador') ||
+                            ($caja->open_time == null && $caja->close_time == null) // Permite abrir si no está iniciada
+                        );
+                    @endphp
+
+                    @if($accionesDisponibles)
+                    <!-- Menú desplegable de tres puntos -->
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted p-0" type="button" id="dropdownMenuButton{{ $caja->id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuButton{{ $caja->id }}">
+                            <!-- Mostrar "Abrir caja" si está cerrada o no iniciada -->
+                            @if($caja->close_time != null || ($caja->open_time == null && $caja->close_time == null))
+                            <li>
+                                <button class="dropdown-item btn-open" data-id="{{ $caja->id }}">Abrir caja</button>
+                            </li>
+                            @endif
+                            <!-- Mostrar "Cerrar caja" si está abierta -->
+                            @if($caja->open_time != null && $caja->close_time == null)
+                            <li>
+                                <button class="dropdown-item btn-closed" data-id="{{ $caja->id }}">Cerrar caja</button>
+                            </li>
+                            @endif
+
+                            <!-- Mostrar las acciones si el usuario tiene rol de Administrador -->
+                            @hasrole('Administrador')
+                            <li>
+                                <button class="dropdown-item btn-view" data-id="{{ $caja->id }}" data-store="{{ $caja->store_id }}" data-user="{{ $caja->user_id }}">Ver Detalles</button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item btn-delete" data-id="{{ $caja->id }}">Eliminar</button>
+                            </li>
+                            @endhasrole
+                        </ul>
+                    </div>
+                    @endif
+                </td>
+              </tr>
+              @endforeach
             </tbody>
         </table>
     </div>
@@ -137,7 +157,7 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="store_id" class="form-label">ID de Tienda:</label>
+                    <label for="store_id" class="form-label">ID de Empresa:</label>
                     <input type="text" id="store_id" name="store_id" class="form-control">
                 </div>
                 <input type="hidden" id="user_id" name="user_id" value="{{ $userId }}">
@@ -159,7 +179,7 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="edit_store_id" class="form-label">ID de Tienda:</label>
+                    <label for="edit_store_id" class="form-label">ID de Empresa:</label>
                     <input type="text" id="edit_store_id" name="edit_store_id" class="form-control">
                 </div>
                 <div class="mb-3">
@@ -196,30 +216,49 @@
     </div>
 </div>
 
+<!-- Modal para cerrar caja registradora -->
+<div class="modal fade" id="cerrarCajaModal" tabindex="-1" aria-labelledby="cerrarCajaLabel" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="cerrarCajaLabel">Cerrar Caja Registradora</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <p>¿Estás seguro de que deseas cerrar esta caja registradora?</p>
+              <input type="hidden" id="cash_register_id_close" name="cash_register_id_close">
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" id="submit-cerrar-caja" class="btn btn-primary">Cerrar Caja</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery -->
 <script>
     $(document).ready(function() {
-
         $('#cash-registers-table').DataTable({
             "order": [[ 0, "desc" ]],
             "language": {
-            "processing": "Procesando...",
-            "search": "Buscar:",
-            "lengthMenu": "Mostrar _MENU_ registros",
-            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
-            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-            "infoFiltered": "(filtrado de _MAX_ registros totales)",
-            "infoPostFix": "",
-            "loadingRecords": "Cargando...",
-            "zeroRecords": "No se encontraron registros coincidentes",
-            "emptyTable": "No hay datos disponibles en la tabla",
-            "paginate": {
-                "first": "Primero",
-                "previous": "Anterior",
-                "next": "Siguiente",
-                "last": "Último"
-            },
-          }
+                "processing": "Procesando...",
+                "search": "Buscar:",
+                "lengthMenu": "Mostrar _MENU_ registros",
+                "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                "infoFiltered": "(filtrado de _MAX_ registros totales)",
+                "loadingRecords": "Cargando...",
+                "zeroRecords": "No se encontraron registros coincidentes",
+                "emptyTable": "No hay datos disponibles en la tabla",
+                "paginate": {
+                    "first": "Primero",
+                    "previous": "Anterior",
+                    "next": "Siguiente",
+                    "last": "Último"
+                },
+            }
         });
 
         var authenticatedUserId = @json($userId);
@@ -240,7 +279,7 @@
                     // Si el array está vacío, ocultar el botón de crear caja
                     $('#crear-caja-btn').hide();
                 } else {
-                    // Si hay IDs, crear un select con las opciones
+                    // Crear un select con las opciones
                     var select = $('<select>', {
                         class: 'form-control',
                         id: 'store_id',
@@ -248,18 +287,12 @@
                         required: true
                     });
 
-                    // Opción por defecto para invitar a seleccionar una tienda
-                    select.append($('<option>', {
-                        value: '',
-                        text: 'Seleccione una tienda...',
-                        disabled: true,
-                        selected: true
-                    }));
-
+                    // Añadir las opciones de las tiendas
                     $.each(storeIds, function(index, store) {
                         select.append($('<option>', {
                             value: store.id,
-                            text: store.name // Usar el nombre de la tienda para mostrar en el select
+                            text: store.name, // Usar el nombre de la tienda para mostrar en el select
+                            selected: index === 0 // Seleccionar la primera tienda por defecto
                         }));
                     });
 
@@ -271,16 +304,28 @@
                 }
             },
             error: function(xhr, status, error) {
-                alert('Error al obtener las tiendas: ' + xhr.responseText);
+              const textToObject = JSON.parse(xhr.responseText);
+              showModalError($('#crearCajaModal'), textToObject.message);
             }
         });
 
+        // Mostrar mensaje de error en el modal correspondiente
+        function showModalError(modal, message) {
+            var errorMessage = $('<div>', {
+                class: 'alert alert-danger mt-2',
+                text: message
+            });
+            // Eliminar mensajes de error anteriores
+            modal.find('.alert').remove();
+            // Añadir nuevo mensaje de error
+            modal.find('.modal-body').prepend(errorMessage);
+        }
+
         // Enviar los datos de la nueva caja registradora al servidor
         $('#submit-crear-caja').click(function() {
-
             var storeId = $('#store_id').val();
             if (!storeId) {
-                alert('Por favor, seleccione una tienda.');
+                showModalError($('#crearCajaModal'), 'Por favor, seleccione una tienda.');
                 return;
             }
 
@@ -299,7 +344,8 @@
                     location.reload(); // Recargar la página para reflejar los cambios
                 },
                 error: function(xhr, status, error) {
-                    alert('Error al crear la caja registradora: ' + xhr.responseText);
+                    const textToObject = JSON.parse(xhr.responseText);
+                    showModalError($('#crearCajaModal'), textToObject.message);
                 }
             });
         });
@@ -317,6 +363,11 @@
             var initialAmount = $('#initial_amount').val();
             var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
+            if (!initialAmount) {
+                showModalError($('#abrirCajaModal'), 'Por favor, ingrese un monto inicial.');
+                return;
+            }
+
             $.ajax({
                 url: 'pdv/open',
                 type: 'POST',
@@ -327,10 +378,11 @@
                 },
                 success: function(response) {
                     $('#abrirCajaModal').modal('hide');
-                    location.reload(); // Recargar la página para reflejar los cambios
+                    window.location.href = '/admin/pdv/front'; // Redirigir a la página de PDV
                 },
                 error: function(xhr, status, error) {
-                    alert('Error al abrir la caja registradora: ' + xhr.responseText);
+                    const textToObject = JSON.parse(xhr.responseText);
+                    showModalError($('#abrirCajaModal'), textToObject.message);
                 }
             });
         });
@@ -351,59 +403,38 @@
                         location.reload(); // Recargar la página para reflejar los cambios
                     },
                     error: function(xhr, status, error) {
-                        alert('Error al eliminar la caja registradora: ' + xhr.responseText);
+                        showModalError($('#editarCajaModal'), 'Error al eliminar la caja registradora: ' + xhr.responseText);
                     }
                 });
             }
         });
 
-        // Mostrar el modal de detalles con la información de la caja
-        $('.btn-view').click(function() {
-            var cashRegisterId = $(this).data('id');
-            var baseUrl = "{{ url('/admin/point-of-sale/details') }}"; // Esto generará la URL base
-            window.location.href = baseUrl + '/' + cashRegisterId;
-        });
-
-        // Mostrar el modal de edición con la información de la caja
-        $('.btn-edit').click(function() {
-            var id = $(this).data('id');
-            var storeId = $(this).data('store');
-            var userId = $(this).data('user');
-
-            $('#edit_store_id').val(storeId);
-            $('#edit_user_id').val(userId);
-            $('#editarCajaModal').modal('show');
-
-            // Manejar la actualización de la caja registradora
-            $('#submit-editar-caja').click(function() {
-                var updatedStoreId = $('#edit_store_id').val();
-                var updatedUserId = $('#edit_user_id').val();
-                var csrfToken = $('meta[name="csrf-token"]').attr('content');
-
-                $.ajax({
-                    url: 'points-of-sales/' + id,
-                    type: 'PUT',
-                    data: {
-                        store_id: updatedStoreId,
-                        user_id: updatedUserId,
-                        _token: csrfToken
-                    },
-                    success: function(response) {
-                        $('#editarCajaModal').modal('hide');
-                        location.reload(); // Recargar la página para reflejar los cambios
-                    },
-                    error: function(xhr, status, error) {
-                        alert('Error al actualizar la caja registradora: ' + xhr.responseText);
-                    }
-                });
-            });
-        });
-
-        // Mostrar el modal de cierre con la información de la caja
+        // Mostrar el modal de cierre al hacer clic en el botón "Cerrar"
         $('.btn-closed').click(function() {
-            var cashRegisterId = $(this).data('id');
-            $('#cash_register_id_close').val(cashRegisterId);
-            $('#cerrarCajaModal').modal('show');
+            var cashRegisterId = $(this).data('id'); // Obtener el ID de la caja registradora
+            $('#cash_register_id_close').val(cashRegisterId); // Asignar el ID al campo oculto en el modal
+            $('#cerrarCajaModal').modal('show'); // Mostrar el modal de cierre de caja
+        });
+
+        // Enviar la solicitud para cerrar la caja registradora al hacer clic en el botón "Cerrar"
+        $('#submit-cerrar-caja').click(function() {
+            var cashRegisterId = $('#cash_register_id_close').val(); // Obtener el ID de la caja a cerrar
+            var csrfToken = $('meta[name="csrf-token"]').attr('content'); // Obtener el token CSRF
+
+            $.ajax({
+                url: 'pdv/close/' + cashRegisterId, // URL de la solicitud para cerrar la caja
+                type: 'POST',
+                data: {
+                    _token: csrfToken // Token CSRF para seguridad
+                },
+                success: function(response) {
+                    $('#cerrarCajaModal').modal('hide'); // Ocultar el modal al cerrar la caja
+                    location.reload(); // Recargar la página para reflejar los cambios
+                },
+                error: function(xhr, status, error) {
+                    showModalError($('#cerrarCajaModal'), 'Error al cerrar la caja registradora: ' + xhr.responseText);
+                }
+            });
         });
     });
 </script>

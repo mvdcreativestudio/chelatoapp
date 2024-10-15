@@ -179,7 +179,7 @@
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
             </span>
-            <span class="switch-label">Tienda</span>
+            <span class="switch-label">Empresa</span>
           </label>
         </div>
         <div class="mx-3">
@@ -212,7 +212,7 @@
           <th>Unidad de Medida</th>
           <th>Stock</th>
           @if(auth()->user()->can('view_all_raw-materials'))
-            <th>Tienda</th>
+            <th>Empresa</th>
           @endif
           <th>Acciones</th>
         </tr>

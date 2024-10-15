@@ -19,15 +19,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
-
-        // Insertar registros de ejemplo en español
-        DB::table('entry_types')->insert([
-            ['name' => 'Venta eCommerce', 'description' => 'Registro de ingresos por ventas en línea'],
-            ['name' => 'Pago Proveedores', 'description' => 'Registro de pagos a proveedores'],
-            ['name' => 'Ingreso POS', 'description' => 'Registro de ingresos en tienda física'],
-            ['name' => 'Gasto Operativo', 'description' => 'Registro de gastos operativos'],
-            ['name' => 'Ajuste Contable', 'description' => 'Ajustes en las cuentas contables'],
-        ]);
     }
 
     /**

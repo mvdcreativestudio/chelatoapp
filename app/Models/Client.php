@@ -10,7 +10,7 @@ class Client extends Model
     use HasFactory;
 
     protected $fillable = ['store_id', 'name', 'lastname', 'type', 'rut', 'ci', 'passport', 'doc_ext',
-    'address', 'city', 'state', 'country', 'phone', 'email', 'website', 'logo', 'doc_type', 'document'];
+    'address', 'city', 'state', 'country', 'phone', 'email', 'website', 'logo', 'doc_type', 'document', 'company_name'];
 
 
     /**
@@ -43,6 +43,15 @@ class Client extends Model
         return $this->hasMany(PosOrder::class);
     }
 
+    /**
+     * Obtiene las ordenes del cliente.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
 
+    public function currentAccount()
+    {
+        return $this->hasOne(CurrentAccount::class);
+    }
 
 }

@@ -167,7 +167,7 @@
         </div>
         <div class="footer">
             <p>Si tienes algún problema con tu pedido, por favor contacta a <a href="mailto:soporte@mvdstudio.com.uy">soporte@mvdstudio.com.uy</a></p>
-            <p>&copy; 2024 MVD Studio. Todos los derechos reservados.</p>
+            <p>&copy; 2024 Sumeria. Todos los derechos reservados.</p>
         </div>
     </div>
 </body>

@@ -23,7 +23,7 @@ class CheckoutController extends Controller
     protected $checkoutRepository;
 
     /**
-     * El repositorio de pedidos para la gestión de pedidos.
+     * El repositorio de ventas para la gestión de ventas.
      *
      * @var OrderRepository
      */
@@ -61,7 +61,7 @@ class CheckoutController extends Controller
     {
         $checkout = $this->checkoutRepository->index();
 
-        // Obtener el ID de la tienda desde la sesión
+        // Obtener el ID de la empresa desde la sesión
         $storeId = session('store.id');
 
         // Agregar Log para verificar el store_id
@@ -74,7 +74,7 @@ class CheckoutController extends Controller
             abort(404, 'Store ID inválido en la sesión');
         }
 
-        // Añadir el ID de la tienda a los datos que se pasan a la vista
+        // Añadir el ID de la empresa a los datos que se pasan a la vista
         $checkout['store_id'] = $storeId;
 
         return view('content.e-commerce.front.checkout', $checkout);

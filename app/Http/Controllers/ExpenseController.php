@@ -66,8 +66,9 @@ class ExpenseController extends Controller
         $stores = $this->expenseRepository->getAllStores();
         $expenseCategories = $this->expenseRepository->getAllExpenseCategories();
         $paymentMethods = $this->expensePaymentMethodRepository->getPaymentsMethods();
+        $currencies = $this->expenseRepository->getAllCurrencies();
          // Combinar todos los datos en un solo array
-        $mergeData = array_merge($expenses, compact('suppliers', 'stores', 'expenseCategories','paymentMethods'));
+        $mergeData = array_merge($expenses, compact('suppliers', 'stores', 'expenseCategories','paymentMethods', 'currencies'));
         return view('content.accounting.expenses.index', $mergeData);
     }
 

@@ -15,11 +15,13 @@ class StoreProductRequest extends FormRequest
             'type' => 'required|in:simple,configurable',
             'max_flavors' => 'nullable|integer|min:1',
             'old_price' => 'required|numeric',
-            'price' => 'required|numeric|lt:old_price',
+            'price' => 'nullable|numeric|lt:old_price',
             'discount' => 'nullable|numeric',
             'store_id' => 'required|exists:stores,id',
             'status' => 'required|boolean',
             'stock' => 'nullable|integer',
+            'safety_margin' => 'nullable|numeric',
+            'bar_code' => 'nullable|string|max:255',
             'categories' => 'required|array',
             'categories.*' => 'exists:product_categories,id',
             'flavors' => 'nullable|array',
@@ -28,19 +30,20 @@ class StoreProductRequest extends FormRequest
             'recipes.*.raw_material_id' => 'required_without:recipes.*.used_flavor_id|exists:raw_materials,id',
             'recipes.*.used_flavor_id' => 'required_without:recipes.*.raw_material_id|exists:flavors,id',
             'recipes.*.quantity' => 'required_with:recipes|numeric|min:0.01',
+            'build_price' => 'nullable|numeric',
         ];
     }
 
-  public function messages()
-  {
-      return [
-               'price.lt' => 'El precio rebajado no puede ser mayor o igual al precio normal.',
-              'recipes' => 'nullable|array',
-              'categories' => 'Faltó completar el campo "CATEGORÍA"',
-              'recipes.*.raw_material_id' => 'required_with:recipes|exists:raw_materials,id',
-              'recipes.*.quantity' => 'required_with:recipes|numeric|min:0.01',
-              ];
-  }
+    public function messages()
+    {
+        return [
+            'price.lt' => 'El precio rebajado no puede ser mayor o igual al precio normal.',
+            'recipes' => 'nullable|array',
+            'categories' => 'Faltó completar el campo "CATEGORÍA"',
+            'recipes.*.raw_material_id' => 'required_with:recipes|exists:raw_materials,id',
+            'recipes.*.quantity' => 'required_with:recipes|numeric|min:0.01',
+            'build_price.numeric' => 'El precio de costo debe ser un número.',
+        ];
+    }
 
 }
-

@@ -29,6 +29,7 @@ class CheckOpenCashRegister
 
         if ($openCashRegisterId) {
             return $next($request);
+            // return redirect()->route('pdv.front');
         } else {
             return redirect()->route('points-of-sales.index');
         }

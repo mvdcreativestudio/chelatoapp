@@ -14,7 +14,7 @@
           </div>
           <div class="mb-3">
             <label for="due_date" class="form-label">Fecha de Vencimiento</label>
-            <input type="date" class="form-control" id="due_date" name="due_date" required>
+            <input type="date" class="form-control" id="due_date" name="due_date" required value="{{ date('Y-m-d') }}">
           </div>
           <div class="mb-3">
             <label for="supplier_id" class="form-label">Proveedor</label>
@@ -34,8 +34,19 @@
               @endforeach
             </select>
           </div>
+
           <div class="mb-3">
-            <label for="store_id" class="form-label">Tienda</label>
+            <label for="currency_id" class="form-label">Moneda</label>
+            <select class="form-select" id="currency_id" name="currency_id" required>
+              <option value="" selected disabled>Seleccione una moneda</option>
+              @foreach($currencies as $currency)
+                <option value="{{ $currency->id }}">{{ $currency->name }}</option>
+              @endforeach
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="store_id" class="form-label">Empresa</label>
             <select class="form-select" id="store_id" name="store_id" required>
               <option value="" selected>Ninguna</option>
               @foreach($stores as $store)

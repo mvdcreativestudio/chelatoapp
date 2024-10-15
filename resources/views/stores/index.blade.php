@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Listado de Tiendas')
+@section('title', 'Listado de Empresas')
 
 @section('vendor-style')
 @vite([
@@ -35,7 +35,7 @@
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Administración /</span> Tiendas
+  <span class="text-muted fw-light">Administración /</span> Empresas
 </h4>
 
 <div class="card mb-4">
@@ -45,7 +45,7 @@
         <div class="col-sm-6 col-lg-4">
           <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
             <div>
-              <h6 class="mb-2">Total de Tiendas</h6>
+              <h6 class="mb-2">Total de Empresas</h6>
               <h4 class="mb-2">{{ $stores->count() }}</h4>
               <p class="mb-0"><span class="text-muted me-2">Total</span></p>
             </div>
@@ -61,7 +61,7 @@
         <div class="col-sm-6 col-lg-4">
           <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
             <div>
-              <h6 class="mb-2">Tiendas Activas</h6>
+              <h6 class="mb-2">Empresas Activas</h6>
               <h4 class="mb-2">{{ $stores->filter(fn($store) => $store->status == true)->count() }}</h4>
               <p class="mb-0"><span class="text-muted me-2">Activas</span></p>
             </div>
@@ -77,7 +77,7 @@
         <div class="col-sm-6 col-lg-4">
           <div class="d-flex justify-content-between align-items-start card-widget-3 pb-3 pb-sm-0">
             <div>
-              <h6 class="mb-2">Tiendas Inactivas</h6>
+              <h6 class="mb-2">Empresas Inactivas</h6>
               <h4 class="mb-2">{{ $stores->filter(fn($store) => $store->status == false)->count() }}</h4>
               <p class="mb-0 text-muted">Inactivas</p>
             </div>
@@ -111,7 +111,7 @@
 
 <div class="card">
   <div class="card-header">
-    <h5 class="card-title">Tiendas</h5>
+    <h5 class="card-title">Empresas</h5>
     <div class="d-flex">
         <p class="text-muted small">
           <a href="" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches" aria-expanded="false" aria-controls="columnSwitches">Ver / Ocultar columnas de la tabla</a>
@@ -213,7 +213,6 @@
           <th>Dirección</th>
           <th>RUT</th>
           <th>Estado</th>
-          <th>F. Automática</th>
           <th>Miembros</th>
           <th>Acciones</th>
         </tr>

@@ -24,6 +24,11 @@ class Store extends Model
         'closed',
         'manual_override_at',
         'automatic_billing',
+        'invoices_enabled',
+        'pymo_user',
+        'pymo_password',
+        'pymo_branch_office',
+        'accepts_peya_envios',
         'peya_envios_key',
     ];
 

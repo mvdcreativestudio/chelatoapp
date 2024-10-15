@@ -309,7 +309,7 @@
       .catch(error => console.error('Error loading the data: ', error));
   }
 
-  // Gráfica de promedio de pedidos por hora
+  // Gráfica de promedio de ventas por hora
   document.addEventListener('DOMContentLoaded', function () {
     const ctx = document.getElementById('averageOrdersByHourChart').getContext('2d');
 

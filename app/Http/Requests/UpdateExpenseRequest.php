@@ -37,6 +37,7 @@ class UpdateExpenseRequest extends FormRequest
             'due_date' => 'required|date',
             'supplier_id' => 'required|integer|exists:suppliers,id',
             'expense_category_id' => 'required|integer|exists:expense_categories,id',
+            'currency_id' => 'required|integer|exists:currencies,id',
             'store_id' => 'nullable|integer|exists:stores,id',
         ];
     }
@@ -59,6 +60,9 @@ class UpdateExpenseRequest extends FormRequest
             'expense_category_id.required' => 'El campo categoría de gasto es requerido.',
             'expense_category_id.integer' => 'El campo categoría de gasto debe ser un número entero.',
             'expense_category_id.exists' => 'La categoría de gasto seleccionada no es válida.',
+            'currency_id.required' => 'El campo moneda es requerido.',
+            'currency_id.integer' => 'El campo moneda debe ser un número entero.',
+            'currency_id.exists' => 'La moneda seleccionada no es válida.',
             'store_id.integer' => 'El campo tienda debe ser un número entero.',
             'store_id.exists' => 'La tienda seleccionada no es válida.',
         ];

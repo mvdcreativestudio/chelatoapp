@@ -28,7 +28,7 @@ class PedidosYaController extends Controller
   }
 
   /**
-   * Obtiene la clave de la API de PedidosYa para una tienda.
+   * Obtiene la clave de la API de PedidosYa para una empresa.
    *
    * @param  int  $store_id
    * @return JsonResponse

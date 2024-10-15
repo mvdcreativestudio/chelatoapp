@@ -71,7 +71,7 @@
           <th>Nombre</th>
           <th>Email</th>
           <th>Rol</th>
-          <th>Local</th>
+          <th>Empresa</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -112,7 +112,7 @@
             </select>
         </div>
         <div class="mb-3">
-            <label class="form-label" for="add-user-store">Tienda</label>
+            <label class="form-label" for="add-user-store">Empresa</label>
             <select id="add-user-store" class="form-control select2" name="store_id" required>
                 @foreach($stores as $store)
                     <option value="{{ $store->id }}">{{ $store->name }}</option>
@@ -160,7 +160,7 @@
           </select>
         </div>
         <div class="mb-3">
-          <label class="form-label" for="edit-user-store">Tienda</label>
+          <label class="form-label" for="edit-user-store">Empresa</label>
           <select id="edit-user-store" class="form-control select2" name="store_id" required>
             @foreach($stores as $store)
               <option value="{{ $store->id }}">{{ $store->name }}</option>

@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
       targets: 5,
       render: function (data, type, row) {
         console.log('Rendering store name for row:', row);
-        return row.stores && row.stores.length > 0 ? row.stores[0].name : 'Tienda sin nombre';
+        return row.stores && row.stores.length > 0 ? row.stores[0].name : 'Empresa sin nombre';
       }
     });
   }

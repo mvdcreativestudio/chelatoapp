@@ -28,7 +28,10 @@ class Product extends Model
         'image',
         'store_id',
         'status',
-        'stock'
+        'stock',
+        'safety_margin',
+        'bar_code',
+        'build_price'
       ];
 
 
@@ -92,5 +95,60 @@ class Product extends Model
     public function productions(): HasMany
     {
         return $this->hasMany(Production::class);
+    }
+
+    /**
+     * Obtiene los filtros para la exportación de productos.
+     *
+     * @param $query
+     * @param $filters
+     * @return mixed
+     */
+    public function scopeFilterData($query, $filters)
+    {
+        if (!empty($filters['search'])) {
+            $query->where('name', 'like', '%' . $filters['search'] . '%');
+        }
+
+        if (!empty($filters['store_id'])) {
+            $query->where('store_id', $filters['store_id']);
+        }
+
+        if (isset($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        // Agrega más filtros según sea necesario
+        return $query;
+    }
+
+    /**
+     * Setea el precio del producto.
+     * @param float|null $value
+     * @return void
+    */
+    public function setPriceAttribute(?float $value): void
+    {
+        $this->attributes['price'] = $value !== null ? (float) $value : null;
+    }
+
+    /**
+     * Setea el precio anterior del producto.
+     * @param float $value
+     * @return void
+    */
+    public function setOldPriceAttribute(float $value): void
+    {
+        $this->attributes['old_price'] = round($value, 2);
+    }
+
+    /**
+     * Setea el descuento del producto.
+     * @param float $value
+     * @return void
+    */
+    public function setDiscountAttribute(float $value): void
+    {
+        $this->attributes['discount'] = round($value, 2);
     }
 }

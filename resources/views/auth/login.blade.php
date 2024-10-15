@@ -97,7 +97,7 @@ $customizerHidden = 'customizer-hide';
         @endif
 
         <div class="divider my-4">
-          <div class="divider-text">MVD Studio</div>
+          <div class="divider-text">Sumeria</div>
         </div>
 
         <!-- Social login buttons removed -->

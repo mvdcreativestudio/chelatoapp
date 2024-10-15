@@ -1,8 +1,13 @@
 document.addEventListener('DOMContentLoaded', function () {
   const switches = [
     { id: 'peyaEnviosSwitch', fieldsId: 'peyaEnviosFields', requiredFields: ['peyaEnviosKey'] },
-    { id: 'mercadoPagoSwitch', fieldsId: 'mercadoPagoFields', requiredFields: ['mercadoPagoPublicKey', 'mercadoPagoAccessToken', 'mercadoPagoSecretKey'] },
-    { id: 'ecommerceSwitch', fieldsId: null }
+    {
+      id: 'mercadoPagoSwitch',
+      fieldsId: 'mercadoPagoFields',
+      requiredFields: ['mercadoPagoPublicKey', 'mercadoPagoAccessToken', 'mercadoPagoSecretKey']
+    },
+    { id: 'ecommerceSwitch', fieldsId: null },
+    { id: 'invoicesEnabledSwitch', fieldsId: 'pymoFields', requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice'] }
   ];
 
   // Añadir animación de transición
@@ -19,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     toggleSwitch.addEventListener('change', function () {
+      console.log('Checkbox invoices_enabled changed:', this.checked); // Para verificar si se detecta el cambio
+
       if (!this.checked && fields) {
         Swal.fire({
           title: '¿Estás seguro?',
@@ -36,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
               fields.style.display = 'none';
               fields.style.opacity = 1;
             }, 500);
+            // Limpia los campos al desactivar la integración
             fields.querySelectorAll('input').forEach(input => input.value = '');
             fields.querySelectorAll('.error-message').forEach(error => error.remove());
           } else {
@@ -45,9 +53,13 @@ document.addEventListener('DOMContentLoaded', function () {
       } else if (fields) {
         fields.style.display = 'block';
         fields.style.opacity = 0;
-        setTimeout(() => { fields.style.opacity = 1; }, 10);
+        setTimeout(() => {
+          fields.style.opacity = 1;
+        }, 10);
       }
     });
+
+
   });
 
   // Validación en tiempo real
@@ -96,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
       event.preventDefault(); // Evita el envío del formulario si hay campos vacíos
       Swal.fire({
         title: 'Campos incompletos',
-        text: 'Por favor, complete todos los campos obligatorios antes de actualizar la tienda.',
+        text: 'Por favor, complete todos los campos obligatorios antes de actualizar la empresa.',
         icon: 'warning',
         confirmButtonText: 'Aceptar'
       });

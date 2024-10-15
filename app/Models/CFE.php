@@ -15,8 +15,8 @@ class CFE extends Model
 
     protected $fillable = [
       'order_id', 'store_id', 'type', 'serie', 'nro',
-      'caeNumber', 'caeRange', 'caeExpirationDate', 'total',
-      'emitionDate', 'sentXmlHash', 'securityCode', 'qrUrl', 'cfeId', 'reason', 'balance', 'main_cfe_id'
+      'caeNumber', 'caeRange', 'caeExpirationDate', 'total', 'currency', 'status',
+      'emitionDate', 'sentXmlHash', 'securityCode', 'qrUrl', 'cfeId', 'reason', 'balance', 'main_cfe_id', 'received', 'is_receipt', 'issuer_name'
     ];
 
     protected $casts = [

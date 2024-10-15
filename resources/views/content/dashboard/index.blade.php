@@ -35,15 +35,15 @@
 <div class="row">
 
   <!-- Botón de Modo Ayuda -->
-  <div class="col-2">
+  {{-- <div class="col-2">
     <button id="help-mode-toggle" class="btn btn-primary">Activar Modo Ayuda</button>
-  </div>
+  </div> --}}
 
   <!-- Abierto / Cerrado Stores -->
   @if(Auth::user()->hasPermissionTo('access_open_close_stores'))
     <div class="row g-4 mt-0 pt-0 mb-4" id="">
       @foreach($stores as $store)
-      <div class="col-4" id="tour-stores">
+      <div class="col-12 col-sm-6 col-md-4" id="tour-stores">
         @if($store->closed)
         <div class="card card-border-shadow-danger">
         @else

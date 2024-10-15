@@ -19,13 +19,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
-
-        // Insertar registros de ejemplo en español
-        DB::table('currencies')->insert([
-            ['code' => 'USD', 'name' => 'Dólar'],
-            ['code' => 'EUR', 'name' => 'Euro'],
-            ['code' => 'ARS', 'name' => 'Pesos Argentinos'],
-        ]);
     }
 
     /**

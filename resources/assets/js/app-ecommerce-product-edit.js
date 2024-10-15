@@ -32,6 +32,32 @@ function initQuillEditor() {
   }
 }
 
+
+function limitTwoDecimals(event) {
+  const input = event.target;
+  let value = input.value;
+
+  // Expresión regular que permite números con hasta dos decimales
+  const regex = /^\d+(\.\d{0,2})?$/;
+
+  if (!regex.test(value)) {
+    // Si el valor no coincide con la expresión regular, recortamos a dos decimales
+    input.value = parseFloat(value).toFixed(2);
+  }
+}
+
+// Seleccionamos los campos de precio
+const priceInput = document.getElementById('ecommerce-product-price');
+const discountPriceInput = document.getElementById('ecommerce-product-discount-price');
+
+if (priceInput) {
+  priceInput.addEventListener('input', limitTwoDecimals);
+}
+
+if (discountPriceInput) {
+  discountPriceInput.addEventListener('input', limitTwoDecimals);
+}
+
 const existingImage = document.querySelector('#existingImage img');
 
 if (existingImage) {
@@ -183,6 +209,16 @@ function initFlatpickr() {
     });
   });
 }
+
+document.getElementById('bar_code').addEventListener('keypress', function(event) {
+  // Si el código de la tecla presionada es 13 (Enter)
+  if (event.keyCode === 13 || event.which === 13) {
+      // Evita que el formulario se envíe
+      event.preventDefault();
+      // Opcional: Puedes hacer algo más aquí, como mover el enfoque a otro campo
+      console.log('Enter presionado en el campo de código de barras.');
+  }
+});
 
 function initStateSwitch() {
   const statusSwitch = document.getElementById('statusSwitch');
@@ -365,4 +401,6 @@ function initRepeater() {
       }
     }
   });
+
+
 }

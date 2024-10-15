@@ -143,7 +143,7 @@
                 <span class="switch-on"><i class="bx bx-check"></i></span>
                 <span class="switch-off"><i class="bx bx-x"></i></span>
               </span>
-              <span class="switch-label">Tienda</span>
+              <span class="switch-label">Empresa</span>
             </label>
           </div>
           <div class="mx-3">
@@ -267,6 +267,7 @@
           <th>Importe</th>
           <th>Abonado</th>
           <th>Categoria</th>
+          <th>Moneda</th>
           <th>Estado de Pago</th>
           <th>Estado Temporal</th>
           <th>Acciones</th>

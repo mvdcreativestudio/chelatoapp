@@ -24,7 +24,7 @@ $(function () {
           dataSrc: 'data'
         },
         columns: [
-          { data: 'id' },
+          { data: 'id', type: 'num'},
           { data: 'store_name' },
           { data: 'client_name' },
           { data: 'order_id' },
@@ -34,7 +34,8 @@ $(function () {
           { data: 'balance' },
           { data: 'currency' },
           { data: 'total' },
-          { data: 'associated_id' }, // Nueva columna para el ID asociado
+          { data: 'associated_id' },
+          { data: 'status' },
           { data: 'actions' }
         ],
         columnDefs: [
@@ -143,35 +144,133 @@ $(function () {
             }
           },
           {
+            targets: 11, // Posición de la nueva columna Status
+            render: function (data, type, full, meta) {
+              var badgeClass;
+              var translatedStatus;
+
+              switch (data) {
+                case 'CFE_UNKNOWN_ERROR':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Error desconocido';
+                  break;
+                case 'CREATED':
+                  badgeClass = 'badge bg-info';
+                  translatedStatus = 'Creado';
+                  break;
+                case 'CREATED_WITHOUT_CAE_NRO':
+                  badgeClass = 'badge bg-warning';
+                  translatedStatus = 'Creado sin número CAE';
+                  break;
+                case 'SENT':
+                  badgeClass = 'badge bg-success';
+                  translatedStatus = 'Enviado';
+                  break;
+                case 'SCHEDULED':
+                  badgeClass = 'badge bg-primary';
+                  translatedStatus = 'Programado';
+                  break;
+                case 'SCHEDULED_CONNECTION_ERR':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Error de conexión programado';
+                  break;
+                case 'SCHEDULED_WITHOUT_CAE_NRO':
+                  badgeClass = 'badge bg-warning';
+                  translatedStatus = 'Programado sin número CAE';
+                  break;
+                case 'PROCESSED_ACCEPTED':
+                  badgeClass = 'badge bg-success';
+                  translatedStatus = 'Procesado y Aceptado';
+                  break;
+                case 'PROCESSED_REJECTED':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Procesado y Rechazado';
+                  break;
+                case 'PROCESSED_RELIQUIDATED':
+                  badgeClass = 'badge bg-info';
+                  translatedStatus = 'Procesado y Reliquidado';
+                  break;
+                case 'FORMAT_REJECTED':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Rechazado por Formato';
+                  break;
+                case 'REPORTED_DAILY_REPORT':
+                  badgeClass = 'badge bg-success';
+                  translatedStatus = 'Reportado en Informe Diario';
+                  break;
+                case 'SOBRE_DUPLICATED':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Sobre Duplicado';
+                  break;
+                case 'DUPLICATED_AT_DGI':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Duplicado en DGI';
+                  break;
+                case 'BAD_CUSTOM_SERIE_NUMBER':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Número de Serie Personalizado Incorrecto';
+                  break;
+                case 'DELETED_MISSING_CAE':
+                  badgeClass = 'badge bg-secondary';
+                  translatedStatus = 'Eliminado - Falta CAE';
+                  break;
+                default:
+                  badgeClass = 'badge bg-secondary';
+                  translatedStatus = 'Estado Desconocido';
+              }
+
+              return '<span class="' + badgeClass + '">' + translatedStatus + '</span>';
+            }
+          },
+          {
             targets: -1,
             orderable: false,
             render: function (data, type, full, meta) {
               var hideEmitirNota =
                 full['type'].includes('Nota de Crédito') || full['type'].includes('Nota de Débito') ? 'd-none' : '';
 
-              return (
-                '<div class="d-flex justify-content-center align-items-center">' +
-                '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
-                '<div class="dropdown-menu dropdown-menu-end m-0">' +
-                '<a href="' +
-                full['qrUrl'] +
-                '" target="_blank" class="dropdown-item">Ver QR</a>' +
-                '<a href="' +
-                baseUrl +
-                'admin/orders/' +
-                full['order_uuid'] +
-                '" class="dropdown-item">Ver Orden</a>' +
-                '<a href="#" class="dropdown-item btn-ver-detalles" data-id="' +
-                full['id'] +
-                '">Ver Detalles</a>' +
-                '<a href="#" class="dropdown-item btn-emitir-nota ' +
-                hideEmitirNota +
-                '" data-id="' +
-                full['id'] +
-                '">Emitir Nota</a>' +
-                '</div>' +
-                '</div>'
-              );
+              var hideEmitirRecibo = full['is_receipt'] ? 'd-none' : '';
+
+              // Ahora si el invoice tiene hide_emit se oculta el botón de emitir nota
+              var hideEmit = full['hide_emit'] ? 'd-none' : '';
+
+                return (
+                  '<div class="d-flex justify-content-center align-items-center">' +
+                  '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
+                  '<div class="dropdown-menu dropdown-menu-end m-0">' +
+                  '<a href="' +
+                  full['qrUrl'] +
+                  '" target="_blank" class="dropdown-item">Ver QR</a>' +
+                  '<a href="' +
+                  baseUrl +
+                  'admin/orders/' +
+                  full['order_uuid'] +
+                  '" class="dropdown-item">Ver Venta</a>' +
+                  '<a href="#" class="dropdown-item btn-ver-detalles" data-id="' +
+                  full['id'] +
+                  '">Ver Detalles</a>' +
+                  '<a href="' +
+                  baseUrl +
+                  'admin/invoices/download/' +
+                  full['id'] +
+                  '" class="dropdown-item">Descargar PDF</a>' +
+                  '<a href="#" class="dropdown-item btn-emitir-nota ' +
+                  hideEmitirNota +
+                  hideEmitirRecibo +
+                  hideEmit +
+                  '" data-id="' +
+                  full['id'] +
+                  '">Emitir Nota</a>' +
+                  '<a href="#" class="dropdown-item btn-emitir-recibo ' +
+                  hideEmitirNota +
+                  hideEmitirRecibo +
+                  hideEmit +
+                  '" data-id="' +
+                  full['id'] +
+                  '">Emitir Recibo</a>' +
+                  '</div>' +
+                  '</div>'
+                );
             }
           }
         ],
@@ -202,7 +301,7 @@ $(function () {
           renderer: 'bootstrap'
         },
         rowCallback: function (row, data, index) {
-          if (data['type'].includes('Nota de Crédito') || data['type'].includes('Nota de Débito')) {
+          if ((data['type'].includes('Nota de Crédito') || data['type'].includes('Nota de Débito')) || data['is_receipt']) {
             $('td', row).eq(5).css('background-color', '#F5F5F9').css('color', '#566A7F');
           }
         }
@@ -241,6 +340,12 @@ $(function () {
         column.visible(!column.visible());
       });
 
+      $('.datatables-invoice tbody').on('click', '.btn-emitir-recibo', function () {
+        var invoiceId = $(this).data('id');
+        $('#emitirReciboForm').attr('action', baseUrl + 'admin/invoices/' + invoiceId + '/emit-receipt');
+        $('#emitirReciboModal').modal('show');
+      });
+
       // Estilos buscador y paginación
       $('.dataTables_length label select').addClass('form-select form-select-sm');
       $('.dataTables_filter label input').addClass('form-control');
@@ -250,8 +355,57 @@ $(function () {
         $('#emitirNotaForm').attr('action', baseUrl + 'admin/invoices/' + invoiceId + '/emit-note');
         $('#emitirNotaModal').modal('show');
       });
+
     } catch (error) {
       console.log(error);
     }
   }
+
+  $('#btn-update-cfes').on('click', function () {
+    $.ajax({
+      url: baseUrl + 'admin/invoices/update-cfes',
+      type: 'POST',
+      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+      beforeSend: function () {
+        $('#btn-update-cfes').prop('disabled', true).text('Actualizando...');
+      },
+      success: function (response) {
+        $('#btn-update-cfes').prop('disabled', false).text('Actualizar CFEs');
+        if (response.success) {
+          // Actualizar la tabla con los nuevos datos
+          dt_invoices.ajax.reload();
+        } else if (response.error) {
+          toastr.error(response.error, 'Error');
+        }
+      },
+      error: function (xhr, status, error) {
+        $('#btn-update-cfes').prop('disabled', false).text('Actualizar CFEs');
+        toastr.error('Ocurrió un error durante la actualización de los CFEs.', 'Error');
+      }
+    });
+  });
+
+  $('#btn-update-all-cfes').on('click', function () {
+    $.ajax({
+      url: baseUrl + 'admin/invoices/update-all-cfes',
+      type: 'POST',
+      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+      beforeSend: function () {
+        $('#btn-update-all-cfes').prop('disabled', true).text('Actualizando...');
+      },
+      success: function (response) {
+        $('#btn-update-all-cfes').prop('disabled', false).text('Actualizar todos los CFEs');
+        if (response.success) {
+          // Actualizar la tabla con los nuevos datos
+          dt_invoices.ajax.reload();
+        } else if (response.error) {
+          toastr.error(response.error, 'Error');
+        }
+      },
+      error: function (xhr, status, error) {
+        $('#btn-update-all-cfes').prop('disabled', false).text('Actualizar todos los CFEs');
+        toastr.error('Ocurrió un error durante la actualización de los CFEs.', 'Error');
+      }
+    });
+  });
 });

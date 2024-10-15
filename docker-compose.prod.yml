@@ -3,9 +3,9 @@ services:
     ####################################################################################################
     # PHP
     ####################################################################################################
-    php_chelatoapp:
+    php_base:
         build: .docker/php
-        container_name: php_chelatoapp
+        container_name: php_base
         restart: unless-stopped
         tty: true
         ports:
@@ -19,9 +19,9 @@ services:
     ####################################################################################################
     # Nginx
     ####################################################################################################
-    nginx_chelatoapp:
+    nginx_base:
         image: nginx
-        container_name: nginx_chelatoapp
+        container_name: nginx_base
         restart: unless-stopped
         tty: true
         ports:
@@ -31,15 +31,15 @@ services:
             - .docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
             - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
         depends_on:
-            - php_chelatoapp
+            - php_base
         networks:
             - mysql_net
     # ####################################################################################################
     # # DATABASE (MySQL)
     # ####################################################################################################
-    # mysql_chelatoapp:
+    # mysql_base:
     #     image: mysql/mysql-server:8.0
-    #     container_name: mysql_db_chelatoapp
+    #     container_name: mysql_db_base
     #     restart: unless-stopped
     #     tty: true
     #     ports:
@@ -60,17 +60,17 @@ services:
     # ####################################################################################################
     # # phpMyAdmin
     # ####################################################################################################
-    # phpmyadmin_chelatoapp:
+    # phpmyadmin_base:
     #     image: phpmyadmin/phpmyadmin
-    #     container_name: phpmyadmin_db_chelatoapp
+    #     container_name: phpmyadmin_db_base
     #     restart: unless-stopped
     #     tty: true
     #     ports:
     #         - 8080:80
     #     links:
-    #         - mysql_chelatoapp
+    #         - mysql_base
     #     environment:
-    #         PMA_HOST: mysql_chelatoapp
+    #         PMA_HOST: mysql_base
     #         PMA_PORT: 3306
     #         PMA_ARBITRARY: 1
     #     volumes:
@@ -81,9 +81,9 @@ services:
     ####################################################################################################
     # Mailpit
     ####################################################################################################
-    mail_chelatoapp:
+    mail_base:
         image: axllent/mailpit:latest
-        container_name: mail_chelatoapp
+        container_name: mail_base
         restart: unless-stopped
         tty: true
         ports:

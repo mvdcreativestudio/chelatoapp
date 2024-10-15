@@ -215,7 +215,7 @@
               <button type="button" class="btn btn-primary mb-2 d-grid offcanvas-cart-button" disabled>Finalizar compra</button>
             @endif
             @if(session()->has('store'))
-              <h6 class="text-center mt-3">Tienda seleccionada: <b>{{ session('store')['name'] }}</b></h6>
+              <h6 class="text-center mt-3">Empresa seleccionada: <b>{{ session('store')['name'] }}</b></h6>
             @endif
           </div>
         </div>

@@ -69,8 +69,8 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label mb-0" for="supplier-doc_number">Número de Documento</label>
-              <input type="text" class="form-control" id="supplier-doc_number" name="doc_number" required placeholder="Número de documento del proveedor" value="{{ $supplier->doc_number }}">
+              <label class="form-label mb-0" for="supplier-doc_number">Cedula de Identidad</label>
+              <input type="text" class="form-control" id="supplier-doc_number" name="doc_number" required placeholder="Cedula de identidad del proveedor" value="{{ $supplier->doc_number }}">
             </div>
 
             <div class="mb-3">

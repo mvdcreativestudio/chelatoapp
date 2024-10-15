@@ -104,10 +104,10 @@ class CheckStoreHours extends Command
         $manualOverrideTime = Carbon::parse($store->manual_override_at)->format('H:i');
 
         if ($action === 'open' && $store->closed) {
-            // Verificar si la tienda fue cerrada manualmente y debe abrirse ahora
+            // Verificar si la empresa fue cerrada manualmente y debe abrirse ahora
             return $currentTime >= $nextTransitionTime && $manualOverrideTime < $nextTransitionTime;
         } elseif ($action === 'close' && !$store->closed) {
-            // Verificar si la tienda fue abierta manualmente y debe cerrarse ahora
+            // Verificar si la empresa fue abierta manualmente y debe cerrarse ahora
             return $currentTime >= $nextTransitionTime && $manualOverrideTime < $nextTransitionTime;
         }
 

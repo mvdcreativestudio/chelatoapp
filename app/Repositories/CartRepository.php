@@ -14,6 +14,18 @@ class CartRepository
 {
 
 
+  /**
+   * Seleccionar una tienda y guardar la información en la sesión.
+   *
+   * @param SelectStoreRequest $request
+   * @return RedirectResponse
+  */
+  // public function selectStore(SelectStoreRequest $request): RedirectResponse
+  // {
+  //   $request->session()->forget(['store', 'cart', 'subtotal']);
+
+
+
     /**
      * Seleccionar una tienda y guardar la información en la sesión.
      *

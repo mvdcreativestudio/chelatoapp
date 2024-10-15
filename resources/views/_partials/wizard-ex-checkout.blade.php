@@ -212,7 +212,7 @@
                   <label class="form-check-label custom-option-content" for="customRadioAddress2">
                     <input name="customRadioTemp" class="form-check-input" type="radio" value="" id="customRadioAddress2">
                     <span class="custom-option-header mb-2">
-                      <span class="fw-medium mb-0">MVD Studio</span>
+                      <span class="fw-medium mb-0">Sumeria</span>
                       <span class="badge bg-label-success">Oficina</span>
                     </span>
                     <span class="custom-option-body">

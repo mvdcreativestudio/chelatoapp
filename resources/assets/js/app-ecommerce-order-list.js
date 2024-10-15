@@ -245,8 +245,8 @@ $(function () {
         search: '',
         searchPlaceholder: 'Buscar...',
         sLengthMenu: '_MENU_',
-        info: 'Mostrando _START_ a _END_ de _TOTAL_ pedidos',
-        infoFiltered: "filtrados de _MAX_ pedidos",
+        info: 'Mostrando _START_ a _END_ de _TOTAL_ ventas',
+        infoFiltered: "filtradas de _MAX_ ventas",
         paginate: {
           first: '<<',
           last: '>>',
@@ -254,7 +254,7 @@ $(function () {
           previous: '<'
         },
         pagingType: "full_numbers",
-        emptyTable: 'No hay pedidos disponibles',
+        emptyTable: 'No hay ventas disponibles',
         dom: 'Bfrtip',
         renderer: "bootstrap"
       },

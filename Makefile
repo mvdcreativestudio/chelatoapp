@@ -3,8 +3,8 @@
 # Variables
 APP_NAME = php_chelatoapp
 NGINX = nginx_chelatoapp
-# MYSQL = mysql_chelatoapp
-# PHP_MY_ADMIN = phpmyadmin_chelatoapp
+# MYSQL = mysql_base
+# PHP_MY_ADMIN = phpmyadmin_base
 # Desarrollo
 dev_install:
 	docker compose -f docker-compose.dev.yml up -d --build
@@ -25,7 +25,7 @@ dev_setup:
 dev_migration:
 	docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan migrate:fresh --seed
 	docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan create:modules-permissions
-	docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan migrate --path=database/migrations/custom_migrations
+	# docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan migrate --path=database/migrations/custom_migrations
 
 dev_vite:
 	docker compose -f docker-compose.dev.yml exec $(APP_NAME) npm run dev --watch
@@ -77,6 +77,10 @@ prod_vite:
 # Comandos para despliegue manual en CPanel
 build_vite:
 	docker compose -f docker-compose.manual.yml run --rm vite-build
+
+# Comando para ver rutas
+dev_routes:
+	docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan route:list
 
 # Comandos para los contenedores
 

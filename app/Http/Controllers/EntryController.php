@@ -60,12 +60,7 @@ class EntryController extends Controller
     public function index(): View
     {
         $entries = $this->entryRepository->getAllEntries();
-        $entryTypes = $this->entryRepository->getAllEntryTypes();
-        $currencies = $this->entryRepository->getAllCurrencies();
-        $accounts = $this->entryRepository->getAllAccounts();
-         // Combinar todos los datos en un solo array
-        $mergeData = array_merge($entries, compact('entryTypes', 'currencies', 'accounts'));
-        return view('content.accounting.entries.index', $mergeData);
+        return view('content.accounting.entries.index', $entries);
     }
 
     /**
@@ -75,7 +70,10 @@ class EntryController extends Controller
      */
     public function create(): View
     {
-        return view('content.accounting.entries.add-entry');
+        $entryTypes = $this->entryRepository->getAllEntryTypes();
+        $currencies = $this->entryRepository->getAllCurrencies();
+        $accounts = $this->entryRepository->getAllAccounts();
+        return view('content.accounting.entries.add-entry', compact('entryTypes', 'currencies', 'accounts'));
     }
 
     /**
@@ -115,11 +113,15 @@ class EntryController extends Controller
      * @param int $id
      * @return JsonResponse
      */
-    public function edit(int $id): JsonResponse
+    public function edit(int $id): View
     {
         try {
             $entry = $this->entryRepository->getEntryById($id);
-            return response()->json($entry);
+            $entryTypes = $this->entryRepository->getAllEntryTypes();
+            $currencies = $this->entryRepository->getAllCurrencies();
+            $accounts = $this->entryRepository->getAllAccounts();
+            // return response()->json($entry);
+            return view('content.accounting.entries.edit-entry', compact('entry', 'entryTypes', 'currencies', 'accounts'));
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return response()->json(['error' => 'Error al obtener los datos del asiento.'], 400);

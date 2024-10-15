@@ -29,7 +29,7 @@ class EcommerceController extends Controller
   }
 
   /**
-   * Muestra la página de selección de tienda.
+   * Muestra la página de selección de empresa.
    *
    * @return View
   */
@@ -40,7 +40,7 @@ class EcommerceController extends Controller
   }
 
   /**
-   * Muestra la página de una tienda específica.
+   * Muestra la página de una empresa específica.
    *
    * @param string $slug
    * @return RedirectResponse|View
@@ -81,7 +81,7 @@ class EcommerceController extends Controller
   }
 
   /**
-   * Muestra la pagina principal ('/') en base a la tienda o si no tiene ninguna seleccionada
+   * Muestra la pagina principal ('/') en base a la empresa o si no tiene ninguna seleccionada
    *
    * @return RedirectResponse
   */

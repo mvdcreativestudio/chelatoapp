@@ -27,7 +27,7 @@
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">E-Commerce /</span> Pedidos
+  <span class="text-muted fw-light"></span>Ventas
 </h4>
 
 @if (Auth::user()->can('access_datacenter'))
@@ -35,10 +35,10 @@
   <div class="card-widget-separator-wrapper">
     <div class="card-body card-widget-separator">
       <div class="row gy-4 gy-sm-1">
-        <div class="col-sm-6 col-lg-3">
+        <div class="col-sm-6 col-lg-6">
           <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
             <div>
-              <h6 class="mb-2">Total de Pedidos</h6>
+              <h6 class="mb-2">Total de Ventas</h6>
               <h4 class="mb-2">{{ $totalOrders }}</h4>
               <p class="mb-0"><span class="text-muted me-2">Total</span></p>
             </div>
@@ -50,8 +50,8 @@
           </div>
           <hr class="d-none d-sm-block d-lg-none me-4">
         </div>
-        <div class="col-sm-6 col-lg-3">
-          <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
+        <div class="col-sm-6 col-lg-6">
+          <div class="d-flex justify-content-between align-items-start card-widget-2 pb-3 pb-sm-0">
             <div>
               <h6 class="mb-2">Ingresos Totales</h6>
               <h4 class="mb-2">{{ $settings->currency_symbol }} {{ number_format($totalIncome, 2) }}</h4>
@@ -65,7 +65,7 @@
           </div>
           <hr class="d-none d-sm-block d-lg-none">
         </div>
-        <div class="col-sm-6 col-lg-3">
+        {{-- <div class="col-sm-6 col-lg-3">
           <div class="d-flex justify-content-between align-items-start border-end pb-3 pb-sm-0 card-widget-3">
             <div>
               <h6 class="mb-2">Pedidos Pendientes</h6>
@@ -93,7 +93,7 @@
               </span>
             </div>
           </div>
-        </div>
+        </div> --}}
       </div>
     </div>
   </div>
@@ -104,7 +104,7 @@
 <div class="card">
   <div class="card-datatable table-responsive">
   <div class="card-header">
-  <h5 class="card-title">Pedidos</h5>
+  <h5 class="card-title">Ventas</h5>
     <div class="d-flex">
         <p class="text-muted small">
           <a href="" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches" aria-expanded="false" aria-controls="columnSwitches">Ver / Ocultar columnas de la tabla</a>
@@ -140,7 +140,7 @@
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
             </span>
-            <span class="switch-label">Local</span>
+            <span class="switch-label">Empresa</span>
           </label>
         </div>
         <div class="mx-3">
@@ -170,12 +170,12 @@
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
             </span>
-            <span class="switch-label">Envío</span>
+            <span class="switch-label">Facturado</span>
           </label>
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="8" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="7" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -185,6 +185,38 @@
         </div>
       </div>
     </div>
+
+    {{-- filters --}}
+    <div class="d-flex justify-content-start align-items-center row py-3 gap-3 mb-0 pb-0 gap-md-0">
+      <div class="col-md-2 client_filter">
+        <label for="client">Cliente</label>
+      </div>
+      <div class="col-md-2 company_filter">
+        <label for="company">Empresa</label>
+      </div>
+      <div class="col-md-2 payment_filter">
+        <label for="payment">Pago</label>
+      </div>
+      <div class="col-md-2 billed_filter">
+        <label for="billed">Facturado</label>
+      </div>
+      <div class="col-md-2">
+        <label for="startDate">Fecha Desde</label>
+        <input type="date" class="form-control date-range-filter" id="startDate" placeholder="Fecha de inicio">
+      </div>
+      <div class="col-md-2">
+        <label for="endDate">Fecha Hasta</label>
+        <input type="date" class="form-control date-range-filter" id="endDate" placeholder="Fecha de fin">
+      </div>
+      <div class="col-md-2 d-flex flex-column mt-2">
+        <button class="btn btn-outline-danger btn-sm clear-filters w-100 mb-2" id="clear-filters">
+          <i class="fas fa-eraser"></i> Limpiar Filtros
+        </button>
+        <button class="btn btn-outline-success btn-sm export-excel w-100" id="export-excel">
+          <i class="fas fa-file-excel"></i> Exportar a Excel
+        </button>
+      </div>
+    </div>
   </div>
     <table class="datatables-order table border-top" data-symbol="{{ $settings->currency_symbol }}">
       <thead>
@@ -192,10 +224,9 @@
           <th>N°</th>
           <th>Fecha</th>
           <th>Cliente</th>
-          <th>Local</th>
+          <th>Empresa</th>
           <th>Importe</th>
           <th>Pago</th>
-          <th>Envío</th>
           <th>Facturado</th>
           <th>Acciones</th>
         </tr>

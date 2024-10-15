@@ -15,7 +15,7 @@ function GetFilesArray(query) {
  * Js Files
  */
 // Page JS Files
-const pageJsFiles = GetFilesArray('resources/assets/js/*.js');
+const pageJsFiles = GetFilesArray('resources/assets/js/**/*.js');
 
 // Page CSS Files
 const pageCssFiles = GetFilesArray('resources/assets/css/*.css');

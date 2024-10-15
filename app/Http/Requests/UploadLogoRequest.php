@@ -23,6 +23,7 @@ class UploadLogoRequest extends FormRequest
     {
       return [
         'logo' => 'required|file',
+        'store_id' => 'required|exists:stores,id',
       ];
     }
 }

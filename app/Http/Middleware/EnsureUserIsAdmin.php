@@ -15,7 +15,7 @@ class EnsureUserIsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ( !auth()->user() || !auth()->user()->hasRole('Administrador') ) {
+        if ( !auth()->user() || !auth()->user()->hasRole('Administrador') || !auth()->user()->hasRole('Superadmin') ) {
             return redirect('roles')->with('error', 'No tienes permisos para realizar esta acción.');
         }
 

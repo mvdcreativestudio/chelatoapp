@@ -15,17 +15,18 @@ class StorePosOrderRequest extends FormRequest
     {
         return [
             'date' => 'required|date',
-            'hour' => ['required', 'regex:/^(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]$/'], 
+            'hour' => ['required', 'regex:/^(?:2[0-3]|[01][0-9]):[0-5][0-9]:[0-5][0-9]$/'],
             'cash_register_log_id' => 'required|int',
-            'cash_sales' => 'required|int',
-            'pos_sales' => 'required|int',
-            'discount' => 'required|int',
+            'cash_sales' => 'required|numeric',
+            'pos_sales' => 'required|numeric',
+            'discount' => 'required|numeric',
             'client_id' => 'nullable|int',
             'client_type' => 'required|string',
             'products' => 'required',
-            'subtotal' => 'required|int',
-            'total' => 'required|int',
-            'notes' => 'nullable|string'
+            'subtotal' => 'required|numeric',
+            'total' => 'required|numeric',
+            'notes' => 'nullable|string',
+            'shipping_status' => 'required|string'
         ];
     }
 
@@ -41,7 +42,8 @@ class StorePosOrderRequest extends FormRequest
             'client_type.required' => 'El tipo de cliente es obligatorio.',
             'products.required' => 'Los productos de la orden son obligatorios.',
             'subtotal.required' => 'Es necesario el subtotal de la orden.',
-            'total.required' => 'Es necesario el total de la orden.'
+            'total.required' => 'Es necesario el total de la orden.',
+            'shipping_status.required' => 'El estado de envío es obligatorio.'
         ];
     }
 }

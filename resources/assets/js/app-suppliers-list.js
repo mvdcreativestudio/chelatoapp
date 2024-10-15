@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function () {
     columnDefs.push({
       targets: 8,
       render: function (data, type, row) {
-        return row.store ? row.store.name : 'Tienda sin nombre';
+        return row.store ? row.store.name : 'Empresa sin nombre';
       }
     });
   }

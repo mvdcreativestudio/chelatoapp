@@ -15,7 +15,7 @@
           </div>
           <div class="mb-3">
             <label for="payment_date" class="form-label">Fecha de Pago</label>
-            <input type="date" class="form-control" id="payment_date" name="payment_date" required>
+            <input type="date" class="form-control" id="payment_date" name="payment_date" required value="{{ date('Y-m-d') }}">
           </div>
           <div class="mb-3">
             <label for="payment_method_id" class="form-label">Método de Pago</label>

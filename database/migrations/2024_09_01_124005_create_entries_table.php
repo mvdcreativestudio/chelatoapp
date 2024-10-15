@@ -22,15 +22,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
-
-        // Insertar registros de ejemplo en español
-        DB::table('entries')->insert([
-            ['entry_date' => '2024-09-01', 'entry_type_id' => 1, 'concept' => 'Venta de producto A vía eCommerce', 'currency_id' => 1, 'is_balanced' => true],
-            ['entry_date' => '2024-09-02', 'entry_type_id' => 2, 'concept' => 'Pago a Proveedor X', 'currency_id' => 1, 'is_balanced' => true],
-            ['entry_date' => '2024-09-03', 'entry_type_id' => 3, 'concept' => 'Ingreso por venta en tienda física', 'currency_id' => 1, 'is_balanced' => true],
-            ['entry_date' => '2024-09-04', 'entry_type_id' => 4, 'concept' => 'Pago de comisiones bancarias', 'currency_id' => 2, 'is_balanced' => true],
-            ['entry_date' => '2024-09-05', 'entry_type_id' => 5, 'concept' => 'Ajuste contable por error de registro', 'currency_id' => 3, 'is_balanced' => true],
-        ]);
     }
 
     /**

@@ -3,6 +3,6 @@
     <img src="{{ asset('assets/img/branding/chelato-white.png') }}" alt="" class="footer-logo">
   </div>
   <div class="creditos-container">
-    <p class="">Desarrollado por <a href="https://mvdcreativestudio.com" class="creditos"><b>MVD Studio</b></a></p>
+    <p class="">Desarrollado por <a href="https://sumeria.com.uy" class="creditos"><b>Sumeria</b></a></p>
   </div>
 </div>

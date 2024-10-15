@@ -134,4 +134,12 @@ class CouponController extends Controller
   {
     return $this->couponRepository->datatable();
   }
+
+  public function getCouponByName($name): JsonResponse
+  {
+    $coupon = $this->couponRepository->getCouponByName($name);
+    return response()->json([
+       'coupon' => $coupon
+    ]);
+  }
 }

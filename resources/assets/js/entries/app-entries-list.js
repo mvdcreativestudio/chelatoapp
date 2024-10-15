@@ -88,7 +88,7 @@ $(function () {
                   </button>
                   <div class="dropdown-menu dropdown-menu-end m-0">
                     <a href="${baseUrl}admin/entry-details/${full['id']}" class="dropdown-item detail-record" data-id="${full['id']}">Ver Detalle Asiento</a>
-                    <a href="javascript:void(0);" class="dropdown-item edit-record" data-id="${full['id']}">Editar</a>
+                    <a href="${baseUrl}admin/entries/${full['id']}/edit" class="dropdown-item edit-record" data-id="${full['id']}">Editar</a>
                     <a href="javascript:void(0);" class="dropdown-item delete-record" data-id="${full['id']}">Eliminar</a>
                   </div>
                 </div>`;

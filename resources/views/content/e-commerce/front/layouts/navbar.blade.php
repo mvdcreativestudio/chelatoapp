@@ -5,7 +5,7 @@
 
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
   <div class="container-fluid">
-    <img src="{{ asset('assets/img/branding/chelato-white.png') }}" alt="" class="navbar-logo">
+    <img src="{{ asset($companySettings->logo_white) }}" alt="" class="navbar-logo">
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>

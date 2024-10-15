@@ -36,14 +36,22 @@ class CashRegisterController extends Controller
         $openCashRegisterId = $this->cashRegisterLogRepository->hasOpenLogForUser($userId);
 
         if ($openCashRegisterId) {
+            $storeId = $this->cashRegisterRepository->findStoreByCashRegisterId($openCashRegisterId);
+
             Session::put('open_cash_register_id', $openCashRegisterId);
-            return redirect()->route('pdv.front');
+            Session::put('store_id', $storeId);
+
+           //return redirect()->route('pdv.front');
         } else {
             Session::forget('open_cash_register_id');
+            Session::forget('store_id');
             $cajas = $this->cashRegisterRepository->getCashRegistersForDatatable($userId);
-            return view('points-of-sales.index', compact('cajas', 'userId'));
+            //return view('points-of-sales.index', compact('cajas', 'userId'));
         }
+        $cajas = $this->cashRegisterRepository->getCashRegistersForDatatable($userId);
+        return view('points-of-sales.index', compact('cajas', 'userId'));
     }
+
 
 
     /**
@@ -113,7 +121,7 @@ class CashRegisterController extends Controller
     }
 
     /**
-     * Devuelve la(s) tienda(s) a las cuales le puede abrir una caha registradora.
+     * Devuelve la(s) empresa(s) a las cuales le puede abrir una caha registradora.
      *
      * @return JsonResponse
      */

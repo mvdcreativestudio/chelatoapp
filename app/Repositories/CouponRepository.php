@@ -29,6 +29,12 @@ class CouponRepository
     return Coupon::find($id);
   }
 
+  public function getCouponByName(string $code): ?Coupon
+  {
+      return Coupon::where('code', $code)->first();
+  }
+
+
   /**
    * Crea un nuevo cupón.
    *

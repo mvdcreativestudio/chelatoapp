@@ -26,9 +26,9 @@ class DatacenterController extends Controller
         // Obtén el rango de fechas basado en el periodo seleccionado
         list($startDate, $endDate) = $this->datacenterRepo->getDateRange($period, $startDate, $endDate);
 
-        // Verifica si el usuario tiene el permiso para ver todas las tiendas
+        // Verifica si el usuario tiene el permiso para ver todas las empresa
         if (!auth()->user()->can('view_all_datacenter')) {
-            // Si no tiene permiso, filtra por la tienda asignada al usuario
+            // Si no tiene permiso, filtra por la empresa asignada al usuario
             $storeIdForView = auth()->user()->store_id;
         }
 
@@ -36,7 +36,7 @@ class DatacenterController extends Controller
         $storesCount = $this->datacenterRepo->countStores();
         $registredClients = $this->datacenterRepo->countClients($startDate, $endDate, $storeIdForView);
         $productsCount = $this->datacenterRepo->countProducts($startDate, $endDate, $storeIdForView);
-        $categoriesCount = $this->datacenterRepo->countCategories();
+        $categoriesCount = $this->datacenterRepo->countCategories($storeIdForView);
         $ordersCount = $this->datacenterRepo->countOrders($startDate, $endDate, $storeIdForView);
 
         // Ingresos
@@ -60,7 +60,7 @@ class DatacenterController extends Controller
         // Obtener todos los locales para el filtro por local
         $stores = Store::all();
 
-        // Gráfica de promedio de pedidos por hora
+        // Gráfica de promedio de ventas por hora
         $storeIdForChart = null;
         if (!auth()->user()->can('view_all_datacenter')) {
             $storeIdForChart = auth()->user()->store_id;
@@ -68,10 +68,6 @@ class DatacenterController extends Controller
         $averageOrdersByHour = $this->datacenterRepo->getAverageOrdersByHour($startDate, $endDate, $storeIdForChart);
 
 
-        // Datos para las cards de gastos
-        $expenses = $this->datacenterRepo->getExpensesData($startDate, $endDate, $storeId);
-        $averageMonthlyExpenses = $this->datacenterRepo->averageMonthlyExpenses($storeId);
-        $suppliersExpensesData = $this->datacenterRepo->getSuppliersExpensesData($startDate, $endDate, $storeId);
 
         return view('datacenter.datacenter-sales', compact(
             'storesCount',
@@ -94,10 +90,7 @@ class DatacenterController extends Controller
             'endDate',
             'storeIdForView', // Este es para la vista
             'stores', // Pasamos los locales a la vista para el filtro
-            'averageOrdersByHour', // Pasamos los datos de la gráfica a la vista
-            'expenses', // Pasamos los datos de los gastos a la vista
-            'averageMonthlyExpenses', // Pasamos el promedio de gastos mensuales a la vista
-            'suppliersExpensesData' // Pasamos los datos de los proveedores a la vista
+            'averageOrdersByHour' // Pasamos los datos de la gráfica a la vista
         ));
     }
 
@@ -124,15 +117,6 @@ class DatacenterController extends Controller
 
         return response()->json($incomeData);
     }
-
-
-
-
-
-
-
-
-
 
     // Gráfica de torta - Ventas por Local en porcentaje
     public function salesByStore(Request $request)
@@ -161,14 +145,27 @@ class DatacenterController extends Controller
         return response()->json($paymentMethods);
     }
 
-
-    // grafica de lineas - Gastos Mensuales
-    public function monthlyExpenses(Request $request)
+    public function salesBySellerData(Request $request)
     {
-        $currentYear = date('Y');
+        $period = $request->input('period', 'year'); // Periodo por defecto es 'año'
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
         $storeId = $request->input('store_id');
-        $monthlyExpenses = $this->datacenterRepo->getMonthlyExpensesData($storeId);
-        return response()->json($monthlyExpenses);
+
+        // Si no se pasa un store_id y el usuario no tiene permisos globales, usar el store_id del usuario.
+        if (!$storeId && !auth()->user()->can('view_all_datacenter')) {
+            $storeId = auth()->user()->store_id;
+        }
+
+        list($startDate, $endDate) = $this->datacenterRepo->getDateRange($period, $startDate, $endDate);
+
+        $salesBySeller = $this->datacenterRepo->getSalesBySellerData($startDate, $endDate, $storeId);
+
+        return response()->json($salesBySeller);
     }
+
+
+
+
 
 }

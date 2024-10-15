@@ -32,4 +32,14 @@ class Supplier extends Model
     {
       return $this->hasMany(SupplierOrder::class);
     }
+
+    /**
+     * Obtiene las cuentas corrientes asociadas al proveedor.
+     *
+     * @return HasMany
+    */
+    public function currentAccount(): HasMany
+    {
+      return $this->hasMany(CurrentAccount::class);
+    }
 }

@@ -1,6 +1,6 @@
 @extends('content.e-commerce.front.layouts.ecommerce-layout')
 
-@section('title', 'MVD Studio')
+@section('title', 'Sumeria')
 
 @section('content')
 
@@ -129,7 +129,7 @@
   <div class="container-fluid">
     <div class="row align-items-center">
       <div class="col-lg-6 col-md-12 text-center quienes-somos-container mb-3 mb-lg-0">
-        <h2>Locales</h2>
+        <h2>Empresas</h2>
         <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam tempor, orci eu lacinia rutrum, mauris metus malesuada neque, a maximus erat turpis quis dolor. In efficitur iaculis feugiat. Sed eget facilisis justo, vel auctor lacus. Donec in velit non orci facilisis aliquet at sed ante. Cras elementum ipsum metus, nec porta lectus porta sit amet. Nunc et tristique arcu, vel tempor neque. Proin placerat, lacus ut consequat vestibulum, lorem ex.</p>
       </div>
       <div class="col-lg-6 col-md-12 p-5 text-end homepage-img-container">

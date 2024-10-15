@@ -34,7 +34,7 @@
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">E-Commerce /</span><span> Crear producto</span>
+  <span class="text-muted fw-light"></span><span> Crear producto</span>
 </h4>
 
 @if ($errors->any())
@@ -59,7 +59,7 @@
     </div>
     <div class="d-flex align-content-center flex-wrap gap-3">
       <button type="button" class="btn btn-label-secondary" id="discardButton">Descartar</button>
-      <button type="submit" name="action" value="save_draft" class="btn btn-label-primary">Guardar borrador</button>
+      {{-- <button type="submit" name="action" value="save_draft" class="btn btn-label-primary">Guardar borrador</button> --}}
       <button type="submit" name="action" value="publish" class="btn btn-primary">Publicar</button>
     </div>
 
@@ -110,7 +110,7 @@
       </div>
       <!-- /Product Information -->
       <!-- Variants -->
-      <div class="card mb-4">
+      <div class="card mb-4" style="">
         <div class="card-header">
           <h5 class="card-title mb-0">Tipo de producto y variaciones</h5>
         </div>
@@ -149,57 +149,14 @@
       <!-- Recipe -->
       <div class="card mb-4" id="recipeCard" style="display: none;">
         <div class="card-header">
-          <h5 class="card-title mb-0">Receta</h5>
+            <h5 class="card-title mb-0">Receta</h5>
         </div>
         <div class="card-body">
-          <div data-repeater-list="recipes">
-            <div class="row mb-3" data-repeater-item>
-              <div class="col-4">
-                <label class="form-label" for="raw-material">Materia Prima</label>
-                <select class="form-select raw-material-select" name="recipes[0][raw_material_id]">
-                  <option value="">Selecciona una materia prima</option>
-                  @foreach ($rawMaterials as $rawMaterial)
-                    <option value="{{ $rawMaterial->id }}" data-unit="{{ $rawMaterial->unit_of_measure }}">{{ $rawMaterial->name }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="col-3">
-                <label class="form-label" for="quantity">Cantidad</label>
-                <input type="number" class="form-control" name="recipes[0][quantity]" placeholder="Cantidad" aria-label="Cantidad" disabled>
-              </div>
-              <div class="col-3">
-                <label class="form-label" for="unit-of-measure">Unidad de Medida</label>
-                <input type="text" class="form-control unit-of-measure" placeholder="Unidad de medida" readonly>
-              </div>
-              <div class="col-2 d-flex align-items-end">
-                <button type="button" class="btn btn-danger" data-repeater-delete>Eliminar</button>
-              </div>
+            <div data-repeater-list="recipes">
+                <!-- Elimina los elementos predeterminados aquí -->
             </div>
-            <div class="row mb-3" data-repeater-item>
-              <div class="col-4">
-                <label class="form-label" for="used-flavor">Sabor Usado</label>
-                <select class="form-select used-flavor-select" name="recipes[1][used_flavor_id]">
-                  <option value="">Selecciona un sabor</option>
-                  @foreach ($flavors as $flavor)
-                    <option value="{{ $flavor->id }}">Balde de {{ $flavor->name }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="col-3">
-                <label class="form-label" for="units-per-bucket">Unidades por Balde</label>
-                <input type="number" class="form-control units-per-bucket" name="recipes[1][units_per_bucket]" placeholder="Unidades por balde" aria-label="Unidades por balde" disabled>
-              </div>
-              <div class="col-3">
-                <label class="form-label" for="quantity-individual">Cantidad Individual</label>
-                <input type="number" class="form-control quantity-individual" name="recipes[1][quantity]" placeholder="Cantidad Individual" aria-label="Cantidad Individual" readonly>
-              </div>
-              <div class="col-2 d-flex align-items-end">
-                <button type="button" class="btn btn-danger" data-repeater-delete>Eliminar</button>
-              </div>
-            </div>
-          </div>
-          <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
-          <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button>
+            <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
+            <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button>
         </div>
       </div>
       <!-- /Recipe -->
@@ -210,24 +167,11 @@
     <div class="col-12 col-lg-4">
       <!-- Pricing Card -->
       <div class="card mb-4">
-        <div class="card-header">
-          <h5 class="card-title mb-0">Precio</h5>
-        </div>
         <div class="card-body">
-          <!-- Base Price -->
-          <div class="mb-3">
-            <label class="form-label" for="ecommerce-product-price">Precio normal</label>
-            <input type="number" class="form-control" id="ecommerce-product-price" placeholder="Precio" name="old_price" aria-label="Product price" required>
-          </div>
-          <!-- Discounted Price -->
-          <div class="mb-3">
-            <label class="form-label" for="ecommerce-product-discount-price">Precio rebajado</label>
-            <input type="number" class="form-control" id="ecommerce-product-discount-price" placeholder="Precio rebajado" name="price" aria-label="Introduzca el precio rebajado">
-          </div>
           <!-- Campo oculto para estado desactivado -->
           <input type="hidden" name="status" value="2">
           <!-- Switch estado -->
-          <div class="d-flex justify-content-between align-items-center border-top pt-3">
+          <div class="d-flex justify-content-between align-items-center mb-3 pb-1">
             <span class="mb-0 h6">Estado</span>
             <div class="w-25 d-flex justify-content-end">
               <label class="switch switch-primary switch-sm me-4 pe-2">
@@ -236,6 +180,23 @@
               </label>
             </div>
           </div>
+
+          <!-- Base Price -->
+          <div class="mb-3">
+            <label class="form-label" for="ecommerce-product-price">Precio normal - <small>IVA INCLUÍDO</small></label></label>
+            <input type="number" min="0" step=".01" class="form-control" id="ecommerce-product-price" placeholder="Precio" name="old_price" aria-label="Product price" required>
+          </div>
+          <!-- Discounted Price -->
+          <div class="mb-3">
+            <label class="form-label" for="ecommerce-product-discount-price">Precio oferta - <small>IVA INCLUÍDO</small></label></label>
+            <input type="number" step=".01" min="0" class="form-control" id="ecommerce-product-discount-price" placeholder="Precio rebajado" name="price" aria-label="Introduzca el precio rebajado">
+          </div>
+          <!-- build_price -->
+          <div class="mb-3">
+            <label class="form-label" for="build_price">Costo</label>
+            <input type="number" step=".01" min="0" class="form-control" id="build_price" placeholder="Introduzca el costo del producto" name="build_price" aria-label="Introduzca costo">
+          <div>
+
         </div>
       </div>
       <!-- /Pricing Card -->
@@ -245,21 +206,17 @@
           <h5 class="card-title mb-0">Organizar</h5>
         </div>
         <div class="card-body">
-          <!-- Vendor -->
-          <div class="mb-3 col ecommerce-select2-dropdown">
-            <label class="form-label mb-1" for="vendor">
-              Local
-            </label>
-            <select id="vendor" class="select2 form-select" data-placeholder="Seleccionar local" name="store_id" required>
-              @if(auth()->user()->hasPermissionTo('access_global_products'))
-                <option value="">Seleccionar local</option>
-                @foreach ($stores as $store)
-                  <option value="{{ $store->id }}">{{ $store->name }}</option>
-                @endforeach
-              @else
-                <option value="{{ auth()->user()->store_id }}" selected>{{ auth()->user()->store->name }}</option>
-              @endif
-            </select>
+
+          <!-- Stock Inicial -->
+          <div class="mb-3" id="stockContainer">
+            <div class="stock-inicial mb-3">
+              <label class="form-label" for="stock">Stock Inicial</label>
+              <input type="number" class="form-control" id="stock" placeholder="Stock Inicial" name="stock" aria-label="Introduzca el stock inicial">
+            </div>
+            <div class="stock-margen">
+              <label class="form-label" for="safety_margin">Margen de Seguridad</label>
+              <input type="number" class="form-control" id="safety_margin" placeholder="¿Cuántas unidades es el minimo por el que desea ser notificado?" name="safety_margin" aria-label="Introduzca el margen de seguridad">
+            </div>
           </div>
 
           <!-- Category -->
@@ -273,11 +230,35 @@
               @endforeach
             </select>
           </div>
-          <!-- Stock Inicial -->
-          <div class="mb-3" id="stockContainer">
-            <label class="form-label" for="stock">Stock Inicial</label>
-            <input type="number" class="form-control" id="stock" placeholder="Stock Inicial" name="stock" aria-label="Introduzca el stock inicial">
+
+          <!-- Vendor -->
+          <div class="mb-3 col ecommerce-select2-dropdown">
+            <label class="form-label mb-1" for="vendor">
+              Empresa
+            </label>
+            <select id="vendor" class="select2 form-select" data-placeholder="Seleccionar local" name="store_id" required {{ count($stores) === 1 ? 'disabled' : '' }}>
+              @if(auth()->user()->hasPermissionTo('access_global_products'))
+                @foreach ($stores as $index => $store)
+                  <option value="{{ $store->id }}" {{ $index === 0 ? 'selected' : '' }}>{{ $store->name }}</option>
+                @endforeach
+              @else
+                <option value="{{ auth()->user()->store_id }}" selected>{{ auth()->user()->store->name }}</option>
+              @endif
+            </select>
+
+            @if(count($stores) === 1)
+              <!-- Campo oculto para enviar el valor si solo hay un local disponible -->
+              <input type="hidden" name="store_id" value="{{ $stores->first()->id }}">
+            @endif
           </div>
+
+          <!-- Código de barras -->
+          <div class="mb-3" id="barCodeContainer">
+            <label class="form-label" for="bar_code">Código de barras</label>
+            <input type="text" class="form-control" id="bar_code" placeholder="Código de barras" name="bar_code" aria-label="Introduzca el código de barras">
+          </div>
+
+
         </div>
       </div>
       <!-- Media -->

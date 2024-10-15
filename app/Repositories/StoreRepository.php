@@ -16,7 +16,11 @@ class StoreRepository
   */
   public function getAll(): Collection
   {
-      return Store::withCount('users')->with('phoneNumber')->get();
+      if (auth()->user()->can('view_all_stores')) {
+        return Store::withCount('users')->with('phoneNumber')->get();
+      } else {
+        return Store::where('id', auth()->user()->store_id)->withCount('users')->with('phoneNumber')->get();
+      }
   }
 
   /**

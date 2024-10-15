@@ -1,27 +1,20 @@
 $(document).ready(function () {
   let editDetailIndex = 1;
 
-  // Abrir modal para editar asiento
-  $('.datatables-entries tbody').on('click', '.edit-record', function () {
-    var recordId = $(this).data('id');
-    prepareEditModal(recordId);
-  });
-
   // Manejar el evento submit del formulario para evitar el comportamiento predeterminado
   $('#editEntryForm').on('submit', function (e) {
     e.preventDefault();
-    var recordId = $('#updateEntryBtn').data('id');
-    submitEditEntry(recordId);
+    submitEditEntry();
   });
 
   // Enviar formulario de edición al hacer clic en el botón de guardar cambios
-  $('#editEntryModal').on('click', '#updateEntryBtn', function (e) {
+  $('#updateEntryBtn').on('click', function (e) {
     e.preventDefault();
     $('#editEntryForm').submit();
   });
 
   // Añadir nuevo detalle de asiento
-  $('#editEntryModal').on('click', '#addEditEntryDetail', function () {
+  $('#addEditEntryDetail').on('click', function () {
     addEditEntryDetailRow();  // Llama a la función para agregar una nueva fila
   });
 
@@ -29,36 +22,6 @@ $(document).ready(function () {
   $('#editEntryDetails').on('click', '.remove-entry-detail', function () {
     $(this).closest('.entry-detail').remove();  // Elimina la fila del detalle
   });
-
-  function prepareEditModal(recordId) {
-    // Función para preparar el modal de edición
-    $.ajax({
-      url: `entries/${recordId}/edit`,
-      type: 'GET',
-      success: function (data) {
-        // Rellenar los campos del formulario con los datos obtenidos
-        $('#edit_entry_date').val(moment(data.entry_date).format('YYYY-MM-DD'));
-        $('#edit_entry_type_id').val(data.entry_type_id);
-        $('#edit_concept').val(data.concept);
-        $('#edit_currency_id').val(data.currency_id);
-
-        // Limpiar detalles existentes
-        $('#editEntryDetails').empty();
-
-        // Rellenar los detalles del asiento
-        data.details.forEach(function (detail, index) {
-          addEditEntryDetailRow(detail);
-        });
-
-        // Mostrar el modal
-        $('#editEntryModal').modal('show');
-        $('#updateEntryBtn').data('id', recordId); // Asigna el ID del registro al botón de actualización
-      },
-      error: function () {
-        Swal.fire('Error', 'No se pudo cargar el formulario de edición. Por favor, intenta de nuevo.', 'error');
-      }
-    });
-  }
 
   function addEditEntryDetailRow(detail = {}) {
     let entryDetails = $('#editEntryDetails');
@@ -97,9 +60,12 @@ $(document).ready(function () {
     editDetailIndex++;
   }
 
-  function submitEditEntry(recordId) {
-    var route = $('#updateEntryBtn').data('route').replace(':id', recordId);
-    
+  function submitEditEntry() {
+    // var route = $('#updateEntryBtn').data('route').replace(':id', recordId);
+    // console.log({route, recordId});
+    // get route form
+    var route = $('#editEntryForm').attr('action');
+    console.log(route);
     // Recopilar los datos del formulario
     var formData = {
       entry_date: $('#edit_entry_date').val(),
@@ -133,7 +99,6 @@ $(document).ready(function () {
       },
       data: formData,
       success: function (response) {
-        $('#editEntryModal').modal('hide');
         Swal.fire({
           icon: 'success',
           title: 'Asiento Actualizado',
@@ -143,7 +108,6 @@ $(document).ready(function () {
         });
       },
       error: function (xhr) {
-        $('#editEntryModal').modal('hide');
 
         var errorMessage = '';
 
@@ -161,9 +125,7 @@ $(document).ready(function () {
           icon: 'error',
           title: 'Error al guardar',
           html: errorMessage
-        }).then(result => {
-          $('#editEntryModal').modal('show');
-        });
+        })
       }
     });
 }

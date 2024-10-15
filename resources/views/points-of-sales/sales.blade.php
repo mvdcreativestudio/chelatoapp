@@ -36,7 +36,7 @@
                             <div class="avatar me-2">
                                 <span class="avatar-initial rounded bg-label-info"><i class='bx bx-money'></i></span>
                             </div>
-                            <h4 class="ms-1 mb-0">${{ $cashSales }}</h4>
+                            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ number_format($cashSales, 0, ',', '.') }}</h4>
                         </div>
                         <p class="mb-1 fw-medium me-1">Ventas en efectivo</p>
                     </div>
@@ -50,7 +50,7 @@
                             <div class="avatar me-2">
                                 <span class="avatar-initial rounded bg-label-info"><i class='bx bx-credit-card'></i></span>
                             </div>
-                            <h4 class="ms-1 mb-0">${{ $posSales }}</h4>
+                            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ number_format($posSales, 0, ',', '.') }}</h4>
                         </div>
                         <p class="mb-1 fw-medium me-1">Ventas por POS</p>
                     </div>
@@ -177,40 +177,65 @@
                 </div>
             </div>
             <div class="card-datatable table-responsive">
-                <table id="cash-register-sales" class="table table-bordered table-hover bg-white">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Hora</th>
-                            <th>Ventas Efectivo</th>
-                            <th>Ventas POS</th>
-                            <th>Descuento</th>
-                            <th>ID Cliente</th>
-                            <th>Total</th>
-                            <th>Notas</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($sales as $sale)
-                            <tr>
-                                <td>{{ $sale->id }}</td>
-                                <td>{{ $sale->date }}</td>
-                                <td>{{ $sale->hour }}</td>
-                                <td>{{ $sale->cash_sales }}</td>
-                                <td>{{ $sale->pos_sales }}</td>
-                                <td>{{ $sale->discount }}</td>
-                                <td>{{ $sale->client_id }}</td>
-                                <td>{{ $sale->total }}</td>
-                                <td>{{ $sale->notes }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="text-center">No hay datos disponibles.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+              <table id="cash-register-sales" class="table table-bordered table-hover bg-white">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Hora</th>
+                        <th>Productos</th>
+                        <th>Pago</th> <!-- Nueva columna para el tipo de pago -->
+                        {{-- <th>Descuento</th> --}}
+                        <th>Total</th>
+                        <th>ID Cliente</th>
+                        <th>Notas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($sales as $sale)
+                    <tr>
+                        <td>{{ $sale->id }}</td>
+                        <td>{{ \Carbon\Carbon::parse($sale->date)->translatedFormat('d \d\e F Y') }}</td>
+                        <td>{{ \Carbon\Carbon::parse($sale->hour)->format('h:i a') }}</td>
+                        <td>
+                            @if (!empty($sale->products))
+                                <ul>
+                                    @foreach ($sale->products as $product)
+                                        <li>{{ $product['name'] }} - {{ $settings->currency_symbol }}{{ number_format($product['price'], 0, ',', '.') }} x {{ $product['quantity'] }}</li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                Sin productos
+                            @endif
+                        </td>
+                        <td>
+                            <!-- Mostrar el tipo de pago con un label -->
+                            @if ($sale->cash_sales > 0)
+                                <span class="badge bg-success">Efectivo</span>
+                            @elseif ($sale->pos_sales > 0)
+                                <span class="badge bg-primary">POS</span>
+                            @else
+                                <span class="badge bg-secondary">Otro</span>
+                            @endif
+                        </td>
+                        {{-- <td>{{ $settings->currency_symbol }}{{ number_format($sale->discount, 0, ',', '.') }}</td> --}}
+                        <td>{{ $settings->currency_symbol }}{{ number_format($sale->total, 0, ',', '.') }}</td>
+                        <td>
+                          @if($sale->client_id == null)
+                            N/A
+                          @else
+                            {{ $sale->client_id }}
+                          @endif
+                        </td>
+                        <td>{{ $sale->notes }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="9" class="text-center">No hay datos disponibles.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+              </table>
             </div>
         </div>
         @else
@@ -302,4 +327,4 @@
 
         });
     </script>
-@endsectio
+@endsection

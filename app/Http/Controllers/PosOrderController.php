@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Repositories\PosOrderRepository;
 use Illuminate\View\View;
 use App\Http\Requests\StorePosOrderRequest;
+use App\Http\Requests\UpdatePosOrderRequest;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class PosOrderController extends Controller
 {
@@ -53,9 +56,28 @@ class PosOrderController extends Controller
     public function store(StorePosOrderRequest $request)
     {
         $validatedData = $request->validated();
+
+        Log::info('Validated data: ' . json_encode($validatedData));
+
+        // Convertir los productos a un array
+        $products = json_decode($validatedData['products'], true);
+
+        Log::info('Products controller: ' . json_encode($products));
+
+        // Intentar actualizar el stock solo si el producto tiene un stock definido
+        $stockUpdated = $this->posOrderRepo->updateProductStock($products);
+
+        if (!$stockUpdated) {
+            // Si el stock no se actualizó, retornar un error
+            return response()->json(['error' => 'Stock insuficiente en uno o más productos'], 400);
+        }
+
+        // Crear la orden después de actualizar el stock
         $order = $this->posOrderRepo->create($validatedData);
+
         return response()->json($order, 201);
     }
+
 
     /**
      * Actualiza una caja registradora ya creada.
@@ -63,7 +85,7 @@ class PosOrderController extends Controller
      * @param UpdatePosOrderRequest $request
      * @param string $id
      * @return JsonResponse
-     * 
+     *
      */
     public function update(UpdatePosOrderRequest $request, $id)
     {

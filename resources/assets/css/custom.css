@@ -279,6 +279,12 @@
   line-height: 1.4;
 }
 
+.img-carrito {
+  border-radius: 7px !important;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
 .success-product-img {
   border-radius: 20px;
 }
@@ -667,6 +673,75 @@ tr.odd {
   border-radius: 3px;
 }
 
+.card-title-product-pos {
+  white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+  overflow: hidden; /* Oculta el desbordamiento de texto */
+  text-overflow: ellipsis; /* Añade puntos suspensivos al final del texto si es demasiado largo */
+  max-width: 100%; /* Asegura que el texto se mantenga dentro del contenedor */
+}
+
+.client-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 5px;
+}
+
+.client-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.client-info {
+  margin-bottom: 4px;
+  color: #6b7280; /* Color gris suave */
+  font-size: 13px; /* Tamaño de fuente reducido */
+}
+
+.btn-select-client {
+  background-color: #4caf50;
+  border: none;
+  color: white;
+  padding: 5px 8px; /* Botón más pequeño */
+  text-align: center;
+  font-size: 12px; /* Fuente más pequeña */
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.btn-select-client:hover {
+  background-color: #45a049;
+}
+
+.card-title {
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 3px;
+  font-size: 14px; /* Fuente más pequeña */
+}
+
+.client-details {
+  flex: 1; /* Asegurar que el contenido ocupe el espacio restante */
+}
+
+.client-info-card {
+  transition: box-shadow 0.3s ease;
+}
+
+.client-details p {
+  font-size: 14px;
+  margin: 0;
+}
+
+.btn-outline-danger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
 .check-circle-integrations {
   background-color: #28a745; /* Fondo verde */
   border-radius: 50%; /* Hace que el contenedor sea un círculo */
@@ -680,4 +755,290 @@ tr.odd {
 .check-circle-integrations i {
   font-size: 24px; /* Ajusta el tamaño del ícono */
   color: #fff; /* Color blanco para el ícono */
+}
+
+#updateButtonContainer {
+  transition: opacity 0.5s ease;
+}
+
+#updateButtonContainer.show {
+  opacity: 1;
+  display: flex !important;
+}
+
+/** Modal de productos - PDV */
+
+.product-cart-card {
+  display: flex;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out;
+  height: 150px;
+  margin-bottom: 15px;
+}
+
+.product-cart-card:hover {
+  transform: translateY(-3px);
+}
+
+.product-cart-card-img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  max-height: 150px;
+  border-radius: 8px;
+}
+
+.product-cart-card-body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.product-cart-title {
+  font-size: .9rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.product-cart-category {
+  font-size: 0.75rem;
+  margin-bottom: 5px;
+}
+
+.product-cart-price {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+
+
+.product-cart-remove {
+  color: #dc3545;
+  cursor: pointer;
+}
+
+
+/* Selector de cantidad PDV Lista */
+
+.selector-cantidad-pdv {
+  width: 40px !important; /* Ancho ajustado */
+  text-align: center !important;
+  font-size: .8rem !important; /* Tamaño de fuente más grande */
+  padding: 0.05rem !important; /* Espaciado interno reducido */
+  height: 24px !important; /* Altura reducida */
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.075) !important;
+  outline: none !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.selector-cantidad-pdv:focus {
+  border-color: #ced4da !important;
+  box-shadow: none!important;
+}
+
+.selector-cantidad-pdv::-webkit-inner-spin-button,
+.selector-cantidad-pdv::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.increment-quantity,
+.decrement-quantity {
+  border-color: #ced4da !important;
+  color: #495057 !important;
+  height: 24px !important;
+  padding: 0.05rem 0.5rem !important;
+}
+
+.increment-quantity:hover,
+.decrement-quantity:hover {
+  background-color: #e9ecef !important;
+  border-color: #ced4da !important;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #ced4da !important;
+}
+
+/* Selector de cantidad PDV Cards */
+
+.selector-cantidad-pdv-cards {
+  width: 40px !important; /* Ancho ajustado */
+  text-align: center !important;
+  font-size: .8rem !important; /* Tamaño de fuente más grande */
+  padding: 0.05rem !important; /* Espaciado interno reducido */
+  height: 24px !important; /* Altura reducida */
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.075) !important;
+  outline: none !important;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.selector-cantidad-pdv-cards:focus {
+  border-color: #ced4da !important;
+  box-shadow: none!important;
+}
+
+.selector-cantidad-pdv-cards::-webkit-inner-spin-button,
+.selector-cantidad-pdv-cards::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.increment-quantity-cards,
+.decrement-quantity-cards {
+  border-color: #ced4da !important;
+  color: #495057 !important;
+  height: 24px !important;
+  padding: 0.05rem 0.5rem !important;
+}
+
+.increment-quantity-cards:hover,
+.decrement-quantity-cards:hover {
+  background-color: #e9ecef !important;
+  border-color: #ced4da !important;
+}
+
+.input-group-cards-pdv {
+  width: 100px !important;
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+/** Categorías de productos */
+
+.category-card {
+  display: flex;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out;
+  height: 150px;
+}
+
+.category-card:hover {
+  transform: translateY(-3px);
+}
+
+.category-card-body {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.category-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.category-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.category-product-count {
+  font-size: 0.75rem;
+  margin-bottom: 5px;
+}
+
+.category-card-actions {
+  text-align: right;
+  margin-top: auto;
+}
+
+/** Clientes */
+
+.clients-card-container {
+  margin-bottom: 10px;
+  position: relative;
+  transition: all 0.3s ease-in-out;
+}
+
+.clients-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  padding-bottom: 5px;
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.clients-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.clients-card-body {
+  flex-grow: 1;
+  display: none;
+  margin-top: 15px;
+}
+
+.clients-name {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333333;
+}
+
+.clients-type {
+  font-size: 0.75rem;
+  padding: 5px 12px;
+  font-weight: 600;
+}
+
+.clients-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.clients-card p {
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #666666;
+}
+
+.clients-card p i {
+  margin-right: 8px;
+  font-size: 1.2rem;
+  color: #888888;
+}
+
+.clients-card-actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+
+@media (max-width: 768px) {
+  .clients-card {
+    padding: 15px;
+  }
+
+  .clients-name {
+    font-size: 1rem;
+  }
+
+  .clients-card p {
+    font-size: 0.95rem;
+  }
+
+}
+
+.bg-primary-op {
+  background-color: #181818a8;
 }

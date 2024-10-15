@@ -16,10 +16,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\CheckoutStoreOrderRequest;
 use Illuminate\Http\RedirectResponse;
 use App\Events\OrderCreatedEvent;
-use Illuminate\Support\Facades\Http;
-use App\Models\PymoSetting;
 use Exception;
-use App\Models\Receipt;
 
 class CheckoutRepository
 {
@@ -114,6 +111,7 @@ class CheckoutRepository
 
             // Obtener el ID de la tienda desde la sesión
             $storeId = session('store.id');
+            Log::info('ID de tienda obtenido:', ['store_id' => $storeId]);
 
             // Obtener los datos del cliente
             $clientData = $this->getClientData($request);
@@ -121,18 +119,14 @@ class CheckoutRepository
             // Obtener los datos de la orden
             $orderData = $this->getOrderData($request);
 
-            // Guardar la orden y los datos del cliente
             $order = $this->createOrder($clientData, $orderData);
 
             $store = $order->store;
 
             if ($store->automatic_billing) {
                 $this->accountingRepository->emitCFE($order);
-
-                // Marcar la orden como facturada
                 $order->update(['is_billed' => true]);
             } else {
-                // Marcar la orden como no facturada
                 $order->update(['is_billed' => false]);
             }
 
@@ -151,12 +145,11 @@ class CheckoutRepository
                 // Procesar el pago con tarjeta
                 $redirectUrl = $this->processCardPayment($request, $order, $mercadoPagoService, $storeId);
                 DB::commit();
-                session()->forget('cart'); // Limpiar el carrito de compras
+                session()->forget('cart');
                 return Redirect::away($redirectUrl);
             } else {
-                // Lógica para pago en efectivo
                 DB::commit();
-                session()->forget('cart'); // Limpiar el carrito de compras
+                session()->forget('cart');
 
                 Log::info('Pedido procesado correctamente.');
 

@@ -70,10 +70,10 @@ $navbarDetached = ($navbarDetached ?? '');
                               popupActive = true;
                               if (unreadNotifications.length > 1) {
                                   Swal.fire({
-                                      title: 'Tienes ' + unreadNotifications.length + ' pedidos nuevos',
-                                      text: 'Haz clic en "Ver pedidos" para ver todos los pedidos nuevos.',
+                                      title: 'Tienes ' + unreadNotifications.length + ' ventas nuevas',
+                                      text: 'Haz clic en "Ver ventas" para ver todas los ventas nuevas.',
                                       icon: 'info',
-                                      confirmButtonText: 'Ver pedidos'
+                                      confirmButtonText: 'Ver ventas'
                                   }).then((result) => {
                                       popupActive = false;
                                       if (result.isConfirmed) {
@@ -82,10 +82,10 @@ $navbarDetached = ($navbarDetached ?? '');
                                   });
                               } else if (lastNotification) {
                                   Swal.fire({
-                                      title: '¡Hay un nuevo pedido!',
-                                      text: `Pedido #${lastNotification.data.order_id} de ${lastNotification.data.customer_name} ${lastNotification.data.customer_lastname}`,
+                                      title: '¡Hay una nueva venta!',
+                                      text: `Venta #${lastNotification.data.order_id} de ${lastNotification.data.customer_name} ${lastNotification.data.customer_lastname}`,
                                       icon: 'info',
-                                      confirmButtonText: 'Ver Orden'
+                                      confirmButtonText: 'Ver Venta'
                                   }).then((result) => {
                                       popupActive = false;
                                       if (result.isConfirmed) {

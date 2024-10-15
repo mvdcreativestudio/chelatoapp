@@ -138,7 +138,7 @@
                   total: {
                     show: true,
                     fontSize: '0.7rem',
-                    label: 'Local con más ventas: ' + topStoreName,
+                    label: 'Empresa con más ventas: ' + topStoreName,
                     color: labelColor,
                     formatter: function (w) {
                       return topStorePercent + '%';

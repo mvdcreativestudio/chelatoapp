@@ -29,6 +29,7 @@ $(document).ready(function () {
         $('#dueDateEdit').val(moment(data.due_date).format('YYYY-MM-DD'));
         $('#supplierIdEdit').val(data.supplier_id);
         $('#expenseCategoryIdEdit').val(data.expense_category_id);
+        $('#expenseCurrencyIdEdit').val(data.currency_id);
         $('#storeIdEdit').val(data.store_id);
 
 
@@ -49,6 +50,7 @@ $(document).ready(function () {
       due_date: $('#dueDateEdit').val(),
       supplier_id: $('#supplierIdEdit').val(),
       expense_category_id: $('#expenseCategoryIdEdit').val(),
+      currency_id: $('#expenseCurrencyIdEdit').val(),
       store_id: $('#storeIdEdit').val(),
       '_token': $('meta[name="csrf-token"]').attr('content')
     }

@@ -15,7 +15,7 @@ class PosService
     {
         return $this->posIntegration->processTransaction($transactionData);
     }
-    
+
     public function checkTransactionStatus(array $transactionData)
     {
         return $this->posIntegration->checkTransactionStatus($transactionData);

@@ -33,66 +33,62 @@ class ScanntechIntegrationService implements PosIntegrationInterface
             return $response->json();
         }
 
-        return ['error' => 'Error en la transacción con Scanntech'];
+
+        Log::error('Error al procesar la transacción con Scanntech: ' . $response->body());
+        return [
+            'success' => false,
+            'message' => 'Error al procesar la transacción con Scanntech'
+        ];
+
     }
 
     public function checkTransactionStatus(array $transactionData): array
     {
         $token = $this->authService->getAccessToken();
-    
+
+
         try {
-            \Log::info('Enviando solicitud de estado de transacción a Scanntech', $transactionData);
-    
+            Log::info('Enviando solicitud de estado de transacción a Scanntech', $transactionData);
+
+
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Content-Type' => 'application/json',
             ])->post('http://200.40.123.21:35000/rest/v2/getTransactionState', $transactionData);
-    
-            \Log::info('Respuesta de Scanntech', [
+
+
+            Log::info('Respuesta de Scanntech', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
-    
+
             if ($response->successful()) {
                 $jsonResponse = $response->json();
-                Log::info('Respuesta JSON completa de Scanntech', $jsonResponse);
-                
                 $responseCode = $jsonResponse['ResponseCode'] ?? null;
+
                 Log::info('Código de respuesta recibido: ' . $responseCode);
-    
-                $responseInfo = $this->getResponses($responseCode);
-                Log::info('Información de respuesta obtenida:', $responseInfo);
-    
-                $finalResponse = [
+
+                return [
                     'responseCode' => $responseCode,
-                    'message' => $responseInfo['message'],
-                    'icon' => $responseInfo['icon'],
-                    'showCloseButton' => $responseInfo['showCloseButton'],
                     'details' => $jsonResponse
                 ];
-                Log::info('Respuesta final preparada', $finalResponse);
-                return $finalResponse;
             } else {
-                \Log::error('Error al consultar el estado de la transacción en Scanntech: ' . $response->body());
+                Log::error('Error al consultar el estado de la transacción en Scanntech: ' . $response->body());
                 return [
                     'responseCode' => $response->status(),
-                    'message' => 'Error al consultar el estado de la transacción',
-                    'icon' => 'error',
-                    'showCloseButton' => true
+                    'message' => 'Error al consultar el estado de la transacción'
                 ];
             }
         } catch (\Exception $e) {
-            \Log::error('Excepción al consultar el estado de la transacción: ' . $e->getMessage());
-            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            Log::error('Excepción al consultar el estado de la transacción: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return [
                 'responseCode' => 999,
-                'message' => 'Error al consultar el estado de la transacción: ' . $e->getMessage(),
-                'icon' => 'error',
-                'showCloseButton' => true
+                'message' => 'Error al consultar el estado de la transacción: ' . $e->getMessage()
             ];
         }
     }
-    
+
 
     public function getResponses($responseCode)
     {
@@ -100,7 +96,7 @@ class ScanntechIntegrationService implements PosIntegrationInterface
         $responseCode = (int)$responseCode; // Convertir a entero
         Log::info('Buscando respuesta para el código: ' . $responseCode);
         Log::info('Configuración completa de respuestas:', $responses);
-        
+
         if (isset($responses[$responseCode])) {
             Log::info('Respuesta encontrada para el código ' . $responseCode . ':', $responses[$responseCode]);
             return $responses[$responseCode];
@@ -113,5 +109,5 @@ class ScanntechIntegrationService implements PosIntegrationInterface
             ];
         }
     }
-
 }
+

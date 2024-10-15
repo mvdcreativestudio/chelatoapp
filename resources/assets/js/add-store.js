@@ -9,6 +9,16 @@ document.addEventListener('DOMContentLoaded', function () {
           mercadoPagoFields.style.display = 'none';
       }
   });
+
+
+  document.getElementById('invoicesEnabledSwitch').addEventListener('change', function() {
+    var pymoFields = document.getElementById('pymoFields');
+    if (this.checked) {
+      pymoFields.style.display = 'block';
+    } else {
+      pymoFields.style.display = 'none';
+    }
+  });
 });
 
 

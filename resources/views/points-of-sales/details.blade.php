@@ -25,7 +25,7 @@
                             </div>
                             <h4 class="ms-1 mb-0">{{ $details->count() }}</h4>
                         </div>
-                        <p class="mb-1 fw-medium me-1">Registros de cajas</p>
+                        <p class="mb-1 fw-medium me-1">Registros de caja</p>
                     </div>
                 </div>
             </div>
@@ -60,8 +60,21 @@
             </div>
             <div class="bg-white p-4 shadow-sm rounded">
 
-            <h2 class="mb-4">Caja Registradora: {{ $cashRegister->id }}</h1>
-                <div class="d-flex">
+            <!-- Tarjeta de Información de la Caja Registradora -->
+            <div class="card mb-4">
+              <div class="card-body">
+                  <div class="d-flex align-items-center">
+                      <div class="avatar avatar-lg me-3">
+                          <span class="avatar-initial rounded-circle bg-label-info"><i class="bx bx-user"></i></span>
+                      </div>
+                      <div>
+                          <h4 class="mb-1">Caja Registradora ID: {{ $cashRegister->id }}</h4>
+                          <p class="mb-0 text-muted">Operada por: <strong>{{ $cashRegister->user->name }}</strong></p>
+                      </div>
+                  </div>
+              </div>
+            </div>
+              <div class="d-flex">
                     <p class="text-muted small">
                         <a href="" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches"
                             aria-expanded="false" aria-controls="columnSwitches">Ver / Ocultar columnas de la tabla</a>
@@ -192,9 +205,9 @@
                                             No ha cerrado.
                                         @endif
                                     </td>
-                                    <td>{{ $detail->cash_sales }}</td>
-                                    <td>{{ $detail->pos_sales }}</td>
-                                    <td>{{ $detail->cash_float }}</td>
+                                    <td>{{ $settings->currency_symbol }}{{ number_format( $detail->cash_sales , 0, ',', '.') }}</td>
+                                    <td>{{ $settings->currency_symbol }}{{ number_format( $detail->pos_sales , 0, ',', '.') }}</td>
+                                    <td>{{ $settings->currency_symbol }}{{ number_format( $detail->cash_float , 0, ',', '.') }}</td>
                                     <td>
                                         @if (is_null($detail->close_time))
                                             <span class="badge bg-success">ABIERTA</span>
@@ -202,7 +215,7 @@
                                             <span class="badge bg-danger">CERRADA</span>
                                         @endif
                                     </td>
-                                    <td>{{ $detail->cash_sales + $detail->pos_sales }}</td>
+                                    <td>{{ $settings->currency_symbol }}{{ number_format($detail->cash_sales + $detail->pos_sales + $detail->cash_float, 0, ',', '.') }}</td>
                                     <td>
                                         <button class="btn btn-outline-primary btn-view-sales"
                                             data-id="{{ $detail->id }}">

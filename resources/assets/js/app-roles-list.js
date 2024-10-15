@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
   const columns = [
     { data: 'name' },
-    { data: 'guard_name' },
     {
       data: null,
       render: function (data, type, row) {

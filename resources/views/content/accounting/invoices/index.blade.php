@@ -30,7 +30,7 @@
   <span class="text-muted fw-light">Contabilidad /</span> Facturas
 </h4>
 
-<div class="card mb-4">
+{{-- <div class="card mb-4">
   <div class="card-widget-separator-wrapper">
     <div class="card-body card-widget-separator">
       <div class="row gy-4 gy-sm-1">
@@ -67,7 +67,7 @@
         <div class="col-sm-6 col-lg-4">
           <div class="d-flex justify-content-between align-items-start">
             <div>
-              <h6 class="mb-2">Tienda con más Emisiones</h6>
+              <h6 class="mb-2">Empresa con más Emisiones</h6>
               <h4 class="mb-2">{{ $storeNameWithMostReceipts }}</h4>
               <p class="mb-0"><span class="text-muted me-2">Más Emisiones</span></p>
             </div>
@@ -81,7 +81,7 @@
       </div>
     </div>
   </div>
-</div>
+</div> --}}
 
 @if (session('success'))
 <div class="alert alert-success mt-3 mb-3">
@@ -114,6 +114,14 @@
           <a href="#" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches" aria-expanded="false" aria-controls="columnSwitches">Ver / Ocultar columnas de la tabla</a>
         </p>
       </div>
+      <button id="btn-update-cfes" class="btn btn-primary">
+        Actualizar estado de CFEs
+      </button>
+      @if (auth()->user()->can('access_update_all_invoices'))
+        <button id="btn-update-all-cfes" class="btn btn-primary">
+          Actualizar estado de todos los CFEs
+        </button>
+      @endif
       <div class="collapse" id="columnSwitches">
         <div class="mt-0 d-flex flex-wrap">
           <div class="mx-3">
@@ -143,7 +151,7 @@
                 <span class="switch-on"><i class="bx bx-check"></i></span>
                 <span class="switch-off"><i class="bx bx-x"></i></span>
               </span>
-              <span class="switch-label">Tienda</span>
+              <span class="switch-label">Empresa</span>
             </label>
           </div>
           <div class="mx-3">
@@ -173,7 +181,7 @@
       <thead>
         <tr>
           <th>N°</th>
-          <th>Tienda</th>
+          <th>Empresa</th>
           <th>Cliente</th>
           <th>Orden</th>
           <th>Fecha</th>
@@ -183,6 +191,7 @@
           <th>Moneda</th>
           <th>Total</th>
           <th>Asociado a</th>
+          <th>Status</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -193,6 +202,27 @@
 </div>
 <!--/ Responsive Datatable -->
 
+<div class="modal fade" id="emitirReciboModal" tabindex="-1" aria-labelledby="emitirReciboLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form action="#" method="POST" id="emitirReciboForm">
+        @csrf
+        <div class="modal-header">
+          <h5 class="modal-title" id="emitirReciboLabel">Emitir Recibo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Está seguro de que desea emitir un recibo sobre esta factura?</p>
+          <p>No podrás emitir más notas de crédito o débito sobre esta factura.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Emitir Recibo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 <div class="modal fade" id="modalDetalle" tabindex="-1" aria-labelledby="modalDetalleLabel" aria-hidden="true">
   <div class="modal-dialog">

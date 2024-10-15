@@ -153,12 +153,11 @@ document.addEventListener('DOMContentLoaded', function () {
           text: '<i class="bx bx-plus me-0 me-sm-1"></i><span class="d-none d-sm-inline-block">Crear</span>',
           className: 'btn btn-primary ml-3',
           action: function () {
-            window.location.href = 'admin/productions/create';
+            window.location.href = 'http://localhost:8000/admin/productions/create';
           }
         }
       ]
     });
-
     // Ajustar clases después de la inicialización del DataTable
     $('.dataTables_length').addClass('mt-0 mt-md-3 me-3');
     $('.dt-buttons > .btn-group > button').removeClass('btn-secondary');

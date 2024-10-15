@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
   let detailIndex = 1;
 
   // Añadir nuevo detalle de asiento
@@ -7,7 +7,8 @@ $(document).ready(function() {
   });
 
   // Manejar el clic en el botón de guardar en el modal
-  $('#addEntryModal').on('click', '#submitEntryBtn', function () {
+  $('#submitEntryBtn').on('click', function (e) {
+    e.preventDefault();
     submitNewEntry();
   });
 
@@ -20,7 +21,7 @@ $(document).ready(function() {
     let entryDetails = $('#entryDetails');
     let accountOptions = '';
 
-    window.accounts.forEach(function(account) {
+    window.accounts.forEach(function (account) {
       accountOptions += `<option value="${account.id}">${account.name}</option>`;
     });
 
@@ -47,14 +48,14 @@ $(document).ready(function() {
           </div>
         </div>
       </div>`;
-      
+
     entryDetails.append(newDetail);
     detailIndex++;
   }
 
   function submitNewEntry() {
     var route = $('#submitEntryBtn').data('route');
-    
+
     // Recopilar los datos del formulario
     var formData = {
       entry_date: $('#entry_date').val(),
@@ -65,11 +66,11 @@ $(document).ready(function() {
     };
 
     // Recopilar los detalles del asiento
-    $('#entryDetails .entry-detail').each(function(index, element) {
+    $('#entryDetails .entry-detail').each(function (index, element) {
       var entry_account_id = $(element).find('[name^="details["][name$="[entry_account_id]"]').val();
       var amount_debit = $(element).find('[name^="details["][name$="[amount_debit]"]').val();
       var amount_credit = $(element).find('[name^="details["][name$="[amount_credit]"]').val();
-      
+
       formData.details.push({
         entry_account_id: entry_account_id,
         amount_debit: amount_debit || 0,
@@ -96,7 +97,7 @@ $(document).ready(function() {
         });
       },
       error: function (xhr) {
-        $('#addEntryModal').modal('hide');
+        // $('#addEntryModal').modal('hide');
 
         var errorMessage = '';
 
@@ -116,7 +117,7 @@ $(document).ready(function() {
           title: 'Error al guardar',
           html: errorMessage
         }).then(result => {
-          $('#addEntryModal').modal('show');
+          // $('#addEntryModal').modal('show');
         });
       }
     });

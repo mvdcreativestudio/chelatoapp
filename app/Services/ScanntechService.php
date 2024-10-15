@@ -1,92 +1,52 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\POS;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
-class ScanntechService extends PaymentService
+class ScanntechAuthService
 {
-    private $scanntechAuthService;
-
-    public function __construct()
-    {
-        $this->scanntechAuthService = app(ScanntechAuthService::class);
-    }
+    private $authUrl = 'https://sso-dev.scanntech.com/auth/realms/scannsae/protocol/openid-connect/token'; // URL de autenticación de Scanntech
+    private $clientId = 'scannsae-client'; // ID de cliente de prueba Scanntech
+    private $username = 'mvdstudio'; // Usuario de prueba Scanntech
+    private $password = 'Mvdstudio.2024'; // Contraseña de prueba Scanntech
 
     /**
-     * Procesa la transacción de compra.
+     * Obtener el token de acceso desde Scanntech.
      *
-     * @param array $transactionData
-     * @return array
+     * @return string|null
      */
-    public function process(array $transactionData)
+    public function getAccessToken()
     {
-        $formattedData = $this->formatData($transactionData);
+        // Verificar si el token ya está en caché
+        $cachedToken = Cache::get('scanntech_token');
 
-        // 1. Iniciar la transacción
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->scanntechAuthService->getAccessToken(),
-            'Content-Type' => 'application/json',
-        ])->post('http://200.40.123.21:35000/rest/v2/postPurchase', $formattedData);
-
-        if (!$response->successful()) {
-            return ['error' => 'Error al iniciar la transacción.'];
+        if ($cachedToken) {
+            return $cachedToken;
         }
 
-        // Extraer transactionId si está disponible
-        $transactionId = $response->json('transactionId') ?? null;
+        // Hacer la solicitud para obtener el token
+        $response = Http::asForm()->post($this->authUrl, [
+            'client_id' => 'scannsae-client',
+            'username' => 'mvdstudio',
+            'password' => 'Mvdstudio.2024',
+            'grant_type' => 'password',
+        ]);
 
-        if (!$transactionId) {
-            return ['error' => 'No se pudo obtener el ID de la transacción.'];
+        // Verificar si la solicitud fue exitosa
+        if ($response->successful()) {
+            $token = $response->json('access_token');
+
+            // Almacenar el token en caché por su tiempo de expiración (ej. 1 hora)
+            Cache::put('scanntech_token', $token, now()->addMinutes(3));
+
+            return $token;
         }
 
-        // 2. Consultar el estado de la transacción hasta obtener el resultado final
-        return $this->pollTransactionState($transactionId);
-    }
+        // Manejar errores de autenticación
+        \Log::error('Error al obtener el token de Scanntech: ' . $response->body());
 
-    /**
-     * Consulta el estado de la transacción repetidamente hasta obtener el resultado final.
-     *
-     * @param string $transactionId
-     * @return array
-     */
-    private function pollTransactionState(string $transactionId)
-    {
-        $attempts = 0;
-        $maxAttempts = 30; // Máximo de intentos para no quedar en un bucle infinito
-
-        while ($attempts < $maxAttempts) {
-            sleep(2); // Esperar 2 segundos entre cada consulta
-
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->scanntechAuthService->getAccessToken(),
-                'Content-Type' => 'application/json',
-            ])->get('http://200.40.123.21:35000/rest/v2/getTransactionState', [
-                'transactionId' => $transactionId,
-            ]);
-
-            if ($response->successful()) {
-                $transactionState = $response->json();
-
-                // Revisar el estado de la transacción
-                if (isset($transactionState['responseCode']) && $transactionState['responseCode'] !== 'PENDING') {
-                    // Finalizó la transacción
-                    return $transactionState;
-                }
-            } else {
-                return ['error' => 'Error al consultar el estado de la transacción.'];
-            }
-
-            $attempts++;
-        }
-
-        return ['error' => 'Tiempo de espera excedido al consultar el estado de la transacción.'];
-    }
-
-    protected function formatData(array $data): array
-    {
-        // Formateo específico para los datos enviados a SCANNSAE
-        $data['needToReadCard'] = false; // Asegurarse de que la bandera esté apagada
-        return $data;
+        return null;
     }
 }

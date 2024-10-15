@@ -79,7 +79,7 @@
                         <td>{{ ucfirst($order->shipping_status) }}</td>
                     </tr>
                     <tr>
-                        <th>Tienda</th>
+                        <th>Empresa</th>
                         <td>{{ $order->store->name }}</td>
                     </tr>
                     <tr>

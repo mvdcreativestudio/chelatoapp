@@ -19,8 +19,9 @@ class DashboardController extends Controller
     public function index()
     {
         $stores = $this->storeRepository->getStoresWithStatus();
+        $user = auth()->user();
 
-
-        return view('content.dashboard.index', compact('stores'));
+        return view('content.dashboard.index', compact('stores', 'user'));
     }
+
 }

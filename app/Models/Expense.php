@@ -21,6 +21,7 @@ class Expense extends Model
         'temporal_status',
         'supplier_id',
         'expense_category_id',
+        'currency_id',
         'store_id',
     ];
 
@@ -52,6 +53,17 @@ class Expense extends Model
     public function expenseCategory(): BelongsTo
     {
         return $this->belongsTo(ExpenseCategory::class);
+    }
+
+    /**
+     * Obtiene la moneda asociada al gasto.
+     *
+     * @return BelongsTo
+     */
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     /**

@@ -25,6 +25,8 @@ class UpdateProductRequest extends FormRequest
           'store_id' => 'required|exists:stores,id',
           'status' => 'required|boolean',
           'stock' => 'nullable|integer',
+          'safety_margin' => 'nullable|numeric',
+          'bar_code' => 'nullable|string|max:255',
           'categories' => 'required|array',
           'categories.*' => 'exists:product_categories,id',
           'flavors' => 'nullable|array',
@@ -35,6 +37,7 @@ class UpdateProductRequest extends FormRequest
           'recipes.*.quantity' => 'nullable|numeric|min:0.01',
           'recipes.*.used_flavor_id' => 'nullable|exists:flavors,id',
           'recipes.*.units_per_bucket' => 'nullable|numeric|min:1',
+          'build_price' => 'nullable|numeric',
       ];
     }
 }

@@ -28,7 +28,7 @@
 @section('content')
 
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">E-Commerce /</span> Variaciones
+  <span class="text-muted fw-light"></span> Variaciones
 </h4>
 
 <div class="card mb-4">

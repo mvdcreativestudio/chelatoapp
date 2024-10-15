@@ -9,6 +9,8 @@ use App\Repositories\ProductCategoryRepository;
 use App\Http\Requests\StoreProductCategoryRequest;
 use App\Http\Requests\UpdateProductCategoryRequest;
 use Illuminate\Http\JsonResponse;
+use App\Models\Store;
+use Illuminate\Http\Request;
 
 class ProductCategoryController extends Controller
 {
@@ -26,29 +28,27 @@ class ProductCategoryController extends Controller
     */
     public function __construct(ProductCategoryRepository $productCategoryRepo)
     {
-      $this->middleware(['check_permission:access_product-categories'])->only(
-          [
-              'index',
-              'create',
-              'store',
-              'edit',
-              'update',
-              'destroy',
-              'datatable'
-          ]
-      );
-
-      $this->productCategoryRepo = $productCategoryRepo;
+        $this->middleware(['check_permission:access_product-categories'])->only([
+            'index', 'create', 'store', 'edit', 'update', 'destroy', 'datatable'
+        ]);
+        $this->productCategoryRepo = $productCategoryRepo;
     }
-    /**
-     * Muestra una lista de todas las categorías de productos.
-     *
-     * @return View
-    */
+
     public function index(): View
     {
-      $categories = $this->productCategoryRepo->index();
-      return view('content.e-commerce.backoffice.product-categories.product-categories', $categories);
+        $stores = Store::all();
+
+        // Obtener las categorías junto con el conteo de productos y el total de stock
+        $data = $this->productCategoryRepo->getCategories();
+
+        // Pasar las variables adicionales a la vista
+        return view('content.e-commerce.backoffice.product-categories.product-categories', [
+            'categories' => $data['categories'],  // Las categorías
+            'totalCategories' => $data['total_categories'],  // Total de categorías
+            'categoryWithMostProducts' => $data['category_with_most_products'],  // Categoría con más productos
+            'categoryWithMostStock' => $data['category_with_most_stock'],  // Categoría con más stock
+            'stores' => $stores,  // Las tiendas
+        ]);
     }
 
     /**
@@ -58,7 +58,8 @@ class ProductCategoryController extends Controller
     */
     public function create(): View
     {
-      return view('content.e-commerce.backoffice.product-categories.add-category');
+      $stores = Store::all();
+      return view('content.e-commerce.backoffice.product-categories.add-category', compact('stores'));
     }
 
     /**
@@ -112,7 +113,6 @@ class ProductCategoryController extends Controller
     }
 
 
-
     /**
      * Encuentra una categoría dada un ID.
      *
@@ -159,10 +159,11 @@ class ProductCategoryController extends Controller
     /**
      * Obtiene los datos de las categorías de productos para DataTables.
      *
+     * @param Request $request
      * @return mixed
-    */
-    public function datatable(): mixed
+     */
+    public function datatable(Request $request): mixed
     {
-      return $this->productCategoryRepo->datatable();
+        return $this->productCategoryRepo->datatable($request);
     }
 }

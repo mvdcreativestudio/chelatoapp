@@ -20,15 +20,12 @@
 <script>
     window.baseUrl = "{{ url('/') }}";
     window.detailUrl = "{{ route('entries.show', ':id') }}";
-    window.accounts = @json($accounts);
 </script>
 @endsection
 
 @section('page-script')
 @vite([
     'resources/assets/js/entries/app-entries-list.js',
-    'resources/assets/js/entries/app-entries-add.js',
-    'resources/assets/js/entries/app-entries-edit.js',
     'resources/assets/js/entries/app-entries-delete.js',
 ])
 @endsection
@@ -90,9 +87,10 @@
     <div class="card pb-3">
         <h5 class="card-header pb-0">
             Asientos Contables
-            <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#addEntryModal">
+            {{-- <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#addEntryModal">
                 Agregar Asiento
-            </button>
+            </button> --}}
+            <a href="{{ route('entries.create') }}" class="btn btn-primary float-end">Agregar Asiento</a>
             <div class="d-flex">
                 <p class="text-muted small">
                     <a href="" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches"
@@ -255,8 +253,8 @@
     </div>
 </div>
 
-@include('content.accounting.entries.add-entry')
-@include('content.accounting.entries.edit-entry')
+{{-- @include('content.accounting.entries.add-entry')
+@include('content.accounting.entries.edit-entry') --}}
 {{-- @include('content.accounting.entries.details-entry') --}}
 
 @endsection

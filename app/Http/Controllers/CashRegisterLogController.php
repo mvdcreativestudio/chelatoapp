@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\StoreClientRequest;
 use App\Models\Product;
-
-
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 
 class CashRegisterLogController extends Controller
 {
@@ -66,8 +66,8 @@ class CashRegisterLogController extends Controller
         $cashRegisterId = $request->input('cash_register_id');
 
         // Verificar si hay un log existente sin fecha de cierre
-        if ($this->cashRegisterLogRepository->hasOpenLog()) {
-            return response()->json(['message' => 'Ya existe una caja registradora abierta.'], 400);
+        if ($this->cashRegisterLogRepository->hasOpenLogForUser(Auth::id())) {
+            return response()->json(['message' => 'Ya existe una caja registradora abierta para este usuario.'], 400);
         }
 
         $request['open_time'] = now();
@@ -75,6 +75,7 @@ class CashRegisterLogController extends Controller
         $request['pos_sales'] = 0;
         $validatedData = $request->validated();
         $cashRegisterLog = $this->cashRegisterLogRepository->createCashRegisterLog($validatedData);
+        Session::put('open_cash_register_id', $cashRegisterId);
         return response()->json($cashRegisterLog, 201);
     }
 
@@ -141,6 +142,7 @@ class CashRegisterLogController extends Controller
         $closed = $this->cashRegisterLogRepository->closeCashRegister($id);
 
         if ($closed) {
+            Session::forget('open_cash_register_id');
             return response()->json(['message' => 'Caja registradora cerrada correctamente.']);
         } else {
             return response()->json(['message' => 'Ha ocurrido un error intentando cerrar la caja registradora.'], 404);
@@ -149,7 +151,7 @@ class CashRegisterLogController extends Controller
 
 
     /**
-     * Toma los productos de la tienda de la caja registradora.
+     * Toma los productos de la empresa de la caja registradora.
      *
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
@@ -161,7 +163,7 @@ class CashRegisterLogController extends Controller
     }
 
     /**
-     * Toma los productos de la tienda de la caja registradora.
+     * Toma los productos de la empresa de la caja registradora.
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -220,41 +222,54 @@ class CashRegisterLogController extends Controller
       $validatedData = $request->validated();
 
       // Establecer valores predeterminados si no están presentes en la solicitud
-      $validatedData['address'] = $validatedData['address'] ?? 'FÍSICO';
-      $validatedData['city'] = $validatedData['city'] ?? 'FÍSICO';
-      $validatedData['state'] = $validatedData['state'] ?? 'FÍSICO';
-      $validatedData['country'] = $validatedData['country'] ?? 'FÍSICO';
-      $validatedData['phone'] = $validatedData['phone'] ?? 'FÍSICO';
-
+      $validatedData['address'] = $validatedData['address'] ?? '-';
+      $validatedData['city'] = $validatedData['city'] ?? '-';
+      $validatedData['state'] = $validatedData['state'] ?? '-';
+      $validatedData['country'] = $validatedData['country'] ?? '-';
+      $validatedData['phone'] = $validatedData['phone'] ?? '-';
 
       // Crear el nuevo cliente
-      $this->cashRegisterLogRepository->createClient($validatedData);
+      $newClient = $this->cashRegisterLogRepository->createClient($validatedData);
 
-      return response()->json(['success' => true, 'message' => 'Cliente creado correctamente.']);
+      // Agregar log
+      Log::info('Nuevo cliente creado desde PDV', [
+          'client_id' => $newClient->id,
+          'name' => $newClient->name,
+          'email' => $newClient->email,
+          'type' => $newClient->type
+      ]);
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Cliente creado correctamente.',
+        'client' => $newClient  // Devuelve los datos completos del cliente
+    ]);
     } catch (\Exception $e) {
+        Log::error('Error al crear cliente desde PDV: ' . $e->getMessage());
         return response()->json(['success' => false, 'message' => 'Ocurrió un error al crear el cliente.']);
     }
   }
 
     /**
-     * Busca el id del cashregister log dado un id de caja registradora.
+     * Busca el id del cashregister log y el store_id dado un id de caja registradora.
      *
-     *  @param string $id
+     * @param string $id
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function getCashRegisterLog(string $id)
     {
         try {
-            $cashRegisterLogId = $this->cashRegisterLogRepository->getCashRegisterLog($id);
-            if ($cashRegisterLogId === null) {
+            $result = $this->cashRegisterLogRepository->getCashRegisterLogWithStore($id);
+            if ($result === null) {
                 return response()->json(['error' => 'No open log found'], 404);
             }
-            return response()->json(['cash_register_log_id' => $cashRegisterLogId]);
+            return response()->json($result); // Devuelve tanto el cash_register_log_id como el store_id
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
 
     /**
      * Obtiene todos los clientes en formato JSON.
@@ -314,5 +329,16 @@ class CashRegisterLogController extends Controller
     {
         $client = session('client', []);
         return response()->json(['client' => $client]);
+    }
+
+    /**
+     * Devuelve el Store ID de la session.
+     *
+     * @return JsonResponse
+     */
+    public function getStoreId()
+    {
+        $id = session('store_id', []);
+        return response()->json(['id' => $id]);
     }
 }
