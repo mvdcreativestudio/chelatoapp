@@ -36,6 +36,7 @@ class StoreExpenseRequest extends FormRequest
             'due_date' => 'required|date',
             'supplier_id' => 'required|integer|exists:suppliers,id',
             'expense_category_id' => 'required|integer|exists:expense_categories,id',
+            'currency_id' => 'required|integer|exists:currencies,id',
             'store_id' => 'nullable|integer|exists:stores,id',
             'is_paid' => 'required|boolean',
             'amount_paid' => [
@@ -48,15 +49,12 @@ class StoreExpenseRequest extends FormRequest
                 // },
             ],
             'payment_method_id' => [
-                'nullable',
-                'integer',
+                'nullable', // Permite que sea nulo si no se selecciona
+                'integer', // Asegura que sea un número entero si se proporciona
                 'exists:payment_methods,id',
-                function ($attribute, $value, $fail) {
-                    if ($this->is_paid && empty($value)) {
-                        $fail('Debe seleccionar un método de pago cuando el gasto está marcado como pagado.');
-                    }
-                },
+                'required_if:is_paid,true', // Requerido solo si is_paid es true
             ],
+            'concept' => 'nullable|string',
         ];
     }
 
@@ -78,6 +76,9 @@ class StoreExpenseRequest extends FormRequest
             'expense_category_id.required' => 'El campo categoría de gasto es requerido.',
             'expense_category_id.integer' => 'El campo categoría de gasto debe ser un número entero.',
             'expense_category_id.exists' => 'La categoría de gasto seleccionada no es válida.',
+            'currency_id.required' => 'El campo moneda es requerido.',
+            'currency_id.integer' => 'El campo moneda debe ser un número entero.',
+            'currency_id.exists' => 'La moneda seleccionada no es válida.',
             'store_id.integer' => 'El campo tienda debe ser un número entero.',
             'store_id.exists' => 'La tienda seleccionada no es válida.',
             'is_paid.required' => 'Debe indicar si el gasto está pagado o no.',
@@ -85,6 +86,8 @@ class StoreExpenseRequest extends FormRequest
             'amount_paid.numeric' => 'El campo monto pagado debe ser un número.',
             'payment_method_id.integer' => 'El método de pago debe ser un número entero.',
             'payment_method_id.exists' => 'El método de pago seleccionado no es válido.',
+            'payment_method_id.required_if' => 'Debe seleccionar un método de pago cuando el gasto está marcado como pagado.',
+            'concept.string' => 'El concepto debe ser una cadena de texto.',
         ];
     }
 }

@@ -27,7 +27,7 @@ class UpdateCompositeProductRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'price' => ['required', 'numeric'], // Validación para el precio
-            'recommended_price' => ['required', 'numeric'], // Validación para el precio recomendado
+            'recommended_price' => ['required', 'numeric'], // Validación para el costo total
             'store_id' => ['required', 'exists:stores,id'],
             'products' => ['required', 'array'], // Asegura que 'products' sea un array
             'products.*.product_id' => ['required', 'exists:products,id'], // Asegura que cada 'product_id' existe
@@ -47,8 +47,7 @@ class UpdateCompositeProductRequest extends FormRequest
             'title.max' => 'El título no puede tener más de 255 caracteres.',
             'price.required' => 'El precio es obligatorio.',
             'price.numeric' => 'El precio debe ser un número.',
-            'recommended_price.required' => 'El precio recomendado es obligatorio.',
-            'recommended_price.numeric' => 'El precio recomendado debe ser un número.',
+            'recommended_price.numeric' => 'El costo total debe ser un número.',
             'store_id.required' => 'La tienda es obligatoria.',
             'products.required' => 'Debes agregar al menos un producto.',
             'products.*.product_id.required' => 'El ID del producto es obligatorio.',

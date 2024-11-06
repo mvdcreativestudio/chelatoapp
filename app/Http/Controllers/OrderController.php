@@ -7,6 +7,7 @@ use App\Http\Requests\StoreOrderRequest;
 use App\Models\Order;
 use App\Repositories\AccountingRepository;
 use App\Repositories\OrderRepository;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -121,9 +122,15 @@ class OrderController extends Controller
         $order = $this->orderRepository->loadOrderRelations($order);
         $products = json_decode($order->products, true);
         $store = $order->store;
-        $clientOrdersCount = $this->orderRepository->getClientOrdersCount($order->client_id);
+        $invoice = $this->orderRepository->getSpecificInvoiceForOrder($order->id);
 
-        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'store', 'products', 'clientOrdersCount'));
+
+        // Verificar si existe un client_id antes de llamar a getClientOrdersCount
+        $clientOrdersCount = $order->client_id 
+            ? $this->orderRepository->getClientOrdersCount($order->client_id)
+            : 0; // O cualquier valor predeterminado si no hay cliente
+
+        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'store', 'products', 'clientOrdersCount', 'invoice'));
     }
 
     /**
@@ -135,14 +142,23 @@ class OrderController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
+            $order = Order::findOrFail($id);
+    
+            // Verificar si la orden tiene CFE's asociados
+            if ($order->invoices()->exists()) {
+                return response()->json(['success' => false, 'message' => 'No se puede eliminar la venta porque tiene CFE\'s asociados.'], 400);
+            }
+    
+            // Proceder con la eliminación de la orden
             $this->orderRepository->destroyOrder($id);
-            return response()->json(['success' => true, 'message' => 'Pedido eliminado correctamente.']);
+    
+            return response()->json(['success' => true, 'message' => 'Venta eliminada correctamente.']);
         } catch (\Exception $e) {
             Log::info($e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Error al eliminar el pedido.'], 400);
+            return response()->json(['success' => false, 'message' => 'Error al eliminar la venta.'], 400);
         }
     }
-
+    
     /**
      * Obtiene los ventas para la DataTable.
      *
@@ -209,7 +225,6 @@ class OrderController extends Controller
     public function exportExcel(Request $request)
     {
         try {
-            // Obtener los filtros de la solicitud
             $client = $request->input('client');
             $company = $request->input('company');
             $payment = $request->input('payment');
@@ -217,14 +232,32 @@ class OrderController extends Controller
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
 
-            // Llamar al método del repositorio que obtiene los datos filtrados
             $orders = $this->orderRepository->getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate);
-
-            // Exportar a Excel utilizando Maatwebsite\Excel
             return Excel::download(new OrdersExport($orders), 'orders-'.date('Y-m-d_H-i-s').'.xlsx');
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
+        }
+    }
+
+    public function exportPdf(Request $request)
+    {
+        try {
+            $client = $request->input('client');
+            $company = $request->input('company');
+            $payment = $request->input('payment');
+            $billed = $request->input('billed');
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+
+            $orders = $this->orderRepository->getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate);
+            $pdf = Pdf::loadView('content.e-commerce.backoffice.orders.order-pdf', compact('orders'));
+            return $pdf->download('orders-'.date('Y-m-d_H-i-s').'.pdf');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
+
         }
     }
 }

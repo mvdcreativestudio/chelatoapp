@@ -54,6 +54,11 @@
             </div>
           </div>
         </div>
+        {{-- @if(isset($posDevice))
+          <p>POS Device: {{ $posDevice->identifier }} (User: {{ $posDevice->user }})</p>
+        @else
+          <p>No POS device is associated with the open cash register.</p>
+        @endif --}}
 
         <div class="col-12 mb-3">
           <div id="client-info" class="card shadow-sm p-4 mb-3 rounded-lg border-0 client-info-card" style="display: block;">
@@ -78,6 +83,9 @@
                 <div class="col-md-6 mb-3">
                   <p class="mb-1" id="client-company" style="display:none;"></p>
                   <p class="mb-1"><strong id="client-doc-label" class="text-muted">CI:</strong> <span id="client-doc" class="text-body fw-bold">-</span></p>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <p class="mb-1"><strong class="text-muted">Lista de Precios Predefinida:</strong> <span id="client-price-list" class="text-body fw-bold">-</span></p>
                 </div>
               </div>
             </div>
@@ -123,74 +131,115 @@
       </div>
 
       <div class="discount-section mt-3">
-        <div class="card shadow-sm p-3 mb-3 border-0">
-            <h5 class="mb-3 font-weight-bold">Descuentos</h5>
-            <div class="form-group mb-3">
-                <label for="coupon-code" class="text-muted small">Cupón de descuento</label>
-                <input type="text" id="coupon-code" class="form-control form-control-sm" placeholder="Ingresa código de cupón">
+        <div class="card shadow-sm border-0">
+            <!-- Encabezado de la tarjeta colapsable -->
+            <div class="card-header p-3" id="headingDiscount" data-bs-toggle="collapse" data-bs-target="#discountCollapse" aria-expanded="false" aria-controls="discountCollapse" role="button">
+                <h5 class="mb-0 font-weight-bold">Descuentos <i class="bx bx-chevron-down float-end"></i></h5>
             </div>
-            <div class="form-group mb-3">
-                <label for="fixed-discount" class="text-muted small">Descuento fijo</label>
-                <div class="input-group">
-                    <input type="number" id="fixed-discount" class="form-control form-control-sm" placeholder="Ingresa cantidad o porcentaje">
-                    <div class="input-group-append">
-                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                            <label class="btn btn-outline-secondary btn-sm">
-                                <input type="radio" name="discount-type" value="fixed" autocomplete="off"> Monto
-                            </label>
-                            <label class="btn btn-outline-secondary btn-sm">
-                                <input type="radio" name="discount-type" value="percentage" autocomplete="off"> %
-                            </label>
+    
+            <!-- Contenido de la tarjeta que será colapsable -->
+            <div id="discountCollapse" class="collapse">
+                <div class="card-body p-3">
+                    <div class="form-group mb-3">
+                        <label for="coupon-code" class="text-muted small">Cupón</label>
+                        <input type="text" id="coupon-code" class="form-control form-control-sm" placeholder="Ingresa código de cupón">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="fixed-discount" class="text-muted small">Descuento</label>
+                        <div class="input-group">
+                            <input type="number" id="fixed-discount" class="form-control form-control-sm" placeholder="Ingresa cantidad o porcentaje">
+                            <div class="input-group-append">
+                                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                    <label class="btn btn-outline-secondary btn-sm">
+                                        <input type="radio" name="discount-type" value="fixed" autocomplete="off"> Monto Fijo
+                                    </label>
+                                    <label class="btn btn-outline-secondary btn-sm">
+                                        <input type="radio" name="discount-type" value="percentage" autocomplete="off"> Porcentaje
+                                    </label>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                    <button class="btn btn-primary btn-sm w-100" id="apply-discount-btn">Aplicar</button>
+                    <button class="btn btn-danger btn-sm w-100 mt-1" id="quitarDescuento" style="display: none;">Eliminar descuento</button>
+                </div>
+            </div>
+        </div>
+      </div>
+    
+
+      <div class="price-list-section mt-3 mb-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-header p-3" id="headingPriceList" data-bs-toggle="collapse" data-bs-target="#priceListCollapse" aria-expanded="false" aria-controls="priceListCollapse" role="button">
+                <h5 class="mb-0 font-weight-bold">Lista de Precios <i class="bx bx-chevron-down float-end"></i></h5>
+            </div>
+            <div id="priceListCollapse" class="collapse">
+                <div class="card-body p-3">
+                    <div class="mb-3 mt-1">
+                        <label class="form-label" for="manual_price_list_id">Lista de Precios</label>
+                        <select id="manual_price_list_id" class="form-select form-select">
+                            <option value="" selected>Seleccionar lista de precios (Opcional)</option>
+                            <option value="0" style="color: white; background-color: #ff7e7e;">No utilizar lista de precios</option>
+                            @foreach($priceLists as $priceList)
+                                <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
             </div>
-            <button class="btn btn-primary btn-sm w-100" id="apply-discount-btn">Aplicar</button>
-            <button class="btn btn-danger btn-sm w-100 mt-1" id="quitarDescuento" style="display: none;">Eliminar descuento</button>
         </div>
       </div>
+    
 
       <div class="card shadow-sm p-4 bg-light">
-        <h5 class="card-title mb-4 text-primary">Método de pago</h5>
-
-        <div class="payment-options">
-          <div class="payment-option mb-3">
-            <input class="btn-check" type="radio" name="paymentMethod" id="cash" autocomplete="off" checked>
-            <label class="btn btn-outline-primary w-100 text-start" for="cash">
+        <h5 class="mb-3 font-weight-bold">Pago y Envío</h5>
+    
+        <div class="payment-options d-flex flex-wrap gap-2">
+          <div class="payment-option flex-grow-1">
+            <input class="btn-check" type="radio" name="paymentMethod" id="cash" autocomplete="off">
+            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="cash" style="min-width: 100px;">
               <i class="bx bx-money me-2"></i> Efectivo
             </label>
-            <div class="mt-3 cash-details" id="cashDetails">
-              <input type="number" id="valorRecibido" min="0" step=".01" class="form-control form-control-lg mb-2" placeholder="Valor recibido">
-              <p class="text-muted mb-0">Vuelto: <span id="vuelto" class="fw-bold">0</span></p>
-              <small id="mensajeError" class="text-danger d-none">El valor recibido es insuficiente.</small>
-            </div>
           </div>
-
-          <div class="payment-option mb-3">
+    
+          <div class="payment-option flex-grow-1">
             <input class="btn-check" type="radio" name="paymentMethod" id="debit" autocomplete="off">
-            <label class="btn btn-outline-primary w-100 text-start" for="debit">
+            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="debit" style="min-width: 100px;">
               <i class="bx bx-credit-card me-2"></i> Débito
             </label>
           </div>
-
-          <div class="payment-option">
+    
+          <div class="payment-option flex-grow-1">
             <input class="btn-check" type="radio" name="paymentMethod" id="credit" autocomplete="off">
-            <label class="btn btn-outline-primary w-100 text-start" for="credit">
+            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="credit" style="min-width: 100px;">
               <i class="bx bx-credit-card-front me-2"></i> Crédito
             </label>
           </div>
+    
+          <div class="payment-option flex-grow-1">
+            <input class="btn-check" type="radio" name="paymentMethod" id="internalCredit" autocomplete="off">
+            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="internalCredit" style="min-width: 100px;">
+              <i class="bx bx-credit-card-front me-2"></i> Crédito Interno
+            </label>
+          </div>
         </div>
-
-        <!-- Nuevo selector de estado de entrega -->
+    
+        <div class="mt-3 cash-details" id="cashDetails">
+          <input type="number" id="valorRecibido" min="0" step=".01" class="form-control form-control-lg mb-2" placeholder="Valor recibido">
+          <p class="text-muted mb-0">Vuelto: <span id="vuelto" class="fw-bold">0</span></p>
+          <small id="mensajeError" class="text-danger d-none">El valor recibido es insuficiente.</small>
+        </div>
+    
         <div class="mt-4">
           <h5 class="card-title mb-3 text-primary">Estado de entrega</h5>
-          <select id="shippingStatus" class="form-select">
+          <select id="shippingStatus" class="form-select form-select-sm">
             <option value="delivered">Entregado</option>
             <option value="shipped">Enviado</option>
             <option value="pending">Pendiente</option>
           </select>
         </div>
-      </div>
+    </div>
+    
       <div class="demo-inline-spacing d-flex justify-content-between">
         <a href="{{ route('pdv.front') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
         <button class="btn btn-success w-100"><i class="bx bx-check"></i> Finalizar venta</button>
@@ -257,7 +306,7 @@
       <!-- Campo CI para Persona -->
       <div class="mb-3" id="ciField">
         <label for="ciCliente" class="form-label">CI <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el CI">
+        <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
       </div>
 
       <!-- Campo RUT y Razón Social para Empresa -->
@@ -281,6 +330,17 @@
       <div class="mb-3">
         <label for="emailCliente" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
         <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
+      </div>
+
+      <!-- Selección de lista de precios -->
+      <div class="mb-3 mt-3">
+        <label class="form-label" for="price_list_id">Lista de Precios</label>
+        <select id="price_list_id" class="form-select form-select" name="price_list_id">
+            <option value="" selected>Seleccionar Lista de Precios</option>
+            @foreach($priceLists as $priceList)
+                <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
+            @endforeach
+        </select>
       </div>
 
       <button type="button" class="btn btn-primary" id="guardarCliente">Guardar</button>

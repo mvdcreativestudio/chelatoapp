@@ -248,4 +248,23 @@ class EntryRepository
     {
         return EntryAccount::all();
     }
+
+    public function getEntriesForExport($entryType, $currencyId, $startDate, $endDate)
+    {
+        $entryType = EntryType::where('name', $entryType)->first();
+        $currencyId = Currency::where('name', $currencyId)->first();
+        $query = Entry::with(['entryType', 'currency', 'details'])
+            ->when($entryType, function ($q) use ($entryType) {
+                return $q->where('entry_type_id', $entryType->id);
+            })
+            ->when($currencyId, function ($q) use ($currencyId) {
+                return $q->where('currency_id', $currencyId->id);
+            })
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                return $q->whereBetween('entry_date', [$startDate, $endDate]);
+            })
+            ->get();
+        return $query;
+    }
+
 }

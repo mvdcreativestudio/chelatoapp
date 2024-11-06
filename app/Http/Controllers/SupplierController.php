@@ -42,14 +42,25 @@ class SupplierController extends Controller
     }
 
     /**
-     * Muestra una lista de todos los proveedores.
+     * Muestra una lista de todos los proveedores y ordenes.
      *
      * @return View
      */
     public function index(): View
     {
-        $suppliers = $this->supplierRepository->getAll();
+        $suppliers = $this->supplierRepository->getAllWithOrders();
         return view('suppliers.index', $suppliers);
+    }
+    
+    
+    /**
+     * Devuelve a todos los proveedores.
+     *
+     */
+    public function getAll()
+    {
+        $suppliers =$this->supplierRepository->getAll();
+        return response()->json($suppliers);
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Enums\Expense\ExpenseStatusEnum;
 use App\Enums\Expense\ExpenseTemporalStatusEnum;
 use App\Helpers\Helpers;
+use App\Models\Currency;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\ExpensePaymentMethod;
@@ -169,10 +170,14 @@ class ExpenseRepository
             'expenses.created_at',
             'suppliers.name as supplier_name',
             'expense_categories.name as category_name',
+            'currencies.name as currency_name',
+            'currencies.symbol as currency_symbol',
             'stores.name as store_name',
+            'expenses.concept',
         ])
             ->join('suppliers', 'expenses.supplier_id', '=', 'suppliers.id')
             ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
+            ->join('currencies', 'expenses.currency_id', '=', 'currencies.id')
             ->leftJoin('stores', 'expenses.store_id', '=', 'stores.id') // Cambiar a leftJoin para incluir registros con store_id null
             ->orderBy('expenses.created_at', 'desc');
 
@@ -289,5 +294,38 @@ class ExpenseRepository
     public function getExpenseStatus(): array
     {
         return ExpenseStatusEnum::getTranslateds();
+    }
+
+    public function getAllCurrencies(): mixed
+    {
+        return Currency::all();
+    }
+
+    public function getExpensesForExport($supplier = null, $store = null, $category = null, $status = null, $startDate = null, $endDate = null)
+    {
+        // Filtrar por nombre de proveedor, tienda y categoría
+        $supplier = Supplier::where('name', $supplier)->first();
+        $store = Store::where('name', $store)->first();
+        $category = ExpenseCategory::where('name', $category)->first();
+
+        $query = Expense::with(['supplier', 'expenseCategory', 'currency', 'store', 'payments'])
+            ->when($supplier, function ($q) use ($supplier) {
+                return $q->where('supplier_id', $supplier->id);
+            })
+            ->when($store, function ($q) use ($store) {
+                return $q->where('store_id', $store->id);
+            })
+            ->when($category, function ($q) use ($category) {
+                return $q->where('expense_category_id', $category->id);
+            })
+            ->when($status, function ($q) use ($status) {
+                return $q->where('status', $status);
+            })
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                return $q->whereBetween('due_date', [$startDate, $endDate]);
+            })
+            ->get();
+
+        return $query;
     }
 }

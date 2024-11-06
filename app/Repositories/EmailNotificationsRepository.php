@@ -15,7 +15,7 @@ class EmailNotificationsRepository
 
     public function __construct()
     {
-        $this->baseUrl = 'https://chelato.mvdstudio.com.uy';
+        $this->baseUrl = 'https://dali.mvdstudio.com.uy';
     }
 
     /**

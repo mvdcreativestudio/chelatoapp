@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Log;
 
 class CompositeProductRepository
 {
@@ -63,20 +64,43 @@ class CompositeProductRepository
         DB::beginTransaction();
 
         try {
-            // Crear un nuevo CompositeProduct y rellenar los datos
+            // Crear el nuevo producto compuesto y asignar los datos
             $compositeProduct = new CompositeProduct();
             $compositeProduct->fill($data);
 
-            // Calcular el precio recomendado sumando los precios de los productos individuales
+            // Guardar el producto compuesto en la base de datos
             $compositeProduct->save();
 
-            // Añadir productos individuales al producto compuesto con sus cantidades
-            foreach ($data['products'] as $product) {
+            // Obtener el stock inicial del producto compuesto
+            $initialStock = $data['stock']; // Supongo que en el formulario envías un valor de stock
+
+
+            // Recorrer los productos individuales que componen el producto compuesto
+            foreach ($data['products'] as $productData) {
+                $productId = $productData['product_id'];
+                $quantityInComposite = $productData['quantity']; // Cantidad de este producto en el compuesto
+
+                // Crear la relación en la tabla de detalles
                 CompositeProductDetail::create([
                     'composite_product_id' => $compositeProduct->id,
-                    'product_id' => $product['product_id'], // Usar el product_id del array
-                    'quantity_composite_product' => $product['quantity'], // Usar la cantidad del array
+                    'product_id' => $productId,
+                    'quantity_composite_product' => $quantityInComposite,
                 ]);
+
+                // Obtener el producto individual para restar su stock
+                $product = Product::find($productId);
+
+                // Calcular la cantidad total a descontar de este producto
+                $totalQuantityToDeduct = $initialStock * $quantityInComposite;
+
+                // Verificar si el producto tiene suficiente stock
+                if ($product->stock < $totalQuantityToDeduct) {
+                    throw new Exception("No hay suficiente stock para el producto: {$product->name}");
+                }
+
+                // Restar el stock del producto individual
+                $product->stock -= $totalQuantityToDeduct;
+                $product->save();
             }
 
             DB::commit();
@@ -86,6 +110,7 @@ class CompositeProductRepository
             throw $e;
         }
     }
+
     /**
      * Obtiene un producto compuesto específico por su ID.
      *
@@ -150,7 +175,7 @@ class CompositeProductRepository
                 ->whereNotIn('product_id', $incomingProductIds)
                 ->delete();
 
-            // Recalcular y actualizar el precio recomendado sumando los precios de los productos individuales
+            // Recalcular y actualizar el costo total sumando los precios de los productos individuales
             $compositeProduct->recommended_price = CompositeProductDetail::where('composite_product_id', $compositeProduct->id)
                 ->join('products', 'composite_product_details.product_id', '=', 'products.id')
                 ->sum(DB::raw('products.build_price * composite_product_details.quantity_composite_product'));
@@ -241,6 +266,8 @@ class CompositeProductRepository
      */
     public function getAllProducts(): mixed
     {
-        return Product::whereNotNull('price')->get();
+        return Product::whereNotNull('old_price')
+                      ->where('is_trash', 0)
+                      ->get();
     }
 }

@@ -57,8 +57,9 @@ class GenericExport implements FromCollection, WithHeadings
                 'created_at' => 'Fecha de creación',
                 'updated_at' => 'Fecha de actualización',
                 'type' => 'Tipo',
-                'old_price' => 'Precio Anterior',
-                'price' => 'Precio',
+                'build_price' => 'Costo',
+                'old_price' => 'Precio',
+                'price' => 'Precio Oferta',
                 // Agrega el resto de los mapeos de las claves a nombres legibles
             ];
 

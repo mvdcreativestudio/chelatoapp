@@ -33,10 +33,6 @@
 @endsection
 
 @section('content')
-<h4 class="py-3 mb-4">
-  <span class="text-muted fw-light"></span><span> Crear Producto Compuesto</span>
-</h4>
-
 @if ($errors->any())
 <div class="alert alert-danger">
   <ul>
@@ -93,20 +89,26 @@
       <div class="col-lg-4">
         <div class="card h-100">
           <div class="card-header">
-            <h5 class="card-title mb-0">Precios</h5>
+            <h5 class="card-title mb-0">Precios y Stock</h5>
           </div>
           <div class="card-body">
+            <!-- Campo para stock -->
+            <div class="mb-3">
+              <label class="form-label" for="stock">Stock Inicial</label>
+              <input type="number" class="form-control" id="stock" placeholder="Establecer stock incial del producto compuesto"
+                name="stock">
+            </div>
             <!-- Campo para el precio final -->
             <div class="mb-3">
               <label class="form-label" for="price">Precio Final</label>
               <input type="number" class="form-control" id="price" placeholder="Precio del producto compuesto"
                 name="price">
             </div>
-            <!-- Campo para el precio recomendado -->
+            <!-- Campo para el costo total -->
             <div class="mb-3">
-              <label class="form-label" for="recommended_price">Precio Recomendado</label>
+              <label class="form-label" for="recommended_price">Costo Total</label>
               <input type="number" class="form-control" id="recommended_price"
-                placeholder="Precio recomendado (calculado automáticamente)" name="recommended_price" required disabled>
+                placeholder="Costo Total (Calculado Automáticamente)" name="recommended_price" required disabled>
             </div>
           </div>
         </div>
@@ -135,23 +137,24 @@
                 @endforeach
               </select>
             </div>
+            <div id="selectedProductsContainer" class="d-none">
+              <!-- Tabla para productos seleccionados -->
+              <table class="table" id="selectedProductsTable">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Costo por unidad</th>
+                    <th>Costo total</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
 
-            <!-- Tabla para productos seleccionados -->
-            <table class="table" id="selectedProductsTable">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Cantidad</th>
-                  <th>Precio Unitario</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-
-            <!-- Alerta si algún producto no tiene build_price -->
-            <div class="alert alert-danger d-none" id="priceAlert">
-              Uno o más productos no tienen un precio asociado, no se puede calcular el precio recomendado.
+              <!-- Alerta si algún producto no tiene build_price -->
+              <div class="alert alert-danger d-none" id="priceAlert">
+                Uno o más productos no tienen un precio asociado, no se puede calcular el costo total.
+              </div>
             </div>
           </div>
         </div>
@@ -168,11 +171,11 @@
             <div class="mb-3">
               <label class="form-label" for="store_id">Empresa</label>
               <select id="store_id" class="form-select" data-placeholder="Seleccione la Empresa" name="store_id"
-                required>
-                <option value="" selected disabled>Seleccione una empresa</option>
-                @foreach ($stores as $store)
-                <option value="{{ $store->id }}">{{ $store->name }}</option>
-                @endforeach
+                  required {{ count($stores) === 1 ? 'disabled' : '' }}>
+                  <option value="" selected disabled>Seleccione una empresa</option>
+                  @foreach ($stores as $store)
+                      <option value="{{ $store->id }}" {{ count($stores) === 1 ? 'selected' : '' }}>{{ $store->name }}</option>
+                  @endforeach
               </select>
             </div>
           </div>

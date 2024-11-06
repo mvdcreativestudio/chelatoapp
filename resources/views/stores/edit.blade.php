@@ -425,7 +425,7 @@
                                         </div>
                                     </div>
                                     <!-- Botones -->
-                                    <div class="d-flex justify-content-end">
+                                    <div class="d-flex justify-content-end mt-5">
                                         <button type="submit" class="btn btn-primary">Actualizar Tienda</button>
                                     </div>
                                 </div>

@@ -28,10 +28,12 @@ $(document).ready(function() {
       due_date: $('#due_date').val(),
       supplier_id: $('#supplier_id').val(),
       expense_category_id: $('#expense_category_id').val(),
+      currency_id: $('#currency_id').val(),
       store_id: $('#store_id').val(),
       is_paid: $('#is_paid').is(':checked'),
       amount_paid: $('#amount_paid').val(),
       payment_method_id: $('#payment_method_id').val(),
+      concept: $('#concept').val(),
     };
     $.ajax({
       url: route,

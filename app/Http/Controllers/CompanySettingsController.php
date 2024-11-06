@@ -46,7 +46,7 @@ class CompanySettingsController extends Controller
   */
   public function update(UpdateCompanySettingsRequest $request): RedirectResponse
   {
-    Log::debug('Request reached controller', ['data' => $request->all()]);
+    Log::info('CompanySettingsController update method reached');
 
     $validatedData = $request->validated();
     Log::debug('Validated data', ['data' => $validatedData]);

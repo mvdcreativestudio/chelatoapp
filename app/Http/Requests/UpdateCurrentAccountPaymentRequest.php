@@ -25,7 +25,8 @@ class UpdateCurrentAccountPaymentRequest extends FormRequest
         return [
             'current_account_id' => 'required|integer|exists:current_accounts,id', // Validar que el ID de cuenta corriente sea válido
             'current_account_payment_id' => 'required|integer|exists:current_account_payments,id', // Asegurar que el ID del pago sea válido
-            'client_id' => 'required|integer|exists:clients,id',
+            'client_id' => 'nullable|integer|exists:clients,id', // Validar cliente o proveedor
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
             'payment_amount' => [
                 'required',
                 'numeric',
@@ -39,7 +40,7 @@ class UpdateCurrentAccountPaymentRequest extends FormRequest
                             ->where('id', '!=', $this->current_account_payment_id) // Excluir el pago actual del cálculo
                             ->sum('payment_amount'); // Suma de los pagos existentes
 
-                        $totalDebit = $currentAccount->total_debit; // Monto total que se debe
+                        $totalDebit = $currentAccount->payment_total_debit; // Monto total que se debe
 
                         // Valida que el nuevo pago no exceda el total pendiente
                         if ($totalPaid + $value > $totalDebit) {
@@ -67,8 +68,8 @@ class UpdateCurrentAccountPaymentRequest extends FormRequest
             'current_account_id.exists' => 'La cuenta corriente seleccionada no es válida.',
             'current_account_payment_id.required' => 'El pago es obligatorio.',
             'current_account_payment_id.exists' => 'El pago seleccionado no es válido.',
-            'client_id.required' => 'El cliente es obligatorio.',
             'client_id.exists' => 'El cliente seleccionado no es válido.',
+            'supplier_id.exists' => 'El proveedor seleccionado no es válido.',
             'payment_amount.required' => 'El monto pagado es obligatorio.',
             'payment_amount.numeric' => 'El monto pagado debe ser un número.',
             'payment_amount.min' => 'El monto pagado debe ser un valor positivo.',

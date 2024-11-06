@@ -72,7 +72,9 @@ $(function () {
           {
             targets: 8,
             render: function (data, type, full, meta) {
-              return data ? '<span class="badge bg-success">BALANCEADO</span>' : '<span class="badge bg-danger">NO BALANCEADO</span>';
+              return data
+                ? '<span class="badge bg-success">BALANCEADO</span>'
+                : '<span class="badge bg-danger">NO BALANCEADO</span>';
             }
           },
           {
@@ -123,7 +125,9 @@ $(function () {
             .columns(3)
             .every(function () {
               var column = this;
-              var select = $('<select class="form-select"><option value="">Todos los tipos de asientos</option></select>')
+              var select = $(
+                '<select class="form-select"><option value="">Todos los tipos de asientos</option></select>'
+              )
                 .appendTo('.entry_type_filter')
                 .on('change', function () {
                   var val = $.fn.dataTable.util.escapeRegex($(this).val());
@@ -162,7 +166,7 @@ $(function () {
         renderer: 'bootstrap'
       });
 
-      $('.toggle-column').on('change', function() {
+      $('.toggle-column').on('change', function () {
         var column = dt_entries.column($(this).attr('data-column'));
         column.visible(!column.visible());
       });
@@ -186,7 +190,6 @@ $(function () {
           $('.datatables-entries tbody input[type="checkbox"]:checked').length;
         $('#checkAll').prop('checked', allChecked);
       });
-
 
       // Eliminar filtros de búsqueda
       $(document).on('click', '#clear-filters', function () {
@@ -214,7 +217,69 @@ $(function () {
           $('#columnSwitches').collapse('hide');
         }
       }
+      $('#export-excel').on('click', function () {
+        // Capturar los valores de los filtros
+        let entryType = $('.entry_type_filter select').val(); // Tipo de Asiento
+        let currency = $('.currency_filter select').val(); // Moneda
+        let startDate = $('#startDate').val(); // Fecha desde
+        let endDate = $('#endDate').val(); // Fecha hasta
 
+        // Construir la URL con los parámetros válidos
+        let url = '/admin/entries-export-excel?';
+        let params = [];
+
+        // Verificar y agregar los parámetros a la URL
+        if (entryType) {
+          params.push(`entry_type=${encodeURIComponent(entryType)}`);
+        }
+        if (currency) {
+          params.push(`currency=${encodeURIComponent(currency)}`);
+        }
+        if (startDate) {
+          params.push(`start_date=${encodeURIComponent(startDate)}`);
+        }
+        if (endDate) {
+          params.push(`end_date=${encodeURIComponent(endDate)}`);
+        }
+
+        // Unir los parámetros a la URL
+        url += params.join('&');
+
+        // Redirigir a la ruta para exportar, abriendo en una nueva pestaña
+        window.open(url, '_blank');
+      });
+
+      $('#export-pdf').on('click', function () {
+        // Capturar los valores de los filtros
+        let entryType = $('.entry_type_filter select').val(); // Tipo de Asiento
+        let currency = $('.currency_filter select').val(); // Moneda
+        let startDate = $('#startDate').val(); // Fecha desde
+        let endDate = $('#endDate').val(); // Fecha hasta
+
+        // Construir la URL con los parámetros válidos
+        let url = '/admin/entries-export-pdf?';
+        let params = [];
+
+        // Verificar y agregar los parámetros a la URL
+        if (entryType) {
+          params.push(`entry_type=${encodeURIComponent(entryType)}`);
+        }
+        if (currency) {
+          params.push(`currency=${encodeURIComponent(currency)}`);
+        }
+        if (startDate) {
+          params.push(`start_date=${encodeURIComponent(startDate)}`);
+        }
+        if (endDate) {
+          params.push(`end_date=${encodeURIComponent(endDate)}`);
+        }
+
+        // Unir los parámetros a la URL
+        url += params.join('&');
+
+        // Redirigir a la ruta para exportar, abriendo en una nueva pestaña
+        window.open(url, '_blank');
+      });
     }
   } catch (error) {
     console.error('Error al inicializar DataTable:', error);

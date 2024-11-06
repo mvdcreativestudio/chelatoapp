@@ -14,27 +14,10 @@
         <label class="form-label" for="ecommerce-category-title">Nombre</label>
         <input type="text" class="form-control" id="ecommerce-category-title" placeholder="Ingrese el nombre de la categoría" name="name" aria-label="category title">
       </div>
-      <!-- Slug -->
-      <div class="mb-3">
-        <label class="form-label" for="ecommerce-category-slug">Slug</label>
-        <input type="text" id="ecommerce-category-slug" class="form-control" placeholder="Ingrese el slug" aria-label="slug" name="slug">
-      </div>
       <!-- Image -->
       <div class="mb-3">
         <label class="form-label" for="ecommerce-category-image">Imagen</label>
         <input class="form-control" name="image" type="file" id="ecommerce-category-image">
-      </div>
-      <!-- Parent category -->
-      <div class="mb-3 ecommerce-select2-dropdown">
-        <label class="form-label" for="ecommerce-category-parent-category">Categoría padre</label>
-        <select id="ecommerce-category-parent-category" class="select2 form-select" data-placeholder="Seleccione la categoría padre">
-          <option value="">Seleccione la categoría padre</option>
-          <option value="Household">Household</option>
-          <option value="Management">Management</option>
-          <option value="Electronics">Electronics</option>
-          <option value="Office">Office</option>
-          <option value="Automotive">Automotive</option>
-        </select>
       </div>
       <!-- Description -->
       <div class="mb-3">
@@ -55,18 +38,6 @@
               </span>
             </div>
           </div>
-        </div>
-      </div>
-      <!-- Campo oculto para estado desactivado -->
-      <input type="hidden" name="status" value="2">
-      <!-- Instock switch -->
-      <div class="d-flex justify-content-between align-items-center border-top pt-3">
-        <span class="mb-0 h6">Estado</span>
-        <div class="w-25 d-flex justify-content-end">
-          <label class="switch switch-primary switch-sm me-4 pe-2">
-            <input type="checkbox" class="switch-input" value="1" id="statusSwitch" checked name="status">
-            <span class="switch-toggle-slider"></span>
-          </label>
         </div>
       </div>
       <!-- Submit and reset -->

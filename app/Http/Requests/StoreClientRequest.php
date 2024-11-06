@@ -114,6 +114,7 @@ class StoreClientRequest extends FormRequest
             'website' => 'nullable|string|max:255',
             'logo' => 'nullable|string|max:255',
             'store_id' => 'nullable|integer',
+            'price_list_id' => 'nullable|integer|exists:price_lists,id',
         ];
     }
 

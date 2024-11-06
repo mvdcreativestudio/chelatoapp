@@ -1,10 +1,12 @@
 # Makefile para ejecutar un proyecto Laravel con Sail
 
 # Variables
+
 APP_NAME = php_base
 NGINX = nginx_base
 # MYSQL = mysql_base
 # PHP_MY_ADMIN = phpmyadmin_base
+
 # Desarrollo
 dev_install:
 	docker compose -f docker-compose.dev.yml up -d --build
@@ -33,14 +35,14 @@ dev_vite:
 dev_migrate:
 	docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan migrate
 
-dev_rollback:
-	docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan migrate:rollback
-
-dev_permisos:
-	docker compose -f docker-compose.prod.yml exec $(APP_NAME) php artisan create:modules-permissions
-
 dev_clear:
 	docker compose -f docker-compose.dev.yml down
+
+dev_create_migration:
+	docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan make:migration $(name)
+
+dev_permissions:
+	docker compose -f docker-compose.dev.yml exec $(APP_NAME) php artisan create:modules-permissions
 
 # Producción
 
@@ -66,9 +68,6 @@ prod_clear:
 
 prod_migrate:
 	docker compose -f docker-compose.prod.yml exec $(APP_NAME) php artisan migrate
-
-prod_permisos:
-	docker compose -f docker-compose.prod.yml exec $(APP_NAME) php artisan create:modules-permissions
 
 prod_vite:
 	docker compose -f docker-compose.prod.yml exec $(APP_NAME) npm run build

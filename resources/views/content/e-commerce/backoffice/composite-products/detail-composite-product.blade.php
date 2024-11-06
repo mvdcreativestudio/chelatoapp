@@ -16,11 +16,6 @@
 ])
 @endsection
 
-@section('page-script')
-@vite([
-'resources/assets/js/composite-products/app-composite-product-details.js'
-])
-@endsection
 
 @section('content')
 <h4 class="py-3 mb-4">
@@ -33,7 +28,7 @@
         <i class="bx bx-left-arrow-alt"></i> Volver Atrás
     </a>
     <a href="{{ route('composite-products.edit', $compositeProduct->id) }}" class="btn btn-primary">
-        <i class="bx bx-edit"></i> Editar Producto Compuesto
+        <i class="bx bx-edit"></i> Editar
     </a>
 </div>
 
@@ -56,13 +51,17 @@
                 <p>{{ $settings->currency_symbol }} {{ number_format($compositeProduct->price, 2) }}</p>
             </div>
             <div class="col-md-6">
-                <h6 class="mb-2">Precio Recomendado:</h6>
+                <h6 class="mb-2">Costo Total:</h6>
                 <p>{{ $settings->currency_symbol }} {{ number_format($compositeProduct->recommended_price, 2) }}</p>
             </div>
             <div class="col-md-6">
                 <h6 class="mb-2">Fecha de Creación:</h6>
                 <p>{{ $compositeProduct->created_at->format('d/m/Y') }}</p>
             </div>
+            <div class="col-md-6">
+              <h6 class="mb-2">Stock:</h6>
+              <p>{{ $compositeProduct->stock }}</p>
+          </div>
         </div>
     </div>
 </div>
@@ -79,7 +78,7 @@
                     <th>Producto</th>
                     <th>Cantidad</th>
                     <th>Stock</th>
-                    <th>Precio Unitario</th>
+                    <th>Costo Unitario</th>
                 </tr>
             </thead>
             <tbody>

@@ -9,6 +9,10 @@
       <div class="modal-body">
         <form id="editExpenseForm" action="">
           <div class="mb-3">
+            <div class="mb-3">
+              <label for="concept" class="form-label">Concepto</label>
+              <input type="text" class="form-control" id="conceptEdit" name="concept" required placeholder="Ingrese el concepto del gasto">
+            </div>
             <label for="amountEdit" class="form-label">Monto</label>
             <input type="number" class="form-control" id="amountEdit" name="amount" required placeholder="Ingrese el monto del gasto">
           </div>
@@ -40,6 +44,15 @@
               <option value="" disabled selected>Seleccione una categoría</option>
               @foreach($expenseCategories as $category)
                 <option value="{{ $category->id }}">{{ $category->name }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="expenseCurrencyIdEdit" class="form-label">Moneda</label>
+            <select class="form-select" id="expenseCurrencyIdEdit" name="expenseCurrencyIdEdit" required>
+              <option value="" selected disabled>Seleccione una moneda</option>
+              @foreach($currencies as $currency)
+                <option value="{{ $currency->id }}">{{ $currency->name }}</option>
               @endforeach
             </select>
           </div>

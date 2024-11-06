@@ -35,4 +35,15 @@ class Currency extends Model
     {
         return $this->hasMany(Entry::class);
     }
+
+    /**
+     * Obtiene las cuentas corrientes asociadas a esta moneda.
+     *
+     * @return HasMany
+     */
+
+    public function currentAccounts()
+    {
+        return $this->hasMany(CurrentAccount::class);
+    }
 }

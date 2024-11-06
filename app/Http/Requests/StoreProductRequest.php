@@ -22,7 +22,8 @@ class StoreProductRequest extends FormRequest
             'stock' => 'nullable|integer',
             'safety_margin' => 'nullable|numeric',
             'bar_code' => 'nullable|string|max:255',
-            'categories' => 'required|array',
+            /** Si hay problema con productos, agregar |array a categories */
+            'categories' => 'required',
             'categories.*' => 'exists:product_categories,id',
             'flavors' => 'nullable|array',
             'flavors.*' => 'exists:flavors,id',
@@ -39,10 +40,12 @@ class StoreProductRequest extends FormRequest
         return [
             'price.lt' => 'El precio rebajado no puede ser mayor o igual al precio normal.',
             'recipes' => 'nullable|array',
-            'categories' => 'Faltó completar el campo "CATEGORÍA"',
+            'categories' => 'Faltó completar el campo "Categoría"',
             'recipes.*.raw_material_id' => 'required_with:recipes|exists:raw_materials,id',
             'recipes.*.quantity' => 'required_with:recipes|numeric|min:0.01',
             'build_price.numeric' => 'El precio de costo debe ser un número.',
+            'categories.required' => 'Faltó completar el campo "Categoría"',
+            'categories.*.exists' => 'La categoría seleccionada no es válida.',
         ];
     }
 

@@ -130,7 +130,6 @@ $(function () {
             }
           }
         ],
-        order: [[0, 'desc']],
         dom:
           '<"card-header d-flex flex-column flex-md-row align-items-start align-items-md-center"<"ms-n2"f><"d-flex align-items-md-center justify-content-md-end mt-2 mt-md-0"l<"dt-action-buttons"B>>' +
           '>t' +

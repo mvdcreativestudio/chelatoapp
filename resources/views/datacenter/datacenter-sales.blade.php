@@ -231,9 +231,9 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <h4 class="ms-1 mb-0">{{ $ordersCount['completed'] }}</h4>
         </div>
         @if($ordersCount['completed'] == 1)
-          <p class="mb-1 fw-medium me-1">Pedido completado</p>
+          <p class="mb-1 fw-medium me-1">Venta completada</p>
         @else
-          <p class="mb-1 fw-medium me-1">Pedidos completados</p>
+          <p class="mb-1 fw-medium me-1">Ventas completadas</p>
         @endif
         <p class="mb-0">
           {{-- <span class="fw-medium me-1 text-success">+18.2%</span> --}}
@@ -251,9 +251,9 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <h4 class="ms-1 mb-0">{{ $ordersCount['pending'] }}</h4>
         </div>
         @if($ordersCount['pending'] == 1)
-          <p class="mb-1 fw-medium me-1">Pedido pendiente</p>
+          <p class="mb-1 fw-medium me-1">Venta pendiente</p>
         @else
-          <p class="mb-1 fw-medium me-1">Pedidos pendientes</p>
+          <p class="mb-1 fw-medium me-1">Ventas pendientes</p>
         @endif
         <p class="mb-0">
           {{-- <span class="fw-medium me-1 text-danger">-8.7%</span> --}}
@@ -271,9 +271,9 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <h4 class="ms-1 mb-0">{{ $ordersCount['cancelled'] }}</h4>
         </div>
         @if($ordersCount['cancelled'] == 1)
-          <p class="mb-1 fw-medium me-1">Pedido fallido</p>
+          <p class="mb-1 fw-medium me-1">Venta fallida</p>
         @else
-          <p class="mb-1">Pedidos fallidos</p>
+          <p class="mb-1">Ventas fallidas</p>
         @endif
         <p class="mb-0">
           {{-- <span class="fw-medium me-1 text-success">+4.3%</span> --}}

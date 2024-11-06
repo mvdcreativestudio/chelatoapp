@@ -2,18 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\AccountingRepository;
+use App\Helpers\Helpers;
+use App\Http\Requests\EmitNoteRequest;
 use App\Http\Requests\SaveRutRequest;
 use App\Http\Requests\UploadLogoRequest;
-use Yajra\DataTables\DataTables;
-use Illuminate\View\View;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use App\Http\Requests\EmitNoteRequest;
-use Illuminate\Support\Facades\Log;
 use App\Models\CFE;
 use App\Models\Store;
+use App\Repositories\AccountingRepository;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
+use Yajra\DataTables\DataTables;
 
 class AccountingController extends Controller
 {
@@ -21,14 +22,14 @@ class AccountingController extends Controller
      * Repositorio de contabilidad.
      *
      * @var AccountingRepository
-    */
+     */
     protected $accountingRepository;
 
     /**
      * Constructor para inyectar el repositorio en el controlador.
      *
      * @param AccountingRepository $accountingRepository
-    */
+     */
     public function __construct(AccountingRepository $accountingRepository)
     {
         $this->accountingRepository = $accountingRepository;
@@ -38,7 +39,7 @@ class AccountingController extends Controller
      * Muestra la vista de recibos.
      *
      * @return View
-    */
+     */
     public function receipts(): View
     {
         return view('content.accounting.receipts');
@@ -48,7 +49,7 @@ class AccountingController extends Controller
      * Muestra la vista de entradas contables.
      *
      * @return View
-    */
+     */
     public function entries(): View
     {
         return view('content.accounting.entries.index');
@@ -58,7 +59,7 @@ class AccountingController extends Controller
      * Muestra la vista de una entrada contable específica.
      *
      * @return View
-    */
+     */
     public function entrie(): View
     {
         return view('content.accounting.entries.entry-details.index');
@@ -68,7 +69,7 @@ class AccountingController extends Controller
      * Muestra las estadísticas de los CFEs enviados.
      *
      * @return View
-    */
+     */
     public function getSentCfes(): View
     {
         $statistics = $this->accountingRepository->getDashboardStatistics();
@@ -79,7 +80,7 @@ class AccountingController extends Controller
      * Obtiene los datos para la tabla de recibos en formato JSON.
      *
      * @return JsonResponse
-    */
+     */
     public function getInvoicesData(): JsonResponse
     {
         $invoicesData = $this->accountingRepository->getInvoicesDataForDatatables();
@@ -90,7 +91,7 @@ class AccountingController extends Controller
      * Muestra la configuración de la contabilidad.
      *
      * @return View
-    */
+     */
     public function settings(): View
     {
         $pymoSetting = $this->accountingRepository->getRutSetting();
@@ -111,7 +112,7 @@ class AccountingController extends Controller
      *
      * @param SaveRutRequest $request
      * @return RedirectResponse
-    */
+     */
     public function saveRut(SaveRutRequest $request): RedirectResponse
     {
         $this->accountingRepository->saveRut($request->rut);
@@ -123,7 +124,7 @@ class AccountingController extends Controller
      *
      * @param UploadLogoRequest $request
      * @return RedirectResponse
-    */
+     */
     public function uploadLogo(UploadLogoRequest $request): RedirectResponse
     {
         if ($this->accountingRepository->uploadCompanyLogo($request->store_id, $request->file('logo'))) {
@@ -157,7 +158,7 @@ class AccountingController extends Controller
      *
      * @param int $cfeId
      * @return mixed
-    */
+     */
     public function downloadCfePdf($cfeId)
     {
         try {
@@ -172,7 +173,7 @@ class AccountingController extends Controller
      *
      * @param int $invoiceId
      * @return RedirectResponse
-    */
+     */
     public function emitReceipt(int $invoiceId): RedirectResponse
     {
         try {
@@ -186,11 +187,11 @@ class AccountingController extends Controller
     }
 
     /**
-      * Maneja la llegada de un webhook de PyMo.
-      *
-      * @param Request $request
-      * @return void
-    */
+     * Maneja la llegada de un webhook de PyMo.
+     *
+     * @param Request $request
+     * @return void
+     */
     public function webhook(Request $request): void
     {
         $data = $request->all(); // Obtener los datos del webhook
@@ -206,7 +207,7 @@ class AccountingController extends Controller
                 preg_match('/\/companies\/(\d+)\/sentCfes\/(\d+)/', $urlToCheck, $matches);
 
                 if (isset($matches[1]) && isset($matches[2])) {
-                    $rut = $matches[1];         // Primer grupo de captura es el RUT
+                    $rut = $matches[1]; // Primer grupo de captura es el RUT
                     $branchOffice = $matches[2]; // Segundo grupo de captura es la sucursal
 
                     Log::info('Rut de la empresa Webhook: ' . $rut);
@@ -228,7 +229,7 @@ class AccountingController extends Controller
      * Actualiza el estado de todos los CFEs para la empresa del usuario autenticado.
      *
      * @return JsonResponse
-    */
+     */
     public function updateAllCfesStatus(): JsonResponse
     {
         try {
@@ -253,7 +254,7 @@ class AccountingController extends Controller
      * Actualiza el estado de todos los CFE's para todas las empresas.
      *
      * @return JsonResponse
-    */
+     */
     public function updateAllCfesStatusForAllStores(): JsonResponse
     {
         try {
@@ -270,7 +271,7 @@ class AccountingController extends Controller
      * Muestra la vista de CFEs recibidos.
      *
      * @return RedirectResponse | View
-    */
+     */
     public function receivedCfes(): RedirectResponse | View
     {
         $store = auth()->user()->store;
@@ -297,7 +298,7 @@ class AccountingController extends Controller
      * Obtiene los datos de los CFEs recibidos para la tabla en formato JSON.
      *
      * @return JsonResponse
-    */
+     */
     public function getReceivedCfesData(): JsonResponse
     {
         try {
@@ -313,5 +314,29 @@ class AccountingController extends Controller
             Log::error('Error al obtener los datos de los CFEs recibidos para la DataTable: ' . $e->getMessage());
             return response()->json(['error' => 'Ocurrió un error al obtener los datos de los CFEs recibidos.'], 500);
         }
-  }
+    }
+
+    // sendEmail
+    public function sendEmail(Request $request)
+    {
+        try {
+
+            $invoiceId = $request->invoice_id;
+            $email = $request->email;
+            $factura = $this->downloadCfePdf($invoiceId);
+            $tempPdfPath = tempnam(sys_get_temp_dir(), 'pdf_');
+            $variables = [
+                'subject' => 'Factura de compra',
+                'reply_to' => 'soporte@mi-tienda.com',
+            ];
+            file_put_contents($tempPdfPath, $factura);
+            $attachmentName = "Factura.pdf"; // Asigna el nombre del archivo
+
+            Helpers::emailService()->sendMail($email, $variables['subject'], 'content.accounting.invoices.email', $variables, $tempPdfPath, $attachmentName);
+            return response()->json(['success' => 'Correo enviado correctamente.']);
+        } catch (\Exception $e) {
+            Log::error('Error al enviar correo: ' . $e->getMessage());
+            return response()->json(['error' => 'Ocurrió un error al enviar el correo.'], 500);
+        }
+    }
 }

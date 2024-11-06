@@ -136,7 +136,7 @@
       productsSelect.find('option').prop('selected', true).trigger('change');
     });
 
-    // Calcular el precio recomendado basado en los productos seleccionados y cantidades
+    // Calcular el costo total basado en los productos seleccionados y cantidades
     const selectedProductsTable = $('#selectedProductsTable tbody');
     const priceAlert = $('#priceAlert');
     const recommendedPriceInput = $('#recommended_price');
@@ -218,10 +218,10 @@
         }
       });
 
-      calculateTotalRecommendedPrice(); // Calcular precio recomendado al seleccionar productos
+      calculateTotalRecommendedPrice(); // Calcular costo total al seleccionar productos
     });
 
-    // Recalcular precio recomendado al cambiar la cantidad
+    // Recalcular costo total al cambiar la cantidad
     selectedProductsTable.on('input', '.product-quantity', function (event) {
       const input = $(this);
       if (input.val() <= 0) {
@@ -241,7 +241,7 @@
       const option = productsSelect.find(`option[value="${productId}"]`);
       option.prop('selected', false).trigger('change'); // Desmarca y dispara el evento change
 
-      calculateTotalRecommendedPrice(); // Recalcular precio recomendado después de eliminar
+      calculateTotalRecommendedPrice(); // Recalcular costo total después de eliminar
     });
 
     // Capturar los datos y enviarlos por AJAX

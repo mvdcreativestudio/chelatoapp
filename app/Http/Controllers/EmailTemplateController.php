@@ -79,6 +79,7 @@ class EmailTemplateController extends Controller
         $store_name = 'Pocitos';
         $ecommerce_name = 'Sumeria';
 
+
         return view('emails.ecommerce.customer.new-order-client', compact(
             'order_id',
             'order_date',

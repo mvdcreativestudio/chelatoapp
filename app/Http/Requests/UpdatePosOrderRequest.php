@@ -20,7 +20,7 @@ class UpdatePosOrderRequest extends FormRequest
             'cash_sales' => 'required|int',
             'pos_sales' => 'required|int',
             'discount' => 'required|numeric',
-            'client_type' => 'required|string'
+            'client_type' => 'nullable|string'
         ];
     }
 
@@ -33,7 +33,6 @@ class UpdatePosOrderRequest extends FormRequest
             'cash_sales.required' => 'La cantidad de dinero en efectivo es obligatoria.',
             'pos_sales.required' => 'La cantidad de dinero del POS es obligatoria.',
             'discount.required' => 'La cantidad de descuento es obligatoria.',
-            'client_type.required' => 'El tipo de cliente es obligatorio.'
         ];
     }
 }

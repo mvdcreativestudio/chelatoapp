@@ -35,7 +35,7 @@
     <div class="card">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
-          <a href="{{ route('clients.index') }}" class="btn btn-primary">
+          <a href="{{ route('clients.index') }}" class="btn btn-sm btn-primary">
             <i class="bx bx-arrow-back me-1"></i>Volver a Clientes
           </a>
           <h2 class="card-title mb-0">
@@ -128,7 +128,7 @@
             <div class="avatar me-2">
               <span class="avatar-initial rounded bg-label-danger"><i class='bx bx-money'></i></span>
             </div>
-            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ $client->orders->sum('total') }}</h4>
+            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ number_format($client->orders->sum('total'), 2) }}</h4>
           </div>
             <p class="mb-1 fw-medium me-1">Total Gastado</p>
 
@@ -146,7 +146,7 @@
               <span class="avatar-initial rounded bg-label-info"><i class='bx bx-line-chart'></i></span>
             </div>
           @if($client->orders->sum('total') !== 0 && $client->orders->count() !== 0)
-            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ $client->orders->sum('total') / $client->orders->count() }}</h4>
+            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ number_format($client->orders->sum('total') / $client->orders->count(), 2) }}</h4>
           @else
             <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}0</h4>
           @endif
@@ -179,21 +179,23 @@
               @endif
             </span>
           </li>
-          @if($client->type == 'individual')
-            <li class="mb-3">
-              <span class="fw-medium me-2">CI:</span>
-              <span>{{ $client->ci }}</span>
-            </li>
-          @endif
-          @if($client->type == 'company')
-            <li class="mb-3">
-              <span class="fw-medium me-2">Razón Social:</span>
-              <span>{{ $client->company_name }}</span>
-            </li>
-            <li class="mb-3">
-              <span class="fw-medium me-2">RUT:</span>
-              <span>{{ $client->rut }}</span>
-            </li>
+          @if(Auth::user()->can('access_client-sensitive-data'))
+            @if($client->type == 'individual')
+              <li class="mb-3">
+                <span class="fw-medium me-2">CI:</span>
+                <span>{{ $client->ci }}</span>
+              </li>
+            @endif
+            @if($client->type == 'company')
+              <li class="mb-3">
+                <span class="fw-medium me-2">Razón Social:</span>
+                <span>{{ $client->company_name }}</span>
+              </li>
+              <li class="mb-3">
+                <span class="fw-medium me-2">RUT:</span>
+                <span>{{ $client->rut }}</span>
+              </li>
+            @endif
           @endif
           <li class="mb-3">
             <span class="fw-medium me-2">Email:</span>
@@ -218,6 +220,11 @@
             <span class="fw-medium me-2">Teléfono:</span>
             <span>{{ $client->phone }}</span>
           </li>
+          <li class="mb-3">
+            <span class="fw-medium me-2">Listas de Precios:</span>
+            <span>{{ $priceListName }}</span>
+          </li>
+          
         </ul>
         <div class="d-flex justify-content-center pt-3">
           <a href="javascript:;" class="btn btn-primary me-3" data-bs-target="#editUser" data-bs-toggle="modal">Editar</a>
@@ -262,12 +269,27 @@
             <input type="text" id="modalEditUserAddress" name="address" class="form-control" value="{{ $client->address }}" />
           </div>
           <div class="col-12 col-md-6">
-            <label class="form-label" for="modalEditUserCity">Ciudad</label>
+            <label class="form-label" for="modalEditUserCity">Ciudad/Barrio</label>
             <input type="text" id="modalEditUserCity" name="city" class="form-control" value="{{ $client->city }}" />
           </div>
           <div class="col-12 col-md-6">
             <label class="form-label" for="modalEditUserCountry">País</label>
             <input type="text" id="modalEditUserCountry" name="country" class="form-control" value="{{ $client->country }}" />
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="modalEditUserPriceList">Lista de Precios</label>
+            <select id="modalEditUserPriceList" name="price_list_id" class="form-control">
+                @if($client->priceLists->count() == 0)
+                    <option value="" disabled selected>No hay listas de precios disponibles</option>
+                @else 
+                    <option value="" disabled selected>Seleccione una lista de precios</option>
+                @endif
+                @foreach($priceLists as $priceList)
+                    <option value="{{ $priceList->id }}" {{ $client->priceLists->contains($priceList->id) ? 'selected' : '' }}>
+                        {{ $priceList->name }}
+                    </option>
+                @endforeach
+            </select>
           </div>
           <div class="col-12 text-center">
             <button type="submit" class="btn btn-primary me-sm-3 me-1">Guardar cambios</button>

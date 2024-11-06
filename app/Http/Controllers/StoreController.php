@@ -99,24 +99,23 @@ class StoreController extends Controller
     public function edit(Store $store): View
     {
         $googleMapsApiKey = config('services.google.maps_api_key');
-
         $companyInfo = null;
         $logoUrl = null;
         $branchOffices = [];
-
-        Log::info('Store: ' . $store->rut);
-
+    
+        // Carga la información de la empresa si la facturación está habilitada
         if ($store->invoices_enabled && $store->pymo_user && $store->pymo_password) {
             $companyInfo = $this->accountingRepository->getCompanyInfo($store);
             $logoUrl = $this->accountingRepository->getCompanyLogo($store);
             $branchOffices = $companyInfo['branchOffices'] ?? [];
         }
-
-        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'branchOffices'));
+    
+        // Cargar dispositivos vinculados a Scanntech para esta tienda
+        $devices = $store->posDevices()->get();
+    
+        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'branchOffices', 'devices'));
     }
-
-
-
+    
     /**
      * Actualiza una Empresa específica en la base de datos.
      *
@@ -126,6 +125,7 @@ class StoreController extends Controller
      */
     public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
     {
+        // Validar los datos enviados en la request
         $storeData = $request->validated();
 
         // Actualización de la tienda excluyendo los datos de integraciones específicas
@@ -139,7 +139,10 @@ class StoreController extends Controller
             'pymo_branch_office',
             'accepts_peya_envios',
             'peya_envios_key',
-            'callbackNotificationUrl'
+            'callbackNotificationUrl',
+            'scanntechCompany',
+            'scanntechBranch',
+            'scanntechUser',
         ]));
 
         // Manejo de la integración de MercadoPago
@@ -148,19 +151,13 @@ class StoreController extends Controller
         // Manejo de la integración de Pedidos Ya Envíos
         $this->handlePedidosYaEnviosIntegration($request, $store);
 
+        // Manejo de la integración de Scanntech
+        $this->handleScanntechIntegration($request, $store);
+
         // Manejo de la integración de Pymo (Facturación Electrónica)
-        if ($request->boolean('invoices_enabled')) {
-          $this->accountingRepository->updateStoreWithPymo($store, $request->input('pymo_branch_office'), $request->input('callbackNotificationUrl'), $request->input('pymo_user'), $request->input('pymo_password'));
-        } else {
-            $store->update([
-                'pymo_user' => null,
-                'pymo_password' => null,
-                'pymo_branch_office' => null,
-            ]);
-        }
+        $this->handlePymoIntegration($request, $store);
 
-
-        return redirect()->route('stores.index')->with('success', 'Empresa actualizada con éxito.');
+        return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
     }
 
     /**
@@ -244,6 +241,29 @@ class StoreController extends Controller
         }
     }
 
+    /**
+     * Manejo de la integración de Scanntech
+     * 
+     * @param UpdateStoreRequest $request
+     * @param Store $store
+     * @return void
+     */
+    private function handleScanntechIntegration(UpdateStoreRequest $request, Store $store): void
+    {
+        if ($request->boolean('scanntech')) {
+            $store->posIntegrationInfo()->updateOrCreate(
+                ['store_id' => $store->id, 'pos_provider_id' => 1], // Scanntech
+                [
+                    'company' => $request->input('scanntechCompany'),
+                    'branch' => $request->input('scanntechBranch'),
+                ]
+            );
+        } else {
+            // Elimina la integración si se desactiva
+            $store->posIntegrationInfo()->where('pos_provider_id', 1)->delete();
+        }
+    }
+    
 
 
     /**

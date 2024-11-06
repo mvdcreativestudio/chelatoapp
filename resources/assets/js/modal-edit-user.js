@@ -33,17 +33,23 @@ document.addEventListener('DOMContentLoaded', function (e) {
         phone: formData.get('phone'),
         address: formData.get('address'),
         city: formData.get('city'),
-        country: formData.get('country')
+        country: formData.get('country'),
       };
+
+      // Solo agregar price_list_id si está presente
+      const priceListId = formData.get('price_list_id');
+      if (priceListId) {
+        clientData.price_list_id = priceListId;
+      }
 
       // Enviar la solicitud AJAX
       fetch(url, {
         method: 'PUT',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
-            'Content-Type': 'application/json', // Asegúrate de que Content-Type está presente y correcto
+            'Content-Type': 'application/json',
         },
-        body: JSON.stringify(clientData) // Enviar los datos como JSON
+        body: JSON.stringify(clientData)
       })
       .then(response => {
         return response.json();
@@ -52,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function (e) {
         if (data.success) {
           // Cierra el modal usando Bootstrap
           const modal = bootstrap.Modal.getInstance(document.getElementById('editUser'));
-          modal.hide(); // Cerrar el modal
+          modal.hide();
 
           Swal.fire({
             icon: 'success',

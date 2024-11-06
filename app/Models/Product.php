@@ -31,7 +31,8 @@ class Product extends Model
         'stock',
         'safety_margin',
         'bar_code',
-        'build_price'
+        'build_price',
+        'bulk_production_id'
       ];
 
 
@@ -53,6 +54,23 @@ class Product extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(ProductCategory::class, 'category_product', 'product_id', 'category_id');
+    }
+
+      
+
+    public function productPrices(): HasMany
+    {
+        return $this->hasMany(ProductPrice::class);
+    }
+
+    public function packaging(): HasMany
+    {
+        return $this->hasMany(Packaging::class, 'final_product_id');
+    }
+
+    public function BulkProduction(): HasMany
+    {
+        return $this->hasMany(BulkProduction::class, 'bulk_production_id');
     }
 
     /**
@@ -150,5 +168,22 @@ class Product extends Model
     public function setDiscountAttribute(float $value): void
     {
         $this->attributes['discount'] = round($value, 2);
+    }
+
+    /**
+     * Obtiene el precio del producto.
+     * @param float|null $value
+     * @return float
+    */
+    public function priceLists()
+    {
+        return $this->belongsToMany(PriceList::class, 'price_list_products')
+                    ->withPivot('price')
+                    ->withTimestamps();
+    }
+    
+    public function batch(): HasMany
+    {
+        return $this->hasMany(Batch::class);
     }
 }

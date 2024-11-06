@@ -17,7 +17,7 @@ use App\Http\Requests\StoreMultipleFlavorsRequest;
 use App\Http\Requests\UpdateFlavorRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Log;
 
 
 class ProductRepository
@@ -523,7 +523,7 @@ class ProductRepository
       // Iniciar la consulta
       $query = Product::with(['categories:id,name', 'store:id,name'])
           ->select([
-              'id', 'name', 'sku', 'description', 'type', 'old_price', 'price',
+              'id', 'name', 'sku', 'description', 'type', 'build_price', 'old_price', 'price',
               'discount', 'image', 'store_id', 'status', 'draft', 'stock', 'safety_margin'
           ])
           ->where('is_trash', '!=', 1);
@@ -630,5 +630,15 @@ class ProductRepository
           }
       }
   }
+
+  /**
+   * Devuelve todos los productos de la base de datos.
+   *
+  */
+  public function getAll()
+  {
+    return Product::all();
+  }
+  
 
 }

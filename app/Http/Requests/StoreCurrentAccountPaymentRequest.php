@@ -24,7 +24,8 @@ class StoreCurrentAccountPaymentRequest extends FormRequest
     {
         return [
             'current_account_id' => 'required|integer|exists:current_accounts,id', // Validar que el ID de cuenta corriente sea válido
-            'client_id' => 'required|integer|exists:clients,id',
+            'client_id' => 'nullable|integer|exists:clients,id', // Validar cliente o proveedor
+            'supplier_id' => 'nullable|integer|exists:suppliers,id',
             'payment_amount' => [
                 'required',
                 'numeric',
@@ -34,8 +35,8 @@ class StoreCurrentAccountPaymentRequest extends FormRequest
                     $currentAccount = CurrentAccount::find($this->current_account_id);
 
                     if ($currentAccount) {
-                        $totalPaid = $currentAccount->payments->sum('payment_amount'); // Suma de los pagos existentes
-                        $totalDebit = $currentAccount->total_debit; // Monto total que se debe
+                        $totalPaid = $currentAccount->payment_amount; // Suma de los pagos existentes
+                        $totalDebit = $currentAccount->payment_total_debit; // Monto total que se debe
 
                         // Valida que el nuevo pago no exceda el total pendiente
                         if ($totalPaid + $value > $totalDebit) {
@@ -61,8 +62,8 @@ class StoreCurrentAccountPaymentRequest extends FormRequest
         return [
             'current_account_id.required' => 'La cuenta corriente es obligatoria.',
             'current_account_id.exists' => 'La cuenta corriente seleccionada no es válida.',
-            'client_id.required' => 'El cliente es obligatorio.',
             'client_id.exists' => 'El cliente seleccionado no es válido.',
+            'supplier_id.exists' => 'El proveedor seleccionado no es válido.',
             'payment_amount.required' => 'El monto pagado es obligatorio.',
             'payment_amount.numeric' => 'El monto pagado debe ser un número.',
             'payment_amount.min' => 'El monto pagado debe ser un valor positivo.',

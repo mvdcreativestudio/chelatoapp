@@ -127,4 +127,36 @@ class Store extends Model
         return $this->hasMany(CFE::class);
     }
 
+    /**
+     * Obtiene los POS vinculados a la tienda.
+     * 
+     * @return BelongsTo
+     */
+    public function posProvider()
+    {
+        return $this->belongsTo(PosProvider::class, 'pos_provider_id');
+    }
+
+    /**
+     * Obtiene la información de integración con el POS.
+     * 
+     * @return HasOne
+     */
+    public function posIntegrationInfo()
+    {
+        return $this->hasOne(PosIntegrationStoreInfo::class, 'store_id');
+    }
+    
+
+    /**
+     * Obtiene los dispositivos POS asociados a la tienda.
+     * 
+     * @return HasMany
+     */
+    public function posDevices()
+    {
+        // Primero obtenemos la integración POS de la tienda, luego los dispositivos asociados
+        return $this->hasManyThrough(PosDevice::class, PosIntegrationStoreInfo::class, 'store_id', 'pos_provider_id', 'id', 'pos_provider_id');
+    }
+    
 }

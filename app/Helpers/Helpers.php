@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Services\Mail\EmailService;
 use Config;
 use Illuminate\Support\Str;
 
@@ -214,5 +215,31 @@ class Helpers
     {
         $d = \DateTime::createFromFormat($format, $date);
         return $d && $d->format($format) === $date;
+    }
+
+    public static function downloadAndSavePdf(string $pdfUrl): string
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $pdfUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+        $pdfContent = curl_exec($ch);
+        curl_close($ch);
+
+        // Verifica que el contenido del PDF no esté vacío
+        if ($pdfContent === false) {
+            throw new \Exception('Error al descargar el PDF');
+        }
+
+        // Guarda el contenido del PDF en un archivo temporal
+        $tempPdfPath = tempnam(sys_get_temp_dir(), 'pdf_');
+        file_put_contents($tempPdfPath, $pdfContent);
+
+        return $tempPdfPath;
+    }
+
+    public static function emailService(): EmailService
+    {
+        return app(EmailService::class);
     }
 }

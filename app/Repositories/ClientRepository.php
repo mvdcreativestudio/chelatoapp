@@ -52,15 +52,16 @@ class ClientRepository
     }
 
     /**
-     * Obtiene un cliente por su ID.
+     * Obtiene un cliente por su ID junto con sus relaciones.
      *
      * @param int $id
      * @return Client|null
      */
     public function getClientById(int $id): ?Client
     {
-        return Client::with('orders')->find($id);
+        return Client::with(['orders', 'priceLists'])->find($id);
     }
+
 
     /**
      * Actualiza un cliente existente.

@@ -37,9 +37,9 @@ services:
     # ####################################################################################################
     # # DATABASE (MySQL)
     # ####################################################################################################
-    # mysql_base:
+    # mysql_chelatoapp:
     #     image: mysql/mysql-server:8.0
-    #     container_name: mysql_db_base
+    #     container_name: mysql_db_chelatoapp
     #     restart: unless-stopped
     #     tty: true
     #     ports:
@@ -60,17 +60,17 @@ services:
     # ####################################################################################################
     # # phpMyAdmin
     # ####################################################################################################
-    # phpmyadmin_base:
+    # phpmyadmin_chelatoapp:
     #     image: phpmyadmin/phpmyadmin
-    #     container_name: phpmyadmin_db_base
+    #     container_name: phpmyadmin_db_chelatoapp
     #     restart: unless-stopped
     #     tty: true
     #     ports:
     #         - 8080:80
     #     links:
-    #         - mysql_base
+    #         - mysql_chelatoapp
     #     environment:
-    #         PMA_HOST: mysql_base
+    #         PMA_HOST: mysql_chelatoapp
     #         PMA_PORT: 3306
     #         PMA_ARBITRARY: 1
     #     volumes:
@@ -81,7 +81,7 @@ services:
     ####################################################################################################
     # Mailpit
     ####################################################################################################
-    mail_base:
+    mail_chelatoapp:
         image: axllent/mailpit:latest
         container_name: mail_base
         restart: unless-stopped

@@ -6,11 +6,11 @@
 
 <div class="video-container">
   <video autoplay muted loop id="myVideo" class="video-background">
-      <source src="../assets/img/videos/back-chelato.mp4" type="video/mp4">
+      <source src="../assets/img/videos/back-dali.mp4" type="video/mp4">
   </video>
   <div class="video-overlay-store">
     <h2 class="header-title-store">{{ $store->name }}</h2>
-    <img src="../assets/img/branding/chelato-white.png" class="logo-header-store" alt="">
+    <img src="../assets/img/branding/dali-white.png" class="logo-header-store" alt="">
   </div>
 </div>
 

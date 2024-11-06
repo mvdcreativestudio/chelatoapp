@@ -24,7 +24,7 @@ $(function () {
           dataSrc: 'data'
         },
         columns: [
-          { data: 'id', type: 'num'},
+          { data: 'id', type: 'num' },
           { data: 'store_name' },
           { data: 'client_name' },
           { data: 'order_id' },
@@ -234,43 +234,50 @@ $(function () {
               // Ahora si el invoice tiene hide_emit se oculta el botón de emitir nota
               var hideEmit = full['hide_emit'] ? 'd-none' : '';
 
-                return (
-                  '<div class="d-flex justify-content-center align-items-center">' +
-                  '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
-                  '<div class="dropdown-menu dropdown-menu-end m-0">' +
-                  '<a href="' +
-                  full['qrUrl'] +
-                  '" target="_blank" class="dropdown-item">Ver QR</a>' +
-                  '<a href="' +
-                  baseUrl +
-                  'admin/orders/' +
-                  full['order_uuid'] +
-                  '" class="dropdown-item">Ver Venta</a>' +
-                  '<a href="#" class="dropdown-item btn-ver-detalles" data-id="' +
-                  full['id'] +
-                  '">Ver Detalles</a>' +
-                  '<a href="' +
-                  baseUrl +
-                  'admin/invoices/download/' +
-                  full['id'] +
-                  '" class="dropdown-item">Descargar PDF</a>' +
-                  '<a href="#" class="dropdown-item btn-emitir-nota ' +
-                  hideEmitirNota +
-                  hideEmitirRecibo +
-                  hideEmit +
-                  '" data-id="' +
-                  full['id'] +
-                  '">Emitir Nota</a>' +
-                  '<a href="#" class="dropdown-item btn-emitir-recibo ' +
-                  hideEmitirNota +
-                  hideEmitirRecibo +
-                  hideEmit +
-                  '" data-id="' +
-                  full['id'] +
-                  '">Emitir Recibo</a>' +
-                  '</div>' +
-                  '</div>'
-                );
+
+              return (
+                '<div class="d-flex justify-content-center align-items-center">' +
+                '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
+                '<div class="dropdown-menu dropdown-menu-end m-0">' +
+                '<a href="' +
+                full['qrUrl'] +
+                '" target="_blank" class="dropdown-item">Ver QR</a>' +
+                '<a href="' +
+                baseUrl +
+                'admin/orders/' +
+                full['order_uuid'] +
+                '" class="dropdown-item">Ver Venta</a>' +
+                '<a href="#" class="dropdown-item btn-ver-detalles" data-id="' +
+                full['id'] +
+                '">Ver Detalles</a>' +
+                '<a href="' +
+                baseUrl +
+                'admin/invoices/download/' +
+                full['id'] +
+                '" class="dropdown-item">Descargar PDF</a>' +
+                '<a href="#" class="dropdown-item btn-emitir-nota ' +
+                hideEmitirNota +
+                hideEmitirRecibo +
+                hideEmit +
+                '" data-id="' +
+                full['id'] +
+                '">Emitir Nota</a>' +
+                '<a href="#" class="dropdown-item btn-emitir-recibo ' +
+                hideEmitirNota +
+                hideEmitirRecibo +
+                hideEmit +
+                '" data-id="' +
+                full['id'] +
+                '">Emitir Recibo</a>' +
+                // add open modal button
+                '<a href="#" class="dropdown-item btn-send-email" data-id="' +
+                full['id'] +
+                '" data-email="' +
+                full['client_email'] +
+                '">Enviar factura por correo</a>' +
+                '</div>' +
+                '</div>'
+              );
             }
           }
         ],
@@ -301,7 +308,11 @@ $(function () {
           renderer: 'bootstrap'
         },
         rowCallback: function (row, data, index) {
-          if ((data['type'].includes('Nota de Crédito') || data['type'].includes('Nota de Débito')) || data['is_receipt']) {
+          if (
+            data['type'].includes('Nota de Crédito') ||
+            data['type'].includes('Nota de Débito') ||
+            data['is_receipt']
+          ) {
             $('td', row).eq(5).css('background-color', '#F5F5F9').css('color', '#566A7F');
           }
         }
@@ -355,7 +366,6 @@ $(function () {
         $('#emitirNotaForm').attr('action', baseUrl + 'admin/invoices/' + invoiceId + '/emit-note');
         $('#emitirNotaModal').modal('show');
       });
-
     } catch (error) {
       console.log(error);
     }
@@ -405,6 +415,81 @@ $(function () {
       error: function (xhr, status, error) {
         $('#btn-update-all-cfes').prop('disabled', false).text('Actualizar todos los CFEs');
         toastr.error('Ocurrió un error durante la actualización de los CFEs.', 'Error');
+      }
+    });
+  });
+
+  // Evento para abrir el modal de envío de correo y cargar el correo electrónico
+  $('.datatables-invoice tbody').on('click', '.btn-send-email', function (e) {
+    e.preventDefault();
+    var email = $(this).data('email');
+    var invoiceId = $(this).data('id');
+
+    // Configurar los datos en el formulario del modal
+    $('#email').val(email);
+    $('#invoice_id').val(invoiceId);
+
+    // Mostrar el modal
+    $('#sendEmailModal').modal('show');
+  });
+
+  // Código de envío del formulario de correo electrónico con jQuery
+  $('#sendEmailForm').on('submit', function (e) {
+    e.preventDefault();
+
+    const invoiceId = $('#invoice_id').val();
+    const email = $('#email').val();
+    const formAction = $(this).attr('action');
+
+    // Cerrar el modal de Bootstrap
+    $('#sendEmailModal').modal('hide');
+
+    // Mostrar Swal de "Enviando..."
+    Swal.fire({
+      title: 'Enviando...',
+      text: 'Por favor, espera mientras enviamos la factura.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    $.ajax({
+      url: formAction,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      },
+      data: JSON.stringify({ email: email, invoice_id: invoiceId }),
+      success: function (data) {
+        Swal.close(); // Cerrar Swal de "Enviando..."
+
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Correo enviado correctamente',
+            showConfirmButton: false,
+            timer: 2000
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al enviar el correo',
+            text: data.message || 'Ocurrió un error. Inténtalo nuevamente.',
+            showConfirmButton: true
+          });
+        }
+      },
+      error: function () {
+        Swal.close(); // Cerrar Swal de "Enviando..." en caso de error
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al enviar el correo',
+          text: 'Ocurrió un error. Inténtalo nuevamente.',
+          showConfirmButton: true
+        });
       }
     });
   });

@@ -30,11 +30,11 @@ yarn-error.log
 !/public/assets/*
 /public/css
 /public/js
+/public/assets/img/branding/*
+/public/assets/img/emcommerce-images/*
+
 
 
 .docker/db/
 .docker/logs/
 .docker/phpmyadmin/
-
-martin_mvd
-martin_mvd.pub

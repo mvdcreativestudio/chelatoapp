@@ -5,14 +5,33 @@ namespace App\Services\POS;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use App\Models\PosProvider;
 
 class ScanntechIntegrationService implements PosIntegrationInterface
 {
     protected $authService;
+    protected $apiUrl;
 
     public function __construct(ScanntechAuthService $authService)
     {
         $this->authService = $authService;
+        $this->apiUrl = $this->getScanntechApiUrl(); // Asignar la URL de la API al instanciar
+    }
+
+    // Obtener la URL de la API desde la tabla pos_providers
+    protected function getScanntechApiUrl()
+    {
+        // Obtener el pos_provider con el id 1 (que corresponde a Scanntech)
+        $posProvider = PosProvider::find(1); // Scanntech tiene el ID 1
+
+        if ($posProvider && $posProvider->api_url) {
+            Log::info('URL de la API de Scanntech encontrada: ' . $posProvider->api_url);
+            return $posProvider->api_url;
+        } else {
+            // Registrar un error si no se encuentra el proveedor o no tiene URL definida
+            Log::error('No se encontró la URL de la API para el proveedor Scanntech.');
+            throw new \Exception('No se pudo encontrar la URL de la API para Scanntech');
+        }
     }
 
     public function getToken()
@@ -24,10 +43,11 @@ class ScanntechIntegrationService implements PosIntegrationInterface
     {
         $token = $this->authService->getAccessToken();
 
+        // Usar la URL obtenida desde la tabla pos_providers
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Content-Type' => 'application/json',
-        ])->post('http://200.40.123.21:35000/rest/v2/postPurchase', $transactionData);
+        ])->post($this->apiUrl . 'postPurchase', $transactionData);
 
         if ($response->successful()) {
             return $response->json();
@@ -47,10 +67,11 @@ class ScanntechIntegrationService implements PosIntegrationInterface
         try {
             Log::info('Enviando solicitud de estado de transacción a Scanntech', $transactionData);
 
+            // Usar la URL obtenida desde la tabla pos_providers
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Content-Type' => 'application/json',
-            ])->post('http://200.40.123.21:35000/rest/v2/getTransactionState', $transactionData);
+            ])->post($this->apiUrl . 'getTransactionState', $transactionData);
 
             Log::info('Respuesta de Scanntech', [
                 'status_code' => $response->status(),

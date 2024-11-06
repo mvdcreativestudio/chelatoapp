@@ -109,6 +109,8 @@ $changeTypeTranslations = [
         <span class="me-2 ms-2">Débito</span>
       @elseif($order->payment_method === 'credit')
         <span class="me-2 ms-2">Crédito</span>
+      @elseif($order->payment_method === 'internalCredit')
+              <span class="me-2 ms-2">Crédito Interno</span>
       @endif
     </h6>
     @if($store->invoices_enabled)
@@ -134,16 +136,46 @@ $changeTypeTranslations = [
   </div>
   <div class="d-flex align-content-center flex-wrap gap-2">
     <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=print" target="_blank" onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=800,height=600').print(); return false;">
-        <button class="btn btn-primary">Imprimir</button>
+        <button class="btn btn-sm btn-primary">Imprimir</button>
     </a>
     @if(!$order->is_billed && $store->invoices_enabled)
-      <button type="button" class="btn btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
+      <button type="button" class="btn btn-sm btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
         Emitir Factura
       </button>
     @endif
-    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download" class="btn btn-label-primary">Descargar Recibo</a>
-    <button class="btn btn-label-danger delete-order">Eliminar</button>
-  </div>
+    @if($order->is_billed && isset($invoice))
+    <a href="{{ route('invoices.download', ['id' => $invoice->id]) }}" class="btn btn-sm btn-label-info">
+        PDF Factura
+    </a>
+    {{-- send email --}}
+    <button type="button" class="btn btn-sm btn-label-info" data-bs-toggle="modal" data-bs-target="#sendEmailModal">
+      Enviar Factura por Correo
+    </button>
+    @endif
+    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download" class="btn btn-sm btn-label-primary">PDF Venta</a>
+
+    
+    @if($order->is_billed)
+      <!-- Botón deshabilitado con tooltip en el contenedor -->
+      <span data-bs-toggle="tooltip" data-bs-placement="top" title="No se puede eliminar porque está facturado">
+        <button type="button" class="btn btn-sm btn-danger" disabled>
+          <i class="bx bx-trash"></i>
+        </button>
+      </span>
+    @else
+      <!-- Botón habilitado y funcional con tooltip -->
+      <button type="button" class="btn btn-sm btn-danger delete-order" data-order-id="{{ $order->id }}" data-bs-toggle="tooltip" data-bs-placement="left" title="Eliminar venta">
+        <i class="bx bx-trash"></i>
+      </button>
+    @endif
+  
+  
+    
+  
+  
+  
+  
+    </div>
 </div>
 
 <!-- Formulario para actualizar el estado del pago y envío -->
@@ -306,7 +338,7 @@ $changeTypeTranslations = [
 
     <div class="card mb-4">
       <div class="card-header">
-        <h5 class="card-title m-0">Actualizar Estado del Pedido</h5>
+        <h5 class="card-title m-0">Actualizar Estado</h5>
       </div>
       <div class="card-body">
         <form action="{{ route('orders.updateStatus', $order->id) }}" method="POST">
@@ -327,7 +359,7 @@ $changeTypeTranslations = [
               <option value="delivered" {{ $order->shipping_status === 'delivered' ? 'selected' : '' }}>Entregado</option>
             </select>
           </div>
-          <button type="submit" class="btn btn-primary">Actualizar Estado del Pedido</button>
+          <button type="submit" class="btn btn-sm btn-primary">Actualizar Estado</button>
         </form>
       </div>
     </div>
@@ -340,14 +372,24 @@ $changeTypeTranslations = [
       <div class="card-body">
         <div class="d-flex justify-content-start align-items-center mb-3">
           <div class="d-flex flex-column">
-            <a href="{{ url('app/user/view/account') }}" class="text-body text-nowrap">
-              <h5 class="mb-0">{{ ucwords($order->client->name) }} {{ ucwords($order->client->lastname) }}</h5>
-            </a>
-            <small class="text-muted">ID: #{{ $order->client->id }}</small>
-            <small class="text-muted">Registrado el: {{ $order->client->created_at->format('d/m/Y') }}</small>
+            @if($order->client !== null)
+              <a href="{{ url('app/user/view/account') }}" class="text-body text-nowrap">
+                @if($order->client->type === 'individual')
+                  <h5 class="mb-0">{{ ucwords($order->client->name) }} {{ ucwords($order->client->lastname) }}</h5>
+                @elseif($order->client->type === 'company')
+                  <h5 class="mb-0">{{ ucwords($order->client->company_name) }}</h5>
+                @endif
+              </a>
+              
+              <small class="text-muted">ID: #{{ $order->client->id }}</small>
+              <small class="text-muted">Registrado el: {{ $order->client->created_at->format('d/m/Y') }}</small>
+            @else
+            <h5 class="mb-0">Consumidor Final</h5>
+            @endif
           </div>
         </div>
 
+        @if($order->client !== null)
         <div class="mb-3">
           <h6 class="card-title mt-4">Información General</h6>
           <p class="mb-1"><strong>Tipo de Cliente:</strong> {{ $order->client->type === 'company' ? 'Empresa' : 'Persona' }}</p>
@@ -355,15 +397,22 @@ $changeTypeTranslations = [
             <p class="mb-1"><strong>Razón Social:</strong> {{ ucwords($order->client->company_name) }}</p>
           @endif
           <p class="mb-1"><strong>{{ $order->client->type === 'company' ? 'RUT' : 'CI' }}:</strong> {{ $order->client->type === 'company' ? $order->client->rut : $order->client->ci }}</p>
+          @endif
         </div>
 
+        @if($order->client !== null)
         <div class="mb-3">
           <h6 class="card-title mt-4">Información de Contacto</h6>
+          @if($order->client->type === 'company' && $order->client->name !== null && $order->client->lastname !== null)
+            <p class="mb-1"><strong>Representante:</strong> {{ ucwords($order->client->name) }} {{ ucwords($order->client->lastname) }}</p>
+          @endif
           <p class="mb-1"><strong>Email:</strong> {{ $order->client->email }}</p>
           <p class="mb-1"><strong>Teléfono:</strong> {{ $order->client->phone }}</p>
           <p class="mb-1"><strong>Dirección:</strong> {{ ucwords($order->client->address) }}, {{ ucwords($order->client->city) }}, {{ ucwords($order->client->state) }}, {{ $order->client->country }}</p>
         </div>
+        @endif
 
+        @if($order->client !== null)
         <div class="mb-3">
           <h6 class="card-title mt-4">Historial de Pedidos</h6>
           <div class="d-flex align-items-center">
@@ -375,6 +424,7 @@ $changeTypeTranslations = [
             </p>
           </div>
         </div>
+        @endif
       </div>
     </div>
 
@@ -385,5 +435,7 @@ $changeTypeTranslations = [
 
 <!-- Modals -->
 @include('content/e-commerce/backoffice/orders/bill-order')
-
+@if($order->is_billed && isset($invoice))
+  @include('content/e-commerce/backoffice/orders/modal-send-email')
+@endif
 @endsection

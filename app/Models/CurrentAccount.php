@@ -13,31 +13,39 @@ class CurrentAccount extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'voucher',
-        'total_debit',
-        'transaction_date',
-        'due_date',
         'status',
         'transaction_type',
         'client_id',
         'supplier_id',
         'currency_id',
-        'current_account_settings_id',
     ];
 
     protected $casts = [
-        'transaction_date' => 'datetime',
-        'due_date' => 'datetime',
         'status' => StatusPaymentEnum::class,
         'transaction_type' => TransactionTypeEnum::class,
     ];
 
-    protected $appends = ['payment_amount'];
+    protected $appends = ['payment_total_debit', 'payment_amount'];
 
-    // generate attribute payment_amount
+    protected $hidden = ['initialCredits', 'client', 'supplier', 'currency'];
+
     public function getPaymentAmountAttribute()
     {
         return $this->payments->sum('payment_amount');
+    }
+
+    public function getPaymentTotalDebitAttribute()
+    {
+        return $this->initialCredits->sum('total_debit');
+    }
+    /**
+     * Obtiene los pagos parciales asociados a esta cuenta corriente.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function initialCredits()
+    {
+        return $this->hasMany(CurrentAccountInitialCredit::class);
     }
 
     /**
@@ -50,15 +58,6 @@ class CurrentAccount extends Model
         return $this->hasMany(CurrentAccountPayment::class);
     }
 
-    /**
-     * Obtiene la moneda asociada a esta cuenta corriente.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function currency()
-    {
-        return $this->belongsTo(Currency::class);
-    }
 
     /**
      * Obtiene el cliente asociado a esta cuenta corriente.
@@ -81,12 +80,13 @@ class CurrentAccount extends Model
     }
 
     /**
-     * Obtiene la configuración de la cuenta corriente asociada.
+     * Obtiene la moneda asociada a esta cuenta corriente.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function settings()
+
+    public function currency()
     {
-        return $this->belongsTo(CurrentAccountSettings::class);
+        return $this->belongsTo(Currency::class);
     }
 }

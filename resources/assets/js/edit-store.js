@@ -7,7 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
       requiredFields: ['mercadoPagoPublicKey', 'mercadoPagoAccessToken', 'mercadoPagoSecretKey']
     },
     { id: 'ecommerceSwitch', fieldsId: null },
-    { id: 'invoicesEnabledSwitch', fieldsId: 'pymoFields', requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice'] }
+    { id: 'invoicesEnabledSwitch', fieldsId: 'pymoFields', requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice'] },
+    { id: 'scanntechSwitch', fieldsId: 'scanntechFields', requiredFields: ['scanntechCompany', 'scanntechBranch'] },
   ];
 
   // Añadir animación de transición

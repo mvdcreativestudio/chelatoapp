@@ -12,40 +12,38 @@ class RawMaterial extends Model
 {
   use HasFactory;
 
-  protected $fillable = ['name', 'description', 'image_url', 'unit_of_measure'];
+  protected $fillable = [
+    'name', 
+    'description', 
+    'status', // Agregar columna despues de description, debe ser un enum que permita 0,1,2.
+    'image_url', 
+    'unit_of_measure',
+    'stock' // Agregar columna despué de unit_of_measure, debe ser un int.
+    ];
 
-  /**
-   * Obtiene la tienda a la que pertenece la materia prima.
-   *
-   * @return BelongsToMany
-  */
-  public function stores()
+
+  public function purchaseOrderItems(): HasMany
   {
-      return $this->belongsToMany(Store::class, 'raw_material_store', 'raw_material_id', 'store_id')
-                  ->withPivot('stock');
+      return $this->hasMany(PurchaseOrderItem::class);
   }
 
-
-  /**
-   * Obtiene las ordenes de compra asociadas a la materia prima.
-   *
-   * @return BelongsToMany
-  */
-  public function supplierOrders(): BelongsToMany
+  public function batch(): HasMany
   {
-    return $this->belongsToMany(SupplierOrder::class, 'supplier_order_raw_material')
-        ->withPivot('quantity')
-        ->withTimestamps();
+      return $this->hasMany(Batch::class);
   }
 
-
-  /**
-   * Relación con las recetas.
-   *
-   * @return HasMany
-  */
-  public function recipes(): HasMany
+  public function formulaRawMaterials(): HasMany
   {
-    return $this->hasMany(Recipe::class);
+      return $this->hasMany(FormulaRawMaterial::class);
+  }
+
+  public function purchaseEntryRawMaterial(): HasMany
+  {
+      return $this->hasMany(PurchaseEntry::class);
+  }
+
+  public function prices(): HasMany
+  {
+      return $this->hasMany(RawMaterialPrices::class);
   }
 }

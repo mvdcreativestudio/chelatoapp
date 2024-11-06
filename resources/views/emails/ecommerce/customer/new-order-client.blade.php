@@ -121,7 +121,7 @@
 <body>
     <div class="email-container">
         <div class="header">
-            <img src="https://657041b07b.imgdist.com/pub/bfra/j2m7xe6w/nvl/6a4/y4a/Chelato-Black-Logo.png" alt="Logo">
+            <img src="https://657041b07b.imgdist.com/pub/bfra/j2m7xe6w/nvl/6a4/y4a/dali-Black-Logo.png" alt="Logo">
         </div>
         <div class="subheader">
           <h4 style="margin-bottom: 8px;">¡Hola, {{ $variables['client_name'] }}!</h4>
@@ -167,7 +167,7 @@
         </div>
         <div class="footer">
             <p>Si tienes algún problema con tu pedido, por favor contacta a <a href="mailto:soporte@mvdstudio.com.uy">soporte@mvdstudio.com.uy</a></p>
-            <p>&copy; 2024 Sumeria. Todos los derechos reservados.</p>
+            <p>&copy; 2024 MVD Studio. Todos los derechos reservados.</p>
         </div>
     </div>
 </body>

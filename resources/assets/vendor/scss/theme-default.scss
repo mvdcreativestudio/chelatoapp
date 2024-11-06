@@ -80,7 +80,7 @@ $primary-color: #313131;
   // menu item active
   .menu-inner > .menu-item.active > .menu-link {
     color: $primary-color;
-    background-color: rgba($primary-color, 0.16) !important;
+    background-color: transparent;
   }
 
   .menu-inner > .menu-item.active:before {

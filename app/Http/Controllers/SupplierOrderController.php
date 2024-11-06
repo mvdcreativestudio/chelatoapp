@@ -69,8 +69,8 @@ class SupplierOrderController extends Controller
     {
         $store_id = auth()->user()->store_id;
 
-        $suppliers = $this->supplierRepository->findByStoreId($store_id);
-        $rawMaterials = $this->rawMaterialRepository->findByStoreId($store_id);
+        $suppliers = $this->supplierRepository->findAll();
+        $rawMaterials = $this->rawMaterialRepository->getAll();
 
         return view('supplier-orders.create', compact('suppliers', 'rawMaterials'));
     }

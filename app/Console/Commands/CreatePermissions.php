@@ -50,12 +50,32 @@ class CreatePermissions extends Command
                     'view_all' => true,
                 ],
                 [
+                    'slug' => 'raw-materials-edit',
+                    'module' => 'manufacturing',
+                    'view_all' => false,
+                ],
+                [
+                    'slug' => 'formulas',
+                    'module' => 'manufacturing',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'batches',
+                    'module' => 'manufacturing',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'packagings',
+                    'module' => 'manufacturing',
+                    'view_all' => false,
+                ],
+                [
                     'slug' => 'suppliers',
                     'module' => 'stock',
                     'view_all' => true,
                 ],
                 [
-                    'slug' => 'supplier-orders',
+                    'slug' => 'purchase-orders',
                     'module' => 'stock',
                     'view_all' => true,
                 ],
@@ -69,19 +89,32 @@ class CreatePermissions extends Command
                     'module' => 'accounting',
                     'submenus' => [
                         'invoices',
-                        'update_all_invoices',
                         'receipts',
                         'entries',
-                        'accounting-settings',
-                        'received-documents',
-                        'expenses',
+                        'accounting-settings'
                     ],
                     'view_all' => false,
                 ],
                 [
                     'slug' => 'clients',
                     'module' => 'crm',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'client-sensitive-data',
+                    'module' => 'crm',
                     'view_all' => false,
+                ],
+                [
+                    'slug' => 'price-lists',
+                    'module' => 'sales',
+                    'submenus' => [
+                        'create-price-lists',
+                        'show-price-lists',
+                        'edit-price-lists',
+                        'delete-price-lists'
+                    ],
+                    'view_all' => true,
                 ],
                 [
                     'slug' => 'ecommerce',
@@ -103,7 +136,7 @@ class CreatePermissions extends Command
                     'view_all' => false,
                 ],
                 [
-                    'slug' => 'productions',
+                    'slug' => 'bulk-productions',
                     'module' => 'manufacturing',
                     'view_all' => true,
                 ],
@@ -134,11 +167,6 @@ class CreatePermissions extends Command
                     'slug' => 'datacenter',
                     'module' => 'datacenter',
                     'view_all' => true,
-                ],
-                [
-                    'slug' => 'crm',
-                    'module' => 'crm',
-                    'view_all' => false,
                 ],
                 [
                     'slug' => 'stores',
@@ -196,6 +224,15 @@ class CreatePermissions extends Command
                     'view_all' => true,
                     "submenus" => [
                         "delete_expenses",
+                        "expense-categories",
+                    ],
+                ],
+                [
+                    "slug" => "expense-categories",
+                    "module" => "expenses",
+                    "view_all" => true,
+                    "submenus" => [
+                        "delete_expense-categories",
                     ],
                 ],
                 [
@@ -207,8 +244,6 @@ class CreatePermissions extends Command
                         'entry-details',
                         'entry-types',
                         'entry-accounts',
-                        // 'entry-currencies',
-                        // 'entry-settings',
                     ],
                 ],
                 [
@@ -245,60 +280,24 @@ class CreatePermissions extends Command
                     'module' => 'current-accounts',
                     'view_all' => true,
                     'submenus' => [
-                        'current-accounts-clients',
-                        'current-accounts-suppliers',
+                        'current-accounts',
+                        'current-account-settings',
                     ],
                 ],
                 [
-                    'slug' => 'current-accounts-clients',
-                    'module' => 'current-accounts',
-                    'view_all' => false,
-                    'submenus' => [
-                        'current-accounts-clients-sales',
-                        'current-accounts-clients-payments',
-                        'current-accounts-clients-settings',
-                    ],
-                ],
-                [
-                    'slug' => 'current-accounts-clients-sales',
+                    'slug' => 'current-account-payments',
                     'module' => 'current-accounts',
                     'view_all' => true,
                     'submenus' => [
-                        'delete_current-accounts-clients-sales',
+                        'delete_current-account-payments',
                     ],
                 ],
                 [
-                    'slug' => 'current-accounts-suppliers',
-                    'module' => 'current-accounts',
-                    'view_all' => false,
-                    'submenus' => [
-                        'current-accounts-suppliers-purs',
-                        'current-accounts-suppliers-payments',
-                        'current-accounts-suppliers-settings',
-                    ],
-                ],
-                [
-                    'slug' => 'current-accounts-suppliers-purs',
+                    'slug' => 'current-account-settings',
                     'module' => 'current-accounts',
                     'view_all' => true,
                     'submenus' => [
-                        'delete_current-accounts-suppliers-purs',
-                    ],
-                ],
-                [
-                    'slug' => 'current-accounts-clients-payments',
-                    'module' => 'current-accounts',
-                    'view_all' => true,
-                    'submenus' => [
-                        'delete_current-accounts-clients-payments',
-                    ],
-                ],
-                [
-                    'slug' => 'current-accounts-suppliers-payments',
-                    'module' => 'current-accounts',
-                    'view_all' => true,
-                    'submenus' => [
-                        'delete_current-accounts-suppliers-payments',
+                        'delete_current-account-settings',
                     ],
                 ],
                 [
@@ -306,25 +305,9 @@ class CreatePermissions extends Command
                     'module' => 'incomes',
                     'view_all' => true,
                     'submenus' => [
-                        'incomes-clients',
-                        'incomes-suppliers',
+                        'incomes',
+                        'delete_incomes',
                         'income-categories',
-                    ],
-                ],
-                [
-                    'slug' => 'incomes-clients',
-                    'module' => 'incomes',
-                    'view_all' => true,
-                    'submenus' => [
-                        'delete_incomes-clients',
-                    ],
-                ],
-                [
-                    'slug' => 'incomes-suppliers',
-                    'module' => 'incomes',
-                    'view_all' => true,
-                    'submenus' => [
-                        'delete_incomes-suppliers',
                     ],
                 ],
                 [
@@ -335,7 +318,14 @@ class CreatePermissions extends Command
                         'delete_income-categories',
                     ],
                 ],
-
+                [
+                    'slug' => 'currencies',
+                    'module' => 'accounting',
+                    'view_all' => true,
+                    'submenus' => [
+                        'delete_currencies',
+                    ],
+                ]
             ],
         ];
 

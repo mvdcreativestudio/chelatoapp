@@ -24,9 +24,11 @@
 @vite('resources/assets/js/app-roles-list.js')
 <script type="text/javascript">
   var roles = @json($roles);
-  window.isAdmin = @json(auth()->user()->hasRole('Administrador'));
+  // Verifica si el usuario tiene el permiso 'access_roles'
+  window.isAdmin = @json(auth()->user()->can('access_roles'));
 </script>
 @endsection
+
 
 @section('content')
 <div class="d-flex justify-content-between mb-4">
@@ -122,16 +124,6 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="1" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Guard Name</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
             <input type="checkbox" class="toggle-column switch-input" data-column="2" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
@@ -157,11 +149,8 @@
       <thead>
         <tr>
           <th>Nombre del Rol</th>
-          <th>Guard Name</th>
           <th>Miembros</th>
-            @if (auth()->user()->hasRole('Administrador'))
           <th>Acciones</th>
-          @endif
         </tr>
       </thead>
       <tbody>

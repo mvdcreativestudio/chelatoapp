@@ -23,10 +23,7 @@ class UpdateProductCategoryRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'parent_id' => 'nullable|integer',
-            'status' => 'required|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }

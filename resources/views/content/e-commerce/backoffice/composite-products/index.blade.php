@@ -37,7 +37,7 @@
   <span class="text-muted fw-light"></span> Productos Compuestos
 </h4>
 
-@if (Auth::user()->can('access_composite-products'))
+{{-- @if (Auth::user()->can('access_composite-products'))
 <div class="card mb-4">
   <div class="card-body card-widget-separator">
     <div class="row gy-4 gy-sm-1">
@@ -70,7 +70,7 @@
       <div class="col-sm-6 col-lg-3">
         <div class="d-flex justify-content-between align-items-start border-end pb-3 pb-sm-0 card-widget-3">
           <div>
-            <h6 class="mb-2">Precio Recomendado Total</h6>
+            <h6 class="mb-2">Costo Total</h6>
             <h4 class="mb-2">{{ $settings->currency_symbol }} {{ number_format($totalRecommendedPrice, 2) }}</h4>
           </div>
           <div class="avatar me-sm-4">
@@ -83,7 +83,7 @@
     </div>
   </div>
 </div>
-@endif
+@endif --}}
 
 <!-- Composite Products List Table -->
 <div class="card">
@@ -93,7 +93,7 @@
       {{-- <button type="button" class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#addCompositeProductModal">
         Agregar Producto Compuesto
       </button> --}}
-      <a href="{{ route('composite-products.create') }}" class="btn btn-primary float-end">Agregar Producto Compuesto</a>
+      <a href="{{ route('composite-products.create') }}" class="btn btn-primary float-end">Crear Nuevo</a>
       <div class="d-flex">
         <p class="text-muted small">
           <a href="" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches"
@@ -142,7 +142,7 @@
                             <span class="switch-on"><i class="bx bx-check"></i></span>
                             <span class="switch-off"><i class="bx bx-x"></i></span>
                         </span>
-                        <span class="switch-label">Precio Recomendado</span>
+                        <span class="switch-label">Costo Total</span>
                     </label>
                 </div>
                 <div class="ml-1">
@@ -204,7 +204,7 @@
           <th>Título</th>
           <th>Empresa</th>
           <th>Precio</th>
-          <th>Precio Recomendado</th>
+          <th>Costo Total</th>
           <th>Fecha de Creación</th>
           <th>Acciones</th>
         </tr>

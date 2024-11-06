@@ -103,116 +103,28 @@
         </p>
       </div>
       <div class="collapse" id="columnSwitches">
-      <div class="mt-0 d-flex flex-wrap">
-        <div class="mx-0">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="0" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Nombre</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="1" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Teléfono</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="2" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Email</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="3" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Ciudad</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="4" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Estado</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="5" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">País</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="6" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Tipo DOC</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="7" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Número DOC</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="8" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Empresa</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="9" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Acciones</span>
-          </label>
-        </div>
+    <div class="mt-0 d-flex flex-wrap">
+      @foreach (['Nombre', 'Teléfono', 'Email', 'Ciudad', 'Estado', 'País', 'Tipo de Doc.','Número de Doc.', 'Acciones'] as $index => $label)
+      <div class="mx-3">
+        <label class="switch switch-square">
+          <input type="checkbox" class="toggle-column switch-input" data-column="{{ $index }}" checked>
+          <span class="switch-toggle-slider">
+            <span class="switch-on"><i class="bx bx-check"></i></span>
+            <span class="switch-off"><i class="bx bx-x"></i></span>
+          </span>
+          <span class="switch-label">{{ $label }}</span>
+        </label>
       </div>
+      @endforeach
     </div>
+  </div>
     @can('create_suppliers')
     <a href="{{ route('suppliers.create') }}" class="btn btn-primary">
       <i class="bx bx-plus me-1"></i> Agregar Proveedor
     </a>
     @endcan
   </div>
-  <div class="card-datatable table-responsive">
+  <div class="card-datatable table-responsive mx-4 my-3">
     <table class="table datatables-suppliers border-top">
       <thead>
         <tr>
@@ -224,9 +136,11 @@
           <th>Pais</th>
           <th>Tipo de Doc</th>
           <th>Número de Doc</th>
+
           @can('view_all_suppliers')
             <th>Empresa</th>
           @endcan
+
           <th>Acciones</th>
         </tr>
       </thead>

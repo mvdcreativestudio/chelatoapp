@@ -22,12 +22,12 @@ class CurrentAccountSettings extends Model
     ];
 
     /**
-     * Obtiene las cuentas corrientes asociadas a esta configuración.
+     * Obtiene los creditos iniciales asociados a esta configuración de cuenta corriente.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function currentAccounts()
+    public function initialCredits()
     {
-        return $this->hasMany(CurrentAccount::class);
+        return $this->hasMany(CurrentAccountInitialCredit::class);
     }
 }

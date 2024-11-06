@@ -2,8 +2,13 @@
 
 namespace App\Repositories;
 
+use App\Enums\CurrentAccounts\StatusPaymentEnum;
+use App\Enums\CurrentAccounts\TransactionTypeEnum;
 use App\Helpers\Helpers;
+use App\Models\CFE;
 use App\Models\Client;
+use App\Models\CurrentAccount;
+use App\Models\CurrentAccountInitialCredit;
 use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\OrderStatusChange;
@@ -45,20 +50,44 @@ class OrderRepository
         // Verificar si el usuario tiene permiso para ver todos los pedidos de la tienda
         if (Auth::user()->can('view_all_ecommerce')) {
             // Si tiene el permiso, obtenemos todos los pedidos
-            $orders = Order::all();
+            $ordersQuery = Order::query();
         } else {
             // Si no tiene el permiso, solo obtenemos los pedidos de su store_id
-            $orders = Order::where('store_id', Auth::user()->store_id)->get();
+            $ordersQuery = Order::where('store_id', Auth::user()->store_id);
         }
+
+        // Obtener los pedidos
+        $orders = $ordersQuery->get();
 
         // Calcular las estadísticas basadas en los pedidos filtrados
         $totalOrders = $orders->count();
         $totalIncome = $orders->where('payment_status', 'paid')->sum('total');
+        $paidOrders = $orders->where('payment_status', 'paid')->count();
+        $unpaidOrders = $orders->where('payment_status', '!=', 'paid')->count();
         $pendingOrders = $orders->where('shipping_status', 'pending')->count();
         $shippedOrders = $orders->where('shipping_status', 'shipped')->count();
         $completedOrders = $orders->where('shipping_status', 'completed')->count();
 
-        return compact('orders', 'totalOrders', 'totalIncome', 'pendingOrders', 'shippedOrders', 'completedOrders');
+        // Calcular el mejor cliente (mayor suma de ventas pagas)
+        $bestClient = $ordersQuery->where('payment_status', 'paid')
+            ->whereNotNull('client_id')
+            ->with('client')
+            ->selectRaw('client_id, COUNT(*) as purchase_count, SUM(total) as total_spent')
+            ->groupBy('client_id')
+            ->orderBy('total_spent', 'desc')
+            ->first();
+
+        return compact(
+            'orders',
+            'totalOrders',
+            'totalIncome',
+            'paidOrders',
+            'unpaidOrders',
+            'pendingOrders',
+            'shippedOrders',
+            'completedOrders',
+            'bestClient'
+        );
     }
 
     /**
@@ -71,22 +100,33 @@ class OrderRepository
     {
         Log::info('Iniciando el proceso de creación de orden', ['request' => $request->all()]);
 
-        $clientData = $this->extractClientData($request->validated());
+        // Extraer datos del cliente solo si client_id está presente
+        $clientData = $request->client_id ? $this->extractClientData($request->validated()) : [];
         $orderData = $this->prepareOrderData($request->payment_method, $request);
 
         DB::beginTransaction();
 
         try {
-            // Depurar la información del cliente y los datos de la orden antes de guardar
-            Log::info('Datos del cliente extraídos', ['clientData' => $clientData]);
-            Log::info('Datos de la orden preparados', ['orderData' => $orderData]);
-
-            $client = Client::firstOrCreate(['email' => $clientData['email']], $clientData);
-            Log::info('Cliente creado o encontrado', ['client_id' => $client->id]);
+            $client = null;
+            if ($request->client_id) {
+                // Si `client_id` está presente, intenta asociar el cliente existente
+                $client = Client::find($request->client_id);
+                if (!$client) {
+                    Log::warning('Client ID proporcionado no encontrado en la base de datos', ['client_id' => $request->client_id]);
+                }
+            } elseif (!empty($clientData)) {
+                // Si hay datos válidos de cliente, crea uno nuevo
+                $client = Client::firstOrCreate(['email' => $clientData['email']], $clientData);
+                Log::info('Cliente creado o encontrado', ['client_id' => $client->id]);
+            } else {
+                Log::info('No se recibió client_id ni datos de cliente; la orden se procesará sin cliente.');
+            }
 
             $order = new Order($orderData);
-            $order->client()->associate($client);
-            Log::info('Orden creada, asociada al cliente', ['order' => $order]);
+            if ($client) {
+                $order->client()->associate($client);
+            }
+            Log::info('Orden creada, asociada al cliente si corresponde', ['order' => $order]);
 
             $order->save();
             Log::info('Orden guardada en la base de datos', ['order_id' => $order->id]);
@@ -98,6 +138,10 @@ class OrderRepository
             $order->save();
             Log::info('Orden actualizada con los productos');
 
+            if ($request->payment_method === 'internalCredit' && $client) {
+                $this->createInternalCredit($order);
+            }
+
             DB::commit();
             Log::info('Transacción de base de datos confirmada');
 
@@ -106,8 +150,7 @@ class OrderRepository
             $store = $order->store;
             Log::info('Información de la tienda recuperada', ['store' => $store]);
 
-            // Verificar si se debe emitir una factura electrónica (CFE)
-            if ($store->automatic_billing) {
+            if ($store->automatic_billing && $client) {
                 $this->accountingRepository->emitCFE($order);
                 Log::info('Factura electrónica emitida', ['order_id' => $order->id]);
                 $order->update(['is_billed' => true]);
@@ -134,20 +177,21 @@ class OrderRepository
     {
         Log::info('Extrayendo datos del cliente', ['validatedData' => $validatedData]);
 
-        $clientData = [
-            'name' => $validatedData['name'],
-            'lastname' => $validatedData['lastname'],
-            'type' => 'individual',
-            'state' => 'Montevideo',
-            'country' => 'Uruguay',
-            'address' => $validatedData['address'],
-            'phone' => $validatedData['phone'],
-            'email' => $validatedData['email'],
-        ];
+        if (isset($validatedData['name'], $validatedData['lastname'], $validatedData['email'])) {
+            return [
+                'name' => $validatedData['name'],
+                'lastname' => $validatedData['lastname'],
+                'type' => $validatedData['type'] ?? 'individual',
+                'state' => 'Montevideo',
+                'country' => 'Uruguay',
+                'address' => $validatedData['address'] ?? '-',
+                'phone' => $validatedData['phone'] ?? '123456789',
+                'email' => $validatedData['email'],
+            ];
+        }
 
-        Log::info('Datos del cliente procesados', ['clientData' => $clientData]);
-
-        return $clientData;
+        Log::info('No se encontró información completa para el cliente; omitiendo los datos de cliente');
+        return [];
     }
 
     /**
@@ -159,9 +203,15 @@ class OrderRepository
      */
     private function prepareOrderData(string $paymentMethod, $request): array
     {
-        $subtotal = array_reduce(session('cart', []), function ($carry, $item) {
-            return $carry + ($item['price'] ?? $item['old_price']) * $item['quantity'];
-        }, 0);
+        $products = json_decode($request['products'], true);
+        $subtotal = 0;
+
+        // Recorre los productos y usa el precio de la lista de precios si está disponible
+        foreach ($products as $item) {
+            // Si hay un precio específico en el carrito (de la lista de precios), úsalo
+            $price = $item['price'] ?? $item['old_price'];
+            $subtotal += $price * $item['quantity'];
+        }
 
         Log::info('Request de prepareOrderData', ['request' => $request->all()]);
 
@@ -195,14 +245,29 @@ class OrderRepository
      */
     public function loadOrderRelations(Order $order)
     {
-        // Cargar las relaciones necesarias
+        // Cargar las relaciones necesarias, incluyendo 'invoices'
         return $order->load([
             'client',
             'statusChanges.user',
             'store',
             'coupon',
             'cashRegisterLog.cashRegister.user',
+            'invoices',
         ]);
+    }
+
+    /**
+     * Obtiene la factura específica asociada a un pedido.
+     *
+     * @param int $orderId
+     * @return CFE|null
+     */
+    public function getSpecificInvoiceForOrder($orderId)
+    {
+        // Buscar la factura asociada al order_id con type 101 o 111
+        return CFE::where('order_id', $orderId)
+            ->whereIn('type', [101, 111])
+            ->first(); // Solo obtendrá la primera que coincida con el criterio
     }
 
     /**
@@ -217,8 +282,14 @@ class OrderRepository
         DB::beginTransaction();
         try {
             $order = Order::findOrFail($orderId);
+
+            // Verificar si hay CFEs asociados
+            if ($order->invoices()->exists()) {
+                throw new Exception("La orden no se puede eliminar porque tiene CFEs asociados.");
+            }
+
+            // Procede con la eliminación si no hay CFEs
             if ($order->payment_status === 'paid' && $order->shipping_status === 'delivered') {
-                // Reintegrar el stock de los productos
                 $products = json_decode($order->products, true);
                 foreach ($products as $product) {
                     $productModel = Product::find($product['id']);
@@ -228,6 +299,7 @@ class OrderRepository
                     }
                 }
             }
+
             // Eliminar la orden
             $order->delete();
 
@@ -235,14 +307,22 @@ class OrderRepository
             Log::info("Orden {$orderId} eliminada y stock reintegrado correctamente.");
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al eliminar la orden {$orderId}: " . $e->getMessage());
-            throw $e;
+
+            // Log detallado del error
+            Log::error("Error al eliminar la orden {$orderId}: " . $e->getMessage(), [
+                'order_id' => $orderId,
+                'trace' => $e->getTraceAsString(), // Añadir la traza del error para más detalles
+            ]);
+
+            // Lanza la excepción con un mensaje personalizado
+            throw new Exception("No se pudo eliminar la orden debido a un error. Detalles: " . $e->getMessage());
         }
     }
 
     /**
      * Obtiene los pedidos para la DataTable.
      *
+     * @param Request $request
      * @return mixed
      */
     public function getOrdersForDataTable(Request $request): mixed
@@ -268,16 +348,67 @@ class OrderRepository
             'orders.payment_method',
             'orders.shipping_method',
             'orders.shipping_tracking',
+            DB::raw("
+                    CASE
+                        WHEN clients.type = 'company' THEN COALESCE(clients.company_name, 'Empresa sin nombre')
+                        ELSE COALESCE(CONCAT(clients.name, ' ', clients.lastname), 'Consumidor Final')
+                    END as client_name
+                "),
             'clients.email as client_email',
             'stores.name as store_name',
-            DB::raw("CONCAT(clients.name, ' ', clients.lastname) as client_name"),
         ])
-        ->join('clients', 'orders.client_id', '=', 'clients.id')
-        ->join('stores', 'orders.store_id', '=', 'stores.id');
+            ->leftJoin('clients', 'orders.client_id', '=', 'clients.id') // Usar leftJoin para permitir client_id null
+            ->join('stores', 'orders.store_id', '=', 'stores.id');
 
         // Verificar permisos del usuario
         if (!Auth::user()->can('view_all_ecommerce')) {
             $query->where('orders.store_id', Auth::user()->store_id);
+        }
+
+        // search
+        if ($request->input('search')) {
+            $query->where(function ($query) use ($request) {
+                $query->where('orders.uuid', 'like', "%{$request->input('search')}%")
+                    ->orWhere('orders.id', 'like', "%{$request->input('search')}%")
+                    ->orWhere('clients.name', 'like', "%{$request->input('search')}%")
+                    ->orWhere('clients.lastname', 'like', "%{$request->input('search')}%");
+                // ->orWhere('stores.name', 'like', "%{$request->input('search')}%");
+            });
+        }
+
+        // filtrar por cliente
+        if ($request->input('client')) {
+            $client = $request->input('client');
+            $clientParts = explode(' ', $client, 2); // Dividir en nombre y apellido
+
+            $query->where(function ($query) use ($clientParts) {
+                if (count($clientParts) == 2) {
+                    $query->where(function ($query) use ($clientParts) {
+                        $query->where('clients.name', 'like', "%{$clientParts[0]}%")
+                            ->where('clients.lastname', 'like', "%{$clientParts[1]}%")
+                            ->orWhere('clients.company_name', 'like', "%{$clientParts[0]}%");
+                    });
+                } else {
+                    $query->where('clients.name', 'like', "%{$clientParts[0]}%")
+                        ->orWhere('clients.lastname', 'like', "%{$clientParts[0]}%")
+                        ->orWhere('clients.company_name', 'like', "%{$clientParts[0]}%");
+                }
+            });
+        }
+
+        // Filtrar por store
+        if ($request->input('store')) {
+            $query->where('stores.name', 'like', "%{$request->input('store')}%");
+        }
+
+        // Filtrar por estado de pago
+        if ($request->input('payment_status')) {
+            $query->where('orders.payment_status', $request->input('payment_status'));
+        }
+
+        // shipping_status
+        if ($request->input('shipping_status')) {
+            $query->where('orders.shipping_status', $request->input('shipping_status'));
         }
 
         // Filtrar por rango de fechas
@@ -287,15 +418,12 @@ class OrderRepository
             $query->whereBetween('orders.date', [$startDate, $endDate]);
         }
 
-        // Aplicar siempre el orden descendente por fecha y hora
+        // Orden descendente por fecha y hora
         $query->orderBy('orders.date', 'desc')
-              ->orderBy('orders.time', 'desc'); // Orden adicional por hora si las fechas son iguales
+            ->orderBy('orders.time', 'desc');
 
-        $dataTable = DataTables::of($query)->make(true);
-
-        return $dataTable;
+        return DataTables::of($query)->make(true);
     }
-
 
     /**
      * Obtiene los productos de un pedido para la DataTable.
@@ -335,11 +463,14 @@ class OrderRepository
     /**
      * Obtiene el conteo de ordenes del cliente.
      *
-     * @param int $clientId
+     * @param int|null $clientId
      * @return int
      */
-    public function getClientOrdersCount(int $clientId): int
+    public function getClientOrdersCount(?int $clientId): int
     {
+        if (is_null($clientId)) {
+            return 0;
+        }
         return Order::where('client_id', $clientId)->count();
     }
 
@@ -449,13 +580,17 @@ class OrderRepository
             'orders.payment_method',
             'orders.shipping_method',
             'orders.shipping_tracking',
+            DB::raw("
+                CASE
+                    WHEN clients.type = 'company' THEN COALESCE(clients.company_name, 'Empresa sin nombre')
+                    ELSE COALESCE(CONCAT(clients.name, ' ', clients.lastname), 'Consumidor Final')
+                END as client_name
+            "),
             'clients.email as client_email',
             'stores.name as store_name',
-            DB::raw("CONCAT(clients.name, ' ', clients.lastname) as client_name"),
         ])
-            ->join('clients', 'orders.client_id', '=', 'clients.id')
+            ->leftJoin('clients', 'orders.client_id', '=', 'clients.id') // Usar leftJoin para permitir client_id null
             ->join('stores', 'orders.store_id', '=', 'stores.id');
-
         // Aplicar los filtros
         if ($client) {
             $query->where(DB::raw("CONCAT(clients.name, ' ', clients.lastname)"), 'like', "%$client%");
@@ -474,5 +609,35 @@ class OrderRepository
         }
 
         return $query->get(); // Retornar los resultados
+    }
+
+    private function createInternalCredit(Order $order)
+    {
+        // verify if exist client in current account
+        $currentAccount = CurrentAccount::where('client_id', $order->client_id)->first();
+
+        if ($currentAccount) {
+            CurrentAccountInitialCredit::create([
+                'total_debit' => $order->total,
+                'description' => 'Compra Interna - <a href="' . route('orders.show', $order->uuid) . '">Pedido #' . $order->id . '</a>',
+                'current_account_id' => $currentAccount->id,
+                'current_account_settings_id' => 1,
+            ]);
+        } else {
+            $currentAccount = CurrentAccount::create([
+                'client_id' => $order->client_id,
+                'payment_total_debit' => $order->total,
+                'status' => StatusPaymentEnum::UNPAID,
+                'transaction_type' => TransactionTypeEnum::SALE,
+                'currency_id' => 1,
+            ]);
+
+            CurrentAccountInitialCredit::create([
+                'total_debit' => $order->total,
+                'description' => 'Compra Interna - <a href="' . route('orders.show', $order->uuid) . '">Pedido #' . $order->id . '</a>',
+                'current_account_id' => $currentAccount->id,
+                'current_account_settings_id' => 1,
+            ]);
+        }
     }
 }

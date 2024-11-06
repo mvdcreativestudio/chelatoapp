@@ -36,7 +36,7 @@ class UpdateCompanySettingsRequest extends FormRequest
         'linkedin' => ['nullable', 'string', 'max:255'],
         'youtube' => ['nullable', 'string', 'max:255'],
         'logo_white' => ['nullable', 'string', 'max:255'],
-        'logo_black' => ['nullable', 'string', 'max:255'],
+        'logo_black' => ['nullable', 'image', 'max:3064'],
         'rut' => ['nullable', 'string', 'max:255'],
         'allow_registration' => ['required', 'boolean'],
       ];

@@ -1,315 +1,263 @@
-$(function () {
-  let borderColor, bodyBg, headingColor;
-  let $currencySymbol = $('.datatables-order').data('symbol');
+'use strict';
 
-  if (isDarkStyle) {
-    borderColor = config.colors_dark.borderColor;
-    bodyBg = config.colors_dark.bodyBg;
-    headingColor = config.colors_dark.headingColor;
-  } else {
-    borderColor = config.colors.borderColor;
-    bodyBg = config.colors.bodyBg;
-    headingColor = config.colors.headingColor;
+$(function () {
+  let currencySymbol = window.currencySymbol;
+  let uniqueClients = new Set();
+  let uniqueStore = new Set();
+
+  var dt_order_list_container = $('#order-list-container');
+  var searchInput = $('#searchOrder');
+  var paymentStatusFilter = $('#paymentStatusFilter');
+  var shippingStatusFilter = $('#shippingStatusFilter');
+  var clientFilter = $('#clientFilter');
+  var storeFilter = $('#storeFilter');
+  var startDateFilter = $('#startDate');
+  var endDateFilter = $('#endDate');
+
+  // Función para verificar si algún filtro está aplicado
+  function isFilterApplied() {
+    return (
+      searchInput.val().trim() !== '' ||
+      paymentStatusFilter.val() !== '' ||
+      shippingStatusFilter.val() !== '' ||
+      clientFilter.val() !== '' ||
+      storeFilter.val() !== '' ||
+      startDateFilter.val().trim() !== '' ||
+      endDateFilter.val().trim() !== ''
+    );
   }
 
-  var dt_order_table = $('.datatables-order');
+  // Función para resetear los filtros
+  function resetFilters() {
+    searchInput.val('');
+    paymentStatusFilter.val('');
+    shippingStatusFilter.val('');
+    clientFilter.val('');
+    storeFilter.val('');
+    startDateFilter.val('');
+    endDateFilter.val('');
+    fetchOrders();
+  }
 
-  try {
-    if (dt_order_table.length) {
-      var dt_products = dt_order_table.DataTable({
-        ajax: {
-          url: 'orders/datatable',
-          data: function (d) {
-            d.store_id = $('select[name="store_id"]').val(); // Añadir store_id a la petición
-            d.start_date = $('#startDate').val(); // Captura la fecha desde
-            d.end_date = $('#endDate').val(); // Captura la fecha hasta
+  $(document).on('click', '#clearFilters', function () {
+    resetFilters();
+  });
+  
+  
+  // Función para obtener las órdenes
+  function fetchOrders() {
+    var ajaxUrl = dt_order_list_container.data('ajax-url');
+    var searchQuery = searchInput.val();
+    var paymentStatus = paymentStatusFilter.val();
+    var shippingStatus = shippingStatusFilter.val();
+    var client = clientFilter.val();
+    var store = storeFilter.val();
+    var startDate = startDateFilter.val();
+    var endDate = endDateFilter.val();
+
+
+    $.ajax({
+      url: ajaxUrl,
+      method: 'GET',
+      data: {
+        search: searchQuery,
+        payment_status: paymentStatus,
+        shipping_status: shippingStatus,
+        client: client,
+        store: store,
+        start_date: startDate,
+        end_date: endDate
+      },
+      success: function (response) {
+        var rows = response.data;
+        var cardContainer = $('#order-list-container').html('');
+
+        // Limpiar los filtros únicos para cliente y tienda
+        uniqueClients.clear();
+        uniqueStore.clear();
+
+        if (rows.length === 0) {
+          if (isFilterApplied()) {
+            cardContainer.html(`
+              <div class="alert alert-warning text-center w-100">
+                <i class="bx bx-filter-alt"></i> No hay órdenes que coincidan con los filtros.
+                <br>
+                <button id="clearFilters" class="btn btn-outline-danger mt-3">Borrar filtros</button>
+              </div>
+            `);
+          } else {
+            cardContainer.html(`
+              <div class="alert alert-info text-center w-100">
+                <i class="bx bx-info-circle"></i> No existen órdenes disponibles.
+              </div>
+            `);
           }
-        },
-        columns: [
-          { data: 'id', type: 'num' },
-          {
-            data: 'date',
-            type: 'datetime', // Definir explícitamente como datetime
-            render: function (data, type, full, meta) {
-              // Usar tanto la fecha (data) como la hora (full['time']) para el renderizado
-              return moment(data + ' ' + full['time']).locale('es').format('DD/MM/YY - hh:mm a'); // Combina fecha y hora
+        } else {
+          rows.forEach(function (orderData) {
+            if (orderData.client_name) {
+              uniqueClients.add(orderData.client_name);
             }
-          },
-          { data: 'client_name' },
-          { data: 'store_name' },
-          { data: 'total' },
-          { data: 'payment_status' },
-          { data: 'is_billed' },
-          { data: '' }
-        ],
-        order: [[0, 'desc']],  // Ordenar por la columna de fecha de manera descendente
-        columnDefs: [
-          {
-            targets: 0, // Enlazar el ID del pedido
-            orderable: false,
-            render: function (data, type, full, meta) {
-              var uuid = full['uuid'];
-              return '<a class="text-muted" href="' + baseUrl + 'admin/orders/' + uuid + '/show">#' + data + '</a>';
+            if (orderData.store_name) {
+              uniqueStore.add(orderData.store_name);
             }
-          },
-          {
-            targets: 4,
-            render: function (data, type, full, meta) {
-              return $currencySymbol + data;
-            }
-          },
-          {
-            targets: 5,
-            render: function (data, type, full, meta) {
-              let badgeClass = data === 'pending' ? 'bg-warning' : data === 'paid' ? 'bg-success' : 'bg-danger';
-              let text = data === 'pending' ? 'PENDIENTE' : data === 'paid' ? 'PAGO' : 'FALLIDO';
-              return '<span class="badge pill ' + badgeClass + '">' + text + '</span>';
-            }
-          },
-          {
-            targets: 6, // Columna para mostrar si ha sido facturado
-            render: function (data, type, full, meta) {
-              return data
-                ? '<span class="badge bg-success">Facturado</span>'
-                : '<span class="badge bg-danger">No Facturado</span>';
-            }
-          },
-          {
-            targets: -1,
-            title: 'Acciones',
-            orderable: false,
-            searchable: false,
-            render: function (data, type, full, meta) {
-              var uuid = full['uuid'];
-              return (
-                '<div class="d-flex justify-content-center align-items-center">' +
-                '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
-                '<div class="dropdown-menu dropdown-menu-end m-0">' +
-                '<a href="' +
-                baseUrl +
-                'admin/orders/' +
-                uuid +
-                '/show" class="dropdown-item">Ver pedido</a>' +
-                '<a href="javascript:void(0);" class="dropdown-item delete-record" data-id="' +
-                full['id'] +
-                '">Eliminar</a>' +
-                '</div>' +
-                '</div>'
-              );
-            }
-          }
-        ],
-        dom:
-          '<"card-header d-flex flex-column flex-md-row align-items-start align-items-md-center"<"ms-n2"f><"d-flex align-items-md-center justify-content-md-end mt-2 mt-md-0"l<"dt-action-buttons"B>>' +
-          '>t' +
-          '<"row mx-2"' +
-          '<"col-sm-12 col-md-6"i>' +
-          '<"col-sm-12 col-md-6"p>' +
-          '>',
+            const paymentStatusText =
+              orderData.payment_status === 'paid'
+                ? 'Pagado'
+                : orderData.payment_status === 'pending'
+                  ? 'Pago Pendiente'
+                  : 'Pago Fallido';
+            const paymentStatusClass =
+              orderData.payment_status === 'paid'
+                ? 'bg-success'
+                : orderData.payment_status === 'pending'
+                  ? 'bg-warning'
+                  : 'bg-danger';
+            const shippingStatusText =
+              orderData.shipping_status === 'delivered'
+                ? 'Entregado'
+                : orderData.shipping_status === 'shipped'
+                  ? 'Enviado'
+                  : 'No enviado';
+            const shippingStatusClass =
+              orderData.shipping_status === 'delivered'
+                ? 'bg-success'
+                : orderData.shipping_status === 'shipped'
+                  ? 'bg-warning'
+                  : 'bg-danger';
 
-        lengthMenu: [10, 25, 50, 100],
-        language: {
-          search: '',
-          searchPlaceholder: 'Buscar...',
-          sLengthMenu: '_MENU_',
-          info: 'Mostrando _START_ a _END_ de _TOTAL_ ventas',
-          infoFiltered: 'filtradas de _MAX_ ventas',
-          paginate: {
-            first: '<<',
-            last: '>>',
-            next: '>',
-            previous: '<'
-          },
-          pagingType: 'full_numbers',
-          emptyTable: 'No hay ventas disponibles',
-          dom: 'Bfrtip',
-          renderer: 'bootstrap'
-        },
-        initComplete: function () {
-          // Filtros personalizados para Cliente
-          this.api()
-            .columns(2) // Columna de cliente
-            .every(function () {
-              var column = this;
-              // Crear el select para el filtro de clientes
-              var select = $('<select class="form-select"><option value="">Todos los clientes</option></select>')
-                .appendTo('.client_filter')
-                .on('change', function () {
-                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                  column.search(val ? val : '', true, false).draw();
-                });
+            const card = `
+                  <div class="col-md-6 col-lg-4 col-12 mb-4">
+                    <div class="order-card position-relative">
+                      <div class="order-card-body">
+                        <h5 class="order-title">#${orderData.id}-${orderData.client_name}</h5>
+                        <p class="order-date text-muted small">${moment(orderData.date).format('DD/MM/YYYY')}</p>
+                        <p class="order-payment-status"><span class="badge ${paymentStatusClass}">${paymentStatusText}</span></p>
+                        <p class="order-shipping-status"><span class="badge ${shippingStatusClass}">${shippingStatusText}</span></p>
+                        <h6 class="order-total">${currencySymbol}${parseFloat(orderData.total).toFixed(2)}</h6>
+                        <div class="d-inline-flex justify-content-end mt-auto mb-2 gap-1">
+                          <a href="${baseUrl}admin/orders/${orderData.uuid}" class="btn view-order p-1"><i class="far fa-eye"></i></a>
+                          <button data-id="${orderData.id}" class="btn delete-order p-1 delete-record"><i class="far fa-trash-alt"></i></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+            cardContainer.append(card);
+          });
 
-              // Poblar el select con los valores únicos de la columna de clientes
-              column
-                .data()
-                .unique()
-                .sort()
-                .each(function (d, j) {
-                  select.append(`<option value="${d}">${d}</option>`);
-                });
-            });
-
-          // Filtros personalizados para Empresa
-          this.api()
-            .columns(3)
-            .every(function () {
-              var column = this;
-              var select = $('<select class="form-select"><option value="">Todas las empresas</option></select>')
-                .appendTo('.company_filter')
-                .on('change', function () {
-                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                  column.search(val ? `^${val}$` : '', true, false).draw();
-                });
-
-              column
-                .data()
-                .unique()
-                .sort()
-                .each(function (d, j) {
-                  select.append(`<option value="${d}">${d}</option>`);
-                });
-            });
-
-          // Filtros personalizados para Estado de Pago
-          this.api()
-            .columns(5)
-            .every(function () {
-              var column = this;
-              var select = $(
-                '<select class="form-select"><option value="">Todos los pagos</option><option value="PAGO">Pagado</option><option value="PENDIENTE">Pendiente</option><option value="FALLIDO">Fallido</option></select>'
-              )
-                .appendTo('.payment_filter')
-                .on('change', function () {
-                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                  column.search(val ? `^${val}$` : '', true, false).draw();
-                });
-            });
-
-          // Filtros personalizados para Facturado
-          this.api()
-            .columns(6) // Columna 6 es la que contiene el estado de facturación
-            .every(function () {
-              var column = this;
-              var select = $(
-                '<select class="form-select">' +
-                  '<option value="">Todos</option>' +
-                  '<option value="Facturado">Facturado</option>' +
-                  '<option value="No Facturado">No Facturado</option>' +
-                  '</select>'
-              )
-                .appendTo('.billed_filter') // Añade el filtro a la clase .billed_filter
-                .on('change', function () {
-                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                  column.search(val ? `^${val}$` : '', true, false).draw();
-                });
-            });
+          // Populate filters with unique values
+          populateFilterOptions(clientFilter, uniqueClients, 'Todos los clientes');
+          populateFilterOptions(storeFilter, uniqueStore, 'Todas las tiendas');
         }
-      });
+      },
+      error: function (xhr, status, error) {
+        console.error('Error al obtener los datos:', error);
+      }
+    });
+  }
 
-      // Eliminar filtros de búsqueda
-      $(document).on('click', '#clear-filters', function () {
-        $('.client_filter select').val('').trigger('change');
-        $('.company_filter select').val('').trigger('change');
-        $('.payment_filter select').val('').trigger('change');
-        $('.billed_filter select').val('').trigger('change');
-        $('#startDate').val('');
-        $('#endDate').val('');
-        dt_products.search('').draw();
-      });
+  // Helper function to populate filter options
+  function populateFilterOptions(filter, items, defaultOptionText) {
+    const currentValue = filter.val();
+    filter.empty(); // Clear existing options
+    filter.append(`<option value="">${defaultOptionText}</option>`); // Add default option
+    items.forEach(item => {
+      filter.append(`<option value="${item}">${item}</option>`);
+    });
+    filter.val(currentValue); // Set the selected value
+  }
 
-      // Filtrar por fechas
-      $('#startDate, #endDate').on('change', function () {
-        dt_products.ajax.reload();
-      });
+  // Click en la tarjeta de Total de Ventas para resetear todos los filtros
+  $('.card-border-shadow-primary').on('click', function () {
+    resetFilters();
+  });
 
-      // Estilos buscador y paginación
-      $('.dataTables_length label select').addClass('form-select form-select-sm');
-      $('.dataTables_filter label input').addClass('form-control');
+  // Click en la tarjeta de Ventas Pagas para aplicar filtro
+  $('.card-border-shadow-success').on('click', function () {
+    paymentStatusFilter.val('paid');
+    fetchOrders();
+  });
 
-      $('.toggle-column').on('change', function () {
-        var column = dt_products.column($(this).attr('data-column'));
-        column.visible(!column.visible());
-      });
+  // Click en la tarjeta de Ventas Impagas para aplicar filtro
+  $('.card-border-shadow-warning').on('click', function () {
+    paymentStatusFilter.val('pending');
+    fetchOrders();
+  });
 
-      $('.datatables-order tbody').on('click', '.delete-record', function () {
-        var recordId = $(this).data('id');
-        Swal.fire({
-          title: '¿Estás seguro?',
-          text: 'Esta acción eliminará completamente el pedido, perdiendo definitivamente sus datos',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Sí, eliminar!',
-          cancelButtonText: 'Cancelar'
-        }).then(result => {
-          if (result.isConfirmed) {
-            $.ajax({
-              url: baseUrl + 'admin/orders/' + recordId,
-              type: 'DELETE',
-              headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-              },
-              success: function (result) {
-                if (result.success) {
-                  Swal.fire(
-                    'Eliminado!',
-                    'El pedido ha sido eliminado y el stock de los productos ha sido reintegrado.',
-                    'success'
-                  );
-                  dt_products.ajax.reload(null, false); // Recarga la tabla sin resetear la paginación
-                } else {
-                  Swal.fire('Error!', 'No se pudo eliminar el pedido. Intente de nuevo.', 'error');
-                }
-              },
-              error: function (xhr, ajaxOptions, thrownError) {
-                Swal.fire('Error!', 'No se pudo eliminar el pedido: ' + xhr.responseJSON.message, 'error');
-              }
-            });
+  $('#openFilters').on('click', function () {
+    $('#filterModal').addClass('open');
+  });
+
+  $('#closeFilterModal').on('click', function () {
+    $('#filterModal').removeClass('open');
+  });
+
+  $(document).on('click', '.delete-record', function () {
+    var recordId = $(this).data('id');
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: 'Esta acción eliminará completamente el pedido, perdiendo definitivamente sus datos',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Sí, eliminar!',
+      cancelButtonText: 'Cancelar'
+    }).then(result => {
+      if (result.isConfirmed) {
+        $.ajax({
+          url: baseUrl + 'admin/orders/' + recordId,
+          type: 'DELETE',
+          headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+          },
+          success: function (result) {
+            if (result.success) {
+              Swal.fire(
+                'Eliminado!',
+                'El pedido ha sido eliminado y el stock de los productos ha sido reintegrado.',
+                'success'
+              );
+              fetchOrders(); // Recarga la lista de órdenes
+            } else {
+              Swal.fire('Error!', 'No se pudo eliminar el pedido. Intente de nuevo.', 'error');
+            }
+          },
+          error: function (xhr, ajaxOptions, thrownError) {
+            Swal.fire('Error!', 'No se pudo eliminar el pedido: ' + xhr.responseJSON.message, 'error');
           }
         });
-      });
+      }
+    });
+  });
 
-      $('#export-excel').on('click', function () {
-        // Capturar los valores de los filtros
-        let client = $('.client_filter select').val();
-        let company = $('.company_filter select').val();
-        let payment = $('.payment_filter select').val();
-        let billed = $('.billed_filter select').val();
-        let startDate = $('#startDate').val();
-        let endDate = $('#endDate').val();
+  searchInput.on('input', function () {
+    fetchOrders();
+  });
 
-        // Construir la URL con los parámetros válidos
-        let url = '/admin/orders-export-excel?';
-        let params = [];
+  paymentStatusFilter.on('change', function () {
+    fetchOrders();
+  });
 
-        if (client) {
-          params.push(`client=${encodeURIComponent(client)}`);
-        }
-        if (company) {
-          params.push(`company=${encodeURIComponent(company)}`);
-        }
-        if (payment) {
-          params.push(`payment=${encodeURIComponent(payment)}`);
-        }
-        if (billed) {
-          params.push(`billed=${encodeURIComponent(billed)}`);
-        }
-        if (startDate) {
-          params.push(`start_date=${encodeURIComponent(startDate)}`);
-        }
-        if (endDate) {
-          params.push(`end_date=${encodeURIComponent(endDate)}`);
-        }
+  shippingStatusFilter.on('change', function () {
+    fetchOrders();
+  });
 
-        // Unir los parámetros a la URL
-        url += params.join('&');
+  clientFilter.on('change', function () {
+    fetchOrders();
+  });
 
-        // Redirigir a la ruta para exportar, abriendo en una nueva pestaña
-        window.open(url, '_blank');
-      });
-    }
-  } catch (error) {
-    console.log('Error: '.error);
-  }
+  storeFilter.on('change', function () {
+    fetchOrders();
+  });
+
+  startDateFilter.on('change', function () {
+    fetchOrders();
+  });
+
+  endDateFilter.on('change', function () {
+    fetchOrders();
+  });
+
+  fetchOrders();
 });

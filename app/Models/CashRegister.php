@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CashRegister extends Model
 {
@@ -68,5 +69,15 @@ class CashRegister extends Model
                 'clase' => 'bg-danger'
             ];
         }
+    }
+
+    /**
+     * Obtiene los dispositivos POS asociados a la caja registradora.
+     *
+     * @return BelongsToMany
+     */
+    public function posDevices(): BelongsToMany
+    {
+        return $this->belongsToMany(PosDevice::class, 'cash_register_pos_device');
     }
 }

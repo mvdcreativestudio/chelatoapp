@@ -51,7 +51,7 @@ Route::get('/pos/token', [PosController::class, 'getPosToken']);
 Route::get('/pos/responses', [PosController::class, 'getPosResponses']);
 Route::post('/pos/process-transaction', [PosController::class, 'processTransaction']);
 Route::post('/pos/check-transaction-status', [PosController::class, 'checkTransactionStatus']);
-
+Route::get('/pos/get-device-info/{cashRegisterId}', [PosController::class, 'getDeviceInfo']);
 
 
 

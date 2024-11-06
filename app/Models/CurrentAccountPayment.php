@@ -13,13 +13,24 @@ class CurrentAccountPayment extends Model
     protected $fillable = [
         'payment_amount',
         'payment_date',
-        'current_account_id',
         'payment_method_id',
+        'current_account_id',
     ];
 
     protected $casts = [
         'payment_date' => 'datetime',
     ];
+
+    /**
+     * Obtiene la cuenta corriente asociada a este pago parcial.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    // public function initialCredit()
+    // {
+    //     return $this->belongsTo(CurrentAccountInitialCredit::class);
+    // }
+
 
     /**
      * Obtiene la cuenta corriente asociada a este pago parcial.

@@ -1,6 +1,7 @@
 @extends('content.e-commerce.front.layouts.ecommerce-layout')
 
-@section('title', 'Sumeria')
+@section('title', 'Teralo')
+
 
 @section('content')
 
@@ -26,11 +27,11 @@
 
 <div class="video-container">
   <video autoplay muted loop id="myVideo" class="video-background">
-      <source src="assets/img/videos/back-chelato.mp4" type="video/mp4">
+      <source src="assets/img/videos/back-dali.mp4" type="video/mp4">
   </video>
   <div class="video-overlay">
-    <h2 class="header-title">Llegaste al paraíso del helado</h2>
-    <img src="assets/img/branding/chelato-white.png" class="logo-header" alt="">
+    <h2 class="header-title">Llegaste al laboratorio indicado</h2>
+    <img src="assets/img/branding/dali-white.png" class="logo-header" alt="">
     <div class="animated-text-container">
       <a class="animated-text" href="#selectStore">Pedí Online <i class="fa fa-arrow-down arrow-animate"></i></a>
     </div>

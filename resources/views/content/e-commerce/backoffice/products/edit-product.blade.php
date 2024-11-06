@@ -149,18 +149,18 @@
                         </div>
                     </div>
                     <!-- /Variants -->
-                    {{-- <!-- Recipe -->
-      <div class="card mb-4" id="recipeCard" style="display: none;">
-        <div class="card-header">
-          <h5 class="card-title mb-0">Receta</h5>
-        </div>
-        <div class="card-body">
-          <div data-repeater-list="recipes">
-          </div>
-          <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
-          <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button>
-        </div>
-      </div> --}}
+                    <!-- Recipe -->
+                    <div class="card mb-4" id="recipeCard" style="display: none;">
+                      <div class="card-header">
+                        <h5 class="card-title mb-0">Receta</h5>
+                      </div>
+                      <div class="card-body">
+                        <div data-repeater-list="recipes">
+                        </div>
+                        <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
+                        {{-- <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button> --}}
+                      </div>
+                    </div>
 
                 </div>
                 <!-- /Second column -->
