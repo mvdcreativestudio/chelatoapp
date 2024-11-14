@@ -13,31 +13,51 @@ class UpdateProductRequest extends FormRequest
 
     public function rules()
     {
-      return [
-          'name' => 'required|string|max:255',
-          'sku' => 'nullable|string|max:255',
-          'description' => 'nullable|string|max:1000',
-          'type' => 'required|in:simple,configurable',
-          'max_flavors' => 'nullable|integer|min:1',
-          'old_price' => 'required|numeric',
-          'price' => 'nullable|numeric',
-          'discount' => 'nullable|numeric',
-          'store_id' => 'required|exists:stores,id',
-          'status' => 'required|boolean',
-          'stock' => 'nullable|integer',
-          'safety_margin' => 'nullable|numeric',
-          'bar_code' => 'nullable|string|max:255',
-          'categories' => 'required|array',
-          'categories.*' => 'exists:product_categories,id',
-          'flavors' => 'nullable|array',
-          'flavors.*' => 'exists:flavors,id',
-          'image' => 'nullable',
-          'recipes' => 'nullable|array',
-          'recipes.*.raw_material_id' => 'nullable|exists:raw_materials,id',
-          'recipes.*.quantity' => 'nullable|numeric|min:0.01',
-          'recipes.*.used_flavor_id' => 'nullable|exists:flavors,id',
-          'recipes.*.units_per_bucket' => 'nullable|numeric|min:1',
-          'build_price' => 'nullable|numeric',
-      ];
+        return [
+            'name' => 'required|string|max:255',
+            'sku' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'type' => 'required|in:simple,configurable',
+            'max_flavors' => 'nullable|integer|min:1',
+            'old_price' => 'required|numeric',
+            'price' => 'nullable|numeric',
+            'discount' => 'nullable|numeric',
+            'store_id' => 'required|exists:stores,id',
+            'status' => 'required|boolean',
+            'stock' => 'nullable|integer',
+            'safety_margin' => 'nullable|numeric',
+            'bar_code' => 'nullable|string|max:255',
+            'categories' => 'required|array',
+            'categories.*' => 'exists:product_categories,id',
+            'flavors' => 'nullable|array',
+            'flavors.*' => 'exists:flavors,id',
+            'image' => 'nullable|image|max:2048',
+            'recipes' => 'nullable|array',
+            'recipes.*.raw_material_id' => 'nullable|exists:raw_materials,id',
+            'recipes.*.quantity' => 'nullable|numeric|min:0.01',
+            'recipes.*.used_flavor_id' => 'nullable|exists:flavors,id',
+            'recipes.*.units_per_bucket' => 'nullable|numeric|min:1',
+            'build_price' => 'nullable|numeric',
+    
+            'features' => 'array',
+            'features.*.name' => 'nullable|string|max:255',
+            'features.*.value' => 'nullable|string|max:255',
+
+
+
+
+    
+            // Reglas de validación para tamaños
+            'sizes' => 'nullable|array',
+            'sizes.*.size' => 'required|string|max:255',
+            'sizes.*.width' => 'nullable|string|max:255',
+            'sizes.*.height' => 'nullable|string|max:255',
+            'sizes.*.length' => 'nullable|string|max:255',
+    
+            // Reglas de validación para colores
+            'colors' => 'nullable|array',
+            'colors.*.name' => 'required|string|max:255',
+        ];
     }
+    
 }

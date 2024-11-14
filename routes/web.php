@@ -61,6 +61,7 @@ use App\Http\Controllers\BulkProductionBatchController;
 use App\Http\Controllers\PackagingController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PackageComponentController;
+use App\Http\Controllers\LandingController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -520,6 +521,12 @@ Route::middleware([
 Route::resources([
     'checkout' => CheckoutController::class,
 ]);
+
+// Landing Page
+Route::get('/landing', [LandingController::class, 'index'])->name('landing-page');
+Route::get('/landing/colchones', [LandingController::class, 'colchones'])->name('landing-page.colchones');
+Route::get('/landing/producto/{id}', [LandingController::class, 'showProduct'])->name('landing-page.producto');
+
 
 // E-Commerce
 // Route::get('/', [EcommerceController::class, 'home'])->name('home');

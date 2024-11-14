@@ -11,7 +11,7 @@
 @endsection
 
 @section('page-script')
-    @vite(['resources/assets/js/app-ecommerce-product-edit.js'])
+    @vite(['resources/assets/js/app-ecommerce-product-edit.js', 'resources/assets/js/app-ecommerce-product-edit-features.js'])
 @endsection
 
 @section('content')
@@ -162,6 +162,83 @@
                       </div>
                     </div>
 
+                    <!-- Características dinámicas -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Características</h5>
+                            <button type="button" class="btn btn-primary float-end" id="addFeature">Agregar Característica</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="featuresRepeater">
+                                @foreach ($product->features as $feature)
+                                <div class="row feature-row mb-3" data-repeater-item>
+                                    <div class="col-5">
+                                        <input type="text" class="form-control" name="features[][name]" placeholder="Nombre de la característica">
+                                    </div>
+                                    <div class="col-5">
+                                        <input type="text" class="form-control" name="features[][value]" placeholder="Valor de la característica">
+                                    </div>                                    
+                                    <div class="col-2">
+                                        <button type="button" class="btn btn-danger remove-feature">Eliminar</button>
+                                    </div>
+                                </div>
+                                @endforeach
+                            
+                            
+                            </div>
+                            
+                        </div>
+                    </div>
+
+                    <!-- Tamaños dinámicos -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Tamaños</h5>
+                            <button type="button" class="btn btn-primary float-end" id="addSize">Agregar Tamaño</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="sizesRepeater">
+                                @foreach ($product->sizes as $size)
+                                    <div class="row size-row mb-3" data-repeater-item>
+                                        <div class="col-3">
+                                            <input type="text" class="form-control" name="sizes[][size]" placeholder="Tamaño" value="{{ $size->size }}">
+                                        </div>
+                                        <div class="col-3">
+                                            <input type="text" class="form-control" name="sizes[][width]" placeholder="Ancho" value="{{ $size->width }}">
+                                        </div>
+                                        <div class="col-3">
+                                            <input type="text" class="form-control" name="sizes[][height]" placeholder="Alto" value="{{ $size->height }}">
+                                        </div>
+                                        <div class="col-3">
+                                            <button type="button" class="btn btn-danger remove-size">Eliminar</button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Colores dinámicos -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Colores</h5>
+                            <button type="button" class="btn btn-primary float-end" id="addColor">Agregar Color</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="colorsRepeater">
+                                @foreach ($product->colors as $color)
+                                    <div class="row color-row mb-3" data-repeater-item>
+                                        <div class="col-10">
+                                            <input type="text" class="form-control" name="colors[][name]" placeholder="Color" value="{{ $color->name }}">
+                                        </div>
+                                        <div class="col-2">
+                                            <button type="button" class="btn btn-danger remove-color">Eliminar</button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <!-- /Second column -->
 

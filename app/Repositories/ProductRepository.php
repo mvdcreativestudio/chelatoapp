@@ -218,21 +218,26 @@ class ProductRepository
   */
   public function edit(int $id): array
   {
-    $product = Product::with('categories', 'flavors', 'recipes.rawMaterial', 'recipes.usedFlavor')->findOrFail($id);
-    $stores = Store::all();
-    $flavors = Flavor::all();
-    $rawMaterials = RawMaterial::all();
-
-    // Verificar si el usuario tiene permiso para ver todas las categorías
-    if (Auth::user()->can('access_global_products')) {
-        $categories = ProductCategory::all();
-    } else {
-        // Si no tiene el permiso, mostrar solo las categorías asociadas a su tienda
-        $categories = ProductCategory::where('store_id', Auth::user()->store_id)->get();
-    }
-
-    return compact('product', 'stores', 'categories', 'flavors', 'rawMaterials');
+      // Cargar el producto con categorías, sabores y recetas como antes
+      $product = Product::with('categories', 'flavors', 'recipes.rawMaterial', 'recipes.usedFlavor')
+                        ->with('features', 'sizes', 'colors') // Agregamos relaciones de características, tamaños y colores
+                        ->findOrFail($id);
+  
+      // Obtener todas las tiendas y categorías (filtradas por permisos)
+      $stores = Store::all();
+      $flavors = Flavor::all();
+      $rawMaterials = RawMaterial::all();
+  
+      // Verificar permisos para obtener categorías específicas
+      if (Auth::user()->can('access_global_products')) {
+          $categories = ProductCategory::all();
+      } else {
+          $categories = ProductCategory::where('store_id', Auth::user()->store_id)->get();
+      }
+  
+      return compact('product', 'stores', 'categories', 'flavors', 'rawMaterials');
   }
+  
 
   /**
    * Actualiza un producto específico en la base de datos.
@@ -245,8 +250,6 @@ class ProductRepository
   {
     $product = Product::findOrFail($id);
 
-    $originalType = $product->type;
-
     $product->update($request->only([
         'name', 'sku', 'description', 'type', 'max_flavors', 'old_price',
         'price', 'discount', 'store_id', 'status', 'stock', 'safety_margin', 'bar_code', 'build_price'
@@ -254,85 +257,63 @@ class ProductRepository
 
     // Manejo de la imagen si se ha subido un archivo
     if ($request->hasFile('image')) {
-      $file = $request->file('image');
-      $filename = time() . '.' . $file->getClientOriginalExtension();
-      $path = $file->move(public_path('assets/img/ecommerce-images'), $filename);
-      if ($path) {
-          $product->image = 'assets/img/ecommerce-images/' . $filename;
-          $product->save();  // Asegurarse de guardar el producto después de actualizar la imagen
-      }
+        $file = $request->file('image');
+        $filename = time() . '.' . $file->getClientOriginalExtension();
+        $path = $file->move(public_path('assets/img/ecommerce-images'), $filename);
+        if ($path) {
+            $product->image = 'assets/img/ecommerce-images/' . $filename;
+            $product->save();
+        }
     }
 
+    // Actualizar categorías y sabores
     $product->categories()->sync($request->input('categories', []));
     if ($request->filled('flavors')) {
         $product->flavors()->sync($request->flavors);
     }
 
-    if ($originalType === 'simple' && $request->input('type') === 'configurable') {
-        $product->recipes()->delete();
-    }
+    // Llamar al método de actualización de características
+    $this->updateProductFeatures($product, $request->input('features', []));
 
-    if ($originalType === 'configurable' && $request->input('type') === 'simple') {
-        $product->flavors()->detach();
-    }
 
-    if ($request->input('type') === 'simple') {
-        $newRecipes = collect($request->input('recipes', []));
+    return $product;
+}
 
-        // Filtrar recetas por raw_material_id o used_flavor_id
-        $newRawMaterialIds = $newRecipes->pluck('raw_material_id')->filter();
-        $newUsedFlavorIds = $newRecipes->pluck('used_flavor_id')->filter();
+/**
+     * Actualiza las características de un producto específico.
+     *
+     * @param Product $product
+     * @param array $features
+     * @return void
+     */
+    public function updateProductFeatures(Product $product, array $features): void
+    {
+        // Eliminar características existentes para evitar duplicados
+        $product->features()->delete();
+        Log::info("Características eliminadas para el producto:", ['product_id' => $product->id]);
 
-        // Eliminar recetas no presentes en las nuevas recetas
-        $product->recipes()
-            ->whereNotIn('raw_material_id', $newRawMaterialIds)
-            ->orWhereNotIn('used_flavor_id', $newUsedFlavorIds)
-            ->delete();
-
-        // Crear o actualizar recetas
-        foreach ($newRecipes as $recipe) {
-            if (isset($recipe['raw_material_id'])) {
-                $existingRecipe = Recipe::where('product_id', $product->id)
-                    ->where('raw_material_id', $recipe['raw_material_id'])
-                    ->first();
-
-                if ($existingRecipe) {
-                    if (isset($recipe['quantity'])) {
-                      $existingRecipe->quantity = $recipe['quantity'];
-                      $existingRecipe->save();
-                    }
-                } else {
-                    Recipe::create([
-                        'product_id' => $product->id,
-                        'raw_material_id' => $recipe['raw_material_id'],
-                        'quantity' => $recipe['quantity'],
-                    ]);
-                }
-            }
-
-            if (isset($recipe['used_flavor_id'])) {
-                $existingRecipe = Recipe::where('product_id', $product->id)
-                    ->where('used_flavor_id', $recipe['used_flavor_id'])
-                    ->first();
-
-                if ($existingRecipe) {
-                    if (isset($recipe['units_per_bucket'])) {
-                      $existingRecipe->quantity = 1 / $recipe['units_per_bucket'];
-                      $existingRecipe->save();
-                    }
-                } else {
-                    Recipe::create([
-                        'product_id' => $product->id,
-                        'used_flavor_id' => $recipe['used_flavor_id'],
-                        'quantity' => 1 / $recipe['units_per_bucket'],
-                    ]);
-                }
+        foreach ($features as $feature) {
+            // Validar que ambos campos, 'name' y 'value', están presentes antes de guardarlos
+            if (!empty($feature['name']) && !empty($feature['value'])) {
+                $product->features()->create([
+                    'name' => $feature['name'],
+                    'value' => $feature['value']
+                ]);
+                Log::info("Característica guardada:", [
+                    'product_id' => $product->id,
+                    'name' => $feature['name'],
+                    'value' => $feature['value']
+                ]);
+            } else {
+                Log::warning("Característica incompleta, no se guardará:", [
+                    'product_id' => $product->id,
+                    'name' => $feature['name'] ?? null,
+                    'value' => $feature['value'] ?? null
+                ]);
             }
         }
     }
 
-    return $product;
-  }
 
   /**
    * Cambia el estado de un producto.

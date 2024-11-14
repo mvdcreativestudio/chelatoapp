@@ -159,9 +159,10 @@ class ProductController extends Controller
   */
   public function edit(int $id): View
   {
-    $product = $this->productRepo->edit($id);
-    return view('content.e-commerce.backoffice.products.edit-product', $product) ;
+      $data = $this->productRepo->edit($id);
+      return view('content.e-commerce.backoffice.products.edit-product', $data);
   }
+  
 
   /**
    * Actualiza un producto específico en la base de datos.
@@ -170,11 +171,22 @@ class ProductController extends Controller
    * @param int $id
    * @return RedirectResponse
   */
-  public function update(UpdateProductRequest $request, $id)
+  public function update(UpdateProductRequest $request, int $id)
   {
-    $this->productRepo->update($id, $request);
-    return redirect()->route('products.index')->with('success', 'Producto actualizado correctamente.');
+      try {
+          // Llama al método update en el repositorio pasando el request completo
+          $product = $this->productRepository->update($id, $request);
+
+          return redirect()->route('products.show', $product->id)
+              ->with('success', 'Producto actualizado correctamente');
+      } catch (\Exception $e) {
+          // Manejo de errores
+          return redirect()->back()->with('error', 'Error al actualizar el producto: ' . $e->getMessage());
+      }
   }
+  
+  
+  
 
   /**
     * Cambia el estado de un producto.
