@@ -38,13 +38,13 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label" for="supplier-city">Ciudad</label>
+              <label class="form-label" for="supplier-city">Ciudad/Barrio</label>
               <input type="text" class="form-control" id="supplier-city" name="city" required placeholder="Ciudad del proveedor" value="{{ $supplier->city }}">
             </div>
 
             <div class="mb-3">
-              <label class="form-label mb-0" for="supplier-state">Estado</label>
-              <input type="text" class="form-control" id="supplier-state" name="state" required placeholder="Estado del proveedor" value="{{ $supplier->state }}">
+              <label class="form-label mb-0" for="supplier-state">Departamento</label>
+              <input type="text" class="form-control" id="supplier-state" name="state" required placeholder="Departamento del proveedor" value="{{ $supplier->state }}">
             </div>
 
             <div class="mb-3">
@@ -61,7 +61,7 @@
               <label class="form-label" for="supplier-doc_type">Tipo de Documento</label>
               <select class="form-select" id="supplier-doc_type" name="doc_type" required>
                 <option value="">Seleccione un tipo de documento</option>
-                <option value="DNI" {{ $supplier->doc_type == 'DNI' ? 'selected' : '' }}>DNI</option>
+                <option value="CI" {{ $supplier->doc_type == 'CI' ? 'selected' : '' }}>CI</option>
                 <option value="PASSPORT" {{ $supplier->doc_type == 'PASSPORT' ? 'selected' : '' }}>Pasaporte</option>
                 <option value="RUT" {{ $supplier->doc_type == 'RUT' ? 'selected' : ''}}>RUT</option>
                 <option value="OTHER" {{ $supplier->doc_type == 'OTHER' ? 'selected' : '' }}>Otro</option>
@@ -69,8 +69,8 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label mb-0" for="supplier-doc_number">Cedula de Identidad</label>
-              <input type="text" class="form-control" id="supplier-doc_number" name="doc_number" required placeholder="Cedula de identidad del proveedor" value="{{ $supplier->doc_number }}">
+              <label class="form-label mb-0" for="supplier-doc_number">Número de Documento</label>
+              <input type="text" class="form-control" id="supplier-doc_number" name="doc_number" required placeholder="Número de documento del proveedor" value="{{ $supplier->doc_number }}">
             </div>
 
             <div class="mb-3">

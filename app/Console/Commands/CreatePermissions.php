@@ -325,7 +325,12 @@ class CreatePermissions extends Command
                     'submenus' => [
                         'delete_currencies',
                     ],
-                ]
+                ],
+                [
+                    'slug' => 'event-configurations',
+                    'module' => 'management',
+                    'view_all' => true,
+                ],
             ],
         ];
 

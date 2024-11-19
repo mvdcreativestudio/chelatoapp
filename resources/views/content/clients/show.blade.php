@@ -128,7 +128,7 @@
             <div class="avatar me-2">
               <span class="avatar-initial rounded bg-label-danger"><i class='bx bx-money'></i></span>
             </div>
-            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ $client->orders->sum('total') }}</h4>
+            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ number_format($client->orders->sum('total'), 2) }}</h4>
           </div>
             <p class="mb-1 fw-medium me-1">Total Gastado</p>
 
@@ -146,7 +146,7 @@
               <span class="avatar-initial rounded bg-label-info"><i class='bx bx-line-chart'></i></span>
             </div>
           @if($client->orders->sum('total') !== 0 && $client->orders->count() !== 0)
-            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ $client->orders->sum('total') / $client->orders->count() }}</h4>
+            <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}{{ number_format($client->orders->sum('total') / $client->orders->count(), 2) }}</h4>
           @else
             <h4 class="ms-1 mb-0">{{ $settings->currency_symbol }}0</h4>
           @endif
@@ -269,7 +269,7 @@
             <input type="text" id="modalEditUserAddress" name="address" class="form-control" value="{{ $client->address }}" />
           </div>
           <div class="col-12 col-md-6">
-            <label class="form-label" for="modalEditUserCity">Ciudad</label>
+            <label class="form-label" for="modalEditUserCity">Ciudad/Barrio</label>
             <input type="text" id="modalEditUserCity" name="city" class="form-control" value="{{ $client->city }}" />
           </div>
           <div class="col-12 col-md-6">

@@ -58,9 +58,11 @@ use App\Http\Controllers\PurchaseEntryController;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\BulkProductionController;
 use App\Http\Controllers\BulkProductionBatchController;
+use App\Http\Controllers\EventStoreConfigurationController;
 use App\Http\Controllers\PackagingController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PackageComponentController;
+use App\Http\Controllers\ProductCatalogueController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -134,9 +136,6 @@ Route::middleware([
 
     // Exportaciones
     Route::get('/products/export', [ProductController::class, 'exportToExcel'])->name('products.export');
-
-    // Importaciones Bulk
-    Route::post('/admin/products/import', [ProductController::class, 'import'])->name('products.import');
 
     // exportar excel
     Route::get('/current-accounts-export-excel', [CurrentAccountController::class, 'exportExcel'])->name('current-account.export.excel');
@@ -334,6 +333,10 @@ Route::middleware([
         Route::post('toggle-store-status', [StoreController::class, 'toggleStoreStatus'])->name('toggle-status');
         Route::post('toggle-store-status-closed', [StoreController::class, 'toggleStoreStatusClosed'])->name('toggleStoreStatusClosed');
         Route::post('toggle-billing', [StoreController::class, 'toggleAutomaticBilling'])->name('toggleAutomaticBilling');
+        // events
+        Route::get('events', [EventStoreConfigurationController::class, 'show'])->name('events.show');
+        // post toggle event
+        Route::post('toggle-event', [EventStoreConfigurationController::class, 'toggleEvent'])->name('events.toggle-status');
     });
 
     // Gestión de Roles
@@ -523,6 +526,12 @@ Route::middleware([
 Route::resources([
     'checkout' => CheckoutController::class,
 ]);
+
+// Catálogo de Productos
+Route::get('catalogue', [ProductCatalogueController::class, 'index'])->name('catalogue.index');
+Route::get('catalogue/search', [ProductCatalogueController::class, 'search'])->name('catalogue.search');
+Route::get('catalogue/{id}', [ProductCatalogueController::class, 'show'])->name('catalogue.show');
+
 
 // E-Commerce
 // Route::get('/', [EcommerceController::class, 'home'])->name('home');

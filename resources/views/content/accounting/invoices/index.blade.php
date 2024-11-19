@@ -23,6 +23,9 @@
 @vite([
   'resources/assets/js/app-invoices-list.js'
 ])
+<script>
+  window.isStoreConfigEmailEnabled = "{{ $isStoreConfigEmailEnabled }}";
+</script>
 @endsection
 
 @section('content')

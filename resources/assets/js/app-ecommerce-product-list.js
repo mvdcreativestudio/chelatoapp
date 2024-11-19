@@ -1,6 +1,18 @@
 'use strict';
 
 $(function () {
+
+  // Función para cerrar el modal de filtros al hacer clic fuera
+  $(document).on('click', function (event) {
+    const filterModal = $('#filterModal');
+    const openFiltersButton = $('#openFilters');
+
+    // Verifica si el modal está abierto, si el clic fue fuera del modal y si el clic no fue en el botón para abrir el modal
+    if (filterModal.hasClass('open') && !filterModal.is(event.target) && !filterModal.has(event.target).length && !openFiltersButton.is(event.target) && !openFiltersButton.has(event.target).length) {
+      filterModal.removeClass('open');
+    }
+  });
+  
   let borderColor, bodyBg, headingColor;
   let currencySymbol = window.currencySymbol;
 
@@ -258,3 +270,4 @@ $(function () {
     });
   });
 });
+

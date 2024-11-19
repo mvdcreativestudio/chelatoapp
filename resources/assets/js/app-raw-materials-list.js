@@ -8,29 +8,18 @@ document.addEventListener('DOMContentLoaded', function () {
   var hasViewAllRawMaterialsPermission = window.hasViewAllRawMaterialsPermission;
   var canEditRawMaterials = window.canEditRawMaterials;
   
+  // Eliminamos la columna de imagen del arreglo columns
   var columns = [
-    { data: 'image_url' },
     { data: 'name' },
     { data: 'description' },
     { data: 'unit_of_measure' },
     { data: 'stock' }
   ];
 
+  // Eliminamos la definición de renderizado de imagen en columnDefs
   var columnsDefs = [
     {
       targets: 0,
-      searchable: false,
-      orderable: false,
-      render: function (data, type, row) {
-        if (!data) {
-          return `<img src="${originUrlAsset}/noimage.jpg" alt="Imagen por defecto" class="img-fluid rounded" style="max-width: 60px; height: auto;">`;
-        }
-        var imageUrl = baseUrlAsset + '/' + data;
-        return `<img src="${imageUrl}" alt="Imagen" class="img-fluid rounded" style="max-width: 60px; height: auto;">`;
-      }
-    },
-    {
-      targets: 1,
       searchable: true,
       responsivePriority: 1,
       orderable: true,
@@ -39,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     {
-      targets: 2,
+      targets: 1,
       searchable: true,
       responsivePriority: 3,
       orderable: true,
@@ -48,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     {
-      targets: 3,
+      targets: 2,
       searchable: true,
       responsivePriority: 4,
       orderable: true,
@@ -57,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     },
     {
-      targets: hasViewAllRawMaterialsPermission ? 5 : 4,
+      targets: hasViewAllRawMaterialsPermission ? 4 : 3,
       searchable: false,
       responsivePriority: 5,
       orderable: false,
@@ -91,17 +80,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   ];
 
-
+  // Si el usuario tiene permiso, añadimos la columna de nombre de la tienda
   if (hasViewAllRawMaterialsPermission) {
     columnsDefs.push({
-      targets: 5,
+      targets: 4,
       render: function (data, type, row) {
         console.log('Rendering store name for row:', row);
         return row.stores && row.stores.length > 0 ? row.stores[0].name : 'Empresa sin nombre';
       }
     });
   }
-
 
   if (dt_raw_materials_table.length) {
     var table = dt_raw_materials_table.DataTable({

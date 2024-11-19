@@ -9,6 +9,7 @@ use App\Http\Requests\UploadLogoRequest;
 use App\Models\CFE;
 use App\Models\Store;
 use App\Repositories\AccountingRepository;
+use App\Repositories\StoresEmailConfigRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,15 +25,16 @@ class AccountingController extends Controller
      * @var AccountingRepository
      */
     protected $accountingRepository;
-
+    protected $storesEmailConfigRepository;
     /**
      * Constructor para inyectar el repositorio en el controlador.
      *
      * @param AccountingRepository $accountingRepository
      */
-    public function __construct(AccountingRepository $accountingRepository)
+    public function __construct(AccountingRepository $accountingRepository, StoresEmailConfigRepository $storesEmailConfigRepository)
     {
         $this->accountingRepository = $accountingRepository;
+        $this->storesEmailConfigRepository = $storesEmailConfigRepository;
     }
 
     /**
@@ -73,7 +75,9 @@ class AccountingController extends Controller
     public function getSentCfes(): View
     {
         $statistics = $this->accountingRepository->getDashboardStatistics();
-        return view('content.accounting.invoices.index', $statistics);
+        $isStoreConfigEmailEnabled = $this->storesEmailConfigRepository->getConfigByStoreId(auth()->user()->store_id);
+        $mergeData = array_merge($statistics, compact('isStoreConfigEmailEnabled'));
+        return view('content.accounting.invoices.index', $mergeData);
     }
 
     /**
@@ -325,16 +329,13 @@ class AccountingController extends Controller
             $email = $request->email;
             $factura = $this->downloadCfePdf($invoiceId);
             $tempPdfPath = tempnam(sys_get_temp_dir(), 'pdf_');
-            $variables = [
-                'subject' => 'Factura de compra',
-                'reply_to' => 'soporte@mi-tienda.com',
-            ];
+            $subject = 'Factura de compra';
             file_put_contents($tempPdfPath, $factura);
             $attachmentName = "Factura.pdf"; // Asigna el nombre del archivo
-
-            Helpers::emailService()->sendMail($email, $variables['subject'], 'content.accounting.invoices.email', $variables, $tempPdfPath, $attachmentName);
+            Helpers::emailService()->sendMail($email, $subject, 'content.accounting.invoices.email', $tempPdfPath, $attachmentName);
             return response()->json(['success' => 'Correo enviado correctamente.']);
         } catch (\Exception $e) {
+            dd($e);
             Log::error('Error al enviar correo: ' . $e->getMessage());
             return response()->json(['error' => 'Ocurrió un error al enviar el correo.'], 500);
         }

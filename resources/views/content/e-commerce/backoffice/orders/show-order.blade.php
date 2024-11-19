@@ -3,49 +3,49 @@
 @section('title', 'Detalle de la venta')
 
 @if (request()->is('*/pdf'))
-    <!-- Cargar estilos CSS directamente -->
-    <link rel="stylesheet" href="{{ public_path('path/to/datatables-bootstrap5.css') }}">
-    <link rel="stylesheet" href="{{ public_path('path/to/datatables-responsive-bootstrap5.css') }}">
-    <link rel="stylesheet" href="{{ public_path('path/to/datatables-buttons-bootstrap5.css') }}">
-    <link rel="stylesheet" href="{{ public_path('path/to/sweetalert2.css') }}">
-    <link rel="stylesheet" href="{{ public_path('path/to/form-validation.css') }}">
-    <link rel="stylesheet" href="{{ public_path('path/to/select2.css') }}">
+<!-- Cargar estilos CSS directamente -->
+<link rel="stylesheet" href="{{ public_path('path/to/datatables-bootstrap5.css') }}">
+<link rel="stylesheet" href="{{ public_path('path/to/datatables-responsive-bootstrap5.css') }}">
+<link rel="stylesheet" href="{{ public_path('path/to/datatables-buttons-bootstrap5.css') }}">
+<link rel="stylesheet" href="{{ public_path('path/to/sweetalert2.css') }}">
+<link rel="stylesheet" href="{{ public_path('path/to/form-validation.css') }}">
+<link rel="stylesheet" href="{{ public_path('path/to/select2.css') }}">
 @else
-    @section('vendor-style')
-    @vite([
-      'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
-      'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
-      'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
-      'resources/assets/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.scss',
-      'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
-      'resources/assets/vendor/libs/@form-validation/form-validation.scss',
-      'resources/assets/vendor/libs/select2/select2.scss'
-    ])
-    @endsection
+@section('vendor-style')
+@vite([
+'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
+'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
+'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
+'resources/assets/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.scss',
+'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+'resources/assets/vendor/libs/@form-validation/form-validation.scss',
+'resources/assets/vendor/libs/select2/select2.scss'
+])
+@endsection
 
-    @section('vendor-script')
-    @vite([
-      'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
-      'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
-      'resources/assets/vendor/libs/cleavejs/cleave.js',
-      'resources/assets/vendor/libs/cleavejs/cleave-phone.js',
-      'resources/assets/vendor/libs/@form-validation/popular.js',
-      'resources/assets/vendor/libs/@form-validation/bootstrap5.js',
-      'resources/assets/vendor/libs/@form-validation/auto-focus.js',
-      'resources/assets/vendor/libs/select2/select2.js'
-    ])
-    @endsection
+@section('vendor-script')
+@vite([
+'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
+'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+'resources/assets/vendor/libs/cleavejs/cleave.js',
+'resources/assets/vendor/libs/cleavejs/cleave-phone.js',
+'resources/assets/vendor/libs/@form-validation/popular.js',
+'resources/assets/vendor/libs/@form-validation/bootstrap5.js',
+'resources/assets/vendor/libs/@form-validation/auto-focus.js',
+'resources/assets/vendor/libs/select2/select2.js'
+])
+@endsection
 
-    @section('page-script')
-    @vite([
-      'resources/assets/js/app-ecommerce-order-details.js',
-    ])
-    <script>
-      window.orderProducts = @json($products);
+@section('page-script')
+@vite([
+'resources/assets/js/app-ecommerce-order-details.js',
+])
+<script>
+  window.orderProducts = @json($products);
       window.baseUrl = "{{ url('') }}/";
       window.currencySymbol = "{{ $settings->currency_symbol }}"
-    </script>
-    @endsection
+</script>
+@endsection
 @endif
 
 @section('content')
@@ -54,22 +54,22 @@
 use Carbon\Carbon;
 Carbon::setLocale('es');
 $paymentStatusTranslations = [
-  'paid' => 'Pagado',
-  'pending' => 'Pendiente',
-  'failed' => 'Fallido',
+'paid' => 'Pagado',
+'pending' => 'Pendiente',
+'failed' => 'Fallido',
 ];
 
 $shippingStatusTranslations = [
-  'pending' => 'Pendiente',
-  'shipped' => 'Enviado',
-  'delivered' => 'Entregado',
-  'pickup' => 'Retira en tienda',
+'pending' => 'Pendiente',
+'shipped' => 'Enviado',
+'delivered' => 'Entregado',
+'pickup' => 'Retira en tienda',
 ];
 
 $changeTypeTranslations = [
-  'payment' => 'Pago',
-  'shipping' => 'Envío',
-  'status' => 'Estado',
+'payment' => 'Pago',
+'shipping' => 'Envío',
+'status' => 'Estado',
 ];
 @endphp
 
@@ -77,24 +77,25 @@ $changeTypeTranslations = [
   <span class="text-muted fw-light"></span> Detalles de la venta
 </h4>
 
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 card p-3">
+<div
+  class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 card p-3">
   <div class="d-flex flex-column justify-content-center">
     <h6 class="mb-1 mt-3">Venta #{{ $order->id }}
       @if($order->payment_status === 'paid')
-        <span class="badge bg-label-info me-2 ms-2">Pago</span>
+      <span class="badge bg-label-info me-2 ms-2">Pago</span>
       @elseif($order->payment_status === 'pending')
-        <span class="badge bg-label-danger me-2 ms-2">Pago pendiente</span>
+      <span class="badge bg-label-danger me-2 ms-2">Pago pendiente</span>
       @elseif($order->payment_status === 'failed')
-        <span class="badge bg-label-danger me-2 ms-2">Pago fallido</span>
+      <span class="badge bg-label-danger me-2 ms-2">Pago fallido</span>
       @endif
       @if($order->shipping_status === 'pending' && $order->shipping_method !== 'pickup')
-        <span class="badge bg-label-warning">No enviado</span>
+      <span class="badge bg-label-warning">No enviado</span>
       @elseif($order->shipping_method === 'pickup')
-        <span class="badge bg-label-primary">Retira en Empresa</span>
+      <span class="badge bg-label-primary">Retira en Empresa</span>
       @elseif($order->shipping_status === 'shipped')
-        <span class="badge bg-label-success">Enviado</span>
+      <span class="badge bg-label-success">Enviado</span>
       @elseif($order->shipping_status === 'delivered')
-        <span class="badge bg-label-info">Entregado</span>
+      <span class="badge bg-label-info">Entregado</span>
       @endif
     </h6>
     <h6 class="card-title mb-1 mt-1">Empresa:
@@ -102,80 +103,90 @@ $changeTypeTranslations = [
     </h6>
     <h6 class="card-title mb-1 mt-1">Método de pago:
       @if($order->payment_method === 'card')
-        <span class="badge bg-label-primary me-2 ms-2">MercadoPago</span>
+      <span class="badge bg-label-primary me-2 ms-2">MercadoPago</span>
       @elseif($order->payment_method === 'cash')
-        <span class="me-2 ms-2">Efectivo</span>
+      <span class="me-2 ms-2">Efectivo</span>
       @elseif($order->payment_method === 'debit')
-        <span class="me-2 ms-2">Débito</span>
+      <span class="me-2 ms-2">Débito</span>
       @elseif($order->payment_method === 'credit')
-        <span class="me-2 ms-2">Crédito</span>
+      <span class="me-2 ms-2">Crédito</span>
       @elseif($order->payment_method === 'internalCredit')
-              <span class="me-2 ms-2">Crédito Interno</span>
+      <span class="me-2 ms-2">Crédito Interno</span>
       @endif
     </h6>
     @if($store->invoices_enabled)
     <!-- Mostrar si la venta ha sido facturada -->
     <h6 class="card-title mb-1 mt-1">Estado de la Facturación:
       @if($order->is_billed)
-        <span class="badge bg-label-success me-2 ms-2">Facturado</span>
+      <span class="badge bg-label-success me-2 ms-2">Facturado</span>
       @else
-        <span class="badge bg-label-danger me-2 ms-2">No Facturado</span>
+      <span class="badge bg-label-danger me-2 ms-2">No Facturado</span>
       @endif
     </h6>
     @endif
     <!-- Mostrar el vendedor -->
     <h6 class="card-title mb-1 mt-1">Vendido por:
       @if($order->cashRegisterLog !== null)
-        <span class="me-2 ms-2">{{ ucwords($order->cashRegisterLog->cashRegister->user->name) }}</span>
+      <span class="me-2 ms-2">{{ ucwords($order->cashRegisterLog->cashRegister->user->name) }}</span>
       @else
-        <span class="me-2 ms-2">Sin registro</span>
+      <span class="me-2 ms-2">Sin registro</span>
       @endif
     </h6>
     <p class="text-body mb-1">{{ date('d/m/Y', strtotime($order->date)) }} - {{ $order->time }}</p>
 
   </div>
   <div class="d-flex align-content-center flex-wrap gap-2">
-    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=print" target="_blank" onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=800,height=600').print(); return false;">
-        <button class="btn btn-sm btn-primary">Imprimir</button>
+    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=print" target="_blank"
+      onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=800,height=600').print(); return false;">
+      <button class="btn btn-sm btn-primary">Imprimir</button>
     </a>
     @if(!$order->is_billed && $store->invoices_enabled)
-      <button type="button" class="btn btn-sm btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
-        Emitir Factura
-      </button>
+    <button type="button" class="btn btn-sm btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
+      Emitir Factura
+    </button>
     @endif
     @if($order->is_billed && isset($invoice))
     <a href="{{ route('invoices.download', ['id' => $invoice->id]) }}" class="btn btn-sm btn-label-info">
-        PDF Factura
+      PDF Factura
     </a>
     {{-- send email --}}
-    <button type="button" class="btn btn-sm btn-label-info" data-bs-toggle="modal" data-bs-target="#sendEmailModal">
-      Enviar Factura por Correo
-    </button>
-    @endif
-    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download" class="btn btn-sm btn-label-primary">PDF Venta</a>
+    <div class="d-inline-block" @if(!$isStoreConfigEmailEnabled) data-bs-toggle="tooltip" data-bs-offset="0,4"
+      data-bs-placement="left" data-bs-html="true" title="Debe asociarse a una tienda y tener configurado el envio de correos" @endif>
+      <button type="button" class="btn btn-sm d-flex align-items-center animate__animated animate__pulse 
+            @if(!$isStoreConfigEmailEnabled) btn-danger @else btn-label-info @endif" data-bs-toggle="modal"
+        data-bs-target="#sendEmailModal" @if(!$isStoreConfigEmailEnabled) disabled @endif>
+        <i class="bx bx-envelope fs-5"></i> Enviar Factura por Correo
+      </button>
+    </div>
 
-    
+
+    @endif
+    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download"
+      class="btn btn-sm btn-label-primary">PDF Venta</a>
+
+
     @if($order->is_billed)
-      <!-- Botón deshabilitado con tooltip en el contenedor -->
-      <span data-bs-toggle="tooltip" data-bs-placement="top" title="No se puede eliminar porque está facturado">
-        <button type="button" class="btn btn-sm btn-danger" disabled>
-          <i class="bx bx-trash"></i>
-        </button>
-      </span>
-    @else
-      <!-- Botón habilitado y funcional con tooltip -->
-      <button type="button" class="btn btn-sm btn-danger delete-order" data-order-id="{{ $order->id }}" data-bs-toggle="tooltip" data-bs-placement="left" title="Eliminar venta">
+    <!-- Botón deshabilitado con tooltip en el contenedor -->
+    <span data-bs-toggle="tooltip" data-bs-placement="top" title="No se puede eliminar porque está facturado">
+      <button type="button" class="btn btn-sm btn-danger" disabled>
         <i class="bx bx-trash"></i>
       </button>
+    </span>
+    @else
+    <!-- Botón habilitado y funcional con tooltip -->
+    <button type="button" class="btn btn-sm btn-danger delete-order" data-order-id="{{ $order->id }}"
+      data-bs-toggle="tooltip" data-bs-placement="left" title="Eliminar venta">
+      <i class="bx bx-trash"></i>
+    </button>
     @endif
-  
-  
-    
-  
-  
-  
-  
-    </div>
+
+
+
+
+
+
+
+  </div>
 </div>
 
 <!-- Formulario para actualizar el estado del pago y envío -->
@@ -204,97 +215,97 @@ $changeTypeTranslations = [
             </tr>
           </thead>
         </table>
-          <div class="d-flex justify-content-end align-items-center m-3 mb-2 p-1">
-            @if($order->coupon_id !== null)
-              <div class="d-flex align-items-center me-3">
-                <span class="text-heading">Cupón utilizado:</span>
-                <span class="badge bg-label-dark">{{$order->coupon->code}}</span>
-              </div>
-            @endif
-            <div class="order-calculations">
-              <div class="d-flex justify-content-between mb-2">
-                <span class="w-px-100">Subtotal:</span>
-                <span class="text-heading">{{ $settings->currency_symbol }}{{ $order->subtotal }}</span>
-              </div>
-              <div class="d-flex justify-content-between mb-2">
-                @if($order->discount !== null && $order->discount !== 0)
-                  <span class="w-px-100">Descuento:</span>
-                  @if($order->discount !== null && $order->discount !== 0)
-                    <span class="text-heading mb-0">{{ $settings->currency_symbol }}{{ $order->discount }}</span>
-                  @else
-                    <span class="text-heading mb-0">{{ $settings->currency_symbol }}0</span>
-                  @endif
-                @endif
-              </div>
-              <div class="d-flex justify-content-between mb-2">
-                <span class="w-px-100">Envío:</span>
-                <span class="text-heading">{{ $settings->currency_symbol }}{{ $order->shipping }}</span>
-              </div>
-              <div class="d-flex justify-content-between">
-                <h6 class="w-px-100 mb-0">Total:</h6>
-                <h6 class="mb-0">{{ $settings->currency_symbol }}{{ $order->total }}</h6>
-              </div>
+        <div class="d-flex justify-content-end align-items-center m-3 mb-2 p-1">
+          @if($order->coupon_id !== null)
+          <div class="d-flex align-items-center me-3">
+            <span class="text-heading">Cupón utilizado:</span>
+            <span class="badge bg-label-dark">{{$order->coupon->code}}</span>
+          </div>
+          @endif
+          <div class="order-calculations">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="w-px-100">Subtotal:</span>
+              <span class="text-heading">{{ $settings->currency_symbol }}{{ $order->subtotal }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              @if($order->discount !== null && $order->discount !== 0)
+              <span class="w-px-100">Descuento:</span>
+              @if($order->discount !== null && $order->discount !== 0)
+              <span class="text-heading mb-0">{{ $settings->currency_symbol }}{{ $order->discount }}</span>
+              @else
+              <span class="text-heading mb-0">{{ $settings->currency_symbol }}0</span>
+              @endif
+              @endif
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span class="w-px-100">Envío:</span>
+              <span class="text-heading">{{ $settings->currency_symbol }}{{ $order->shipping }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <h6 class="w-px-100 mb-0">Total:</h6>
+              <h6 class="mb-0">{{ $settings->currency_symbol }}{{ $order->total }}</h6>
             </div>
           </div>
+        </div>
       </div>
     </div>
-<!-- Order Status Changes Table -->
-<div class="card mb-4">
-  <div class="card-header">
-    <h5 class="card-title m-0">Actualizaciones de la venta</h5>
-  </div>
-  <div class="card-body">
-    <ul class="timeline pb-0 mb-0">
-      @if($order->statusChanges == null || $order->statusChanges->isEmpty())
-        <li class="timeline-item timeline-item-transparent border-primary">
-          <span class="timeline-point-wrapper"><span class="timeline-point timeline-point-primary"></span></span>
-          <div class="timeline-event">
-            <div class="timeline-header">
-              <h6 class="mb-0">Pedido creado (ID: #{{ $order->id }})</h6>
-              <span class="text-muted">{{ $order->created_at->translatedFormat('l H:i A') }}</span>
+    <!-- Order Status Changes Table -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="card-title m-0">Actualizaciones de la venta</h5>
+      </div>
+      <div class="card-body">
+        <ul class="timeline pb-0 mb-0">
+          @if($order->statusChanges == null || $order->statusChanges->isEmpty())
+          <li class="timeline-item timeline-item-transparent border-primary">
+            <span class="timeline-point-wrapper"><span class="timeline-point timeline-point-primary"></span></span>
+            <div class="timeline-event">
+              <div class="timeline-header">
+                <h6 class="mb-0">Pedido creado (ID: #{{ $order->id }})</h6>
+                <span class="text-muted">{{ $order->created_at->translatedFormat('l H:i A') }}</span>
+              </div>
             </div>
-          </div>
-        </li>
-      @else
-        @foreach($order->statusChanges->reverse() as $change)
+          </li>
+          @else
+          @foreach($order->statusChanges->reverse() as $change)
           @php
-            $oldBadgeClass = '';
-            $newBadgeClass = '';
-            switch ($change->old_status) {
-              case 'pending':
-                $oldBadgeClass = 'bg-warning';
-                break;
-              case 'paid':
-              case 'shipped':
-              case 'delivered':
-                $oldBadgeClass = 'bg-success';
-                break;
-              case 'failed':
-                $oldBadgeClass = 'bg-danger';
-                break;
-              default:
-                $oldBadgeClass = 'bg-secondary';
-                break;
-            }
-            switch ($change->new_status) {
-              case 'pending':
-                $newBadgeClass = 'bg-warning';
-                break;
-              case 'paid':
-              case 'shipped':
-                $newBadgeClass = 'bg-success';
-                break;
-              case 'delivered':
-                $newBadgeClass = 'bg-info';
-                break;
-              case 'failed':
-                $newBadgeClass = 'bg-danger';
-                break;
-              default:
-                $newBadgeClass = 'bg-secondary';
-                break;
-            }
-            $timelineClass = $newBadgeClass;
+          $oldBadgeClass = '';
+          $newBadgeClass = '';
+          switch ($change->old_status) {
+          case 'pending':
+          $oldBadgeClass = 'bg-warning';
+          break;
+          case 'paid':
+          case 'shipped':
+          case 'delivered':
+          $oldBadgeClass = 'bg-success';
+          break;
+          case 'failed':
+          $oldBadgeClass = 'bg-danger';
+          break;
+          default:
+          $oldBadgeClass = 'bg-secondary';
+          break;
+          }
+          switch ($change->new_status) {
+          case 'pending':
+          $newBadgeClass = 'bg-warning';
+          break;
+          case 'paid':
+          case 'shipped':
+          $newBadgeClass = 'bg-success';
+          break;
+          case 'delivered':
+          $newBadgeClass = 'bg-info';
+          break;
+          case 'failed':
+          $newBadgeClass = 'bg-danger';
+          break;
+          default:
+          $newBadgeClass = 'bg-secondary';
+          break;
+          }
+          $timelineClass = $newBadgeClass;
           @endphp
           <li class="timeline-item timeline-item-transparent border-{{ str_replace('bg-', '', $timelineClass) }}">
             <span class="timeline-point-wrapper">
@@ -303,33 +314,39 @@ $changeTypeTranslations = [
             </span>
             <div class="timeline-event">
               <div class="timeline-header">
-                <h6 class="mb-0">Estado de {{ $changeTypeTranslations[$change->change_type] ?? ucfirst($change->change_type) }} (Pedido: #{{ $change->order_id }})</h6>
-                <span class="text-muted">{{ Carbon::parse($change->created_at)->locale('es')->translatedFormat('l H:i A') }}</span>
+                <h6 class="mb-0">Estado de {{ $changeTypeTranslations[$change->change_type] ??
+                  ucfirst($change->change_type) }} (Pedido: #{{ $change->order_id }})</h6>
+                <span class="text-muted">{{ Carbon::parse($change->created_at)->locale('es')->translatedFormat('l H:i
+                  A') }}</span>
               </div>
               <p class="mt-2">
                 @if($change->change_type === 'payment')
-                  <span class="badge {{ $oldBadgeClass }}">{{ $paymentStatusTranslations[$change->old_status] ?? $change->old_status }}</span>
-                  <i class="bx bx-right-arrow-alt mx-2"></i>
-                  <span class="badge {{ $newBadgeClass }}">{{ $paymentStatusTranslations[$change->new_status] ?? $change->new_status }}</span>
+                <span class="badge {{ $oldBadgeClass }}">{{ $paymentStatusTranslations[$change->old_status] ??
+                  $change->old_status }}</span>
+                <i class="bx bx-right-arrow-alt mx-2"></i>
+                <span class="badge {{ $newBadgeClass }}">{{ $paymentStatusTranslations[$change->new_status] ??
+                  $change->new_status }}</span>
                 @elseif($change->change_type === 'shipping')
-                  <span class="badge {{ $oldBadgeClass }}">{{ $shippingStatusTranslations[$change->old_status] ?? $change->old_status }}</span>
-                  <i class="bx bx-right-arrow-alt mx-2"></i>
-                  <span class="badge {{ $newBadgeClass }}">{{ $shippingStatusTranslations[$change->new_status] ?? $change->new_status }}</span>
+                <span class="badge {{ $oldBadgeClass }}">{{ $shippingStatusTranslations[$change->old_status] ??
+                  $change->old_status }}</span>
+                <i class="bx bx-right-arrow-alt mx-2"></i>
+                <span class="badge {{ $newBadgeClass }}">{{ $shippingStatusTranslations[$change->new_status] ??
+                  $change->new_status }}</span>
                 @else
-                  <span class="badge {{ $oldBadgeClass }}">{{ $change->old_status }}</span>
-                  <i class="bx bx-right-arrow-alt mx-2"></i>
-                  <span class="badge {{ $newBadgeClass }}">{{ $change->new_status }}</span>
+                <span class="badge {{ $oldBadgeClass }}">{{ $change->old_status }}</span>
+                <i class="bx bx-right-arrow-alt mx-2"></i>
+                <span class="badge {{ $newBadgeClass }}">{{ $change->new_status }}</span>
                 @endif
                 <br>
                 <small class="text-muted">por {{ optional($change->user)->name ?? 'Usuario eliminado' }}</small>
               </p>
             </div>
           </li>
-        @endforeach
-      @endif
-    </ul>
-  </div>
-</div>
+          @endforeach
+          @endif
+        </ul>
+      </div>
+    </div>
 
 
   </div>
@@ -356,7 +373,8 @@ $changeTypeTranslations = [
             <select name="shipping_status" id="shipping_status" class="form-select">
               <option value="pending" {{ $order->shipping_status === 'pending' ? 'selected' : '' }}>Pendiente</option>
               <option value="shipped" {{ $order->shipping_status === 'shipped' ? 'selected' : '' }}>Enviado</option>
-              <option value="delivered" {{ $order->shipping_status === 'delivered' ? 'selected' : '' }}>Entregado</option>
+              <option value="delivered" {{ $order->shipping_status === 'delivered' ? 'selected' : '' }}>Entregado
+              </option>
             </select>
           </div>
           <button type="submit" class="btn btn-sm btn-primary">Actualizar Estado</button>
@@ -373,16 +391,16 @@ $changeTypeTranslations = [
         <div class="d-flex justify-content-start align-items-center mb-3">
           <div class="d-flex flex-column">
             @if($order->client !== null)
-              <a href="{{ url('app/user/view/account') }}" class="text-body text-nowrap">
-                @if($order->client->type === 'individual')
-                  <h5 class="mb-0">{{ ucwords($order->client->name) }} {{ ucwords($order->client->lastname) }}</h5>
-                @elseif($order->client->type === 'company')
-                  <h5 class="mb-0">{{ ucwords($order->client->company_name) }}</h5>
-                @endif
-              </a>
-              
-              <small class="text-muted">ID: #{{ $order->client->id }}</small>
-              <small class="text-muted">Registrado el: {{ $order->client->created_at->format('d/m/Y') }}</small>
+            <a href="{{ url('app/user/view/account') }}" class="text-body text-nowrap">
+              @if($order->client->type === 'individual')
+              <h5 class="mb-0">{{ ucwords($order->client->name) }} {{ ucwords($order->client->lastname) }}</h5>
+              @elseif($order->client->type === 'company')
+              <h5 class="mb-0">{{ ucwords($order->client->company_name) }}</h5>
+              @endif
+            </a>
+
+            <small class="text-muted">ID: #{{ $order->client->id }}</small>
+            <small class="text-muted">Registrado el: {{ $order->client->created_at->format('d/m/Y') }}</small>
             @else
             <h5 class="mb-0">Consumidor Final</h5>
             @endif
@@ -392,11 +410,13 @@ $changeTypeTranslations = [
         @if($order->client !== null)
         <div class="mb-3">
           <h6 class="card-title mt-4">Información General</h6>
-          <p class="mb-1"><strong>Tipo de Cliente:</strong> {{ $order->client->type === 'company' ? 'Empresa' : 'Persona' }}</p>
+          <p class="mb-1"><strong>Tipo de Cliente:</strong> {{ $order->client->type === 'company' ? 'Empresa' :
+            'Persona' }}</p>
           @if($order->client->type === 'company')
-            <p class="mb-1"><strong>Razón Social:</strong> {{ ucwords($order->client->company_name) }}</p>
+          <p class="mb-1"><strong>Razón Social:</strong> {{ ucwords($order->client->company_name) }}</p>
           @endif
-          <p class="mb-1"><strong>{{ $order->client->type === 'company' ? 'RUT' : 'CI' }}:</strong> {{ $order->client->type === 'company' ? $order->client->rut : $order->client->ci }}</p>
+          <p class="mb-1"><strong>{{ $order->client->type === 'company' ? 'RUT' : 'CI' }}:</strong> {{
+            $order->client->type === 'company' ? $order->client->rut : $order->client->ci }}</p>
           @endif
         </div>
 
@@ -404,11 +424,13 @@ $changeTypeTranslations = [
         <div class="mb-3">
           <h6 class="card-title mt-4">Información de Contacto</h6>
           @if($order->client->type === 'company' && $order->client->name !== null && $order->client->lastname !== null)
-            <p class="mb-1"><strong>Representante:</strong> {{ ucwords($order->client->name) }} {{ ucwords($order->client->lastname) }}</p>
+          <p class="mb-1"><strong>Representante:</strong> {{ ucwords($order->client->name) }} {{
+            ucwords($order->client->lastname) }}</p>
           @endif
           <p class="mb-1"><strong>Email:</strong> {{ $order->client->email }}</p>
           <p class="mb-1"><strong>Teléfono:</strong> {{ $order->client->phone }}</p>
-          <p class="mb-1"><strong>Dirección:</strong> {{ ucwords($order->client->address) }}, {{ ucwords($order->client->city) }}, {{ ucwords($order->client->state) }}, {{ $order->client->country }}</p>
+          <p class="mb-1"><strong>Dirección:</strong> {{ ucwords($order->client->address) }}, {{
+            ucwords($order->client->city) }}, {{ ucwords($order->client->state) }}, {{ $order->client->country }}</p>
         </div>
         @endif
 
@@ -436,6 +458,6 @@ $changeTypeTranslations = [
 <!-- Modals -->
 @include('content/e-commerce/backoffice/orders/bill-order')
 @if($order->is_billed && isset($invoice))
-  @include('content/e-commerce/backoffice/orders/modal-send-email')
+@include('content/e-commerce/backoffice/orders/modal-send-email')
 @endif
 @endsection

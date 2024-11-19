@@ -64,14 +64,6 @@ class PosOrderController extends Controller
 
         Log::info('Products controller: ' . json_encode($products));
 
-        // Intentar actualizar el stock solo si el producto tiene un stock definido
-        $stockUpdated = $this->posOrderRepo->updateProductStock($products);
-
-        if (!$stockUpdated) {
-            // Si el stock no se actualizó, retornar un error
-            return response()->json(['error' => 'Stock insuficiente en uno o más productos'], 400);
-        }
-
         // Crear la orden después de actualizar el stock
         $order = $this->posOrderRepo->create($validatedData);
 

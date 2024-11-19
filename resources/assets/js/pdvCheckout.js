@@ -1062,7 +1062,7 @@ $(document).ready(function () {
     const subtotal = parseFloat($('.subtotal').text().replace(/[^\d.-]/g, '')) || 0;
 
     // Validación para ventas mayores a 12000
-    if (total > 12000 && (!client || !client.id)) {
+    if (total > 600 && (!client || !client.id)) {
         mostrarError('Para ventas mayores a USD600, es necesario tener un cliente asignado a la venta. Puede seleccionar uno existente o crear uno nuevo.');
         return;
     }
@@ -1249,15 +1249,15 @@ $(document).ready(function () {
     if (paymentMethod !== 'debit' || paymentMethod !== 'credit') {
       postOrder();
     } else {
-      // postOrder();
+      postOrder();
 
-      /** Descomentar para usar el POS */
-      obtenerTokenPos().done(function (response) {
-        const token = response.access_token;
-        enviarTransaccionPos(token);
-      }).fail(function (error) {
-        console.error('Error al obtener el token del POS:', error);
-      });
+      // /** Descomentar para usar el POS */
+      // obtenerTokenPos().done(function (response) {
+      //   const token = response.access_token;
+      //   enviarTransaccionPos(token);
+      // }).fail(function (error) {
+      //   console.error('Error al obtener el token del POS:', error);
+      // });
     }
   });
 

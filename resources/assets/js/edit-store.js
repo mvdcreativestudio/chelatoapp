@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
     { id: 'ecommerceSwitch', fieldsId: null },
     { id: 'invoicesEnabledSwitch', fieldsId: 'pymoFields', requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice'] },
     { id: 'scanntechSwitch', fieldsId: 'scanntechFields', requiredFields: ['scanntechCompany', 'scanntechBranch'] },
+    { id: 'emailConfigSwitch', fieldsId: 'emailConfigFields', requiredFields: ['mailHost', 'mailPort', 'mailUsername', 'mailPassword', 'mailEncryption', 'mailFromAddress', 'mailFromName'] }
   ];
 
   // Añadir animación de transición
@@ -20,47 +21,45 @@ document.addEventListener('DOMContentLoaded', function () {
     const toggleSwitch = document.getElementById(switchObj.id);
     const fields = switchObj.fieldsId ? document.getElementById(switchObj.fieldsId) : null;
 
-    if (toggleSwitch.checked && fields) {
+    if (toggleSwitch && toggleSwitch.checked && fields) {
       fields.style.display = 'block';
     }
 
-    toggleSwitch.addEventListener('change', function () {
-      console.log('Checkbox invoices_enabled changed:', this.checked); // Para verificar si se detecta el cambio
-
-      if (!this.checked && fields) {
-        Swal.fire({
-          title: '¿Estás seguro?',
-          text: 'Se perderán los datos de esta integración y deberá ser realizada nuevamente.',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#3085d6',
-          cancelButtonColor: '#d33',
-          confirmButtonText: 'Sí, desactivar',
-          cancelButtonText: 'Cancelar'
-        }).then(result => {
-          if (result.isConfirmed) {
-            fields.style.opacity = 0;
-            setTimeout(() => {
-              fields.style.display = 'none';
-              fields.style.opacity = 1;
-            }, 500);
-            // Limpia los campos al desactivar la integración
-            fields.querySelectorAll('input').forEach(input => input.value = '');
-            fields.querySelectorAll('.error-message').forEach(error => error.remove());
-          } else {
-            toggleSwitch.checked = true;
-          }
-        });
-      } else if (fields) {
-        fields.style.display = 'block';
-        fields.style.opacity = 0;
-        setTimeout(() => {
-          fields.style.opacity = 1;
-        }, 10);
-      }
-    });
-
-
+    if (toggleSwitch) {
+      toggleSwitch.addEventListener('change', function () {
+        if (!this.checked && fields) {
+          Swal.fire({
+            title: '¿Estás seguro?',
+            text: 'Se perderán los datos de esta integración y deberá ser realizada nuevamente.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, desactivar',
+            cancelButtonText: 'Cancelar'
+          }).then(result => {
+            if (result.isConfirmed) {
+              fields.style.opacity = 0;
+              setTimeout(() => {
+                fields.style.display = 'none';
+                fields.style.opacity = 1;
+              }, 500);
+              // Limpia los campos al desactivar la integración
+              fields.querySelectorAll('input').forEach(input => input.value = '');
+              fields.querySelectorAll('.error-message').forEach(error => error.remove());
+            } else {
+              toggleSwitch.checked = true;
+            }
+          });
+        } else if (fields) {
+          fields.style.display = 'block';
+          fields.style.opacity = 0;
+          setTimeout(() => {
+            fields.style.opacity = 1;
+          }, 10);
+        }
+      });
+    }
   });
 
   // Validación en tiempo real
@@ -84,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Validación antes de enviar el formulario
-  const submitButton = document.querySelector('button[type="submit"]'); // Selector específico del botón de envío
+  const submitButton = document.querySelector('button[type="submit"]');
 
   submitButton.addEventListener('click', function (event) {
     let formIsValid = true;
@@ -93,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const toggleSwitch = document.getElementById(switchObj.id);
       const fields = switchObj.fieldsId ? document.getElementById(switchObj.fieldsId) : null;
 
-      if (toggleSwitch.checked && fields) {
+      if (toggleSwitch && toggleSwitch.checked && fields) {
         const inputs = fields.querySelectorAll('input');
 
         inputs.forEach(input => {

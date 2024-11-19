@@ -58,11 +58,6 @@ class RawMaterialRepository
      */
     public function create(array $data): RawMaterial
     {
-        if (isset($data['image'])) {
-            $data['image_url'] = $this->uploadImage($data['image']);
-            unset($data['image']);
-        }
-
         // Crear la materia prima
         $rawMaterial = RawMaterial::create($data);
 
@@ -83,14 +78,6 @@ class RawMaterialRepository
      */
     public function update(RawMaterial $rawMaterial, array $data): RawMaterial
     {
-        if (isset($data['image'])) {
-            if ($rawMaterial->image_url) {
-                Storage::delete('public/' . $rawMaterial->image_url);
-            }
-            $data['image_url'] = $this->uploadImage($data['image']);
-            unset($data['image']);
-        }
-
         // Actualizar la materia prima
         $rawMaterial->update($data);
 
@@ -107,17 +94,5 @@ class RawMaterialRepository
     public function delete(RawMaterial $rawMaterial): ?bool
     {
         return $rawMaterial->delete();
-    }
-
-    /**
-     * Sube una imagen al servidor y devuelve el nombre del archivo.
-     *
-     * @param  \Illuminate\Http\UploadedFile $image
-     * @return string
-     */
-    protected function uploadImage(HttpUploadedFile $image): string
-    {
-        $path = $image->store('public/assets/img/raw_materials');
-        return basename($path);
     }
 }

@@ -35,7 +35,7 @@ $currencySymbol = $settings->currency_symbol;
 @if (Auth::user()->can('access_datacenter'))
 <div class="row">
   <!-- Total de Ventas -->
-  <div class="col-sm-6 col-lg-3 mb-4">
+  <div class="col-sm-6 col-lg-2 mb-4">
     <div class="card animated-card card-border-shadow-primary h-100 cursor-pointer">
       <div class="card-body">
         <div class="d-flex align-items-center mb-2 pb-1">
@@ -50,7 +50,7 @@ $currencySymbol = $settings->currency_symbol;
   </div>
 
   <!-- Ventas Pagas -->
-  <div class="col-sm-6 col-lg-3 mb-4">
+  <div class="col-sm-6 col-lg-2 mb-4">
     <div class="card animated-card card-border-shadow-success h-100 cursor-pointer">
       <div class="card-body">
         <div class="d-flex align-items-center mb-2 pb-1">
@@ -65,12 +65,12 @@ $currencySymbol = $settings->currency_symbol;
   </div>
 
   <!-- Ventas Impagas -->
-  <div class="col-sm-6 col-lg-3 mb-4">
+  <div class="col-sm-6 col-lg-2 mb-4">
     <div class="card animated-card card-border-shadow-warning h-100 cursor-pointer">
       <div class="card-body">
         <div class="d-flex align-items-center mb-2 pb-1">
           <div class="avatar me-2">
-            <span class="avatar-initial rounded bg-label-warning"><i class="bx bx-time"></i></span>
+            <span class="avatar-initial rounded bg-label-warning"><i class="bx bx-minus-circle"></i></span>
           </div>
           <h4 class="ms-1 mb-0">{{ $unpaidOrders }}</h4>
         </div>
@@ -79,8 +79,23 @@ $currencySymbol = $settings->currency_symbol;
     </div>
   </div>
 
+  <!-- Ventas Impagas -->
+  <div class="col-sm-6 col-lg-2 mb-4">
+    <div class="card animated-card card-border-shadow-danger h-100 cursor-pointer">
+      <div class="card-body">
+        <div class="d-flex align-items-center mb-2 pb-1">
+          <div class="avatar me-2">
+            <span class="avatar-initial rounded bg-label-danger"><i class="bx bx-time"></i></span>
+          </div>
+          <h4 class="ms-1 mb-0">{{ $failedOrders }}</h4>
+        </div>
+        <p class="mb-1 fw-medium me-1">Ventas Fallidas</p>
+      </div>
+    </div>
+  </div>
+
   @if($bestClient)
-<div class="col-sm-6 col-lg-3 mb-4">
+<div class="col-sm-6 col-lg-4 mb-4">
   <a href="{{ route('clients.show', ['client' => $bestClient->client->id]) }}" class="text-decoration-none">
     <div class="card animated-card card-border-shadow-primary h-100">
       <div class="card-body d-flex flex-column justify-content-between">

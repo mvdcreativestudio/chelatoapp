@@ -33,9 +33,25 @@
 @endsection
 
 @section('content')
-<h4 class="py-3 mb-4">
-  <span class="text-muted fw-light"></span><span> Crear producto</span>
-</h4>
+<form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
+  @csrf
+<div class="d-flex align-items-center justify-content-between bg-white p-4 mb-3 rounded shadow-lg sticky-top border-bottom border-light">
+
+  <!-- Título del formulario alineado a la izquierda -->
+  <div class="d-flex flex-column justify-content-center">
+    <h4 class="mb-0 page-title">
+      <i class="bx bx-box me-2"></i> Crear nuevo producto
+    </h4>
+  </div>
+
+  <!-- Botones alineados a la derecha, ahora responsive -->
+  <div class="text-end d-flex gap-2">
+    <button type="button" class="btn btn-sm btn-outline-danger" id="discardButton">Descartar</button>
+    {{-- <button type="submit" name="action" value="save_draft" class="btn btn-label-primary">Guardar borrador</button> --}}
+    <button type="submit" name="action" value="publish" class="btn btn-sm btn-success">Guardar Producto</button>
+  </div>
+
+</div>
 
 @if ($errors->any())
     <div class="alert alert-danger">
@@ -50,20 +66,6 @@
 <div class="app-ecommerce" data-raw-materials='@json($rawMaterials)' data-flavors='@json($flavors)'>
 
   <!-- Add Product -->
-<form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data">
-    @csrf
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-
-    <div class="d-flex flex-column justify-content-center">
-      <h4 class="mb-1 mt-3">Crear un nuevo producto</h4>
-    </div>
-    <div class="d-flex align-content-center flex-wrap gap-3">
-      <button type="button" class="btn btn-label-secondary" id="discardButton">Descartar</button>
-      {{-- <button type="submit" name="action" value="save_draft" class="btn btn-label-primary">Guardar borrador</button> --}}
-      <button type="submit" name="action" value="publish" class="btn btn-primary">Publicar</button>
-    </div>
-
-  </div>
 
   <div class="row">
 

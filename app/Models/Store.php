@@ -159,4 +159,15 @@ class Store extends Model
         return $this->hasManyThrough(PosDevice::class, PosIntegrationStoreInfo::class, 'store_id', 'pos_provider_id', 'id', 'pos_provider_id');
     }
     
+
+    /**
+     * Obtiene la configuración de envío de correos electrónicos de la tienda.
+     * 
+     * @return HasOne
+     */
+
+    public function emailConfig()
+    {
+        return $this->hasOne(StoresEmailConfig::class, 'store_id');
+    }
 }

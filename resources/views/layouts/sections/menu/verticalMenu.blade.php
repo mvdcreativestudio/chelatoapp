@@ -1,5 +1,27 @@
 @php
 $configData = Helper::appClasses();
+
+use Illuminate\Support\Str;
+
+$currentUrl = url()->current();
+
+function checkActiveClass($menuItem, $currentUrl) {
+    // Verificar si el elemento del menú tiene una URL y coincide exactamente con la URL actual
+    if (isset($menuItem->url) && $currentUrl === url($menuItem->url)) {
+        return 'active';
+    }
+
+    // Si hay un submenú, comprobar cada elemento del submenú de forma recursiva
+    if (isset($menuItem->submenu)) {
+        foreach ($menuItem->submenu as $submenuItem) {
+            if (checkActiveClass($submenuItem, $currentUrl) === 'active') {
+                return 'active open';
+            }
+        }
+    }
+
+    return '';
+}
 @endphp
 
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
@@ -10,11 +32,6 @@ $configData = Helper::appClasses();
         <img src="{{ asset($companySettings->logo_black) }}" alt="" class="" style="max-width: 150px;">
       </div>
     </a>
-    {{-- Colapsa el menú --}}
-
-    {{-- <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
-      <i class="bx bx-chevron-left bx-sm align-middle"></i>
-    </a> --}}
   </div>
   @endif
 
@@ -26,17 +43,8 @@ $configData = Helper::appClasses();
       @endcan
 
       @php
-      $activeClass = null;
-      $currentRouteName = Route::currentRouteName();
-      if ($currentRouteName === $menu->slug) {
-        $activeClass = 'active';
-      } elseif (isset($menu->submenu)) {
-        foreach ($menu->submenu as $submenu) {
-          if (str_contains($currentRouteName, $submenu->slug) && strpos($currentRouteName, $submenu->slug) === 0) {
-            $activeClass = 'active open';
-          }
-        }
-      }
+      // Obtener la clase activa para el elemento actual usando la función recursiva
+      $activeClass = checkActiveClass($menu, $currentUrl);
       @endphp
 
       @if (isset($menu->menuHeader))
@@ -44,7 +52,7 @@ $configData = Helper::appClasses();
         <span class="menu-header-text">{{ __($menu->menuHeader) }}</span>
       </li>
       @else
-      <li class="menu-item {{$activeClass}}" @isset($menu->id) id="{{ $menu->id }}" @endisset>
+      <li class="menu-item {{ $activeClass }}" @isset($menu->id) id="{{ $menu->id }}" @endisset>
         <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}" class="{{ isset($menu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}" @if(isset($menu->target) && !empty($menu->target)) target="_blank" @endif>
           @isset($menu->icon)
           <i class="{{ $menu->icon }}"></i>

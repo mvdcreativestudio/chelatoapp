@@ -197,6 +197,7 @@ class CashRegisterLogRepository
         // Obtener los productos de la tabla products y agregar el campo 'type'
         $products = Product::where('store_id', $storeId)
             ->where('is_trash', 0) // Agregar condición para is_trash == 0
+
             ->get()
             ->map(function ($product) {
                 $product->is_composite = 0; // Agregar un campo 'type' indicando que es un producto normal

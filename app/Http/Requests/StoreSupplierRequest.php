@@ -31,7 +31,7 @@ class StoreSupplierRequest extends FormRequest
             'state' => 'required|string|max:255',
             'country' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:suppliers',
-            'doc_type' => 'required|in:DNI,PASSPORT,RUT,OTHER',
+            'doc_type' => 'required|in:CI,PASSPORT,RUT,OTHER',
             'doc_number' => 'required|numeric',
             'default_payment_method' => 'required|string|max:255',
             'store_id' => 'nullable|numeric|exists:stores,id',

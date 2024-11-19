@@ -39,10 +39,11 @@ $(function () {
     fetchOrders();
   }
 
-  $('#clearFilters').on('click', function () {
+  $(document).on('click', '#clearFilters', function () {
     resetFilters();
   });
-
+  
+  
   // Función para obtener las órdenes
   function fetchOrders() {
     var ajaxUrl = dt_order_list_container.data('ajax-url');
@@ -53,6 +54,7 @@ $(function () {
     var store = storeFilter.val();
     var startDate = startDateFilter.val();
     var endDate = endDateFilter.val();
+
 
     $.ajax({
       url: ajaxUrl,
@@ -173,6 +175,12 @@ $(function () {
   // Click en la tarjeta de Ventas Pagas para aplicar filtro
   $('.card-border-shadow-success').on('click', function () {
     paymentStatusFilter.val('paid');
+    fetchOrders();
+  });
+
+  // Click en la tarjeta de Ventas Fallidas para aplicar filtro
+  $('.card-border-shadow-danger').on('click', function () {
+    paymentStatusFilter.val('failed');
     fetchOrders();
   });
 

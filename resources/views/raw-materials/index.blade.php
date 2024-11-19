@@ -39,7 +39,7 @@
   <span class="text-muted fw-light">Gestión /</span> Listado de Materias Primas
 </h4>
 
-<div class="card mb-4">
+{{-- <div class="card mb-4">
   <div class="card-widget-separator-wrapper">
     <div class="card-body card-widget-separator">
       <div class="row gy-4 gy-sm-1">
@@ -93,7 +93,7 @@
       </div>
     </div>
   </div>
-</div>
+</div> --}}
 
 
 @if (session('success'))
@@ -126,19 +126,9 @@
       </div>
       <div class="collapse" id="columnSwitches">
       <div class="mt-0 d-flex flex-wrap">
-        <div class="mx-0">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="0" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Imagen</span>
-          </label>
-        </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="1" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="0" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -148,7 +138,7 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="2" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="1" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -158,7 +148,7 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="3" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="2" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -168,7 +158,7 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="4" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="3" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -178,7 +168,7 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="5" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="4" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -212,7 +202,6 @@
     <table class="table datatables-raw-materials border-top">
       <thead>
         <tr>
-          <th>#</th>
           <th>Nombre</th>
           <th>Descripción</th>
           <th>Unidad de Medida</th>

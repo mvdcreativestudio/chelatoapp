@@ -261,4 +261,17 @@ class StoreRepository
           return false;
       }
   }
+
+    /**
+     * Obtiene la tienda a la que pertenece un usuario.
+     *
+     * @param User $user
+     * @return Store
+     */
+
+
+    public function getStoreByUserId($userId)
+    {
+        return User::find($userId)->store;
+    }
 }

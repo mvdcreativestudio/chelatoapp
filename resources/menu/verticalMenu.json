@@ -8,6 +8,13 @@
       "url": "/admin"
     },
     {
+      "id": "tour-datacenter",
+      "name": "Datacenter",
+      "icon": "menu-icon tf-icons bx bx-line-chart",
+      "slug": "datacenter",
+      "url": "/admin/datacenter-sales"
+    },
+    {
       "id": "tour-punto-de-venta",
       "name": "Punto de Venta",
       "icon": "menu-icon tf-icons bx bx-home-circle",
@@ -84,20 +91,6 @@
           "icon": "menu-icon tf-icons bx bx-list-ul",
           "slug": "product-categories",
           "url": "/admin/product-categories"
-        },
-        {
-          "id": "tour-productos-crear-en-masa",
-          "name": "Crear en Masa",
-          "icon": "menu-icon tf-icons bx bx-plus",
-          "slug": "bulk-products",
-          "url": "/admin/products/add"
-        },
-        {
-          "id": "tour-productos-editar-en-masa",
-          "name": "Editar en Masa",
-          "icon": "menu-icon tf-icons bx bx-edit",
-          "slug": "bulk-products",
-          "url": "/admin/products/edit"
         }
       ]
     },
@@ -355,13 +348,6 @@
           ]
         }
       ]
-    },
-    {
-      "id": "tour-datacenter",
-      "name": "Datacenter",
-      "icon": "menu-icon tf-icons bx bx-line-chart",
-      "slug": "datacenter",
-      "url": "/admin/datacenter-sales"
     },
     {
       "name": "Usuarios",
