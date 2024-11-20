@@ -155,10 +155,9 @@
         </div>
         <div class="card-body">
             <div data-repeater-list="recipes"> 
-                <!-- Elimina los elementos predeterminados aquí -->
              </div>
             <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button> 
-            <!-- <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button> -->
+            <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button>
         </div>
       </div> 
       <!-- /Recipe -->

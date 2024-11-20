@@ -473,11 +473,12 @@ $(document).ready(function () {
             var category_id = category ? category.category_id : null;
 
             if (cartItem) {
-                // Verificar si hay stock suficiente para incrementar la cantidad
-                if (product.stock !== null && cartItem.quantity + quantity > product.stock) {
-                    mostrarError('No hay suficiente stock para agregar más unidades de este producto.');
-                    return;
-                }
+                // Descomentar si no se permite agregar al carrito productos que no tengan stock disponible
+                // // Verificar si hay stock suficiente para incrementar la cantidad
+                // if (product.stock !== null && cartItem.quantity + quantity > product.stock) {
+                //     mostrarError('No hay suficiente stock para agregar más unidades de este producto.');
+                //     return;
+                // }
                 cartItem.quantity += quantity; // Incrementar por la cantidad deseada
             } else {
                 // Descomentar para no permitir la venta de productos sin stock

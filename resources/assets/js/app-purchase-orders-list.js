@@ -5,10 +5,17 @@ document.addEventListener('DOMContentLoaded', function () {
         success: function (response) {
             let supplierSelect = $('#supplier_id');
             supplierSelect.empty();
-
+    
+            // Agregar el elemento inicial
+            supplierSelect.append('<option value="" disabled selected>Seleccione un proveedor</option>');
+    
+            // Ordenar proveedores alfabéticamente por nombre
+            response.sort((a, b) => a.name.localeCompare(b.name));
+    
+            // Agregar los proveedores al select
             response.forEach(function (supplier) {
                 supplierSelect.append(
-                    `<option value="${supplier.id}">ID: ${supplier.id} - ${supplier.name}</option>`
+                    `<option value="${supplier.id}">${supplier.name}</option>`
                 );
             });
         },
@@ -17,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Detalles:', xhr.responseText);
         }
     });
+    
+    
 
     var table = $('.datatables-purchase-orders').DataTable({
         "order": [[0, "desc"]],

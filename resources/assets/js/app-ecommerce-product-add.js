@@ -70,7 +70,7 @@
       } else {
         flavorsQuantityContainer.style.display = 'none';
         flavorsContainer.style.display = 'none';
-        recipeCard.style.display = 'block';
+        recipeCard.style.display = 'none';
         stockContainer.style.display = 'block';
         console.log('Producto simple');
 

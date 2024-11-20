@@ -126,25 +126,29 @@ class OrderRepository
             }
             Log::info('Orden creada, asociada al cliente si corresponde', ['order' => $order]);
 
-            $order->save();
-            Log::info('Orden guardada en la base de datos', ['order_id' => $order->id]);
-
             $products = json_decode($request['products'], true);
 
-            // Validar stock si $deductStockOnCreate es true
-            $stockValidation = $this->validateAndUpdateStock($products, $deductStockOnCreate);
-            if (!$deductStockOnCreate && !$stockValidation['success']) {
-                Log::warning("Stock insuficiente, pero se permite la creación de la orden con estado pending: {$stockValidation['error']}");
-            } elseif ($deductStockOnCreate && !$stockValidation['success']) {
-                throw new Exception($stockValidation['error']);
+            // Validar y actualizar stock según el estado de envío
+            if ($orderData['shipping_status'] === 'delivered' || $orderData['shipping_status'] === 'shipped') {
+                $stockValidation = $this->validateAndUpdateStock($products, true); // Validar y descontar stock
+                if (!$stockValidation['success']) {
+                    throw new Exception($stockValidation['error']);
+                }
+            } elseif ($orderData['shipping_status'] === 'pending') {
+                $stockValidation = $this->validateAndUpdateStock($products, false); // Validar sin descontar stock
+                if (!$stockValidation['success']) {
+                    Log::warning("Stock insuficiente para el estado pending: {$stockValidation['error']}");
+                }
+            } else {
+                throw new Exception("Estado de envío no válido: {$orderData['shipping_status']}");
             }
 
             // Asignar los productos a la orden
-            $order->products = $products;
+            $order->products = json_encode($products); // Convertir a JSON antes de guardar
             Log::info('Productos asociados a la orden', ['products' => $products]);
 
-            $order->save();
-            Log::info('Orden actualizada con los productos');
+            $order->save(); // Guardar la orden
+            Log::info('Orden guardada en la base de datos con los productos', ['order_id' => $order->id]);
 
             if ($request->payment_method === 'internalCredit' && $client) {
                 $this->createInternalCredit($order);
@@ -220,6 +224,7 @@ class OrderRepository
 
         return ['success' => true];
     }
+
 
 
 
@@ -686,7 +691,7 @@ class OrderRepository
         if ($currentAccount) {
             CurrentAccountInitialCredit::create([
                 'total_debit' => $order->total,
-                'description' => 'Compra Interna - <a href="' . route('orders.show', $order->uuid) . '">Pedido #' . $order->id . '</a>',
+                'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
                 'current_account_settings_id' => 1,
             ]);
@@ -701,7 +706,7 @@ class OrderRepository
 
             CurrentAccountInitialCredit::create([
                 'total_debit' => $order->total,
-                'description' => 'Compra Interna - <a href="' . route('orders.show', $order->uuid) . '">Pedido #' . $order->id . '</a>',
+                'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
                 'current_account_settings_id' => 1,
             ]);
