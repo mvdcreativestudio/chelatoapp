@@ -122,23 +122,23 @@ class LandingController extends Controller
             'company' => 'nullable|string|max:255',
         ]);
 
-        // Obtener la configuración de la empresa (ajusta esto según tu sistema)
-        $companySettings = app('App\Models\CompanySettings')->first(); // Cambia esto según tu modelo o lógica
-
+        // Obtener la configuración de la empresa
+        $companySettings = app('App\Models\CompanySettings')->first();
 
         // Enviar correo (opcional, ajusta según tus necesidades)
-        Mail::send([], [], function ($message) use ($validatedData) {
-          $htmlContent =
-              'Nombre: ' . $validatedData['name'] . '<br>' .
-              'Correo: ' . $validatedData['email'] . '<br>' .
-              'Teléfono: ' . ($validatedData['phone'] ?? 'No proporcionado') . '<br>' .
-              'Empresa: ' . ($validatedData['company'] ?? 'No proporcionado') . '<br>' .
-              'Mensaje: ' . $validatedData['message'];
+        Mail::send([], [], function ($message) use ($validatedData, $companySettings) {
+            $htmlContent =
+                'Nombre: ' . $validatedData['name'] . '<br>' .
+                'Correo: ' . $validatedData['email'] . '<br>' .
+                'Teléfono: ' . ($validatedData['phone'] ?? 'No proporcionado') . '<br>' .
+                'Empresa: ' . ($validatedData['company'] ?? 'No proporcionado') . '<br>' .
+                'Mensaje: ' . $validatedData['message'];
 
-          $message->to($companySettings->email ?? 'info@mvdcreativestudio.com')
-                  ->subject('Nuevo mensaje del Sitio Web')
-                  ->replyTo($validatedData['email'])
-                  ->html($htmlContent); // Usa el método `html` directamente
+            $message->to($companySettings->email ?? 'info@mvdcreativestudio.com')
+                    ->from('no-reply@anjos.com.uy', $companySettings->name ?? 'MVD Studio')
+                    ->subject('Nuevo mensaje del Sitio Web')
+                    ->replyTo($validatedData['email'])
+                    ->html($htmlContent);
         });
 
         // Redirigir con mensaje de éxito

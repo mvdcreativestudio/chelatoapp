@@ -187,7 +187,7 @@
                                         Colores
                                     </button>
                                 </li>
-                              
+
                             </ul>
 
                             <!-- Contenido de Tabs -->
@@ -264,7 +264,7 @@
                                                         value="{{ $color->hex_code ?? '#FFFFFF' }}" onchange="syncHexInput(this)"
                                                         oninput="syncHexInput(this)">
                                                     <input type="text" class="form-control" name="colors[{{ $index }}][hex_code]"
-                                                        placeholder="#FFFFFF (Opcional)" value="{{ $color->hex_code ?? '' }}"
+                                                        placeholder="#FFFFFF" value="{{ $color->hex_code ?? '' }}"
                                                         oninput="syncColorPicker(this)">
                                                 </div>
                                                 <div class="col-2">
@@ -279,7 +279,7 @@
                                     <button type="button" class="btn btn-primary btn-sm" id="addColor">
                                         <i class="bx bx-plus"></i> Agregar Color
                                     </button>
-                                </div>                        
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -344,7 +344,7 @@
                                         <span class="switch-toggle-slider"></span>
                                     </label>
                                 </div>
-                            </div>                           
+                            </div>
 
                         </div>
                     </div>
@@ -444,8 +444,8 @@
                                         <div class="mb-3 d-flex justify-content-center" id="existingImage">
                                             @if ($product->image)
                                                 <img src="{{ asset($product->image) }}" alt="Imagen del producto"
-                                                    class="img-thumbnail rounded shadow-sm" 
-                                                    id="productImagePreview" 
+                                                    class="img-thumbnail rounded shadow-sm"
+                                                    id="productImagePreview"
                                                     style="max-width: 200px; border: 1px solid #ddd;">
                                             @endif
                                         </div>
@@ -462,7 +462,7 @@
                                     </div>
                                 </div>
 
-                            
+
                                 <!-- Gallery Tab -->
                                 <div class="tab-pane fade" id="galleryTabContent" role="tabpanel" aria-labelledby="gallery-tab">
                                     <div class="mb-3">
@@ -474,8 +474,8 @@
                                             <div class="col-12 col-xl-6 d-flex justify-content-center">
                                                 <div class="card shadow-sm border-0 w-100 text-center">
                                                     <div class="position-relative d-flex align-items-center justify-content-center">
-                                                        <img src="{{ asset($image->image) }}" 
-                                                             class="card-img-top rounded mx-auto d-block" 
+                                                        <img src="{{ asset($image->image) }}"
+                                                             class="card-img-top rounded mx-auto d-block"
                                                              alt="Imagen del producto"
                                                              style="max-height: 200px; object-fit: cover; width: 100%;">
                                                         <button type="button" class="btn btn-sm btn-danger remove-image position-absolute top-0 end-0 m-2"
@@ -488,13 +488,13 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                </div>                           
+                                </div>
                             </div>
                         </div>
                     </div>
                     <!-- /Media and Gallery Card -->
 
-                    
+
 
                 </div>
                 <!-- /Second column -->

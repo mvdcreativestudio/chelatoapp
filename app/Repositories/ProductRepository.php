@@ -467,18 +467,18 @@ class ProductRepository
         try {
           $product->colors()->create([
             'color_name' => $color['name'],
-            'hex_code' => $color['hex_code'] ?? null, // Permitir nulo en hex_code
+            'hex_code' => $color['hex_code'],
           ]);
           \Log::info('Color creado:', [
             'product_id' => $product->id,
             'color_name' => $color['name'],
-            'hex_code' => $color['hex_code'] ?? null,
+            'hex_code' => $color['hex_code'],
           ]);
         } catch (\Exception $e) {
           \Log::error('Error al crear color:', [
             'product_id' => $product->id,
             'color_name' => $color['name'],
-            'hex_code' => $color['hex_code'] ?? null,
+            'hex_code' => $color['hex_code'],
             'error' => $e->getMessage(),
           ]);
         }
