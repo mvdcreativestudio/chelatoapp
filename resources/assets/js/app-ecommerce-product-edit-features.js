@@ -82,11 +82,11 @@ function createFeatureRow() {
   row.innerHTML = `
       <div class="col-10">
           <div class="form-group position-relative">
-              <input 
-                  type="text" 
-                  class="form-control mb-2" 
-                  name="features[${timestamp}][value]" 
-                  placeholder="Ejemplo: Resistente al agua" 
+              <input
+                  type="text"
+                  class="form-control mb-2"
+                  name="features[${timestamp}][value]"
+                  placeholder="Ejemplo: Resistente al agua"
                   aria-label="Característica">
               <div class="error-message text-danger small mt-1"></div>
           </div>
@@ -210,7 +210,7 @@ function createColorRow() {
       </div>
       <div class="col-5 d-flex align-items-center">
           <input type="color" class="form-control-color me-2" name="colors[${timestamp}][color_picker]" value="#FFFFFF" onchange="syncHexInput(this)" oninput="syncHexInput(this)">
-          <input type="text" class="form-control" name="colors[${timestamp}][hex_code]" placeholder="#FFFFFF (Opcional)" value="" oninput="syncColorPicker(this)">
+          <input type="text" class="form-control" name="colors[${timestamp}][hex_code]" placeholder="#FFFFFF" value="" oninput="syncColorPicker(this)">
       </div>
       <div class="col-2">
           <button type="button" class="btn btn-icon btn-outline-danger remove-color" title="Eliminar">

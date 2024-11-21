@@ -33,7 +33,7 @@
             <button class="gallery-button prev">&lt;</button>
             <button class="gallery-button next">&gt;</button>
         </div>
-        
+
         @if($product->features->count() > 0)
             <div class="technical-specs mt-5">
                 <h2 class="specs-title">Ficha técnica</h2>
@@ -69,6 +69,20 @@
                 @endforeach
             </tbody>
         </table>
+    </div>
+    @endif
+
+    @if($product->colors->count() > 0)
+    <div class="colors-table-container mb-5">
+        <h3 class="colors-title text-center">Colores Disponibles</h3>
+        <div class="colors-grid">
+            @foreach($product->colors as $color)
+            <div class="color-card">
+                <div class="color-sample" style="background-color: {{ $color->hex_code }};"></div>
+                <p class="color-name">{{ ucfirst($color->color_name) }}</p>
+            </div>
+            @endforeach
+        </div>
     </div>
     @endif
 
