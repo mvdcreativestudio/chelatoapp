@@ -1419,3 +1419,38 @@ font-family: 'Maven Pro', sans-serif;
         margin: 20px 0;
     }
 }
+
+
+/** WhatsApp Button Layout */
+
+.whatsapp-button-layout-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.whatsapp-button-layout-element {
+    display: flex;
+    align-items: center;
+    background-color: #25D366;
+    color: white;
+    padding: 20px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+}
+
+.whatsapp-button-layout-element:hover {
+  color: white!important;
+  transform: scale(1.1);
+}
+
+.whatsapp-icon-layout {
+  font-size: 3em;
+}
+
+
