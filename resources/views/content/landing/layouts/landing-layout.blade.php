@@ -24,11 +24,13 @@ $customizerHidden = ($customizerHidden ?? '');
 @include('content/landing/layouts/navbar')
 @include('content/e-commerce/front/layouts/spinner')
 
+
 <!-- Contenedor principal -->
 <div class="d-flex flex-column min-vh-100">
     <!-- Contenido -->
     <div class="flex-grow-1">
         @yield('content')
+        @include('content/landing/layouts/whatsapp-button')
     </div>
     <!--/ Contenido -->
 
