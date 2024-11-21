@@ -28,6 +28,7 @@ class Product extends Model
         'image',
         'store_id',
         'status',
+        'show_in_catalogue',
         'stock',
         'safety_margin',
         'bar_code',
@@ -220,5 +221,15 @@ class Product extends Model
     public function colors()
     {
         return $this->hasMany(ProductColor::class);
+    }
+
+    /**
+     * Obtiene las imagenes de la galeria del producto
+     * 
+     * @return HasMany
+     */
+    public function gallery()
+    {
+        return $this->hasMany(ProductGallery::class);
     }
 }

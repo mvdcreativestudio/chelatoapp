@@ -24,6 +24,7 @@ class UpdateProductRequest extends FormRequest
             'discount' => 'nullable|numeric',
             'store_id' => 'required|exists:stores,id',
             'status' => 'required|boolean',
+            'show_in_catalogue' => 'required|boolean',
             'stock' => 'nullable|integer',
             'safety_margin' => 'nullable|numeric',
             'bar_code' => 'nullable|string|max:255',
@@ -31,7 +32,7 @@ class UpdateProductRequest extends FormRequest
             'categories.*' => 'exists:product_categories,id',
             'flavors' => 'nullable|array',
             'flavors.*' => 'exists:flavors,id',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120', // 5MB = 5120KB
             'recipes' => 'nullable|array',
             'recipes.*.raw_material_id' => 'nullable|exists:raw_materials,id',
             'recipes.*.quantity' => 'nullable|numeric|min:0.01',
@@ -41,23 +42,31 @@ class UpdateProductRequest extends FormRequest
     
             'features' => 'array',
             'features.*.name' => 'nullable|string|max:255',
-            'features.*.value' => 'nullable|string|max:255',
-
-
-
-
     
-            // Reglas de validación para tamaños
-            'sizes' => 'nullable|array',
-            'sizes.*.size' => 'required|string|max:255',
-            'sizes.*.width' => 'nullable|string|max:255',
-            'sizes.*.height' => 'nullable|string|max:255',
-            'sizes.*.length' => 'nullable|string|max:255',
+            'sizes' => 'array',
+            'sizes.*.size' => 'nullable|string|max:255',
+            'sizes.*.width' => 'nullable|numeric|min:0',
+            'sizes.*.height' => 'nullable|numeric|min:0',
+            'sizes.*.length' => 'nullable|numeric|min:0',
     
-            // Reglas de validación para colores
-            'colors' => 'nullable|array',
-            'colors.*.name' => 'required|string|max:255',
+            'colors' => 'array',
+            'colors.*.color_name' => 'nullable|string|max:255',
+            'colors.*.hex_code' => 'nullable|string|max:255',
         ];
     }
+    
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $colors = $this->input('colors', []);
+            foreach ($colors as $color) {
+                if (empty($color['name']) && !empty($color['hex_code'])) {
+                    $validator->errors()->add('colors', 'El campo "Nombre del color" es obligatorio si se proporciona un código HEX.');
+                }
+            }
+        });
+    }
+
     
 }

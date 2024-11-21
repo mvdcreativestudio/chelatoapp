@@ -352,6 +352,10 @@ Route::middleware([
     Route::get('/product-flavors/{id}', [ProductController::class, 'editFlavor'])->name('flavors.edit');
     Route::put('/product-flavors/{id}', [ProductController::class, 'updateFlavor'])->name('flavors.update');
 
+    // Gestión de Galería de Imagenes en Productos
+    Route::post('/products/{id}/gallery', [ProductController::class, 'uploadGalleryImages'])->name('products.uploadGalleryImages');
+    Route::delete('/products/gallery/{imageId}', [ProductController::class, 'deleteGalleryImage'])->name('products.gallery.delete');
+
     // CRM y Contabilidad
     Route::get('crm', [CrmController::class, 'index'])->name('crm');
     Route::get('receipts', [AccountingController::class, 'receipts'])->name('receipts');
@@ -522,11 +526,16 @@ Route::resources([
     'checkout' => CheckoutController::class,
 ]);
 
+
 // Landing Page
 Route::get('/landing', [LandingController::class, 'index'])->name('landing-page');
-Route::get('/landing/colchones', [LandingController::class, 'colchones'])->name('landing-page.colchones');
+Route::get('/landing/products', [LandingController::class, 'products'])->name('landing-page.products');
 Route::get('/landing/producto/{id}', [LandingController::class, 'showProduct'])->name('landing-page.producto');
-
+Route::get('/landing/filter-products/{categoryId?}', [LandingController::class, 'filterProducts'])
+    ->name('landing.filter-products');
+Route::get('/landing/about-us', [LandingController::class, 'aboutUs'])->name('landing-page.about-us');
+Route::get('/landing/contact', [LandingController::class, 'contact'])->name('landing-page.contact');
+Route::post('/landing/contact', [LandingController::class, 'sendContact'])->name('landing-page.contact.send');
 
 // E-Commerce
 // Route::get('/', [EcommerceController::class, 'home'])->name('home');

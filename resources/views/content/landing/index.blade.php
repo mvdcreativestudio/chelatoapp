@@ -2,7 +2,9 @@
 
 @section('title', 'Landing Page')
 
-
+@section('page-script')
+@vite(['resources/assets/js/app-ecommerce-landing-index.js'])
+@endsection
 
 <!-- Contenido -->
 @section('content')
@@ -14,27 +16,17 @@
             <div class="slide-content">
             </div>
         </div>
-        <div class="carousel-slide">
-            <img src="assets/img/landing/2550x735px-BONUCCI-1536x443.jpg" alt="Sofá Confortable 2">
-            <div class="slide-content">
-            </div>
-        </div>
-        <div class="carousel-slide">
-            <img src="assets/img/landing/2550x735px-BONUCCI-1536x443.jpg"  alt="Sofá Confortable 3">
-            <div class="slide-content">
-            </div>
-        </div>
     </div>
 </section>
 
-<section id="video-section" class="video-section">
+<section id="video-section" class="video-section-index">
     <video autoplay muted loop id="bg-video">
         <source src="assets/img/landing/BANNER-FRANQUEADO-DESKTOP.webm" type="video/webm">
     </video>
     </div>
 </section>
 
-<section id="catalog-section" class="catalog-section">
+{{-- <section id="catalog-section" class="catalog-section">
     <div class="catalog-content">
         <div class="catalog-header">
             <div class="catalog-title">
@@ -50,15 +42,26 @@
             <button type="submit">QUERO MEU DESCONTO</button>
         </form>
     </div>
-</section>
+</section> --}}
 
 <section id="especialista-section" class="especialista-section">
     <div class="especialista-content">
-        <h2 class="font-white">Converse com nosso especialista</h2>
-        <p>Tem alguma dúvida e deseja tirar com um especialista e não um robô? <br>
-        Clique no botão abaixo e faça todas as perguntas que desejar!</p>
+        <h2 class="font-white">Converse con un especialista</h2>
+        <p>¿Tiene alguna consulta? <br>
+        ¡Haga click para hablar con un vendedor!</p>
         <div class="whatsapp-button-container">
-            <img src="assets/img/landing/botonwp.png" alt="Fale com um especialista">
+            @php
+            // Elimina todos los caracteres no numéricos
+            $phoneNumber = preg_replace('/\D/', '', $companySettings->phone);
+    
+            // Si el número comienza con "0", quítalo
+            if (substr($phoneNumber, 0, 1) === '0') {
+                $phoneNumber = substr($phoneNumber, 1);
+            }
+            @endphp
+            <a href="https://wa.me/598{{ $phoneNumber }}" target="_blank" class="btn btn-primary btn-wpp text-white mx-2">
+                <i class="fab fa-whatsapp fa-2x mx-2"></i> Iniciar Conversación
+            </a>
         </div>
     </div>
 </section>
@@ -87,27 +90,27 @@
         </div>
     </div>
     <div class="produtos-content">
-        <h2 class="font-white">Conheça <br> Nossos produtos</h2> 
-        <p>Conforto e funcionalidade<br>para quem ama viver bem.</p>
-        <a href="#" class="btn-encante">ENCANTE-SE</a>
+        <h2 class="font-white">Conozca nuestros productos</h2> 
+        <p>Comodidad y funcionalidad para quienes aman vivir bien.</p>
+        <a href="{{ route('landing-page.products') }}" class="btn-encante">Ver Productos</a>
     </div>
 </section>
 
 <section class="excelencia-satisfacao" style="background-image: url('{{ asset('assets/img/landing/seccion5.jpg') }}');">
     <div class="content-wrapper-excelencia">
         <img class="guion-excelencia" src="assets/img/landing/guion3.png" alt="">
-        <h2 class="font-white">Excelência e Satisfação</h2>
+        <h2 class="font-white">Excelencia y Satisfacción</h2>
         <p>
-            Para o quarto, camas produzidas com tecidos de alta decoração, tecnologia e extremo conforto. Para a sala, um portfólio de sofás em diferentes estilos e formatos que garantem conforto e funcionalidade aos ambientes. Além disso, a Anjos trabalha com parceiros selecionados para a linha de complementos, que surpreendem pelo bom gosto.
+            Para el dormitorio, camas confeccionadas con tejidos de alta decoración, tecnología y extremo confort. Para el salón, un portafolio de sofás en diferentes estilos y formatos que garantizan comodidad y funcionalidad a los ambientes. Además, Anjos trabaja con socios seleccionados para la línea de complementos, que sorprenden por su buen gusto.
         </p>
-        <a href="#" class="cta-button">Saiba Mais</a>
+        <a href="{{ route('landing-page.products') }}" class="cta-button">Ver más</a>
     </div>
 </section>
 
 <section class="anjos-testimonios">
     <div class="anjos-container">
-        <h2 class="anjos-title text-dark">Depoimentos</h2>
-        <div id="anjos-testimoniosCarousel" class="anjos-carousel">
+        <h2 class="anjos-title text-dark">Opiniones de Clientes</h2>
+        <div id="testimoniosCarousel" class="anjos-carousel">
             <div class="anjos-carousel-item d-flex">
                 <div class="col-1"> <button id="anjos-prevBtn" class="anjos-carousel-control anjos-prev">&lt;</button></div>
                 <div class="anjos-card col-10">
@@ -123,9 +126,10 @@
                 <div class="col-1"> <button id="anjos-nextBtn" class="anjos-carousel-control anjos-next">&gt;</button></div>
             </div>
         </div>
-        <button class="anjos-cta-button">Fale com um consultor do sono</button>
     </div>
 </section>
+
+
 
 @endsection
 <!--/ Contenido -->

@@ -91,7 +91,6 @@
         url: '#', // No se necesita URL aquí, el formulario manejará el envío
         autoProcessQueue: false,
         maxFiles: 1,
-        previewsContainer: '#existingImage', // Muestra la vista previa en el contenedor existente
         clickable: '#btnBrowse, #dropzone',
         maxFilesize: 2, // Limite de 2MB
         acceptedFiles: '.jpg,.jpeg,.png,.gif',
@@ -376,6 +375,24 @@
       statusSwitch.addEventListener('change', function () {
         this.value = this.checked ? '1' : '2';
       });
+
+      var catalogueSwitch = document.getElementById('catalogueSwitch');
+      catalogueSwitch.value = catalogueSwitch.checked ? '1' : '2';
+
+      catalogueSwitch.addEventListener('change', function () {
+        this.value = this.checked ? '1' : '2';
+      });
+
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var catalogueSwitch = document.getElementById('catalogueSwitch');
+      catalogueSwitch.value = catalogueSwitch.checked ? '1' : '2';
+
+      catalogueSwitch.addEventListener('change', function () {
+        this.value = this.checked ? '1' : '2';
+      });
+
     });
 
     $(document).ready(function () {

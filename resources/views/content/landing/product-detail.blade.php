@@ -2,92 +2,79 @@
 
 @section('title', $product->name)
 
-@section('content')
-<div class="container my-5">
-    <div class="row">
-        <!-- Contenedor de la imagen del producto -->
-        <div class="col-md-6">
-            <div class="product-container">
-                <img src="{{ asset($product->image) }}" class="product-image" alt="{{ $product->name }}">
-                <h1 class="product-title">{{ strtoupper($product->name) }}</h1>
-            </div>
-        </div>
+@section('page-script')
+    @vite(['resources/assets/js/app-ecommerce-landing-product-page.js'])
+@endsection
 
-        <!-- Detalles del producto -->
-        <div class="col-md-6">
-            <div class="product-description">
-                <h2>Descripción del Producto</h2>
-                <p>{{ $product->description }}</p>
-                <p><strong>Precio:</strong> ${{ number_format($product->price, 2) }}</p>
-            </div>
-        </div>
+@section('content')
+<div class="ficha-producto-container">
+
+    <div class="product-container">
+        <img src="{{ asset($product->image) }}" alt="Colchão Admirable" class="product-image">
+        <h1 class="product-title">{{ $product->name }}</h1>
     </div>
 
-    <!-- Galería del producto -->
-    <div class="row my-5">
-        <div class="col-12 product-gallery">
+    @if($product->description != '<p><br></p>')
+    <div class="product-description">
+        <div class="content-wrapper-ficha landing-product-description">
+            {!! $product->description !!}
+        </div>
+    </div>
+    @endif
+
+
+    <div class="content-wrapper-ficha">
+        <div class="product-gallery mb-5">
             <div class="gallery-container">
-                @php
-                    $images_gallery = json_decode($product->specs->images_gallery ?? '[]', true);
-                @endphp
-                @foreach($images_gallery as $key => $image)
-                    <img src="{{ asset($image) }}" class="gallery-image" alt="Imagen adicional de {{ $product->name }}">
+                @foreach($product->gallery as $image)
+                    <img src="{{ asset($image->image) }}" alt="Imagen del producto" class="gallery-image">
                 @endforeach
             </div>
-            <button class="gallery-button prev">‹</button>
-            <button class="gallery-button next">›</button>
+            <button class="gallery-button prev">&lt;</button>
+            <button class="gallery-button next">&gt;</button>
         </div>
-    </div>
-
-    <!-- Especificaciones técnicas -->
-    <div class="technical-specs">
-        <h2 class="specs-title">Especificaciones Técnicas</h2>
-        <div class="specs-grid">
-            @php
-                $features = json_decode($product->specs->features ?? '[]', true);
-            @endphp
-            @foreach($features as $feature => $value)
-                <div class="spec-item">
-                    <span><strong>{{ ucfirst($feature) }}:</strong> {{ $value }}</span>
+        
+        @if($product->features->count() > 0)
+            <div class="technical-specs mt-5">
+                <h2 class="specs-title">Ficha técnica</h2>
+                <div class="specs-grid">
+                    @foreach($product->features as $feature)
+                        <div class="spec-item">{{ strtoupper($feature->value) }}</div>
+                    @endforeach
                 </div>
-            @endforeach
-        </div>
+            </div>
+        @endif
     </div>
 
-    <!-- Tabla de medidas -->
-    <div class="measures-table-container">
-        <h2 class="measures-title">Tabla de Medidas</h2>
+    @if($product->sizes->count() > 0)
+    <div class="measures-table-container mb-4">
         <table class="measures-table">
+            <h3 class="measures-title">Medidas Disponibles</h3>
             <thead>
                 <tr>
-                    <th>Tamaño</th>
-                    <th>Dimensiones</th>
+                    <th>Nombre</th>
+                    <th>Ancho</th>
+                    <th>Largo</th>
+                    <th>Alto</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach(json_decode($product->specs->sizes ?? '[]', true) as $size => $dimensions)
+                @foreach($product->sizes as $size)
                     <tr>
-                        <td>{{ ucfirst($size) }}</td>
-                        <td>{{ $dimensions }}</td>
+                        <td>{{ ucfirst($size->size) }}</td>
+                        <td>{{ $size->width }}cm</td>
+                        <td>{{ $size->height }}cm</td>
+                        <td>{{ $size->length }}cm</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
     </div>
+    @endif
 
-    <!-- Colores disponibles -->
-    <div class="technical-specs">
-        <h2 class="specs-title">Colores Disponibles</h2>
-        <div class="specs-grid">
-            @php
-                $colors = json_decode($product->specs->colors ?? '[]', true);
-            @endphp
-            @foreach($colors as $colorKey => $colorName)
-                <div class="spec-item">
-                    <span>{{ ucfirst($colorName) }}</span>
-                </div>
-            @endforeach
-        </div>
+
+    <div class="additional-info text-center">
+        <p>*La casa se reserva el derecho a modificar características de los productos sin previo aviso al consumidor.</p>
     </div>
 
 </div>
