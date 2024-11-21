@@ -28,6 +28,7 @@ class Product extends Model
         'image',
         'store_id',
         'status',
+        'show_in_catalogue',
         'stock',
         'safety_margin',
         'bar_code',
@@ -182,8 +183,53 @@ class Product extends Model
                     ->withTimestamps();
     }
     
+    /**
+     * Obtiene los lotes del producto
+     * 
+     * @return HasMany
+     */
     public function batch(): HasMany
     {
         return $this->hasMany(Batch::class);
+    }
+
+    /**
+     * Obtiene las características del producto
+     * 
+     * @return HasMany
+     */
+    public function features()
+    {
+        return $this->hasMany(ProductFeature::class);
+    }
+
+    /**
+     * Obtiene los tamaños del producto
+     * 
+     * @return HasMany
+     */
+    public function sizes()
+    {
+        return $this->hasMany(ProductSize::class);
+    }
+
+    /**
+     * Obtiene los colores del producto
+     * 
+     * @return HasMany
+     */
+    public function colors()
+    {
+        return $this->hasMany(ProductColor::class);
+    }
+
+    /**
+     * Obtiene las imagenes de la galeria del producto
+     * 
+     * @return HasMany
+     */
+    public function gallery()
+    {
+        return $this->hasMany(ProductGallery::class);
     }
 }
