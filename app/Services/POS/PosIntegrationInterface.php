@@ -7,4 +7,5 @@ interface PosIntegrationInterface {
     public function checkTransactionStatus(array $transactionData): array;
     public function getResponses($responseCode);
     public function getToken();
+    public function formatTransactionData(array $transactionData): array;
 }

@@ -36,7 +36,9 @@ class UpdateStoreRequest extends FormRequest
             'accepts_mercadopago' => 'required|boolean',
             'invoices_enabled' => 'boolean',
             'accepts_peya_envios' => 'sometimes|boolean',
-        ];
+            'scanntech' => 'required|in:0,1',
+            'fiserv' => 'required|in:0,1',
+          ];
 
         if ($this->boolean('invoices_enabled')) {
             $rules += [
@@ -61,11 +63,18 @@ class UpdateStoreRequest extends FormRequest
         }
 
         if ($this->boolean('scanntech')) {
-            $rules += [
-                'scanntechCompany' => 'required|string|max:255',
-                'scanntechBranch' => 'required|string|max:255',
-            ];
-        }
+          $rules += [
+              'scanntechCompany' => 'required|string|max:255',
+              'scanntechBranch' => 'required|string|max:255',
+          ];
+      }
+
+      if ($this->boolean('fiserv')) {
+          $rules += [
+              'system_id' => 'required|string|max:255',
+          ];
+      }
+
 
         return $rules;
     }

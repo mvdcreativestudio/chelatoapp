@@ -2,11 +2,27 @@
 
 @section('title', 'Editar Empresa')
 
+@section('vendor-script')
+@vite([
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+])
+@endsection
+
+@section('vendor-style')
+@vite([
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+  ])
+@endsection
+
+
 @section('page-script')
 @vite(['resources/assets/js/edit-store.js'])
 <script
     src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsApiKey }}&libraries=places&callback=initAutocomplete"
     async defer></script>
+    <script>
+        window.baseUrl = "{{ url('') }}/";
+    </script>
 @endsection
 
 @section('content')
@@ -103,6 +119,109 @@
 
                         <!-- Tarjetas de Integraciones -->
                         <div class="row pt-3">
+
+                            <!-- Integración Fiserv -->
+                            <div class="col-lg-3 col-sm-6 mb-4">
+                              <div class="card position-relative border">
+                                  <div class="card-header text-center bg-light">
+                                      <div class="border-0 rounded-circle mx-auto">
+                                          <img src="{{ asset('assets/img/integrations/fiserv-logo.png') }}" alt="Fiserv Logo" class="img-fluid" style="width: 80px;">
+                                      </div>
+                                      <!-- Icono de check para mostrar la vinculación activa -->
+                                      @if ($store->pos_provider_id == 2)
+                                      <span class="position-absolute top-0 end-0 translate-middle p-2 bg-success rounded-circle">
+                                          <i class="bx bx-check text-white"></i>
+                                      </span>
+                                      @endif
+                                  </div>
+                                  <div class="card-body text-center">
+                                      <h3 class="card-title mb-1 me-2">Fiserv</h3>
+                                      <small class="d-block mb-2">Acepta pagos desde terminales Fiserv</small>
+                                      <!-- Switch para Fiserv -->
+                                      <!-- Switch para Fiserv -->
+                                      <div class="form-check form-switch d-flex justify-content-center">
+                                        <input type="hidden" name="fiserv" value="0">
+                                        <input class="form-check-input" type="checkbox" id="fiservSwitch" name="fiserv" value="1" {{ $store->pos_provider_id == 2 ? 'checked' : '' }}>
+                                      </div>
+
+                                      <!-- Campo system_id (solo visible si Fiserv está activo) -->
+                                      <div id="fiservFields" class="integration-fields" style="{{ $store->pos_provider_id == 2 ? '' : 'display: none;' }}">
+                                        <div class="mb-3">
+                                            <label class="form-label mt-2" for="systemId">System ID</label>
+                                            <input
+                                                type="text"
+                                                class="form-control"
+                                                id="systemId"
+                                                name="system_id"
+                                                placeholder="System ID de Fiserv"
+                                                value="{{ $store->posIntegrationInfo && $store->posIntegrationInfo->where('pos_provider_id', 2)->first() ? $store->posIntegrationInfo->where('pos_provider_id', 2)->first()->system_id : '' }}">
+                                        </div>
+                                      </div>
+                                      @if ($store->pos_provider_id == 2)
+                                        <button type="button" class="btn btn-info mt-3" data-bs-toggle="modal" data-bs-target="#fiservModal">
+                                            Ver Terminales
+                                        </button>
+                                      @endif
+                                  </div>
+                              </div>
+                            </div>
+
+                            <!-- Integración Scanntech -->
+                            <div class="col-lg-3 col-sm-6 mb-4">
+                              <div class="card position-relative border h-100">
+                                <div class="card-header text-center bg-light h-100 align-content-center">
+                                  <div class="border-0 rounded-circle mx-auto">
+                                    <img src="{{ asset('assets/img/integrations/scanntech-logo.png') }}" alt="Scanntech Logo" class="img-fluid" style="width: 200px;">
+                                  </div>
+                                  <!-- Icono de check para mostrar la vinculación activa -->
+                                  @if ($store->pos_provider_id == 1)
+                                  <span class="position-absolute top-0 end-0 translate-middle p-2 bg-success rounded-circle">
+                                    <i class="bx bx-check text-white"></i>
+                                  </span>
+                                  @endif
+                                </div>
+                                <div class="card-body text-center">
+                                  <h3 class="card-title mb-1 me-2">Scanntech</h3>
+                                  <small class="d-block mb-2">Acepta pagos desde terminales Scanntech</small>
+                                  <!-- Switch para Scanntech -->
+                                  <div class="form-check form-switch d-flex justify-content-center">
+                                    <!-- Campo oculto para enviar '0' si el switch está apagado -->
+                                    <input type="hidden" name="scanntech" value="0">
+                                    <input class="form-check-input" type="checkbox" id="scanntechSwitch" name="scanntech" value="1" {{ $store->pos_provider_id == 1 ? 'checked' : '' }}>
+
+                                  </div>
+                                  <!-- Campos company y branch (solo visibles si Scanntech está activo) -->
+                                  <div id="scanntechFields" class="integration-fields" style="{{ $store->pos_provider_id == 1 ? '' : 'display: none;' }}">
+                                    <div class="mb-3">
+                                      <label class="form-label mt-2" for="company">Company</label>
+                                      <input
+                                        type="text"
+                                        class="form-control"
+                                        id="company"
+                                        name="scanntechCompany"
+                                        placeholder="Ingrese la Company ID"
+                                        value="{{ $store->posIntegrationInfo && $store->posIntegrationInfo->where('pos_provider_id', 1)->first() ? $store->posIntegrationInfo->where('pos_provider_id', 1)->first()->company : '' }}">
+                                    </div>
+                                    <div class="mb-3">
+                                      <label class="form-label mt-2" for="branch">Branch</label>
+                                      <input
+                                        type="text"
+                                        class="form-control"
+                                        id="branch"
+                                        name="scanntechBranch"
+                                        placeholder="Ingrese la Branch ID"
+                                        value="{{ $store->posIntegrationInfo && $store->posIntegrationInfo->where('pos_provider_id', 1)->first() ? $store->posIntegrationInfo->where('pos_provider_id', 1)->first()->branch : '' }}">
+                                    </div>
+                                  </div>
+                                  @if ($store->pos_provider_id == 1)
+                                  <button type="button" class="btn btn-info mt-3" data-bs-toggle="modal" data-bs-target="#scanntechModal">
+                                    Ver Terminales
+                                  </button>
+                                  @endif
+                                </div>
+                              </div>
+                            </div>
+
                             <!-- Integración Ecommerce -->
                             <div class="col-lg-3 col-sm-6 mb-4">
                                 <div class="card position-relative border">
@@ -524,6 +643,12 @@
                         </div>
     </form>
 </div>
+
+@include('_partials/_editStore/_fiservModal')
+@include('_partials/_editStore/_scanntechModal')
+
+
+
 <script>
     let autocomplete;
 

@@ -6,6 +6,7 @@ use App\Models\Store;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class StoreRepository
 {
@@ -34,17 +35,12 @@ class StoreRepository
       return Store::create($data);
   }
 
-  /**
-   * Actualiza una tienda existente con los datos proporcionados.
-   *
-   * @param Store $store
-   * @param array $data
-   * @return Store
-  */
-  public function update(Store $store, array $data): Store
+
+  public function update(Store $store, array $data)
   {
-      $store->update($data);
-      return $store;
+      $result = $store->update($data);
+      \Log::info('Resultado de la actualización:', ['success' => $result, 'data' => $data, 'store' => $store->toArray()]);
+      return $result;
   }
 
   /**

@@ -102,20 +102,20 @@ class StoreController extends Controller
         $companyInfo = null;
         $logoUrl = null;
         $branchOffices = [];
-    
+
         // Carga la información de la empresa si la facturación está habilitada
         if ($store->invoices_enabled && $store->pymo_user && $store->pymo_password) {
             $companyInfo = $this->accountingRepository->getCompanyInfo($store);
             $logoUrl = $this->accountingRepository->getCompanyLogo($store);
             $branchOffices = $companyInfo['branchOffices'] ?? [];
         }
-    
+
         // Cargar dispositivos vinculados a Scanntech para esta tienda
         $devices = $store->posDevices()->get();
-    
+
         return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'branchOffices', 'devices'));
     }
-    
+
     /**
      * Actualiza una Empresa específica en la base de datos.
      *
@@ -125,32 +125,37 @@ class StoreController extends Controller
      */
     public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
     {
+      Log::info('Datos enviados al actualizar la tienda:', $request->all());
+
         // Validar los datos enviados en la request
         $storeData = $request->validated();
 
-        // Actualización de la tienda excluyendo los datos de integraciones específicas
-        $this->storeRepository->update($store, Arr::except($storeData, [
-            'mercadoPagoPublicKey',
-            'mercadoPagoAccessToken',
-            'mercadoPagoSecretKey',
-            'accepts_mercadopago',
-            'pymo_user',
-            'pymo_password',
-            'pymo_branch_office',
-            'accepts_peya_envios',
-            'peya_envios_key',
-            'callbackNotificationUrl',
-            'scanntechCompany',
-            'scanntechBranch',
-            'scanntechUser',
-            'mail_host',
-            'mail_port',
-            'mail_username',
-            'mail_password',
-            'mail_encryption',
-            'mail_from_address',
-            'mail_from_name',
-        ]));
+      Log::info('Datos validados:', $storeData);
+
+    // Validar exclusividad entre Scanntech y Fiserv
+    if ($request->boolean('scanntech') && $request->boolean('fiserv')) {
+      return redirect()->back()->withErrors([
+          'error' => 'Solo puede estar activo un proveedor de POS a la vez. Desactive una opción antes de activar la otra.'
+      ]);
+  }
+
+    // Determinar el valor de pos_provider_id
+    if ($request->boolean('scanntech')) {
+      $storeData['pos_provider_id'] = 1; // Scanntech
+      Log::info('Scanntech activado');
+  } elseif ($request->boolean('fiserv')) {
+      $storeData['pos_provider_id'] = 2; // Fiserv
+      Log::info('Fiserv activado');
+  } else {
+      $storeData['pos_provider_id'] = null; // Ninguno
+      Log::info('Ningún proveedor POS activado');
+  }
+
+
+  $this->storeRepository->update($store, $storeData);
+
+  Log::info('Estado de la tienda después de la actualización:', $store->toArray());
+
 
         // Manejo de la integración de MercadoPago
         $this->handleMercadoPagoIntegration($request, $store);
@@ -166,6 +171,9 @@ class StoreController extends Controller
 
         // Manejo de la integración de configuración de correo
         $this->handleEmailConfigIntegration($request, $store);
+
+        // Manejo de la integración de Fiserv
+        $this->handleFiservIntegration($request, $store);
 
         return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
     }
@@ -253,7 +261,7 @@ class StoreController extends Controller
 
     /**
      * Manejo de la integración de Scanntech
-     * 
+     *
      * @param UpdateStoreRequest $request
      * @param Store $store
      * @return void
@@ -268,12 +276,19 @@ class StoreController extends Controller
                     'branch' => $request->input('scanntechBranch'),
                 ]
             );
+
+            // Asegurarse de que pos_provider_id esté actualizado correctamente
+            $store->update(['pos_provider_id' => 1]);
+            Log::info('Integración Scanntech actualizada con éxito.');
         } else {
             // Elimina la integración si se desactiva
             $store->posIntegrationInfo()->where('pos_provider_id', 1)->delete();
+            Log::info('Integración Scanntech eliminada.');
         }
     }
-    
+
+
+
     /**
      * Maneja la lógica de la integración de configuración de correo.
      *
@@ -301,6 +316,34 @@ class StoreController extends Controller
             $store->emailConfig()->delete();
         }
     }
+
+    /**
+     * Manejo de la integración de Fiserv
+     *
+     * @param UpdateStoreRequest $request
+     * @param Store $store
+     * @return void
+     */
+    private function handleFiservIntegration(UpdateStoreRequest $request, Store $store): void
+    {
+        if ($request->boolean('fiserv')) {
+            $store->posIntegrationInfo()->updateOrCreate(
+                ['store_id' => $store->id, 'pos_provider_id' => 2], // Fiserv
+                [
+                    'system_id' => $request->input('system_id'),
+                ]
+            );
+
+            // Asegurarse de que pos_provider_id esté actualizado correctamente
+            $store->update(['pos_provider_id' => 2]);
+            Log::info('Integración Fiserv actualizada con éxito.');
+        } else {
+            // Elimina la integración si se desactiva
+            $store->posIntegrationInfo()->where('pos_provider_id', 2)->delete();
+            Log::info('Integración Fiserv eliminada.');
+        }
+    }
+
 
 
     /**

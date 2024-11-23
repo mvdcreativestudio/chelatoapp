@@ -9,7 +9,9 @@ document.addEventListener('DOMContentLoaded', function () {
     { id: 'ecommerceSwitch', fieldsId: null },
     { id: 'invoicesEnabledSwitch', fieldsId: 'pymoFields', requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice'] },
     { id: 'scanntechSwitch', fieldsId: 'scanntechFields', requiredFields: ['scanntechCompany', 'scanntechBranch'] },
-    { id: 'emailConfigSwitch', fieldsId: 'emailConfigFields', requiredFields: ['mailHost', 'mailPort', 'mailUsername', 'mailPassword', 'mailEncryption', 'mailFromAddress', 'mailFromName'] }
+    { id: 'emailConfigSwitch', fieldsId: 'emailConfigFields', requiredFields: ['mailHost', 'mailPort', 'mailUsername', 'mailPassword', 'mailEncryption', 'mailFromAddress', 'mailFromName'] },
+    { id: 'fiservSwitch', fieldsId: 'fiservFields', requiredFields: ['systemId'] },
+
   ];
 
   // Añadir animación de transición
@@ -114,4 +116,16 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     }
   });
+});
+
+document.getElementById('scanntechSwitch').addEventListener('change', function () {
+  if (this.checked) {
+      document.getElementById('fiservSwitch').checked = false;
+  }
+});
+
+document.getElementById('fiservSwitch').addEventListener('change', function () {
+  if (this.checked) {
+      document.getElementById('scanntechSwitch').checked = false;
+  }
 });

@@ -95,6 +95,8 @@ $(document).ready(function () {
 
   function enviarTransaccionPos(token) {
 
+    console.log('CashRegisterId para enviar:', cashRegisterId);
+
     // Obtener el ID del dispositivo POS desde el cashRegisterId
     $.ajax({
         url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
@@ -107,7 +109,6 @@ $(document).ready(function () {
             const caja = device.data.cash_register;
             const userId = device.data.user;
 
-
             const now = new Date();
             const transactionDateTime = now.getFullYear().toString() +
                 String(now.getMonth() + 1).padStart(2, '0') +
@@ -117,8 +118,8 @@ $(document).ready(function () {
                 String(now.getSeconds()).padStart(2, '0');
 
             const amount = parseFloat($('.total').text().replace('$', ''));
-            const quotas = 1.5;
-            const plan = 1;
+            const quotas = 1;
+            const plan = 0;
             const currency = "858";
             const taxableAmount = amount;
             const invoiceAmount = amount;
@@ -127,6 +128,7 @@ $(document).ready(function () {
             const needToReadCard = false;
 
             const transactionData = {
+                cash_register_id: cashRegisterId,
                 store_id: sessionStoreId,
                 PosID: posID,
                 Empresa: empresa,
@@ -149,32 +151,43 @@ $(document).ready(function () {
             showTransactionStatus(10, false, true); // Mostrar mensaje de transacción en progreso
 
             $.ajax({
-                url: `${baseUrl}api/pos/process-transaction`,
-                type: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                data: JSON.stringify(transactionData),
-                success: function (response) {
-                    const transactionId = response.TransactionId;
-                    const sTransactionId = response.STransactionId;
+              url: `${baseUrl}api/pos/process-transaction`,
+              type: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+              },
+              data: JSON.stringify(transactionData),
+              success: function (response) {
+                  console.log('Respuesta completa del POS:', response);
 
-                    if (transactionId && sTransactionId) {
+                  const transactionId = response.TransactionId || response.transaction?.TransactionId || response.response?.TransactionId;
+                  const sTransactionId = response.STransactionId || response.transaction?.STransactionId || response.response?.STransactionId;
 
-                        sessionStorage.setItem('TransactionId', transactionId);
-                        sessionStorage.setItem('STransactionId', sTransactionId);
-                        consultarEstadoTransaccion(transactionId, sTransactionId, transactionDateTime, token);
-                    } else {
-                        console.warn('No se recibieron IDs válidos en la respuesta:', response); // Advertencia si no hay IDs válidos
-                        showTransactionStatus(999); // Error desconocido
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error en la transacción POS:', error); // Error detallado del servidor
-                    showTransactionStatus(999); // Mostrar error
-                }
+                  if (transactionId && sTransactionId) {
+                      sessionStorage.setItem('TransactionId', transactionId);
+                      sessionStorage.setItem('STransactionId', sTransactionId);
+                      consultarEstadoTransaccion(transactionId, sTransactionId, transactionDateTime, token);
+                  } else {
+                      console.warn('No se recibieron IDs válidos en la respuesta:', response);
+                      showTransactionStatus({
+                          message: 'Error al procesar la transacción. No se recibieron datos válidos.',
+                          icon: 'error',
+                          showCloseButton: true
+                      });
+                  }
+
+              },
+              error: function (xhr, status, error) {
+                  console.error('Error en la transacción POS:', error, xhr.responseText);
+                  showTransactionStatus({
+                      message: `Error al procesar la transacción: ${xhr.responseText || 'Error desconocido.'}`,
+                      icon: 'error',
+                      showCloseButton: true
+                  });
+              }
             });
+
         },
         error: function (xhr, status, error) {
             console.error('Error al obtener la información del dispositivo POS:', error); // Log en caso de error al obtener el dispositivo
@@ -183,101 +196,103 @@ $(document).ready(function () {
   }
 
 
-  // Función para consultar el estado de la transacción
-  function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDateTime, token) {
+  function consultarEstadoTransaccion(transactionId, sTransactionId, token) {
     let attempts = 0;
-    const maxAttempts = 30; // Número máximo de intentos
-    let isTransactionComplete = false; // Variable de control para detener la consulta si la transacción ha sido completada
+    const maxAttempts = 30;
 
     function poll() {
         if (attempts >= maxAttempts) {
-            showTransactionStatus('Tiempo de espera excedido al consultar el estado de la transacción.', true);
-            return;
-        }
-
-        if (isTransactionComplete) {
-            return;
-        }
-
-        setTimeout(function () {
-            attempts++;
-
-            // Asegurarse de incluir store_id en los datos enviados
-            const dataToSend = {
-                PosID: $('#posID').val() || "7",
-                Empresa: $('#empresa').val() || "2024",
-                Local: $('#local').val() || "1",
-                Caja: $('#caja').val() || "7",
-                UserId: $('#userId').val() || "Usuario1",
-                TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
-                TransactionId: transactionId,
-                STransactionId: sTransactionId,
-                store_id: sessionStoreId // Asegúrate de pasar el store_id
-            };
-
-            if (attempts === 1) {
-                showTransactionStatus('Transacción en progreso...', false, true);
-            }
-
-            $.ajax({
-                url: `${baseUrl}api/pos/check-transaction-status`,
-                type: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                data: JSON.stringify(dataToSend), // Asegúrate de que store_id esté en los datos
-                success: function (response) {
-                    const responseCode = response.responseCode;
-                    showTransactionStatus(responseCode, false, false);
-
-                    // Manejo de diferentes códigos de respuesta
-                    if (responseCode === 10 || responseCode === 113 || responseCode === 12 || responseCode === 0) {
-                        // Continuar consultando mientras se reciba uno de estos códigos
-                        poll();
-                    } else if (responseCode === 111) {
-                        if (swalInstance) {
-                            swalInstance.close(); // Cerrar swal si está abierto
-                        }
-                        isTransactionComplete = true; // Marcar la transacción como completa para detener consultas adicionales
-                        postOrder(); // Llamar a la función postOrder() para procesar la orden
-                    } else {
-                        console.error('Código de respuesta no esperado:', responseCode);
-                        showTransactionStatus(`Error inesperado: Código de respuesta ${responseCode}`, true);
-                    }
-                },
-                error: function (xhr) {
-                    console.error('Error al consultar el estado de la transacción:', xhr);
-                    showTransactionStatus(`Error al consultar el estado: ${xhr.status} - ${xhr.responseText}`, true);
-                }
+            showTransactionStatus({
+                message: 'Tiempo de espera excedido al consultar el estado de la transacción.',
+                icon: 'error',
+                showCloseButton: true
             });
-        }, 2000); // Intervalo de 2 segundos entre cada consulta
+            return;
+        }
+
+        attempts++;
+
+        const dataToSend = {
+            TransactionId: transactionId,
+            STransactionId: sTransactionId,
+            store_id: sessionStoreId // Asegúrate de incluir store_id
+        };
+
+        $.ajax({
+            url: `${baseUrl}api/pos/check-transaction-status`,
+            type: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            data: JSON.stringify(dataToSend),
+            success: function (response) {
+                const { responseCode, message, icon, keepPolling, transactionSuccess } = response;
+
+                // Mostrar el estado actual de la transacción
+                showTransactionStatus({ message, icon, showCloseButton: !keepPolling });
+
+                // Si la transacción sigue en progreso, continuar con el polling
+                if (keepPolling) {
+                    setTimeout(poll, 2000);
+                } else {
+                    // Si transactionSuccess es true, realizar el postOrder
+                    if (transactionSuccess) {
+                        postOrder();
+                    }
+                }
+            },
+            error: function (xhr) {
+                console.error('Error al consultar el estado de la transacción:', xhr.responseText);
+                showTransactionStatus({
+                    message: `Error al consultar el estado: ${xhr.status} - ${xhr.responseText}`,
+                    icon: 'error',
+                    showCloseButton: true
+                });
+            }
+        });
     }
 
-    poll(); // Iniciar el ciclo de consultas
-  }
+    poll();
+}
 
 
 
   let swalInstance;
 
   // Función para mostrar el mensaje de estado de la transacción
-  function showTransactionStatus(code, isError = false, isInitial = false) {
-    if (!posResponsesConfig || !posResponsesConfig[code]) {
-        // Default message if no response config is found for the given code
-        const defaultConfig = {
-            message: 'Error desconocido.',
-            icon: 'error',
-            showCloseButton: true
-        };
-        showSweetAlert(defaultConfig, isInitial);
-        return;
+  function showTransactionStatus({ message, icon, showCloseButton }) {
+    if (!swalInstance) {
+        // Crear un nuevo SweetAlert si no existe
+        swalInstance = Swal.fire({
+            icon: icon || 'info',
+            title: 'Estado de Transacción',
+            html: message || 'Procesando...',
+            showConfirmButton: showCloseButton,
+            confirmButtonText: 'Cerrar',
+            allowOutsideClick: showCloseButton,
+            didOpen: () => {
+                if (!showCloseButton) {
+                    Swal.showLoading();
+                }
+            }
+        });
+    } else {
+        // Actualizar el SweetAlert existente
+        swalInstance.update({
+            icon: icon || 'info',
+            html: message || 'Procesando...',
+            showConfirmButton: showCloseButton,
+            confirmButtonText: 'Cerrar',
+            allowOutsideClick: showCloseButton
+        });
+
+        if (showCloseButton) {
+            Swal.hideLoading();
+        }
     }
+}
 
-    const responseConfig = posResponsesConfig[code];
-
-    showSweetAlert(responseConfig, isInitial);
-  }
 
   // Función para mostrar el mensaje de respuesta POS en SweetAlert
   function showSweetAlert(responseConfig, isInitial) {
@@ -374,12 +389,12 @@ $(document).ready(function () {
       dataType: 'json',
       success: function (response) {
         client = response.client;
-  
+
         if (client && client.id) {
           showClientInfo(client);
           $('#client-selection-container').hide();
           console.log('Cliente en loadClientFromSession:', client);
-  
+
           // Si el cliente tiene una lista de precios, cargar los precios desde la lista
           if (client.price_list_id) {
             updateCartPricesWithPriceList(client.price_list_id);
@@ -394,7 +409,7 @@ $(document).ready(function () {
       }
     });
   }
-  
+
   function updateCartPrices() {
     const selectedPriceListId = $('#manual_price_list_id').val();
     const clientPriceListId = client && client.price_list_id;
@@ -412,7 +427,7 @@ $(document).ready(function () {
   // Escucha cambios en el selector manual de listas de precios
   $('#manual_price_list_id').on('change', updateCartPrices);
 
-  
+
 
   function loadStoreIdFromSession() {
     $.ajax({
@@ -434,14 +449,14 @@ $(document).ready(function () {
     const clientDoc = client.type === 'company' ? client.rut : client.ci;
     const fullName = `${client.name || '-'} ${client.lastname || ''}`.trim();
     const clientPriceList = client.price_list_name;
-  
+
     $('#client-id').text(client.id || '-');
     $('#client-name').text(fullName);
     $('#client-type').text(clientType);
     $('#client-doc-label').text(clientDocLabel);
     $('#client-doc').text(clientDoc || 'No disponible');
     $('#client-price-list').text(clientPriceList);
-  
+
     if (client.type === 'company') {
       $('#client-company').html(`<strong class="text-muted">Razón Social:</strong> <span class="text-body fw-bold">${client.company_name || '-'}</span>`);
       $('#client-company').show();
@@ -450,11 +465,11 @@ $(document).ready(function () {
     }
 
     console.log('Cliente en showClientInfo:', client);
-  
+
     $('#client-info').show();
     $('#client-selection-container').hide();
   }
-  
+
 
 
   function saveCartToSession() {
@@ -705,7 +720,7 @@ $(document).ready(function () {
     // Event listener para el botón "Seleccionar"
     $('.btn-select-client').on('click', function () {
       const selectedClient = $(this).data('client');
-      
+
       showClientInfo(selectedClient);
 
       // Cerrar el offcanvas después de seleccionar el cliente
@@ -734,12 +749,12 @@ $(document).ready(function () {
       type: 'GET',
       success: function (response) {
         client = response.client;
-  
+
         if (client && client.id) {
           // Actualizamos la vista con la información del cliente
           showClientInfo(client);
           $('#client-selection-container').hide();
-  
+
           // Si el cliente tiene una lista de precios, actualizamos los precios del carrito
           if (client.price_list_id) {
             updateCartPricesWithPriceList(client.price_list_id); // Esto debería funcionar si el ID es correcto
@@ -755,7 +770,7 @@ $(document).ready(function () {
       }
     });
   }
-  
+
   function updateCartPricesWithPriceList(priceListId) {
     $.ajax({
         url: `${baseUrl}admin/price-list/${priceListId}/products`,
@@ -767,7 +782,7 @@ $(document).ready(function () {
             // Itera sobre los productos del carrito y actualiza sus precios
             cart.forEach(item => {
                 const productInPriceList = priceListProducts.find(p => p.id === item.id);
-                
+
                 if (productInPriceList) {
                     // Si el producto está en la lista, aplica el precio de la lista
                     item.price = productInPriceList.price;
@@ -828,7 +843,7 @@ $(document).ready(function () {
         mostrarError('Error al guardar el cliente en la sesión: ' + xhr.responseText);
       });
   }
-  
+
 
   $('#offcanvasEnd').on('show.bs.offcanvas', function () {
     loadClients();
@@ -1007,7 +1022,7 @@ $(document).ready(function () {
       .done(function () {
         // Volver a cargar el carrito desde la sesión y restaurar los precios originales
         loadCartFromSessionWithNormalPrices();
-        
+
         // Actualizar la UI para deseleccionar al cliente
         $('#client-id').text('');
         $('#client-name').text('');
@@ -1062,8 +1077,8 @@ $(document).ready(function () {
     const subtotal = parseFloat($('.subtotal').text().replace(/[^\d.-]/g, '')) || 0;
 
     // Validación para ventas mayores a 12000
-    if (total > 600 && (!client || !client.id)) {
-        mostrarError('Para ventas mayores a USD600, es necesario tener un cliente asignado a la venta. Puede seleccionar uno existente o crear uno nuevo.');
+    if (total > 25000 && (!client || !client.id)) {
+        mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta. Puede seleccionar uno existente o crear uno nuevo.');
         return;
     }
 
@@ -1246,19 +1261,20 @@ $(document).ready(function () {
       mostrarError('Por favor, seleccione un método de pago.');
       return;
     }
-    if (paymentMethod !== 'debit' || paymentMethod !== 'credit') {
+    if (paymentMethod !== 'debit' && paymentMethod !== 'credit') {
+      console.log('No es débito ni crédito, continuando con la creación de la orden');
+      console.log('paymentMethod:', paymentMethod);
       postOrder();
     } else {
-      postOrder();
-
-      // /** Descomentar para usar el POS */
-      // obtenerTokenPos().done(function (response) {
-      //   const token = response.access_token;
-      //   enviarTransaccionPos(token);
-      // }).fail(function (error) {
-      //   console.error('Error al obtener el token del POS:', error);
-      // });
+        console.log('Es débito o crédito, continuando con la creación de la orden');
+        obtenerTokenPos().done(function (response) {
+            const token = response.access_token;
+            enviarTransaccionPos(token);
+        }).fail(function (error) {
+            console.error('Error al obtener el token del POS:', error);
+        });
     }
+
   });
 
   $('#descartarVentaBtn').on('click', function () {

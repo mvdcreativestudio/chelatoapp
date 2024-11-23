@@ -65,13 +65,11 @@
                     <th>Ultima Apertura</th>
                     <th>Ultimo Cierre</th>
                     <th>Estado</th>
+                    <th>Terminal POS</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-              {{-- @php
-                dd($cajas);
-              @endphp --}}
               @foreach ($cajas as $caja)
               <tr>
                   <td>{{ $caja->id }}</td>
@@ -97,6 +95,46 @@
                       {{-- Utiliza el método del modelo para determinar el estado --}}
                       <span class="badge {{ $caja->getEstado()['clase'] }}">{{ $caja->getEstado()['estado'] }}</span>
                   </td>
+                  <td class="text-center">
+                    @if ($caja->posDevices->isNotEmpty())
+                        <div class="d-flex flex-column align-items-center">
+                            <!-- Lista de dispositivos POS -->
+                            @foreach ($caja->posDevices as $posDevice)
+                                <p class="mb-1">
+                                    <strong>{{ $posDevice->name }}</strong>
+                                    <br>
+                                    <span class="text-muted">{{ $posDevice->identifier }}</span>
+                                </p>
+                            @endforeach
+
+                            <!-- Botón para desvincular -->
+                            <button
+                                class="btn btn-outline-danger btn-sm mt-2 btn-unlink-pos"
+                                data-id="{{ $caja->id }}"
+                                data-store_id="{{ $caja->store_id }}"
+                                data-pos-id="{{ $caja->posDevices->first()->id }}">
+                                <i class="fas fa-unlink mx-1"></i> Desvincular
+                            </button>
+                        </div>
+                    @else
+                        <div class="d-flex flex-column align-items-center">
+                            <!-- Icono para indicar que no hay dispositivos vinculados -->
+                            <i class="fas fa-exclamation-circle text-warning fs-4 mb-2"></i>
+                            <span class="text-muted mb-2">Sin terminal asignada</span>
+
+                            <!-- Botón para vincular -->
+                            <button
+                                class="btn btn-outline-primary btn-sm btn-link-pos"
+                                data-id="{{ $caja->id }}"
+                                data-store_id="{{ $caja->store_id }}">
+                                <i class="fas fa-link mx-1"></i> Vincular
+                            </button>
+                        </div>
+                    @endif
+                </td>
+
+
+
                   <td>
                     @php
                         // Verifica si hay acciones disponibles para mostrar
@@ -235,6 +273,32 @@
       </div>
   </div>
 </div>
+
+<!-- Modal para asignar un dispositivo POS a la caja registradora -->
+<div class="modal fade" id="managePosModal" tabindex="-1" aria-labelledby="managePosModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="managePosModalLabel">Gestionar POS</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="pos_device" class="form-label">Dispositivo POS:</label>
+          <select id="pos_device" class="form-select">
+            <!-- Opciones dinámicas se cargarán aquí -->
+          </select>
+        </div>
+        <input type="hidden" id="cash_register_id" name="cash_register_id">
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="submit-manage-pos" class="btn btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery -->
@@ -437,5 +501,84 @@
             });
         });
     });
+</script>
+<script>
+
+$(document).on('click', '.btn-link-pos, .btn-edit-pos', function () {
+    let cashRegisterId = $(this).data('id');
+    let storeId = $(this).data('store_id'); // Obtén el store_id del atributo data-store_id
+    $('#cash_register_id').val(cashRegisterId);
+
+    // Filtrar los dispositivos POS según el store_id
+    $.ajax({
+        url: 'get-pos-devices', // Ruta para obtener los dispositivos POS
+        type: 'GET',
+        data: { store_id: storeId },
+        success: function (devices) {
+            let options = '';
+            devices.forEach(device => {
+                options += `<option value="${device.id}">${device.name} - ${device.identifier}</option>`;
+            });
+            $('#pos_device').html(options);
+            $('#managePosModal').modal('show');
+        },
+        error: function () {
+            alert('Error al cargar los dispositivos POS.');
+        }
+    });
+});
+
+
+$(document).on('click', '.btn-link-pos, .btn-edit-pos', function () {
+    let cashRegisterId = $(this).data('id');
+    $('#cash_register_id').val(cashRegisterId);
+    $('#managePosModal').modal('show');
+});
+
+$('#submit-manage-pos').click(function () {
+    let cashRegisterId = $('#cash_register_id').val();
+    let posDeviceId = $('#pos_device').val();
+    let csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+    $.ajax({
+        url: 'cash-registers/' + cashRegisterId + '/link-pos',
+        type: 'POST',
+        data: {
+            pos_device_id: posDeviceId,
+            _token: csrfToken
+        },
+        success: function (response) {
+            $('#managePosModal').modal('hide');
+            location.reload();
+        },
+        error: function (xhr) {
+            alert('Error al vincular el POS.');
+        }
+    });
+});
+
+$(document).on('click', '.btn-unlink-pos', function () {
+    let cashRegisterId = $(this).data('id');
+    let posDeviceId = $(this).data('pos-id'); // Asegúrate de que este atributo esté definido en el botón
+    let csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+    if (confirm('¿Estás seguro de que deseas desvincular el POS?')) {
+        $.ajax({
+            url: `cash-registers/${cashRegisterId}/unlink-pos/${posDeviceId}`,
+            type: 'DELETE',
+            data: {
+                _token: csrfToken
+            },
+            success: function () {
+                location.reload();
+            },
+            error: function () {
+                alert('Error al desvincular el POS.');
+            }
+        });
+    }
+});
+
+
 </script>
 @endsection

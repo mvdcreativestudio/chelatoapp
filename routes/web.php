@@ -270,6 +270,12 @@ Route::middleware([
     Route::get('/point-of-sale/details/sales/{id}', [CashRegisterController::class, 'getSales']);
     Route::get('/point-of-sale/details/sales/pdf/{id}', [CashRegisterController::class, 'getSalesPdf']);
 
+    // Vinculación de POS a los PDV
+    Route::post('/cash-registers/{cashRegister}/link-pos', [CashRegisterController::class, 'linkPos']);
+    Route::delete('/cash-registers/{cashRegister}/unlink-pos/{posDevice}', [CashRegisterController::class, 'unlinkPos']);
+    Route::get('/get-pos-devices', [CashRegisterController::class, 'getPosDevices']);
+
+
     Route::post('/pdv/open', [CashRegisterLogController::class, 'store']);
     Route::post('/pdv/close/{id}', [CashRegisterLogController::class, 'closeCashRegister']);
     Route::get('/pdv/clients/json', [CashRegisterLogController::class, 'getAllClients']);

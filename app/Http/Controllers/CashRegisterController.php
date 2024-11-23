@@ -12,6 +12,8 @@ use App\Repositories\CashRegisterRepository;
 use App\Repositories\CashRegisterLogRepository;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use App\Models\CashRegister;
+use App\Models\PosDevice;
 use PDF;
 
 
@@ -41,18 +43,25 @@ class CashRegisterController extends Controller
             Session::put('open_cash_register_id', $openCashRegisterId);
             Session::put('store_id', $storeId);
 
-           //return redirect()->route('pdv.front');
+            //return redirect()->route('pdv.front');
         } else {
             Session::forget('open_cash_register_id');
             Session::forget('store_id');
-            $cajas = $this->cashRegisterRepository->getCashRegistersForDatatable($userId);
-            //return view('points-of-sales.index', compact('cajas', 'userId'));
         }
+
+        // Obtener las cajas registradoras
         $cajas = $this->cashRegisterRepository->getCashRegistersForDatatable($userId);
-        return view('points-of-sales.index', compact('cajas', 'userId'));
+
+        // Obtener los dispositivos POS disponibles por store y pos_provider
+        $posDevices = PosDevice::whereIn('pos_provider_id', function ($query) use ($cajas) {
+            $query->select('pos_provider_id')
+                ->from('stores')
+                ->whereIn('id', $cajas->pluck('store_id'));
+        })->get();
+
+        // Retornar la vista con las cajas y los dispositivos POS
+        return view('points-of-sales.index', compact('cajas', 'userId', 'posDevices'));
     }
-
-
 
     /**
      * Agrega una caja registradora a la base de datos.
@@ -184,4 +193,49 @@ class CashRegisterController extends Controller
 
         return $pdf->stream('cash_register_sales.pdf');
     }
+
+    public function getPosDevices(Request $request)
+    {
+        $request->validate([
+            'store_id' => 'required|exists:stores,id', // Validar que el store_id exista
+        ]);
+
+        // Filtrar los dispositivos POS según el store_id
+        $posDevices = PosDevice::where('pos_provider_id', function ($query) use ($request) {
+            $query->select('pos_provider_id')
+                ->from('stores')
+                ->where('id', $request->store_id); // Buscar el pos_integration_id de la tienda
+        })->get();
+
+        return response()->json($posDevices); // Devolver los dispositivos filtrados
+    }
+
+
+
+    public function linkPos(Request $request, CashRegister $cashRegister)
+    {
+        $request->validate([
+            'pos_device_id' => 'required|exists:pos_devices,id',
+        ]);
+
+        // Vincular el dispositivo POS a la caja registradora
+        $cashRegister->posDevices()->syncWithoutDetaching([$request->pos_device_id]);
+
+        return response()->json(['message' => 'POS vinculado correctamente.']);
+    }
+
+
+    public function unlinkPos(CashRegister $cashRegister, PosDevice $posDevice)
+    {
+        // Elimina el dispositivo POS específico de la caja registradora
+        $cashRegister->posDevices()->detach($posDevice->id);
+
+        return response()->json(['message' => 'POS desvinculado correctamente.']);
+    }
+
+
+
+
+
+
 }

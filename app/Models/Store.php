@@ -30,6 +30,7 @@ class Store extends Model
         'pymo_branch_office',
         'accepts_peya_envios',
         'peya_envios_key',
+        'pos_provider_id'
     ];
 
     /**
@@ -129,7 +130,7 @@ class Store extends Model
 
     /**
      * Obtiene los POS vinculados a la tienda.
-     * 
+     *
      * @return BelongsTo
      */
     public function posProvider()
@@ -139,18 +140,18 @@ class Store extends Model
 
     /**
      * Obtiene la información de integración con el POS.
-     * 
-     * @return HasOne
+     *
+     * @return HasMany
      */
     public function posIntegrationInfo()
     {
-        return $this->hasOne(PosIntegrationStoreInfo::class, 'store_id');
+        return $this->hasMany(PosIntegrationStoreInfo::class, 'store_id');
     }
-    
+
 
     /**
      * Obtiene los dispositivos POS asociados a la tienda.
-     * 
+     *
      * @return HasMany
      */
     public function posDevices()
@@ -158,11 +159,11 @@ class Store extends Model
         // Primero obtenemos la integración POS de la tienda, luego los dispositivos asociados
         return $this->hasManyThrough(PosDevice::class, PosIntegrationStoreInfo::class, 'store_id', 'pos_provider_id', 'id', 'pos_provider_id');
     }
-    
+
 
     /**
      * Obtiene la configuración de envío de correos electrónicos de la tienda.
-     * 
+     *
      * @return HasOne
      */
 
