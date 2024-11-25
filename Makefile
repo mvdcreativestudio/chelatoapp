@@ -3,8 +3,8 @@
 # Variables
 APP_NAME = php_chelatoapp
 NGINX = nginx_chelatoapp
-# MYSQL = mysql_base
-# PHP_MY_ADMIN = phpmyadmin_base
+# MYSQL = mysql_chelatoapp
+# PHP_MY_ADMIN = phpmyadmin_chelatoapp
 # Desarrollo
 dev_install:
 	docker compose -f docker-compose.dev.yml up -d --build

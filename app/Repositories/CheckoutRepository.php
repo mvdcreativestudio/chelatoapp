@@ -367,7 +367,7 @@ class CheckoutRepository
             ];
         }
 
-        $costoEnvio = $request->shipping_cost;
+        $costoEnvio = $request->shipping_cost / 2;
         $total = $subtotal + $costoEnvio - session('coupon.discount', 0);
 
         $orderData = [
