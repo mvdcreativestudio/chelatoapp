@@ -248,50 +248,59 @@
           </div>
 
           @if(session('cart') && count(session('cart')) > 0)
-            <div>
+          <div>
               <div class="d-flex justify-content-between align-items-center mt-3">
-                <p class="mb-0">Dirección de la tienda</p>
-                <h6 class="mb-0">{{ session('store')['address'] }}</h6>
+                  <p class="mb-0">Dirección de la tienda</p>
+                  <h6 class="mb-0">{{ session('store')['address'] }}</h6>
               </div>
               <div class="d-flex justify-content-between align-items-center mt-3">
-                <p class="mb-0">Subtotal</p>
-                <h6 class="mb-0">{{ $settings->currency_symbol }}{{$subtotal}}</h6>
+                  <p class="mb-0">Subtotal</p>
+                  <h6 class="mb-0">{{ $settings->currency_symbol }}{{$subtotal}}</h6>
               </div>
               @if($discount > 0)
-                <div class="d-flex justify-content-between align-items-center mt-3">
-                  <p class="mb-0">Cupón de descuento</p>
-                  <h6 class="mb-0">{{ $settings->currency_symbol }}{{$discount}}</h6>
-                </div>
+                  <div class="d-flex justify-content-between align-items-center mt-3">
+                      <p class="mb-0">Cupón de descuento</p>
+                      <h6 class="mb-0">{{ $settings->currency_symbol }}{{$discount}}</h6>
+                  </div>
               @endif
               <div class="d-flex justify-content-between align-items-center mt-3">
-                <p class="mb-0">Envío</p>
-                <h6 class="mb-0" id="orderShippingCost">A calcular</h6>
+                  <p class="mb-0">Envío</p>
+                  <!-- Envio hardcodeado a $65 -->
+                  <h6 class="mb-0" id="orderShippingCost">${{ 65 }}</h6> <!-- Hardcodear el costo de envío -->
               </div>
               <hr>
               <div class="d-flex justify-content-between align-items-center mt-3 pb-1">
-                <p class="mb-0">Total</p>
-                <h6 class="mb-0" id="orderTotal">A calcular</h6>
+                  <p class="mb-0">Total</p>
+                  <!-- Envio hardcodeado a $65 -->
+                  <h6 class="mb-0" id="orderTotal">
+                      {{ $settings->currency_symbol }}{{ $subtotal - $discount + 65 }} <!-- Calcular el total -->
+                  </h6>
               </div>
               <div class="d-grid mt-3">
-                @if(session('cart') && count(session('cart')) > 0)
-                  <button type="button" id="validate-address" class="btn btn-primary mb-2" type="button">
-                    <span class="me-2">Calcular envío</span>
-                    <i class="bx bx-calculator scaleX-n1-rtl"></i>
-                  </button>
-                  <button class="btn btn-success" disabled id="orderConfirm">
-                    <span class="me-2">Confirmar pedido</span>
-                    <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
-                  </button>
-                @else
-                  <button class="btn btn-primary" disabled>
-                    <span class="me-2">Confirmar pedido</span>
-                    <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
-                  </button>
-                @endif
+                  @if(session('cart') && count(session('cart')) > 0)
+                      <!-- Envio hardcodeado a $65 -->
+                      <button type="button" id="validate-address" class="btn btn-primary mb-2">
+                          <span class="me-2">Calcular envío</span>
+                          <i class="bx bx-calculator scaleX-n1-rtl"></i>
+                      </button>
+
+                      {{-- <button class="btn btn-success" disabled id="orderConfirm"> --}}
+                      <!-- Envio hardcodeado a $65 -->
+                      <button class="btn btn-success" id="orderConfirm">
+                          <span class="me-2">Confirmar pedido</span>
+                          <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
+                      </button>
+                  @else
+                      <button class="btn btn-primary" disabled>
+                          <span class="me-2">Confirmar pedido</span>
+                          <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
+                      </button>
+                  @endif
               </div>
-            </div>
           </div>
-          @endif
+        </div>
+        @endif
+
         </div>
       </div>
     </form>
@@ -365,10 +374,10 @@ document.querySelectorAll('input[name="shipping_method"]').forEach((elem) => {
         } else {
             addressContainer.style.display = 'block';
             validateAddressButton.style.display = 'block';
-            orderShippingCost.style.display = 'block';
+            orderShippingCost.innerText = '$65'; // Envio hardcodeado a $65
             orderConfirmButton.setAttribute('disabled', 'disabled');
-            orderTotal.innerText = 'A calcular';
-        }
+            orderTotal.innerText = '{{ $settings->currency_symbol }}' + (parseFloat('{{ $subtotal }}') - parseFloat('{{ $discount }}') + 65); // Envio hardcodeado a $65
+          }
     });
 });
 
@@ -376,11 +385,11 @@ document.querySelectorAll('input[name="payment_method"]').forEach((elem) => {
     elem.addEventListener('change', function(event) {
         const orderConfirmButton = document.getElementById('orderConfirm');
         orderConfirmButton.setAttribute('disabled', 'disabled');
-        document.getElementById('orderShippingCost').innerText = 'A calcular';
-        document.getElementById('orderTotal').innerText = 'A calcular';
+        document.getElementById('orderShippingCost').innerText = '$65'; // Envio hardcodeado a $65
+        document.getElementById('orderTotal').innerText = '{{ $settings->currency_symbol }}' + (parseFloat('{{ $subtotal }}') - parseFloat('{{ $discount }}') + 65); // Envio hardcodeado a $65
         document.getElementById('estimateIdInput').value = '';
-        document.getElementById('shippingCostInput').value = '0';
-    });
+        document.getElementById('shippingCostInput').value = 65; // Envio hardcodeado a $65
+      });
 });
 
 
@@ -510,16 +519,16 @@ document.getElementById('validate-address').addEventListener('click', async func
           document.getElementById('orderConfirm').removeAttribute('disabled');
 
           // Actualiza el costo de envío en el input hidden
-          document.getElementById('shippingCostInput').value = data.deliveryOffers[0].pricing.total;
+          document.getElementById('shippingCostInput').value = 65; // Envio hardcodeado a $65
 
           // Actualiza el id de la estimación
           document.getElementById('estimateIdInput').value = data.estimateId;
 
           // Actualiza el costo de envío
-          document.getElementById('orderShippingCost').innerText = '$' + data.deliveryOffers[0].pricing.total;
+          document.getElementById('orderShippingCost').innerText = '$65'; // Envio hardcodeado a $65
 
           // Actualiza el total
-          document.getElementById('orderTotal').innerText = '$' + (parseFloat(data.deliveryOffers[0].pricing.total) + parseFloat('200' - '0'));
+          document.getElementById('orderTotal').innerText = '{{ $settings->currency_symbol }}' + (parseFloat('{{ $subtotal }}') - parseFloat('{{ $discount }}') + 65); // Envio hardcodeado a $65
         }
         else {
           handleApiReturns('Hubo un error al calcular el envío.');

@@ -367,7 +367,8 @@ class CheckoutRepository
             ];
         }
 
-        $costoEnvio = $request->shipping_cost / 2;
+        // Envío hardcodeado a $65
+        $costoEnvio = 65;
         $total = $subtotal + $costoEnvio - session('coupon.discount', 0);
 
         $orderData = [
