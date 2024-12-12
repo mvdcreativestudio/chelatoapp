@@ -127,9 +127,9 @@ class MercadoPagoRepository
 
           Log::info("Estado de la orden actualizado a '$status' para la orden con ID: $orderId");
 
-          if ($status === 'paid') {
-              $this->sendOrderEmails($order);
-          }
+          // if ($status === 'paid') {
+          //     $this->sendOrderEmails($order);
+          // }
 
           if ($status === 'paid' && $order->shipping_method === 'peya') {
               $this->createPeYaShipping($order);
