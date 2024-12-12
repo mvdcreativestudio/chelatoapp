@@ -182,8 +182,8 @@
                 <div class="col-12 col-md-6 mt-3">
                   <label class="form-label" for="doc_type">Tipo de Documento</label>
                   <select id="doc_type" name="doc_type" class="form-control" required>
-                    <option value="2">RUC</option>
                     <option value="3">CI</option>
+                    <option value="2">RUC</option>
                   </select>
                 </div>
                 <div class="col-12 col-md-6 mt-3">
