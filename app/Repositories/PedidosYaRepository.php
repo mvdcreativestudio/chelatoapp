@@ -12,15 +12,26 @@ class PedidosYaRepository
   /**
    * Obtiene la clave de la API de PedidosYa para una tienda.
    *
-   * @param  int  $storeId
+   * @param  int  $store_id
    * @return string|null
    */
-  private function getApiKeyForStore(int $storeId): ?string
+  private function getApiKeyForStore(int $store_id): ?string
   {
-      $store = Store::find($storeId);
+      if (!$store_id) {
+          Log::error('El store_id proporcionado es inválido o está vacío.');
+          return null;
+      }
 
-      return $store ? $store->peya_envios_key : null;
+      $store = Store::find($store_id);
+
+      if (!$store) {
+          Log::error("No se encontró una tienda asociada al store_id {$store_id}.");
+          return null;
+      }
+
+      return $store->peya_envios_key;
   }
+
 
 
   /**
@@ -31,6 +42,7 @@ class PedidosYaRepository
   */
   public function estimateOrderRequest(Request $request): array {
     $url = 'https://courier-api.pedidosya.com/v3/shippings/estimates';
+    Log::info('Request recibida en estimateOrderRequest', $request->all());
     $apiKey = $this->getApiKeyForStore($request->store_id);
 
     Log::info('Estimating order for store ' . $request->store_id);
@@ -60,46 +72,55 @@ class PedidosYaRepository
    * @return array
    */
   public function confirmOrderRequest(Request $request): array
-    {
-        $url = 'https://courier-api.pedidosya.com/v3/shippings/estimates/' . $request->estimate_id . '/confirm';
-        $apiKey = $this->getApiKeyForStore($request->store_id);
+{
+    Log::info('Contenido de Request en confirmOrderRequest:', $request->all()); // Log adicional
 
-        if (!$apiKey) {
-            return ['error' => 'API key not found for the store'];
-        }
+    $url = 'https://courier-api.pedidosya.com/v3/shippings/estimates/' . $request->estimate_id . '/confirm';
 
-        try {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $apiKey,
-                'Content-Type' => 'application/json',
-                'User-Agent' => 'PedidosYa MVD Studio Client'
-            ])->post($url);
+    // Convertir store_id a entero
+    $storeId = (int) $request->store_id;
+    Log::info('Confirming order for store ' . $storeId);
 
-            if ($response->successful()) {
-                return $response->json();
-            } else {
-                Log::error('PedidosYa API error', [
-                    'url' => $url,
-                    'response' => $response->body(),
-                    'status' => $response->status()
-                ]);
-                return [
-                    'error' => 'API request failed',
-                    'status' => $response->status(),
-                    'body' => $response->body()
-                ];
-            }
-        } catch (\Exception $e) {
-            Log::error('PedidosYa API exception', [
+    $apiKey = $this->getApiKeyForStore($storeId);
+    Log::info('API key: ' . $apiKey);
+
+    if (!$apiKey) {
+        return ['error' => 'API key not found for the store'];
+    }
+
+    try {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $apiKey,
+            'Content-Type' => 'application/json',
+            'User-Agent' => 'PedidosYa MVD Studio Client'
+        ])->post($url);
+
+        if ($response->successful()) {
+            return $response->json();
+        } else {
+            Log::error('PedidosYa API error', [
                 'url' => $url,
-                'message' => $e->getMessage()
+                'response' => $response->body(),
+                'status' => $response->status()
             ]);
             return [
-                'error' => 'Exception occurred',
-                'message' => $e->getMessage()
+                'error' => 'API request failed',
+                'status' => $response->status(),
+                'body' => $response->body()
             ];
         }
-  }
+    } catch (\Exception $e) {
+        Log::error('PedidosYa API exception', [
+            'url' => $url,
+            'message' => $e->getMessage()
+        ]);
+        return [
+            'error' => 'Exception occurred',
+            'message' => $e->getMessage()
+        ];
+    }
+}
+
 
 
 }

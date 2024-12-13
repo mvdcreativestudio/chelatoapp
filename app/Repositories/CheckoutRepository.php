@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 use App\Http\Requests\CheckoutStoreOrderRequest;
 use Illuminate\Http\RedirectResponse;
 use App\Events\OrderCreatedEvent;
+use App\Repositories\PedidosYaRepository;
+
 use Exception;
 
 class CheckoutRepository
@@ -35,13 +37,21 @@ class CheckoutRepository
     protected $accountingRepository;
 
     /**
+     * El repositorio de PedidosYa para la gestión de envíos.
+     *
+     * @var PedidosYaRepository
+    */
+    protected $pedidosYaRepository;
+
+    /**
      * Inicializa el repositorio de notificaciones de correo electrónico.
      *
      * @param EmailNotificationsRepository $emailNotificationsRepository
      * @param AccountingRepository $accountingRepository
     */
-    public function __construct(EmailNotificationsRepository $emailNotificationsRepository, AccountingRepository $accountingRepository)
+    public function __construct(PedidosYaRepository $pedidosYaRepository, EmailNotificationsRepository $emailNotificationsRepository, AccountingRepository $accountingRepository)
     {
+        $this->pedidosYaRepository = $pedidosYaRepository;
         $this->emailNotificationsRepository = $emailNotificationsRepository;
         $this->accountingRepository = $accountingRepository;
     }
@@ -153,6 +163,12 @@ class CheckoutRepository
 
                 Log::info('Pedido procesado correctamente.');
 
+                // Crear envío en PedidosYa si el método de envío es 'peya'
+                if ($order->shipping_method === 'peya') {
+                    Log::info('Método de envío es peya. Creando envío...', ['order' => $order]);
+                    $this->createPeYaShipping($order);
+                }
+
                 // Enviar correos
                 try {
                     Log::info('Método de pago es efectivo. Intentando enviar correos...');
@@ -194,7 +210,48 @@ class CheckoutRepository
         }
     }
 
+    /**
+     * Crea el envío en PedidosYa si el método de envío es 'peya'.
+     *
+     * @param Order $order
+     * @return void
+    */
+    private function createPeYaShipping(Order $order): void
+    {
+        $request = new Request([
+            'estimate_id' => $order->estimate_id,
+            'store_id' => $order->store_id, // Asegúrate de incluir el store_id
+        ]);
 
+        $response = $this->pedidosYaRepository->confirmOrderRequest($request);
+
+        if (isset($response['shippingId'])) {
+            $order->shipping_id = $response['shippingId'];
+            $order->shipping_status = $response['status'];
+            $order->save();
+
+            Log::info("Envío creado con éxito en PedidosYa para la orden con ID: {$order->id}");
+        } else {
+            Log::error("Error al crear el envío en PedidosYa para la orden con ID: {$order->id}", ['response' => $response]);
+        }
+    }
+
+
+    /**
+     * Analiza los datos de la firma X-Signature.
+     *
+     * @param array $xSignatureParts
+     * @return array
+    */
+    private function parseXSignature(array $xSignatureParts): array
+    {
+        $xSignatureData = [];
+        foreach ($xSignatureParts as $part) {
+            list($key, $value) = explode('=', $part);
+            $xSignatureData[trim($key)] = trim($value);
+        }
+        return $xSignatureData;
+    }
 
 
     /**
