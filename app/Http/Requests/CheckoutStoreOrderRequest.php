@@ -29,6 +29,8 @@ class CheckoutStoreOrderRequest extends FormRequest
           'email' => 'required|email',
           'payment_method' => 'required',
           'estimate_id' => 'sometimes|nullable',
+          'delivery_offer_id' => 'sometimes|nullable',
+          'shipping_id' => 'sometimes|nullable',
           'shipping_method' => 'required',
           'shipping_cost' => 'required|numeric|min:0',
         ];

@@ -17,7 +17,7 @@ class Order extends Model
     protected $fillable = ['date', 'time', 'origin', 'client_id',
       'store_id', 'products', 'subtotal', 'tax', 'shipping', 'coupon_id',
       'coupon_amount', 'discount', 'total', 'payment_status', 'shipping_status',
-      'payment_method', 'shipping_method', 'estimate_id', 'shipping_id', 'uuid', 'is_billed', 'doc_type', 'document', 'cash_register_log_id'];
+      'payment_method', 'shipping_method', 'estimate_id', 'shipping_id', 'delivery_offer_id', 'uuid', 'is_billed', 'doc_type', 'document', 'cash_register_log_id'];
 
     /**
      * The "booted" method of the model.

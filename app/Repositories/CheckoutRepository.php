@@ -221,6 +221,7 @@ class CheckoutRepository
         $request = new Request([
             'estimate_id' => $order->estimate_id,
             'store_id' => $order->store_id, // Asegúrate de incluir el store_id
+            'delivery_offer_id' => $order->delivery_offer_id,
         ]);
 
         $response = $this->pedidosYaRepository->confirmOrderRequest($request);
@@ -450,6 +451,9 @@ class CheckoutRepository
 
         if ($request->filled('estimate_id')) {
             $orderData['estimate_id'] = $request->estimate_id;
+        }
+        if($request->filled('delivery_offer_id')) {
+            $orderData['delivery_offer_id'] = $request->delivery_offer_id;
         }
 
         return $orderData;

@@ -97,6 +97,7 @@
 
       <input type="hidden" name="shipping_cost" id="shippingCostInput" value="0">
       <input type="hidden" name="estimate_id" id="estimateIdInput" value="">
+      <input type="hidden" name="delivery_offer_id" id="deliveryOfferIdInput" value="">
       <input type="hidden" name="city" id="city" />
       <input type="hidden" name="department" id="department" />
       <input type="hidden" name="store_id" id="storeId" value="{{ $store_id }}" />
@@ -523,6 +524,9 @@ document.getElementById('validate-address').addEventListener('click', async func
 
           // Actualiza el id de la estimación
           document.getElementById('estimateIdInput').value = data.estimateId;
+
+          // Actualiza el id de la oferta de envío
+          document.getElementById('deliveryOfferIdInput').value = data.deliveryOffers[0].deliveryOfferId; // Guardar el deliveryOfferId
 
           // Actualiza el costo de envío
           document.getElementById('orderShippingCost').innerText = '$65'; // Envio hardcodeado a $65
