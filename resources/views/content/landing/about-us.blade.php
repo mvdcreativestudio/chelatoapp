@@ -71,8 +71,10 @@
             </div>
             <div class="video-player">
 
-                <iframe src="https://player.vimeo.com/video/713782582" width="640" height="360"
-                    frameborder="0"></iframe>
+              <video width="640" height="360" controls autoplay muted loop>
+                <source src="{{ asset('assets/img/landing/video-institucional.mp4') }}" type="video/mp4">
+                Tu navegador no soporta reproducción de videos. Por favor, actualiza tu navegador.
+            </video>
 
             </div>
         </div>
