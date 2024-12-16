@@ -19,7 +19,7 @@
         </li>
         @endif
       </ul>
-      <ul class="navbar-nav navbar-nav-scroll">
+      {{-- <ul class="navbar-nav navbar-nav-scroll">
         <li>
           @if(session('store') && session('store')['id'] == $selectedStoreId)
           <a href="#" class="nav-link nav-link-menu" onclick="confirmChangeStore()">Cambiar de tienda</a>
@@ -27,7 +27,7 @@
           <a href="#" class="nav-link nav-link-menu" data-bs-toggle="modal" data-bs-target="#selectStoreModal">Seleccionar tienda</a>
           @endif
         </li>
-      </ul>
+      </ul> --}}
     </div>
   </div>
 </nav>
