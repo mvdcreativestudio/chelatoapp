@@ -1,6 +1,6 @@
 @extends('content.e-commerce.front.layouts.ecommerce-layout')
 
-@section('title', 'Sumeria')
+@section('title', 'Chelato Helados')
 
 @section('content')
 
@@ -102,7 +102,7 @@
   </div>
   @endif
 
-  <div class="container-fluid mt-3">
+  {{-- <div class="container-fluid mt-3">
     <div class="row align-items-center">
       <div class="col-lg-6 col-md-12 text-center quienes-somos-container mb-3 mb-lg-0">
         <h2>¿Quiénes somos?</h2>
@@ -136,7 +136,7 @@
         <img class="img-fluid homepage-quienes-somos-img" src="{{ asset('assets/img/front-pages/homepage/locales-1.jpg') }}" alt="">
       </div>
     </div>
-  </div>
+  </div> --}}
 
 
 

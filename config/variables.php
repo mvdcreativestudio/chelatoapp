@@ -3,7 +3,7 @@
   return [
     "creatorName" => "MDV Studio",
     "creatorUrl" => "#",
-    "templateName" => "Sumeria",
+    "templateName" => "E-Commerce",
     "templateSuffix" => "",
     "templateVersion" => "2.2.0",
     "templateFree" => false,
