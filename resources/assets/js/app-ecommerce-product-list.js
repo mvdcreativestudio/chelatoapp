@@ -91,6 +91,8 @@ $(function () {
             const priceToShow = rowData.price > 0 ? rowData.price : rowData.old_price; // Cambiado para mostrar old_price si price es 0
             const priceClass = rowData.price !== null ? '' : ''; // Añadido para mostrar un estilo diferente si no hay precio
 
+            const store = rowData.store ? rowData.store.name : 'Sin tienda disponible';
+
             const card = `
               <div class="col-md-6 col-lg-4 col-12 mb-4">
                 <a href="${baseUrl}admin/products/${rowData.id}" class="text-decoration-none">
@@ -106,6 +108,7 @@ $(function () {
                         <h6 class="product-price ${priceClass}">${currencySymbol}${parseFloat(priceToShow).toFixed(2)}</h6>
                         <p class="product-stock"><span class="badge ${stockClass}">${rowData.stock}</span></p>
                         <p class="product-status ${statusTextClass}">${statusText}</p>
+                        <p class="product-store text-muted small">${store}</p>
                       </div>
                     </div>
                   </div>

@@ -18,13 +18,11 @@ class ProductCategoryRepository
   */
   public function index(): Collection
   {
-    // if(auth()->user()->can('access_global_products')){
-    //   return ProductCategory::all(); // Devuelve una colección
-    // }else{
-    //   return ProductCategory::where('store_id', auth()->user()->store_id)->get(); // Devuelve una colección
-    // }
-    // Temporalmente mostramos todas las categorías de productos
-    return ProductCategory::all();
+    if(auth()->user()->can('access_global_products')){
+      return ProductCategory::all(); // Devuelve una colección
+    }else{
+      return ProductCategory::where('store_id', auth()->user()->store_id)->get(); // Devuelve una colección
+    }
   }
 
   /**

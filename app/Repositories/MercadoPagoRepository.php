@@ -185,21 +185,20 @@ class MercadoPagoRepository
   */
   private function createPeYaShipping(Order $order): void
   {
-    $request = new Request([
-        'estimate_id' => $order->estimate_id,
-    ]);
-
-    $response = $this->pedidosYaRepository->confirmOrderRequest($request);
-
-    if (isset($response['shippingId'])) {
-        $order->shipping_id = $response['shippingId'];
-        $order->shipping_status = $response['status'];
-        $order->save();
-
-        Log::info("Envío creado con éxito en PedidosYa para la orden con ID: $order->id");
-    } else {
-        Log::error("Error al crear el envío en PedidosYa para la orden con ID: $order->id", ['response' => $response]);
-    }
+      $request = new Request([
+          'estimate_id' => $order->estimate_id,
+          'store_id' => $order->store_id, // Asegúrate de incluir el store_id
+          'delivery_offer_id' => $order->delivery_offer_id,
+      ]);
+      $response = $this->pedidosYaRepository->confirmOrderRequest($request);
+      if (isset($response['shippingId'])) {
+          $order->shipping_id = $response['shippingId'];
+          $order->shipping_status = $response['status'];
+          $order->save();
+          Log::info("Envío creado con éxito en PedidosYa para la orden con ID: {$order->id}");
+      } else {
+          Log::error("Error al crear el envío en PedidosYa para la orden con ID: {$order->id}", ['response' => $response]);
+      }
   }
 
   /**

@@ -32,7 +32,7 @@ class MercadoPagoService
     public function __construct()
     {
       // Cargar la secret key desde la configuración
-      $this->secretKey = 'd9a801275bb607f1a2279c89ab21e014e023041158f1ed210fae7fdd157359c5';
+      $this->secretKey = '80cd3dd7852a56bd241b7e2ec7db21ca09a92927ddc6eb928a05da4d5f2d0731';
       $this->client = new Client();
 
       // Configurar el acceso a la API de MercadoPago
@@ -94,7 +94,9 @@ class MercadoPagoService
       $preference->auto_return = "all";
 
       // URL para las notificaciones webhooks
-      $preference->notification_url = 'https://cd65-2800-a4-1756-6f00-61bd-b9eb-ccc6-7b8e.ngrok-free.app/api/mpagohook?source_news=webhooks';
+      $preference->notification_url = 'https://chelato.com.uy/api/mpagohook';
+
+      $preference->external_reference = $order->id;
 
       // Configurar los envíos
       $preference->shipments = (object) [

@@ -287,7 +287,7 @@
 
                       {{-- <button class="btn btn-success" disabled id="orderConfirm"> --}}
                       <!-- Envio hardcodeado a $65 -->
-                      <button class="btn btn-success" id="orderConfirm">
+                      <button class="btn btn-success" id="orderConfirm" disabled>
                           <span class="me-2">Confirmar pedido</span>
                           <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
                       </button>
@@ -479,7 +479,7 @@ document.getElementById('validate-address').addEventListener('click', async func
       store_id: storeId, // Asegúrate de incluir store_id
       referenceId: referenceId,
       items: items,
-      isTest: true,
+      isTest: false,
       notificationMail: document.getElementById('email').value || null,
       waypoints: [{
         type: "PICK_UP",
