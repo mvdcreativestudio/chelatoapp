@@ -65,67 +65,75 @@ class PedidosYaRepository
 }
 
 
-  /**
-   * Confirma una estimación de pedido y lo envía a la API de PedidosYa.
-   *
-   * @param  Request  $request
-   * @return array
-   */
-  public function confirmOrderRequest(Request $request): array
-  {
-      Log::info('Contenido de Request en confirmOrderRequest:', $request->all());
+/**
+ * Confirma una estimación de pedido y lo envía a la API de PedidosYa.
+ *
+ * @param  Request  $request
+ * @return array
+ */
+public function confirmOrderRequest(Request $request): array
+{
+    Log::info('Contenido de Request en confirmOrderRequest:', $request->all());
 
-      $url = 'https://courier-api.pedidosya.com/v3/shippings/estimates/' . $request->estimate_id . '/confirm';
+    $url = 'https://courier-api.pedidosya.com/v3/shippings/estimates/' . $request->estimate_id . '/confirm';
 
-      // Convertir store_id a entero
-      $storeId = (int) $request->store_id;
-      Log::info('Confirming order for store ' . $storeId);
+    // Convertir store_id a entero
+    $storeId = (int) $request->store_id;
+    Log::info('Confirming order for store ' . $storeId);
 
-      $apiKey = $this->getApiKeyForStore($storeId);
-      Log::info('API key: ' . $apiKey);
+    $apiKey = $this->getApiKeyForStore($storeId);
+    Log::info('API key: ' . $apiKey);
 
-      if (!$apiKey) {
-          return ['error' => 'API key not found for the store'];
-      }
+    if (!$apiKey) {
+        return ['error' => 'API key not found for the store'];
+    }
 
-      // Construir el cuerpo del request
-      $body = [
-          'deliveryOfferId' => $request->delivery_offer_id,
-      ];
+    // Construir el cuerpo del request
+    $body = [
+        'deliveryOfferId' => $request->delivery_offer_id,
+    ];
 
-      try {
-          $response = Http::withHeaders([
-              'Authorization' => 'Bearer ' . $apiKey,
-              'Content-Type' => 'application/json',
-              'User-Agent' => 'PedidosYa MVD Studio Client'
-          ])->post($url, $body); // Enviar el cuerpo con delivery_offer_id
+    // Encabezados de la solicitud
+    $headers = [
+        'Authorization' => $apiKey,
+        'Content-Type' => 'application/json',
+        'User-Agent' => 'PedidosYa MVD Studio Client'
+    ];
 
-          if ($response->successful()) {
-              Log::info('Respuesta exitosa de PedidosYa:', $response->json());
-              return $response->json();
-          } else {
-              Log::error('PedidosYa API error', [
-                  'url' => $url,
-                  'response' => $response->body(),
-                  'status' => $response->status()
-              ]);
-              return [
-                  'error' => 'API request failed',
-                  'status' => $response->status(),
-                  'body' => $response->body()
-              ];
-          }
-      } catch (\Exception $e) {
-          Log::error('PedidosYa API exception', [
-              'url' => $url,
-              'message' => $e->getMessage()
-          ]);
-          return [
-              'error' => 'Exception occurred',
-              'message' => $e->getMessage()
-          ];
-      }
-  }
+    // Log para capturar los headers
+    Log::info('Headers de la solicitud a PedidosYa:', $headers);
+
+    try {
+        $response = Http::withHeaders($headers)
+            ->post($url, $body); // Enviar el cuerpo con delivery_offer_id
+
+        if ($response->successful()) {
+            Log::info('Respuesta exitosa de PedidosYa:', $response->json());
+            return $response->json();
+        } else {
+            Log::error('PedidosYa API error', [
+                'url' => $url,
+                'response' => $response->body(),
+                'status' => $response->status()
+            ]);
+            return [
+                'error' => 'API request failed',
+                'status' => $response->status(),
+                'body' => $response->body()
+            ];
+        }
+    } catch (\Exception $e) {
+        Log::error('PedidosYa API exception', [
+            'url' => $url,
+            'message' => $e->getMessage()
+        ]);
+        return [
+            'error' => 'Exception occurred',
+            'message' => $e->getMessage()
+        ];
+    }
+}
+
 
 
 
