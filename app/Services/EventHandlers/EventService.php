@@ -39,9 +39,11 @@ class EventService
                 $data['event_id'] = $event->id;
 
                 if (!$event) {
-                    Log::error("Evento no encontrado en la base de datos: {$eventEnum->getDescription()}");
-                    throw new Exception("Evento no encontrado en la base de datos: {$eventEnum->getDescription()}");
+                    return;
                 }
+
+                $data['event_id'] = $event->id;
+
                 if ($this->eventConfigRepo->isEventEnabledForStore($storeId, $event)) {
                     $this->executeEvent($storeId, $eventEnum, $data);
                 }

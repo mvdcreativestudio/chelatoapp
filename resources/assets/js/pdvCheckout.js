@@ -1375,6 +1375,8 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     const selectedCurrency = $('input[name="currency"]:checked').val();
 
     const shippingStatus = $('#shippingStatus').val();
+    const construction_site = $('#construction_site').val();
+
     let cashSales = 0;
     let posSales = 0;
 
@@ -1448,6 +1450,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     if (client && client.id) {
         orderData.client_id = client.id;
     }
+    
 
     // Crear la orden en pos-orders primero
     $.ajax({
@@ -1464,6 +1467,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         const ordersData = {
           ...orderData,
           origin: 'physical',
+                construction_site: construction_site,
           payment_status: paymentStatus,
           payment_method: paymentMethod,
           shipping_method: 'standard',

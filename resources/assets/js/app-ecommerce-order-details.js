@@ -149,6 +149,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  $(document).on('click', '.btn-dispatch', function() {
+    var orderUuid = $(this).data('id');
+    var dispatchUrl = `${baseUrl}admin/dispatch-notes/${orderUuid}`;
+    window.location.href = dispatchUrl;
+  });
+
   document.getElementById('sendEmailForm').addEventListener('submit', function (e) {
     e.preventDefault();
 
