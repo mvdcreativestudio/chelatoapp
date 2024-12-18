@@ -134,22 +134,18 @@ $(function () {
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') 
                     },
-                    success: function(response) {
-                        if (response.success) {
-                            card.fadeOut(300, function() {
-                                $(this).remove();
-                                if ($('.note-delivery-card-wrapper').length === 0) {
-                                    displayNoteDeliveries();
-                                }
-                            });
-                            
-                            Swal.fire(
-                                '¡Eliminado!',
-                                'El envío ha sido eliminado.',
-                                'success'
-                            );
-                        }
-                    },
+                    success: function (response) {
+                        Swal.fire({
+                          title: '¡Éxito!',
+                          text: 'El envío ha sido eliminado correctamente.',
+                          icon: 'success',
+                          confirmButtonText: 'Aceptar'
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            location.reload(); 
+                          }
+                        });
+                      },
                     error: function(xhr, status, error) {
                         console.error('Error:', error);
                         Swal.fire(
