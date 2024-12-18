@@ -57,12 +57,10 @@ class PosOrderController extends Controller
     {
         $validatedData = $request->validated();
 
-        Log::info('Validated data: ' . json_encode($validatedData));
 
         // Convertir los productos a un array
         $products = json_decode($validatedData['products'], true);
 
-        Log::info('Products controller: ' . json_encode($products));
 
         // Crear la orden después de actualizar el stock
         $order = $this->posOrderRepo->create($validatedData);

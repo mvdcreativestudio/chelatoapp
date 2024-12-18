@@ -108,13 +108,6 @@
       "slug": "manufacturing",
       "submenu": [
         {
-          "id": "tour-variaciones",
-          "name": "Variaciones",
-          "icon": "menu-icon tf-icons bx bx-lemon",
-          "slug": "product-flavors",
-          "url": "/admin/product-flavors"
-        },
-        {
           "id": "tour-materias-primas",
           "name": "Materias Primas",
           "icon": "menu-icon tf-icons bx bx-box",
@@ -137,7 +130,7 @@
         },
         {
           "id": "batches",
-          "name": "Remitos",
+          "name": "Lotes",
           "icon": "menu-icon tf-icons bx bx-package",
           "slug": "batches",
           "url": "/admin/batches"
@@ -162,6 +155,35 @@
           "icon": "menu-icon tf-icons bx bx-droplet",
           "slug": "packagings",
           "url": "/admin/packagings"
+        }
+      ]
+    },
+    {
+      "id": "tour-logistica",
+      "name": "Logística",
+      "icon": "menu-icon tf-icons bx bx-send",
+      "slug": "logistics",
+      "submenu": [
+        {
+          "id": "Choferes",
+          "name": "Choferes",
+          "icon": "menu-icon tf-icons bx bx-user-circle",
+          "slug": "drivers",
+          "url": "/admin/drivers"
+        },
+        {
+          "id": "Vehiculos",
+          "name": "Vehículos",
+          "icon": "menu-icon tf-icons bx bx-car",
+          "slug": "vehicles",
+          "url": "/admin/vehicles"
+        },
+        {
+          "id": "Envios",
+          "name": "Envíos",
+          "icon": "menu-icon tf-icons bx bx-map-alt",
+          "slug": "note_deliveries",
+          "url": "/admin/note-deliveries"
         }
       ]
     },

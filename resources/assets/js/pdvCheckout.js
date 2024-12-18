@@ -1055,6 +1055,8 @@ $(document).ready(function () {
 
     const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
     const shippingStatus = $('#shippingStatus').val();
+    const construction_site = $('#construction_site').val();
+
     let cashSales = 0;
     let posSales = 0;
 
@@ -1103,6 +1105,7 @@ $(document).ready(function () {
     if (client && client.id) {
         orderData.client_id = client.id;
     }
+    
 
     // POST a pos-orders
     $.ajax({
@@ -1116,6 +1119,7 @@ $(document).ready(function () {
             const ordersData = {
                 ...orderData,
                 origin: 'physical',
+                construction_site: construction_site,
                 payment_status: 'paid',
                 payment_method: paymentMethod,
                 shipping_method: 'standard',
