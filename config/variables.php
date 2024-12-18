@@ -3,7 +3,7 @@
   return [
     "creatorName" => "MDV Studio",
     "creatorUrl" => "#",
-    "templateName" => "Sumeria",
+    "templateName" => "Hormigonera",
     "templateSuffix" => "",
     "templateVersion" => "2.2.0",
     "templateFree" => false,

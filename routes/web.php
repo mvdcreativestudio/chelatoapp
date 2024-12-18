@@ -63,6 +63,10 @@ use App\Http\Controllers\PackagingController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PackageComponentController;
 use App\Http\Controllers\ProductCatalogueController;
+use App\Http\Controllers\DriverController;
+use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\DispatchNoteController;
+use App\Http\Controllers\NoteDeliveryController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -198,6 +202,25 @@ Route::middleware([
         'income-categories' => IncomeCategoryController::class,
         'currencies' => CurrencyController::class,
     ]);
+
+    // Rutas logística
+    Route::get('drivers', [DriverController::class, 'index']);
+    Route::get('vehicles', [VehicleController::class, 'index']);
+    Route::post('drivers', [DriverController::class, 'store']);
+    Route::post('vehicles', [VehicleController::class, 'store']);
+    Route::delete('vehicles/{vehicleId}', [VehicleController::class, 'destroy']);
+    Route::delete('drivers/{driverId}', [DriverController::class, 'destroy']);
+    Route::get('dispatch-notes/{uuid}', [DispatchNoteController::class, 'index']);
+    Route::post('dispatch-notes', [DispatchNoteController::class, 'store']);
+    Route::get('note-deliveries/form', [NoteDeliveryController::class, 'getInfoForForm']);
+    Route::post('note-deliveries', [NoteDeliveryController::class, 'store']);
+    Route::get('note-deliveries/export', [NoteDeliveryController::class, 'export'])->name('note-deliveries.export');    Route::get('note-deliveries/{id}', [NoteDeliveryController::class, 'getDeliveryDetails']);
+    Route::get('note-deliveries', [NoteDeliveryController::class, 'index']);
+    Route::get('dispatch-notes/pdf/{uuid}', [DispatchNoteController::class, 'downloadMultiplePdf'])->name('dispatch-notes.pdf');
+    Route::get('dispatch-notes/{id}/pdf', [DispatchNoteController::class, 'downloadSinglePdf'])->name('dispatch-notes.single.pdf');
+    Route::get('note-deliveries/export-excel', [NoteDeliveryController::class, 'exportExcel']);  
+    Route::delete('note-deliveries/{noteDeliveryId}', [NoteDeliveryController::class, 'destroy']);  
+    Route::delete('dispatch-notes/{dispatchNoteId}', [DispatchNoteController::class, 'destroy']);  
 
     // Rutas específicas modulo de dalí
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
@@ -341,11 +364,11 @@ Route::middleware([
 
     // Gestión de Roles
     Route::prefix('roles/{role}')->name('roles.')->group(function () {
-        Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('manageUsers');
-        Route::post('associate-user', [RoleController::class, 'associateUser'])->name('associateUser');
-        Route::post('disassociate-user', [RoleController::class, 'disassociateUser'])->name('disassociateUser');
-        Route::get('manage-permissions', [RoleController::class, 'managePermissions'])->name('managePermissions');
-        Route::post('assign-permissions', [RoleController::class, 'assignPermissions'])->name('assignPermissions');
+        Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('roles.manageUsers');
+        Route::post('associate-user', [RoleController::class, 'associateUser'])->name('roles.associateUser');
+        Route::post('disassociate-user', [RoleController::class, 'disassociateUser'])->name('roles.disassociateUser');
+        Route::get('manage-permissions', [RoleController::class, 'managePermissions'])->name('roles.managePermissions');
+        Route::post('assign-permissions', [RoleController::class, 'assignPermissions'])->name('roles.assignPermissions');
     });
 
     // Gestión de Variaciones de Productos
@@ -564,4 +587,4 @@ Route::get('/notifications', [NotificationController::class, 'index'])->name('no
 Route::post('/notifications/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
 // Sesión
-Route::get('/session/clear', [CartController::class, 'clearSession'])->name('session.clear'); // Limpiar Sesión
+Route::get('/session/clear', [CartController::class, 'clearSession'])->name('session.clear');

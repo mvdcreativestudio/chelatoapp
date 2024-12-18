@@ -60,6 +60,26 @@ class CreatePermissions extends Command
                     'view_all' => true,
                 ],
                 [
+                    'slug' => 'logistics',
+                    'module' => 'logistics',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'vehicles',
+                    'module' => 'logistics',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'drivers',
+                    'module' => 'logistics',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'note_deliveries',
+                    'module' => 'logistics',
+                    'view_all' => true,
+                ],
+                [
                     'slug' => 'batches',
                     'module' => 'manufacturing',
                     'view_all' => true,

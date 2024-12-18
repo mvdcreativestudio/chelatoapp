@@ -124,13 +124,14 @@ $(function () {
                 : orderData.shipping_status === 'shipped'
                   ? 'bg-warning'
                   : 'bg-danger';
-
+            console.log(orderData);
             const card = `
                   <div class="col-md-6 col-lg-4 col-12 mb-4">
                     <div class="order-card position-relative">
                       <div class="order-card-body">
                         <h5 class="order-title">#${orderData.id}-${orderData.client_name}</h5>
                         <p class="order-date text-muted small">${moment(orderData.date).format('DD/MM/YYYY')}</p>
+                        <p class="order-construction_site">Obra: ${orderData.construction_site}</p>
                         <p class="order-payment-status"><span class="badge ${paymentStatusClass}">${paymentStatusText}</span></p>
                         <p class="order-shipping-status"><span class="badge ${shippingStatusClass}">${shippingStatusText}</span></p>
                         <h6 class="order-total">${currencySymbol}${parseFloat(orderData.total).toFixed(2)}</h6>
