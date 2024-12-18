@@ -30,6 +30,12 @@
             </div>
 
             <div class="mb-3">
+              <label class="form-label" for="store-description">Descripción</label>
+              <input type="text" class="form-control" id="store-description" name="description"
+                placeholder="Descripción de la Empresa">
+            </div>
+
+            <div class="mb-3">
               <label class="form-label" for="store-address">Dirección</label>
               <input type="text" class="form-control" id="store-address" name="address" required
                 placeholder="Calle, esquina, número de puerta" onFocus="geolocate()" role="presentation"

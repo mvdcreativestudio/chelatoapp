@@ -479,13 +479,14 @@ document.getElementById('validate-address').addEventListener('click', async func
       store_id: storeId, // Asegúrate de incluir store_id
       referenceId: referenceId,
       items: items,
-      isTest: false,
+      isTest: true,
       notificationMail: document.getElementById('email').value || null,
       waypoints: [{
         type: "PICK_UP",
         ...storeDetails,
         phone: "+541234567890",
         name: '{{ session("store")["name"] }}',
+        instructions: '{{ session("store")["description"] }}',
       }, {
         type: "DROP_OFF",
         ...userDetails,
