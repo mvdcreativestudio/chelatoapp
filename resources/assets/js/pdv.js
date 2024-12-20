@@ -1,6 +1,6 @@
 'use strict';
 
-    
+
 
 $(document).ready(function () {
     const cashRegisterId = window.cashRegisterId;
@@ -25,11 +25,68 @@ $(document).ready(function () {
     });
 
     loadClientFromSession(); // Ejecuta esta función al cargar
-    
+
     if (client && client.id) {
         $('#seleccionar-cliente-btn').hide(); // Ocultar el botón si el cliente existe
     }
-    
+
+
+function toggleDocumentFields(selectedType) {
+      // Ocultar todos los campos de documentos
+      $('#ciField, #passportField, #otherField').hide();
+      $('#ci, #passport, #other_id_type').val('').removeAttr('required');
+
+      // Mostrar y configurar el campo correspondiente al tipo de documento seleccionado
+      if (selectedType === 'ci') {
+          $('#ciField').show();
+      } else if (selectedType === 'passport') {
+          $('#passportField').show();
+      } else if (selectedType === 'other_id_type') {
+          $('#otherField').show();
+      }
+    }
+
+      // Manejar el cambio del tipo de cliente
+      $('#tipoCliente').on('change', function () {
+        const selectedType = $(this).val();
+
+        if (selectedType === 'individual') {
+            // Mostrar campos para persona física
+            $('#documentTypeField').show();
+            $('#razonSocialField, #rutField').hide();
+
+            // Restablecer el tipo de documento a CI por defecto
+            $('#documentType').val('ci').trigger('change');
+
+            // Hacer que el campo de documento sea obligatorio
+            $('#documentType').attr('required', true);
+
+            // Ocultar campos no necesarios para persona física
+            $('#company_name, #rut').removeAttr('required');
+            $('#ci, #passport, #other_id_type').val('').removeAttr('required');
+
+            // Configurar los campos según el tipo de documento seleccionado
+            toggleDocumentFields($('#documentType').val());
+        } else if (selectedType === 'company') {
+            // Mostrar campos para persona jurídica
+            $('#razonSocialField, #rutField').show();
+            $('#ciField, #documentTypeField').hide();
+
+            // Hacer que los campos para persona jurídica sean obligatorios
+            $('#company_name, #rut').attr('required', true);
+
+            // Ocultar campos no necesarios para persona jurídica
+            $('#documentType').removeAttr('required');
+            $('#ci, #passport, #other_id_type').val('').removeAttr('required');
+        }
+    });
+
+    // Manejar el cambio del tipo de documento solo para persona física
+    $('#documentType').on('change', function () {
+        const selectedDocumentType = $(this).val();
+        toggleDocumentFields(selectedDocumentType);
+    });
+
 
     // Inicializar Select2 en elementos con clase .select2
     $(function () {
@@ -65,7 +122,7 @@ $(document).ready(function () {
     // Cargar el cliente de la sesión
     function loadClientFromSession() {
         console.log('Ejecutando loadClientFromSession...'); // Marca el inicio de la ejecución de la función
-        
+
         $.ajax({
             url: `client-session`,
             type: 'GET',
@@ -176,6 +233,34 @@ $(document).ready(function () {
         searchCategories(query);
     });
 
+    $('#search-client').on('input', function () {
+        const searchText = $(this).val().toLowerCase();
+
+        // Seleccionar las tarjetas de cliente correctas
+        $('#client-list .client-card').each(function () {
+          const name = $(this).find('.card-title').text().toLowerCase(); // Obtener el nombre del cliente desde la tarjeta
+          const ci = $(this).find('.client-info:contains("CI")').text().toLowerCase(); // Obtener CI
+          const rut = $(this).find('.client-info:contains("RUT")').text().toLowerCase(); // Obtener RUT
+          const company_name = $(this).find('.client-info:contains("Razón Social")').text().toLowerCase(); // Obtener Razón Social
+          const passport = $(this).find('.client-info:contains("Pasaporte")').text().toLowerCase(); // Obtener Pasaporte
+          const otherIdType = $(this).find('.client-info:contains("Otro")').text().toLowerCase(); // Obtener Otro tipo de ID
+          // Comprobar si el texto de búsqueda coincide con nombre, CI o RUT
+          if (
+            name.includes(searchText) ||
+            ci.includes(searchText) ||
+            rut.includes(searchText) ||
+            company_name.includes(searchText) ||
+            passport.includes(searchText) ||
+            otherIdType.includes(searchText)
+          ) {
+            $(this).removeClass('d-none'); // Mostrar tarjeta
+          } else {
+            $(this).addClass('d-none'); // Ocultar tarjeta
+          }
+        });
+    });
+
+
     // Función para actualizar el menú desplegable de categorías en la vista
     function actualizarCategoriasEnVista(categoriesToDisplay = productCategory) {
         let categoryHtml = '';
@@ -239,7 +324,7 @@ $(document).ready(function () {
                         }
                         return product;
                     });
-    
+
                     if (isListView) {
                         displayProductsList(products); // Mostrar la vista de lista por defecto
                     } else {
@@ -254,7 +339,7 @@ $(document).ready(function () {
             }
         });
     }
-  
+
     // Cargar variaciones desde el backend
     function cargarVariaciones() {
         $.ajax({
@@ -523,12 +608,12 @@ $(document).ready(function () {
         cartHtml = `
         <div class="row gy-3 overflow-auto" style="max-height: 400px;">
       `;
-      
+
       cart.forEach(item => {
           const itemTotal = item.price * item.quantity;
           subtotal += itemTotal;
           totalItems += item.quantity;
-      
+
           cartHtml += `
             <div class="col-12">
               <div class="product-cart-card">
@@ -552,9 +637,9 @@ $(document).ready(function () {
             </div>
           `;
       });
-      
+
       cartHtml += `</div>`; // Cerrar el contenedor de desplazamiento
-      
+
 
         // Actualiza el contenido del carrito
         $('#cart-items').html(cartHtml);
@@ -727,7 +812,7 @@ $(document).ready(function () {
             });
         }
     }
-    
+
 
 
 
@@ -741,7 +826,7 @@ $(document).ready(function () {
         });
         displayProductsList(products); // Renderizar con los precios actualizados
     }
-    
+
 
     function loadStoreIdFromSession() {
         $.ajax({
@@ -805,14 +890,20 @@ $(document).ready(function () {
         });
     }
 
-    function displayClients(clients) {
+     function displayClients(clients) {
         const clientList = $('#client-list');
         clientList.empty(); // Limpiar la lista existente
 
         clients.forEach(client => {
             const clientType = client.type === 'company' ? 'Empresa' : 'Persona';
-            const clientDoc = client.type === 'company' ? client.rut : client.ci;
-            const clientDocLabel = client.type === 'company' ? 'RUT' : 'CI';
+
+            const clientDocLabel = client.type === 'company' ? 'RUT' : (
+                (client.type === 'individual' && client.passport ? 'Pasaporte' : (client.other_id_type ? 'Otro' : 'CI'))
+            );
+
+            const clientDoc = client.type === 'company' ? client.rut : (
+                (client.type === 'individual' && client.passport ? client.passport : (client.other_id_type ? client.other_id_type : client.ci))
+            );
 
             // Si es una empresa, mostrar company_name, si es una persona, mostrar name y lastname
             const displayName = client.type === 'company'
@@ -846,21 +937,21 @@ $(document).ready(function () {
             saveClientToSession(client).then(() => {
                 showClientInfo(client);
                 console.log('Cliente guardado en la sesión:', client);
-            
+
                 $('#seleccionar-cliente-btn').addClass('d-none'); // Oculta el botón
-            
+
                 if (client.price_list_id) {
                     loadClientPriceList(client.price_list_id).then(updateCartPrices);
                 } else {
                     updateProductPrices();
                     updateCartPrices();
                 }
-            
+
                 // Cerrar el offcanvas
                 let offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEnd'));
                 offcanvas.hide();
             });
-            
+
 
             if (client.price_list_id) {
                 loadClientPriceList(client.price_list_id).then(updateCartPrices);
@@ -928,6 +1019,8 @@ $(document).ready(function () {
     const direccion = document.getElementById('direccionCliente');
     const razonSocial = document.getElementById('razonSocialCliente');
     const priceList = document.getElementById('price_list_id');
+    const passport = document.getElementById('passport');
+    const otherIdType = document.getElementById('other_id_type');
 
     let hasError = false;
     clearErrors();
@@ -944,40 +1037,6 @@ $(document).ready(function () {
           showError(nombre, 'El nombre es obligatorio para clientes individuales');
           hasError = true;
       }
-
-      if (apellido.value.trim() === '') {
-          showError(apellido, 'El apellido es obligatorio para clientes individuales');
-          hasError = true;
-      }
-
-      if (ci.value.trim() === '') {
-          showError(ci, 'El documento de identidad es obligatorio para clientes individuales');
-          hasError = true;
-      }
-    }
-
-    // Validar que el campo "email" no esté vacío
-    if (email.value.trim() === '') {
-      showError(email, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    // Validar que "dirección" no esté vacía (si es aplicable a ambos tipos de cliente)
-    if (direccion.value.trim() === '') {
-      showError(direccion, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    if (tipo.value === 'company') {
-        if (rut.value.trim() === '') {
-            showError(rut, 'Este campo es obligatorio');
-            hasError = true;
-        }
-
-        if (razonSocial.value.trim() === '') {
-            showError(razonSocial, 'Este campo es obligatorio');
-            hasError = true;
-        }
     }
 
     // Si hubo errores, detener la ejecución.
@@ -996,36 +1055,45 @@ $(document).ready(function () {
         price_list_id: priceList.value
     };
 
+    data.documentType = $('#documentType').val();
+
     if (tipo.value === 'individual') {
-        data.ci = ci.value.trim();
+        if (ci && ci.value.trim() !== '') {
+          data.ci = ci.value.trim();
+        } else if (passport && passport.value.trim() !== '') {
+          data.passport = passport.value.trim();
+        } else if (otherIdType && otherIdType.value.trim() !== '') {
+          data.other_id_type = otherIdType.value.trim();
+        }
     } else if (tipo.value === 'company') {
         data.rut = rut.value.trim();
         data.company_name = razonSocial.value.trim();
     }
 
-    // Realizar la petición para crear el cliente
-    fetch('client', {
-        method: 'POST',
+    data.from_pdv = true;
+
+    $.ajax({
+        url: '/admin/clients',
+        type: 'POST',
+        data: data,
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-                let offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('crearClienteOffcanvas'));
-                offcanvas.hide();
+        success: function (response) {
+            let offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('crearClienteOffcanvas'));
+            offcanvas.hide();
 
-                // Limpiar el formulario de creación de cliente
-                document.getElementById('formCrearCliente').reset();
+            // Limpiar el formulario de creación de cliente
+            document.getElementById('formCrearCliente').reset();
 
-    })
-    .catch(error => {
-        mostrarError('Error al guardar el cliente: ' + error);
+            // Mostrar mensaje de éxito
+            toastr.success('Cliente creado correctamente');
+        },
+        error: function (xhr) {
+            mostrarError('Error al guardar el cliente: ' + xhr.responseText);
+        }
     });
   });
-
 
   // Función para mostrar el mensaje de error
   function showError(input, message) {
@@ -1048,13 +1116,13 @@ $(document).ready(function () {
     function deselectClient() {
         client = [];  // Limpiar los datos del cliente
         priceListProducts = []; // Vaciar lista de precios para usar precios originales
-    
+
         saveClientToSession(client)
             .done(function () {
                 // Restaurar precios de productos y carrito a los originales
                 loadNormalPrices();
                 updateCartPrices();
-    
+
                 // Actualizar la UI para deseleccionar al cliente
                 $('#client-id').text('');
                 $('#client-name').text('');
@@ -1092,22 +1160,22 @@ $(document).ready(function () {
     }
 
     function loadManualPriceListProducts(priceListId) {
-        if (priceListId === "0") { 
+        if (priceListId === "0") {
             loadNormalPrices(); // Restaurar precios originales en la vista
-    
+
             // Restaurar precios originales en el carrito
             cart = cart.map(item => {
                 const originalProduct = products.find(p => p.id === item.id);
                 item.price = originalProduct ? originalProduct.original_price : item.price;
                 return item;
             });
-    
+
             updateCart(); // Actualizar precios en el carrito
             return;
         } else if (priceListId === "") { // Si selecciona "Lista de precios manual"
             loadClientPriceList(client.price_list_id).then(updateCartPrices);
         }
-    
+
         $.ajax({
             url: `${baseUrl}admin/price-list/${priceListId}/products`,
             type: 'GET',
@@ -1121,8 +1189,8 @@ $(document).ready(function () {
             }
         });
     }
-    
-    
+
+
 
     // Inicializar funciones
     loadProducts();

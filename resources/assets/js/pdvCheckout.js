@@ -374,12 +374,12 @@ $(document).ready(function () {
       dataType: 'json',
       success: function (response) {
         client = response.client;
-  
+
         if (client && client.id) {
           showClientInfo(client);
           $('#client-selection-container').hide();
           console.log('Cliente en loadClientFromSession:', client);
-  
+
           // Si el cliente tiene una lista de precios, cargar los precios desde la lista
           if (client.price_list_id) {
             updateCartPricesWithPriceList(client.price_list_id);
@@ -394,7 +394,7 @@ $(document).ready(function () {
       }
     });
   }
-  
+
   function updateCartPrices() {
     const selectedPriceListId = $('#manual_price_list_id').val();
     const clientPriceListId = client && client.price_list_id;
@@ -412,7 +412,7 @@ $(document).ready(function () {
   // Escucha cambios en el selector manual de listas de precios
   $('#manual_price_list_id').on('change', updateCartPrices);
 
-  
+
 
   function loadStoreIdFromSession() {
     $.ajax({
@@ -434,14 +434,14 @@ $(document).ready(function () {
     const clientDoc = client.type === 'company' ? client.rut : client.ci;
     const fullName = `${client.name || '-'} ${client.lastname || ''}`.trim();
     const clientPriceList = client.price_list_name;
-  
+
     $('#client-id').text(client.id || '-');
     $('#client-name').text(fullName);
     $('#client-type').text(clientType);
     $('#client-doc-label').text(clientDocLabel);
     $('#client-doc').text(clientDoc || 'No disponible');
     $('#client-price-list').text(clientPriceList);
-  
+
     if (client.type === 'company') {
       $('#client-company').html(`<strong class="text-muted">Razón Social:</strong> <span class="text-body fw-bold">${client.company_name || '-'}</span>`);
       $('#client-company').show();
@@ -450,11 +450,11 @@ $(document).ready(function () {
     }
 
     console.log('Cliente en showClientInfo:', client);
-  
+
     $('#client-info').show();
     $('#client-selection-container').hide();
   }
-  
+
 
 
   function saveCartToSession() {
@@ -705,7 +705,7 @@ $(document).ready(function () {
     // Event listener para el botón "Seleccionar"
     $('.btn-select-client').on('click', function () {
       const selectedClient = $(this).data('client');
-      
+
       showClientInfo(selectedClient);
 
       // Cerrar el offcanvas después de seleccionar el cliente
@@ -734,12 +734,12 @@ $(document).ready(function () {
       type: 'GET',
       success: function (response) {
         client = response.client;
-  
+
         if (client && client.id) {
           // Actualizamos la vista con la información del cliente
           showClientInfo(client);
           $('#client-selection-container').hide();
-  
+
           // Si el cliente tiene una lista de precios, actualizamos los precios del carrito
           if (client.price_list_id) {
             updateCartPricesWithPriceList(client.price_list_id); // Esto debería funcionar si el ID es correcto
@@ -755,7 +755,7 @@ $(document).ready(function () {
       }
     });
   }
-  
+
   function updateCartPricesWithPriceList(priceListId) {
     $.ajax({
         url: `${baseUrl}admin/price-list/${priceListId}/products`,
@@ -767,7 +767,7 @@ $(document).ready(function () {
             // Itera sobre los productos del carrito y actualiza sus precios
             cart.forEach(item => {
                 const productInPriceList = priceListProducts.find(p => p.id === item.id);
-                
+
                 if (productInPriceList) {
                     // Si el producto está en la lista, aplica el precio de la lista
                     item.price = productInPriceList.price;
@@ -828,7 +828,7 @@ $(document).ready(function () {
         mostrarError('Error al guardar el cliente en la sesión: ' + xhr.responseText);
       });
   }
-  
+
 
   $('#offcanvasEnd').on('show.bs.offcanvas', function () {
     loadClients();
@@ -1007,7 +1007,7 @@ $(document).ready(function () {
       .done(function () {
         // Volver a cargar el carrito desde la sesión y restaurar los precios originales
         loadCartFromSessionWithNormalPrices();
-        
+
         // Actualizar la UI para deseleccionar al cliente
         $('#client-id').text('');
         $('#client-name').text('');

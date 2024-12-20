@@ -12,7 +12,7 @@
 <section id="hero" class="hero-carousel">
     <div class="carousel-container">
         <div class="carousel-slide">
-            <img src="assets/img/landing/2550x735px-BONUCCI-1536x443.jpg" alt="Sofá Confortable 1">
+            <img src="{{ asset($companySettings->hero_image) }}" alt="Sofá Confortable">
             <div class="slide-content">
             </div>
         </div>
@@ -53,7 +53,7 @@
             @php
             // Elimina todos los caracteres no numéricos
             $phoneNumber = preg_replace('/\D/', '', $companySettings->phone);
-    
+
             // Si el número comienza con "0", quítalo
             if (substr($phoneNumber, 0, 1) === '0') {
                 $phoneNumber = substr($phoneNumber, 1);
@@ -90,7 +90,7 @@
         </div>
     </div>
     <div class="produtos-content">
-        <h2 class="font-white">Conozca nuestros productos</h2> 
+        <h2 class="font-white">Conozca nuestros productos</h2>
         <p>Comodidad y funcionalidad para quienes aman vivir bien.</p>
         <a href="{{ route('landing-page.products') }}" class="btn-encante">Ver Productos</a>
     </div>
