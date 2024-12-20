@@ -52,9 +52,9 @@
       paymentInput.addEventListener('change', function (e) {
         const paymentInputValue = e.target.value;
         if (paymentInputValue === 'credit-card') {
-          document.querySelector('#form-credit-card').classList.remove('d-none');
+          document.querySelector('#form-credit-card')?.classList.remove('d-none');
         } else {
-          document.querySelector('#form-credit-card').classList.add('d-none');
+          document.querySelector('#form-credit-card')?.classList.add('d-none');
         }
       });
     });

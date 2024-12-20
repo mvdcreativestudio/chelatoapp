@@ -128,4 +128,15 @@ class Store extends Model
         return $this->hasMany(CFE::class);
     }
 
+    /**
+     * Obtiene la configuración de envío de correos electrónicos de la tienda.
+     * 
+     * @return HasOne
+     */
+
+     public function emailConfig()
+     {
+         return $this->hasOne(StoresEmailConfig::class, 'store_id');
+     }
+
 }

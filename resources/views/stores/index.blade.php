@@ -27,6 +27,7 @@
     window.storeManageHours = "{{ route('stores.manageHours', ':id') }}";
     window.toggleStoreStatus= "{{ route('stores.toggle-status', ':id') }}";
     window.storeChangeBilling = "{{ route('stores.toggleAutomaticBilling', ':id') }}";
+    window.events = "{{ route('stores.events.show', ':id') }}";
     window.csrfToken = "{{ csrf_token() }}";
     var stores = @json($stores);
 </script>
