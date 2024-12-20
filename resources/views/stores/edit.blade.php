@@ -68,6 +68,13 @@
                                     placeholder="Nombre de la tienda" value="{{ $store->name }}">
                             </div>
 
+                            <!-- Descripción -->
+                            <div class="mb-3">
+                              <label class="form-label" for="store-description">Descripción</label>
+                              <input type="text" class="form-control" id="store-description" name="description" required
+                                  placeholder="Descripción de la tienda" value="{{ $store->description }}">
+                            </div>
+
                             <!-- Dirección -->
                             <div class="mb-3">
                                 <label class="form-label" for="store-address">Dirección</label>

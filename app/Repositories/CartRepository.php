@@ -51,6 +51,7 @@ class CartRepository
         $request->session()->put('store', [
             'id' => $store->id,
             'name' => $store->name,
+            'description' => $store->description,
             'address' => $store->address,
             'slug' => $store->slug,
             // Puedes agregar cualquier otro dato necesario de la tienda aquí

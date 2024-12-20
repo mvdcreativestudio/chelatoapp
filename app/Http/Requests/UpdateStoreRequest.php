@@ -28,6 +28,7 @@ class UpdateStoreRequest extends FormRequest
 
         $rules = [
             'name' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string|max:255',
             'address' => 'sometimes|string|max:255',
             'email' => ['sometimes', 'email', Rule::unique('stores')->ignore($store->id)],
             'rut' => ['sometimes', 'string', Rule::unique('stores')->ignore($store->id)],
