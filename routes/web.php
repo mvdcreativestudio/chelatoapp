@@ -43,6 +43,7 @@ use App\Http\Controllers\WhatsAppController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EventStoreConfigurationController;
 
 // Ruta raíz redirige a la tienda (Shop)
 Route::get('/', [EcommerceController::class, 'index'])->name('shop');
@@ -205,6 +206,10 @@ Route::middleware([
         Route::post('toggle-store-status', [StoreController::class, 'toggleStoreStatus'])->name('toggle-status');
         Route::post('toggle-store-status-closed', [StoreController::class, 'toggleStoreStatusClosed'])->name('toggleStoreStatusClosed');
         Route::post('toggle-billing', [StoreController::class, 'toggleAutomaticBilling'])->name('toggleAutomaticBilling');
+        // events
+        Route::get('events', [EventStoreConfigurationController::class, 'show'])->name('events.show');
+        // post toggle event
+        Route::post('toggle-event', [EventStoreConfigurationController::class, 'toggleEvent'])->name('events.toggle-status');
     });
 
     // Gestión de Roles

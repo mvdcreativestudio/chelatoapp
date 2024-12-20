@@ -126,6 +126,12 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+        // Canal específico para correos
+        'emails' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/emails.log'),
+            'level' => 'info',
+        ],
     ],
 
 ];

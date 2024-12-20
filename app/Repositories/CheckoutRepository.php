@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Enums\Events\EventEnum;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\Coupon;
@@ -17,7 +18,6 @@ use App\Http\Requests\CheckoutStoreOrderRequest;
 use Illuminate\Http\RedirectResponse;
 use App\Events\OrderCreatedEvent;
 use App\Repositories\PedidosYaRepository;
-
 use Exception;
 
 class CheckoutRepository
@@ -171,7 +171,7 @@ class CheckoutRepository
 
                 // Enviar correos
                 try {
-                    Log::info('Método de pago es efectivo. Intentando enviar correos...');
+                    Log::channel('emails')->info('Método de pago es efectivo. Intentando enviar correos...');
                     $variables = [
                         'order_id' => $order->id,
                         'client_name' => $order->client->name,
@@ -191,15 +191,16 @@ class CheckoutRepository
                         'order_shipping_method' => $order->shipping_method,
                         'order_payment_method' => $order->payment_method,
                         'order_payment_status' => $order->payment_status,
+                        'store_id' => $order->store->id,
                         'store_name' => $order->store->name,
                     ];
 
-                    $this->emailNotificationsRepository->sendNewOrderEmail($variables);
+                    // $this->emailNotificationsRepository->sendNewOrderEmail($variables);
                     $this->emailNotificationsRepository->sendNewOrderClientEmail($variables);
                 } catch (\Exception $e) {
-                    Log::error("Error al enviar correos: {$e->getMessage()} en {$e->getFile()}:{$e->getLine()}");
+                    dd($e->getMessage());
+                    Log::channel('emails')->error("Error al enviar correos: {$e->getMessage()} en {$e->getFile()}:{$e->getLine()}");
                 }
-
                 // Redirigir al usuario a la página de éxito usando el UUID
                 return redirect()->route('checkout.success', $order->uuid);
             }

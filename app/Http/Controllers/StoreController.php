@@ -139,7 +139,14 @@ class StoreController extends Controller
             'pymo_branch_office',
             'accepts_peya_envios',
             'peya_envios_key',
-            'callbackNotificationUrl'
+            'callbackNotificationUrl',
+            'mail_host',
+            'mail_port',
+            'mail_username',
+            'mail_password',
+            'mail_encryption',
+            'mail_from_address',
+            'mail_from_name',
         ]));
 
         // Manejo de la integración de MercadoPago
@@ -147,6 +154,9 @@ class StoreController extends Controller
 
         // Manejo de la integración de Pedidos Ya Envíos
         $this->handlePedidosYaEnviosIntegration($request, $store);
+
+        // Manejo de la integración de configuración de correo
+        $this->handleEmailConfigIntegration($request, $store);
 
         // Manejo de la integración de Pymo (Facturación Electrónica)
         if ($request->boolean('invoices_enabled')) {
@@ -244,7 +254,33 @@ class StoreController extends Controller
         }
     }
 
-
+    /**
+     * Maneja la lógica de la integración de configuración de correo.
+     *
+     * @param UpdateStoreRequest $request
+     * @param Store $store
+     */
+    private function handleEmailConfigIntegration(UpdateStoreRequest $request, Store $store): void
+    {
+        if ($request->boolean('stores_email_config')) {
+            $store->emailConfig()->updateOrCreate(
+                ['store_id' => $store->id],
+                [
+                    'mail_host' => $request->input('mail_host'),
+                    'mail_port' => $request->input('mail_port'),
+                    'mail_username' => $request->input('mail_username'),
+                    'mail_password' => $request->input('mail_password'),
+                    'mail_encryption' => $request->input('mail_encryption'),
+                    'mail_from_address' => $request->input('mail_from_address'),
+                    'mail_from_name' => $request->input('mail_from_name'),
+                    'mail_reply_to_address' => $request->input('mail_reply_to_address'),
+                    'mail_reply_to_name' => $request->input('mail_reply_to_name'),
+                ]
+            );
+        } else {
+            $store->emailConfig()->delete();
+        }
+    }
 
     /**
      * Elimina la Empresa.

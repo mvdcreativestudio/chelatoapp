@@ -130,4 +130,6 @@ return [
         ],
     ],
 
+    'provider' => env('MAIL_PROVIDER', 'native'),
+
 ];

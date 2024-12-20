@@ -2,10 +2,12 @@
 
 namespace App\Repositories;
 
+use App\Enums\Events\EventEnum;
 use App\Mail\AdminNewOrderMail;
 use App\Mail\ClientNewOrderMail;
 use App\Models\EmailTemplate;
 use App\Models\EcommerceSetting;
+use App\Services\EventHandlers\EventService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -13,9 +15,17 @@ class EmailNotificationsRepository
 {
     protected $baseUrl;
 
-    public function __construct()
+
+    /**
+     * El servicio de eventos para la gestión de eventos.
+     *
+     * @var EventService
+    */
+    protected $eventService;
+    public function __construct(EventService $eventService)
     {
         $this->baseUrl = 'https://chelato.mvdstudio.com.uy';
+        $this->eventService = $eventService;
     }
 
     /**
@@ -28,28 +38,28 @@ class EmailNotificationsRepository
     private function sendTemplateEmail(string $templateName, array $variables, string $recipient)
 {
     try {
-        Log::info('Iniciando envío de correo', ['templateName' => $templateName, 'variables' => $variables, 'recipient' => $recipient]);
+        Log::channel('emails')->info('Iniciando envío de correo', ['templateName' => $templateName, 'variables' => $variables, 'recipient' => $recipient]);
 
         $template = EmailTemplate::where('name', $templateName)->firstOrFail();
-        Log::info('Plantilla encontrada', ['template' => $template]);
+        Log::channel('emails')->info('Plantilla encontrada', ['template' => $template]);
 
         if (isset($variables['order_items'])) {
             $variables['order_items'] = $this->generateOrderItemsHtml(json_decode($variables['order_items'], true));
         } else {
-            Log::error('La clave order_items no está presente en las variables');
+            Log::channel('emails')->error('La clave order_items no está presente en las variables');
         }
 
         $variables['year'] = date('Y');
 
         $subject = $this->replaceVariables($template->subject, $variables);
-        Log::info('Asunto del correo generado', ['subject' => $subject]);
+        Log::channel('emails')->info('Asunto del correo generado', ['subject' => $subject]);
 
         $replyTo = $template->reply_to ?? 'default_reply_to@example.com';
         $viewName = $this->getViewNameByTemplateName($templateName);
-        Log::info('Nombre de la vista obtenido', ['viewName' => $viewName]);
+        Log::channel('emails')->info('Nombre de la vista obtenido', ['viewName' => $viewName]);
 
         $body = view($viewName, $variables)->render();
-        Log::info('Cuerpo del correo renderizado');
+        Log::channel('emails')->info('Cuerpo del correo renderizado');
 
         Mail::send([], [], function ($message) use ($recipient, $subject, $body, $replyTo) {
             $message->to($recipient)
@@ -58,9 +68,9 @@ class EmailNotificationsRepository
                 ->html($body);
         });
 
-        Log::info('Correo enviado a ' . $recipient . ' con el asunto ' . $subject);
+        Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $subject);
     } catch (\Exception $e) {
-        Log::error('Error enviando correo: ' . $e->getMessage());
+        Log::channel('emails')->error('Error enviando correo: ' . $e->getMessage());
     }
 }
 
@@ -75,14 +85,14 @@ class EmailNotificationsRepository
      */
     private function replaceVariables(string $content, array $variables): string
     {
-        Log::info('Contenido original:', ['content' => $content]);
-        Log::info('Variables para reemplazo:', ['variables' => $variables]);
+        Log::channel('emails')->info('Contenido original:', ['content' => $content]);
+        Log::channel('emails')->info('Variables para reemplazo:', ['variables' => $variables]);
 
         foreach ($variables as $key => $value) {
             $content = str_replace('{{ ' . $key . ' }}', $value, $content);
         }
 
-        Log::info('Contenido después del reemplazo:', ['content' => $content]);
+        Log::channel('emails')->info('Contenido después del reemplazo:', ['content' => $content]);
         return $content;
     }
 
@@ -95,21 +105,21 @@ class EmailNotificationsRepository
      */
     private function generateOrderItemsHtml(array $items): string
     {
-        Log::info('Generando HTML para los ítems del pedido', ['items' => $items]);
+        Log::channel('emails')->info('Generando HTML para los ítems del pedido', ['items' => $items]);
         $html = '';
         foreach ($items as $item) {
             if (is_array($item)) {
                 $html .= '
                     <tr>
                         <td>
-                            <img src="' . $this->baseUrl . $item['image'] . '" alt="' . $item['name'] . '" style="max-width: 70px; max-height: 70px;">
+                            <img src="' . $this->baseUrl .'/'. $item['image'] . '" alt="' . $item['name'] . '" style="max-width: 70px; max-height: 70px;">
                         </td>
                         <td style="font-size: 1em;">' . $item['name'] . '</td>
                         <td>' . $item['quantity'] . '</td>
                         <td>$' . $item['price'] . '</td>
                     </tr>';
             } else {
-                Log::error('Ítem no es un arreglo', ['item' => $item]);
+                Log::channel('emails')->error('Ítem no es un arreglo', ['item' => $item]);
             }
         }
         return $html;
@@ -131,12 +141,13 @@ class EmailNotificationsRepository
             $variables['subject'] = $this->replaceVariables($template->subject, $variables);
 
             $variables['order_items'] = $this->generateOrderItemsHtml(json_decode($variables['order_items'], true));
+            // Mail::to($recipient)->send(new AdminNewOrderMail(null, $variables));
+            $this->eventService->handleEvents($variables['store_id'], [EventEnum::NEW_ORDER_ADMIN_NOTIFICATION_ECCOMERCE], ['data' => $variables]);
 
-            Mail::to($recipient)->send(new AdminNewOrderMail(null, $variables));
-
-            Log::info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
+            // Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
         } catch (\Exception $e) {
-            Log::error('Error enviando correo: ' . $e->getMessage());
+            dd($e);
+            Log::channel('emails')->error('Error enviando correo: ' . $e->getMessage());
         }
     }
 
@@ -155,11 +166,12 @@ class EmailNotificationsRepository
             $variables['order_items'] = $this->generateOrderItemsHtml(json_decode($variables['order_items'], true));
 
 
-            Mail::to($recipient)->send(new ClientNewOrderMail(null, $variables));
+            // Mail::to($recipient)->send(new ClientNewOrderMail(null, $variables));
+            $this->eventService->handleEvents($variables['store_id'], [EventEnum::NEW_ORDER_CUSTOMER_CONFIRMATION_ECCOMERCE], ['data' => $variables]);
 
-            Log::info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
+            Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
         } else {
-            Log::error('El email del cliente no está definido en las variables.');
+            Log::channel('emails')->error('El email del cliente no está definido en las variables.');
         }
     }
 
@@ -179,9 +191,9 @@ class EmailNotificationsRepository
 
             Mail::to($recipient)->send(new ProductUpdateMail(null, $variables));
 
-            Log::info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
+            Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
         } catch (\Exception $e) {
-            Log::error('Error enviando correo: ' . $e->getMessage());
+            Log::channel('emails')->error('Error enviando correo: ' . $e->getMessage());
         }
     }
 

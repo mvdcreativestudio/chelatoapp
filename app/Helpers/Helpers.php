@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Services\Mail\EmailService;
 use Config;
 use Illuminate\Support\Str;
 
@@ -214,5 +215,10 @@ class Helpers
     {
         $d = \DateTime::createFromFormat($format, $date);
         return $d && $d->format($format) === $date;
+    }
+
+    public static function emailService(): EmailService
+    {
+        return app(EmailService::class);
     }
 }

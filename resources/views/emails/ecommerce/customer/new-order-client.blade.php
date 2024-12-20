@@ -124,27 +124,27 @@
             <img src="https://657041b07b.imgdist.com/pub/bfra/j2m7xe6w/nvl/6a4/y4a/Chelato-Black-Logo.png" alt="Logo">
         </div>
         <div class="subheader">
-          <h4 style="margin-bottom: 8px;">¡Hola, {{ $variables['client_name'] }}!</h4>
+          <h4 style="margin-bottom: 8px;">¡Hola, {{ $data['variables']['client_name'] }}!</h4>
           <h4>Hemos recibido tu pedido en {{ $companySettings->name }}</h4>
-          <h6 style="margin-top: 0px;">Local: <strong>{{ $variables['store_name'] }}</strong></h6>
+          <h6 style="margin-top: 0px;">Local: <strong>{{ $data['variables']['store_name'] }}</strong></h6>
 
         </div>
         <div class="order-details">
             <h2>Detalles del pedido</h2>
-            <p><strong>Número de Pedido:</strong> #{{ $variables['order_id'] }}</p>
-            <p><strong>Fecha de Pedido:</strong> {{ $variables['order_date'] }}</p>
-            <p><strong>Método de Pago:</strong> {{ $variables['order_payment_method'] }}</p>
-            <p><strong>Método de Envío:</strong> {{ $variables['order_shipping_method'] }}</p>
-            @if($variables['order_shipping_method'] == 'pickup')
+            <p><strong>Número de Pedido:</strong> #{{ $data['variables']['order_id'] }}</p>
+            <p><strong>Fecha de Pedido:</strong> {{ $data['variables']['order_date'] }}</p>
+            <p><strong>Método de Pago:</strong> {{ $data['variables']['order_payment_method'] }}</p>
+            <p><strong>Método de Envío:</strong> {{ $data['variables']['order_shipping_method'] }}</p>
+            @if($data['variables']['order_shipping_method'] == 'pickup')
               <p class="mt-2">Puedes retirar tu pedido en el correr de las próximas 2 horas.</p>
             @endif
         </div>
         <div class="client-details">
           <h2>Detalles del cliente</h2>
-          <p>{{ $variables['client_name'] }} {{ $variables['client_lastname'] }}</p>
-          <p>{{ $variables['client_email'] }}</p>
-          <p>{{ $variables['client_phone'] }}</p>
-          <p>{{ $variables['client_address'] }}, {{ $variables['client_city'] }}, {{ $variables['client_state'] }}</p>
+          <p>{{ $data['variables']['client_name'] }} {{ $data['variables']['client_lastname'] }}</p>
+          <p>{{ $data['variables']['client_email'] }}</p>
+          <p>{{ $data['variables']['client_phone'] }}</p>
+          <p>{{ $data['variables']['client_address'] }}, {{ $data['variables']['client_city'] }}, {{ $data['variables']['client_state'] }}</p>
         </div>
         <table class="product-table">
             <thead>
@@ -156,14 +156,14 @@
                 </tr>
             </thead>
             <tbody>
-              {!! $variables['order_items'] !!}
+              {!! $data['variables']['order_items'] !!}
             </tbody>
         </table>
         <div class="totals">
-            <p>Subtotal: <strong>${{ $variables['order_subtotal'] }}</strong></p>
-            <p>Envío: <strong>${{ $variables['order_shipping'] }}</strong></p>
-            <p>Descuentos: <strong>-${{ $variables['coupon_amount'] }}</strong></p>
-            <p class="total"><strong>Total:</strong> ${{ $variables['order_total'] }}</p>
+            <p>Subtotal: <strong>${{ $data['variables']['order_subtotal'] }}</strong></p>
+            <p>Envío: <strong>${{ $data['variables']['order_shipping'] }}</strong></p>
+            <p>Descuentos: <strong>-${{ $data['variables']['coupon_amount'] }}</strong></p>
+            <p class="total"><strong>Total:</strong> ${{ $data['variables']['order_total'] }}</p>
         </div>
         <div class="footer">
             <p>Si tienes algún problema con tu pedido, por favor contacta a <a href="mailto:soporte@mvdstudio.com.uy">soporte@mvdstudio.com.uy</a></p>
