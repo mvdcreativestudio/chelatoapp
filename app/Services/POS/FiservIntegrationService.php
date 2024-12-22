@@ -36,6 +36,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             'TaxRefund' => 0, // Valor fijo
             'TaxableAmount' => number_format($transactionData['Amount'], 0, '', ''), // Cambiar a 'Amount'
             'InvoiceAmount' => number_format($transactionData['Amount'], 0, '', ''), // Cambiar a 'Amount'
+            'order_id' => $transactionData['order_id'] ?? null,
         ];
     }
 
@@ -64,25 +65,52 @@ class FiservIntegrationService implements PosIntegrationInterface
 
     public function processTransaction(array $transactionData): array
     {
+        // Agregar un log para inspeccionar los datos que se están enviando para crear la transacción
+        Log::info('Datos recibidos para crear la transacción inicial:', $transactionData);
+
+        // Crear el registro inicial de la transacción
+        $initialTransaction = Transaction::create([
+            'order_id' => $transactionData['order_id'] ?? null, // Asignar el order_id desde los datos recibidos
+            'TransactionId' => null, // Inicialmente nulo, se actualizará con la respuesta de Fiserv
+            'STransactionId' => null, // Inicialmente nulo
+            'formatted_data' => $transactionData, // Guardar los datos iniciales de la transacción
+        ]);
+
+        // Verificar si el order_id se asignó correctamente en la transacción inicial
+        if (!$initialTransaction->order_id) {
+            Log::error('El order_id no se asignó correctamente en la transacción inicial:', [
+                'transactionData' => $transactionData,
+                'transactionRecord' => $initialTransaction->toArray(),
+            ]);
+        }
+
+        Log::info('Registro inicial de transacción creado en la base de datos:', $initialTransaction->toArray());
+
+        // Realiza la solicitud a Fiserv
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post($this->apiUrl . 'processFinancialPurchase', $transactionData);
 
         Log::info('Estableciendo conexión Fiserv en ' . $this->apiUrl . 'processFinancialPurchase');
-        Log::info('Data de la transacción: ' . json_encode($transactionData));
+        Log::info('Datos de la transacción enviados a Fiserv:', $transactionData);
 
         if ($response->successful()) {
             $jsonResponse = $response->json();
             Log::info('Respuesta de Fiserv al procesar transacción:', $jsonResponse);
 
-            // Guardar en la base de datos usando el modelo
-            Transaction::create([
+            // Actualizar el registro de la transacción con los datos de la respuesta de Fiserv
+            $initialTransaction->update([
                 'TransactionId' => $jsonResponse['TransactionId'] ?? null,
                 'STransactionId' => $jsonResponse['STransactionId'] ?? null,
-                'formatted_data' => $transactionData,
+                'formatted_data' => array_merge($transactionData, [
+                    'TransactionId' => $jsonResponse['TransactionId'] ?? null,
+                    'STransactionId' => $jsonResponse['STransactionId'] ?? null,
+                ]),
             ]);
 
-            // Llamar al método para verificar el estado de la transacción
+            Log::info('Datos de la transacción actualizados en la base de datos:', $initialTransaction->toArray());
+
+            // Verificar el estado de la transacción
             try {
                 $statusResponse = $this->checkTransactionStatus([
                     'TransactionId' => $jsonResponse['TransactionId'],
@@ -96,13 +124,20 @@ class FiservIntegrationService implements PosIntegrationInterface
             return $jsonResponse;
         }
 
+        // Manejar errores en la solicitud a Fiserv
         Log::error('Error al procesar la transacción con Fiserv: ' . $response->body());
+
+        // En caso de error, puedes actualizar el estado de la transacción para indicar un fallo
+        $initialTransaction->update([
+            'status' => 'failed', // Agrega un campo de estado si es necesario
+            'error_message' => $response->body(),
+        ]);
+
         return [
             'success' => false,
-            'message' => 'Error al procesar la transacción con Fiserv'
+            'message' => 'Error al procesar la transacción con Fiserv',
         ];
     }
-
 
     public function checkTransactionStatus(array $transactionData): array
     {
@@ -136,6 +171,25 @@ class FiservIntegrationService implements PosIntegrationInterface
                 $jsonResponse = $response->json();
                 Log::info('Estado de transacción recibido de Fiserv', $jsonResponse);
 
+                // Verificar el PosResponseCode si está presente
+                $posResponseCode = $jsonResponse['PosResponseCode'] ?? '';
+                if (!empty($posResponseCode)) {
+                    // Si PosResponseCode es 'CT', la transacción fue cancelada
+                    if ($posResponseCode === 'CT') {
+                        return [
+                            'responseCode' => 999,
+                            'message' => 'La transacción fue cancelada.',
+                            'icon' => 'error',
+                            'keepPolling' => false,
+                            'transactionSuccess' => false,
+                            'details' => $jsonResponse,
+                        ];
+                    }
+
+                    // Manejar otros códigos de PosResponseCode si es necesario
+                    // Puedes mapear otros códigos a mensajes específicos si lo necesitas
+                }
+
                 // Obtener la configuración del código de respuesta desde el archivo
                 $responseCode = $jsonResponse['ResponseCode'] ?? 999;
                 $responseConfig = $this->getResponses($responseCode);
@@ -158,6 +212,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             return $this->getResponses(999);
         }
     }
+
 
     public function getResponses($responseCode)
     {
@@ -191,6 +246,6 @@ class FiservIntegrationService implements PosIntegrationInterface
         }
     }
 
-    
+
 
 }

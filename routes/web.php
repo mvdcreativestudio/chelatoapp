@@ -400,6 +400,8 @@ Route::middleware([
     Route::post('/orders/{orderId}/update-status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::get('/orders/{order}/pdf', [OrderPdfController::class, 'generatePdf'])->name('orders.pdf');
     Route::post('/orders/{order}/emit-cfe', [OrderController::class, 'emitCFE'])->name('orders.emitCFE');
+    Route::post('/orders/{orderId}/set-order-as-paid', [OrderController::class, 'setOrderAsPaid'])->name('orders.setOrderAsPaid');
+
 
     // Gestión de Cupones
     Route::post('marketing/coupons/delete-selected', [CouponController::class, 'deleteSelected'])->name('coupons.deleteSelected');

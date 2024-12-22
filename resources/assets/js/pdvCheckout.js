@@ -93,16 +93,13 @@ $(document).ready(function () {
     });
   }
 
-  function enviarTransaccionPos(token) {
+  function enviarTransaccionPos(token, posOrderId, orderId, orderUuid) {
+    console.log('Order ID recibido en enviarTransaccionPos:', orderId);
 
-    console.log('CashRegisterId para enviar:', cashRegisterId);
-
-    // Obtener el ID del dispositivo POS desde el cashRegisterId
     $.ajax({
         url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
         type: 'GET',
         success: function (device) {
-
             const posID = device.data.identifier;
             const empresa = device.data.company;
             const local = device.data.branch;
@@ -118,142 +115,158 @@ $(document).ready(function () {
                 String(now.getSeconds()).padStart(2, '0');
 
             const amount = parseFloat($('.total').text().replace('$', ''));
-            const quotas = 1;
-            const plan = 0;
-            const currency = "858";
-            const taxableAmount = amount;
-            const invoiceAmount = amount;
-            const taxAmount = amount * 2;
-            const ivaAmount = amount * 2;
-            const needToReadCard = false;
-
             const transactionData = {
                 cash_register_id: cashRegisterId,
                 store_id: sessionStoreId,
+                pos_order_id: posOrderId, // Asociar la transacción al ID de la orden en pos-orders
+                order_id: orderId, // Asociar la transacción al ID de la orden en orders
                 PosID: posID,
                 Empresa: empresa,
                 Local: local,
                 Caja: caja,
                 UserId: userId,
                 TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
-                Amount: amount.toString() + "00",
-                Quotas: quotas,
-                Plan: plan,
-                Currency: currency,
-                TaxableAmount: taxableAmount.toString() + "00",
-                InvoiceAmount: invoiceAmount.toString() + "00",
-                TaxAmount: taxAmount.toString() + "00",
-                IVAAmount: ivaAmount.toString() + "00",
-                NeedToReadCard: needToReadCard
+                Amount: amount.toString() + "00"
             };
+            console.log('Order ID enviado a la transacción:', transactionData.order_id);
 
 
-            showTransactionStatus(10, false, true); // Mostrar mensaje de transacción en progreso
+            showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
 
             $.ajax({
-              url: `${baseUrl}api/pos/process-transaction`,
-              type: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-              },
-              data: JSON.stringify(transactionData),
-              success: function (response) {
-                  console.log('Respuesta completa del POS:', response);
+                url: `${baseUrl}api/pos/process-transaction`,
+                type: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                data: JSON.stringify(transactionData),
+                success: function (response) {
+                    const transactionId = response.TransactionId;
+                    const sTransactionId = response.STransactionId;
 
-                  const transactionId = response.TransactionId || response.transaction?.TransactionId || response.response?.TransactionId;
-                  const sTransactionId = response.STransactionId || response.transaction?.STransactionId || response.response?.STransactionId;
-
-                  if (transactionId && sTransactionId) {
-                      sessionStorage.setItem('TransactionId', transactionId);
-                      sessionStorage.setItem('STransactionId', sTransactionId);
-                      consultarEstadoTransaccion(transactionId, sTransactionId, transactionDateTime, token);
-                  } else {
-                      console.warn('No se recibieron IDs válidos en la respuesta:', response);
-                      showTransactionStatus({
-                          message: 'Error al procesar la transacción. No se recibieron datos válidos.',
-                          icon: 'error',
-                          showCloseButton: true
-                      });
-                  }
-
-              },
-              error: function (xhr, status, error) {
-                  console.error('Error en la transacción POS:', error, xhr.responseText);
-                  showTransactionStatus({
-                      message: `Error al procesar la transacción: ${xhr.responseText || 'Error desconocido.'}`,
-                      icon: 'error',
-                      showCloseButton: true
-                  });
-              }
+                    if (transactionId && sTransactionId) {
+                        consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid);
+                    } else {
+                        showTransactionStatus({
+                            message: 'Error en la transacción POS. Intente nuevamente.',
+                            icon: 'error',
+                            showCloseButton: true
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Error en la transacción POS:', xhr.responseText);
+                    showTransactionStatus({
+                        message: 'Error al procesar la transacción POS.',
+                        icon: 'error',
+                        showCloseButton: true
+                    });
+                }
             });
-
         },
-        error: function (xhr, status, error) {
-            console.error('Error al obtener la información del dispositivo POS:', error); // Log en caso de error al obtener el dispositivo
+        error: function (xhr) {
+            console.error('Error al obtener la información del dispositivo POS:', xhr.responseText);
         }
     });
+}
+
+
+
+
+function consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid) {
+  let attempts = 0;
+  const maxAttempts = 30;
+
+  function poll() {
+      if (attempts >= maxAttempts) {
+          showTransactionStatus({
+              message: 'El tiempo de espera para la transacción ha expirado.',
+              icon: 'error',
+              showCloseButton: true
+          });
+          return;
+      }
+
+      attempts++;
+
+      $.ajax({
+          url: `${baseUrl}api/pos/check-transaction-status`,
+          type: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+          },
+          data: JSON.stringify({ TransactionId: transactionId, STransactionId: sTransactionId, store_id: sessionStoreId }),
+          success: function (response) {
+              const { transactionSuccess, message, icon, keepPolling, details } = response;
+
+              if (transactionSuccess) {
+                  // Actualizar el estado de pago y confirmar la venta
+                  $.ajax({
+                      url: `${baseUrl}orders/${orderId}/set-order-as-paid`,
+                      type: 'POST',
+                      data: {
+                          _token: $('meta[name="csrf-token"]').attr('content'),
+                          payment_status: 'paid'
+                      },
+                      success: function () {
+                          confirmarVenta({ order_uuid: orderUuid }, 'POS');
+                      },
+                      error: function (xhr) {
+                          console.error('Error al actualizar el estado de pago de la orden:', xhr.responseText);
+                          showTransactionStatus({
+                              message: 'Error al actualizar el estado del pedido.',
+                              icon: 'error',
+                              showCloseButton: true
+                          });
+                      }
+                  });
+              } else if (keepPolling) {
+                  setTimeout(poll, 2000);
+              } else {
+                  showTransactionStatus({
+                      message: message || 'Transacción fallida.',
+                      icon: icon || 'error',
+                      showCloseButton: true
+                  });
+
+                  // Manejar casos como transacción cancelada (CT)
+                  if (details && details.PosResponseCode === 'CT') {
+                      console.warn('Transacción cancelada desde el dispositivo POS.');
+                  }
+              }
+          },
+          error: function (xhr) {
+              console.error('Error al consultar estado de transacción:', xhr.responseText);
+          }
+      });
   }
 
+  poll();
+}
 
-  function consultarEstadoTransaccion(transactionId, sTransactionId, token) {
-    let attempts = 0;
-    const maxAttempts = 30;
 
-    function poll() {
-        if (attempts >= maxAttempts) {
-            showTransactionStatus({
-                message: 'Tiempo de espera excedido al consultar el estado de la transacción.',
-                icon: 'error',
-                showCloseButton: true
-            });
-            return;
-        }
 
-        attempts++;
 
-        const dataToSend = {
-            TransactionId: transactionId,
-            STransactionId: sTransactionId,
-            store_id: sessionStoreId // Asegúrate de incluir store_id
-        };
 
-        $.ajax({
-            url: `${baseUrl}api/pos/check-transaction-status`,
-            type: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            data: JSON.stringify(dataToSend),
-            success: function (response) {
-                const { responseCode, message, icon, keepPolling, transactionSuccess } = response;
-
-                // Mostrar el estado actual de la transacción
-                showTransactionStatus({ message, icon, showCloseButton: !keepPolling });
-
-                // Si la transacción sigue en progreso, continuar con el polling
-                if (keepPolling) {
-                    setTimeout(poll, 2000);
-                } else {
-                    // Si transactionSuccess es true, realizar el postOrder
-                    if (transactionSuccess) {
-                        postOrder();
-                    }
-                }
-            },
-            error: function (xhr) {
-                console.error('Error al consultar el estado de la transacción:', xhr.responseText);
-                showTransactionStatus({
-                    message: `Error al consultar el estado: ${xhr.status} - ${xhr.responseText}`,
-                    icon: 'error',
-                    showCloseButton: true
-                });
-            }
-        });
-    }
-
-    poll();
+function confirmarVenta(response, paymentMethod) {
+  Swal.fire({
+      title: 'Venta Realizada con Éxito',
+      text: 'La venta se ha realizado exitosamente.',
+      icon: 'success',
+      showCancelButton: userHasPermission('access_orders'),
+      confirmButtonText: userHasPermission('access_orders') ? 'Ver Venta' : 'Cerrar',
+      cancelButtonText: 'Cerrar',
+      timer: 5000,
+      timerProgressBar: true
+  }).then(result => {
+      if (result.isConfirmed && userHasPermission('access_orders')) {
+          window.location.href = `${baseUrl}admin/orders/${response.order_uuid}/show`;
+      } else {
+          window.location.href = frontRoute;
+      }
+  });
 }
 
 
@@ -1065,10 +1078,9 @@ $(document).ready(function () {
   obtenerCashRegisterLogId();
   loadStoreIdFromSession();
 
-  function postOrder() {
+  function postOrder(paymentMethod, paymentStatus) {
     ocultarError();
 
-    const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
     const shippingStatus = $('#shippingStatus').val();
     let cashSales = 0;
     let posSales = 0;
@@ -1076,9 +1088,8 @@ $(document).ready(function () {
     const total = parseFloat($('.total').text().replace(/[^\d.-]/g, '')) || 0;
     const subtotal = parseFloat($('.subtotal').text().replace(/[^\d.-]/g, '')) || 0;
 
-    // Validación para ventas mayores a 12000
     if (total > 25000 && (!client || !client.id)) {
-        mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta. Puede seleccionar uno existente o crear uno nuevo.');
+        mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
         return;
     }
 
@@ -1089,7 +1100,7 @@ $(document).ready(function () {
     }
 
     if (paymentMethod === 'internalCredit' && (!client || !client.id)) {
-        mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido. Puede seleccionar uno existente o crear uno nuevo.');
+        mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido.');
         return;
     }
 
@@ -1114,12 +1125,11 @@ $(document).ready(function () {
         shipping_status: shippingStatus
     };
 
-    // Agregar datos de cliente solo si hay uno asociado
     if (client && client.id) {
         orderData.client_id = client.id;
     }
 
-    // POST a pos-orders
+    // Crear la orden en pos-orders primero
     $.ajax({
         url: `${baseUrl}admin/pos-orders`,
         type: 'POST',
@@ -1127,11 +1137,14 @@ $(document).ready(function () {
             _token: $('meta[name="csrf-token"]').attr('content'),
             ...orderData
         },
-        success: function (response) {
+        success: function (posOrderResponse) {
+            const posOrderId = posOrderResponse.order_uuid; // ID de la orden en pos-orders
+
+            // Crear la orden en orders
             const ordersData = {
                 ...orderData,
                 origin: 'physical',
-                payment_status: 'paid',
+                payment_status: paymentStatus,
                 payment_method: paymentMethod,
                 shipping_method: 'standard',
                 coupon_id: coupon ? coupon.coupon.id : null,
@@ -1150,74 +1163,37 @@ $(document).ready(function () {
                     _token: $('meta[name="csrf-token"]').attr('content'),
                     ...ordersData
                 },
-                success: function (response) {
-                    clearCartAndClient()
-                        .then(() => {
-                            return Swal.fire({
-                                customClass: {
-                                    popup: 'swal-popup',
-                                    title: 'swal-title',
-                                    content: 'swal-content',
-                                    confirmButton: 'btn btn-outline-primary',
-                                    cancelButton: 'btn btn-outline-danger'
-                                },
-                                title: 'Venta Realizada con Éxito',
-                                text: 'La venta se ha realizado exitosamente.',
-                                icon: 'success',
-                                showCancelButton: userHasPermission('access_orders'),
-                                confirmButtonText: userHasPermission('access_orders') ? 'Ver Venta' : 'Cerrar',
-                                cancelButtonText: 'Cerrar',
-                                timer: 5000,
-                                timerProgressBar: true,
-                                didOpen: (toast) => {
-                                    toast.addEventListener('mouseenter', Swal.stopTimer);
-                                    toast.addEventListener('mouseleave', Swal.resumeTimer);
-                                }
-                            });
-                        })
-                        .then(result => {
-                            if (result.isConfirmed && userHasPermission('access_orders')) {
-                                clearCartAndClient().then(() => {
-                                    window.location.href = `${baseUrl}admin/orders/${response.order_uuid}/show`;
-                                }).catch(error => {
-                                    console.error('Error al limpiar carrito y cliente:', error);
-                                    mostrarError(error);
-                                });
-                            } else {
-                                clearCartAndClient().then(() => {
-                                    window.location.href = frontRoute;
-                                }).catch(error => {
-                                    console.error('Error al limpiar carrito y cliente:', error);
-                                    mostrarError(error);
-                                });
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error al limpiar carrito y cliente:', error);
-                            mostrarError(error);
+                success: function (orderResponse) {
+                    const orderId = orderResponse.order_id; // ID de la orden en orders
+                    const orderUuid = orderResponse.order_uuid; // UUID de la orden en orders
+
+                    if (paymentMethod === 'debit' || paymentMethod === 'credit') {
+                        // Si el método de pago es debit o credit, inicia el flujo de transacción POS
+                        obtenerTokenPos().then(token => {
+                            enviarTransaccionPos(token, posOrderId, orderId, orderUuid); // Enviar la orden al POS
+                        }).catch(error => {
+                            console.error('Error al obtener token POS:', error);
+                            mostrarError('Error al procesar el pago con POS.');
                         });
+                    } else {
+                        // Para otros métodos de pago, confirmar venta directamente
+                        confirmarVenta(orderResponse, paymentMethod);
+                    }
                 },
                 error: function (xhr) {
-                    console.error('Error al guardar la orden en /admin/orders:', xhr.responseText);
-                    mostrarError('Error al guardar la orden en /admin/orders: ' + xhr.responseText);
+                    console.error('Error al guardar en /admin/orders:', xhr);
+                    mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
                 }
             });
         },
         error: function (xhr) {
             console.error('Error al guardar en /admin/pos-orders:', xhr);
-            if (xhr.responseJSON && xhr.responseJSON.errors) {
-                const errores = xhr.responseJSON.errors;
-                let mensajes = '';
-                for (const campo in errores) {
-                    mensajes += `${errores[campo].join(', ')}<br>`;
-                }
-                mostrarError(mensajes);
-            } else {
-                mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido');
-            }
+            mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
         }
     });
 }
+
+
 
 
 
@@ -1256,26 +1232,32 @@ $(document).ready(function () {
   toggleCashDetails();
 
   $('.btn-success').on('click', function () {
+    ocultarError();
+
     const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
     if (!paymentMethod) {
-      mostrarError('Por favor, seleccione un método de pago.');
-      return;
-    }
-    if (paymentMethod !== 'debit' && paymentMethod !== 'credit') {
-      console.log('No es débito ni crédito, continuando con la creación de la orden');
-      console.log('paymentMethod:', paymentMethod);
-      postOrder();
-    } else {
-        console.log('Es débito o crédito, continuando con la creación de la orden');
-        obtenerTokenPos().done(function (response) {
-            const token = response.access_token;
-            enviarTransaccionPos(token);
-        }).fail(function (error) {
-            console.error('Error al obtener el token del POS:', error);
-        });
+        mostrarError('Por favor, seleccione un método de pago.');
+        return;
     }
 
+    console.log('Método de pago seleccionado:', paymentMethod);
+
+    // Validación adicional para crédito interno
+    if (paymentMethod === 'internalCredit' && (!client || !client.id)) {
+        mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido.');
+        return;
+    }
+
+    // Determinar el estado inicial de la orden basado en el método de pago
+    let paymentStatus = 'paid'; // Por defecto, el estado es 'paid'
+    if (paymentMethod === 'debit' || paymentMethod === 'credit') {
+        paymentStatus = 'pending'; // Cambiar a 'pending' para métodos de pago con POS
+    }
+
+    // Crear la orden
+    postOrder(paymentMethod, paymentStatus);
   });
+
 
   $('#descartarVentaBtn').on('click', function () {
     client = [];

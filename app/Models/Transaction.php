@@ -12,6 +12,7 @@ class Transaction extends Model
     protected $fillable = [
         'TransactionId',
         'STransactionId',
+        'order_id',
         'formatted_data',
     ];
 

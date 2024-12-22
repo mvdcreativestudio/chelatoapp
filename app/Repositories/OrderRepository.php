@@ -284,7 +284,7 @@ class OrderRepository
             'coupon_id' => $request->coupon_id,
             'coupon_amount' => $request->coupon_amount,
             'total' => $subtotal + session('costoEnvio', 0) - $request->discount,
-            'payment_status' => 'paid',
+            'payment_status' => $request->payment_status ?? 'pending',
             'shipping_status' => $request->shipping_status ?? 'delivered',
             'payment_method' => $paymentMethod,
             'shipping_method' => 'peya',
@@ -561,6 +561,36 @@ class OrderRepository
     }
 
     /**
+     * Actualiza el estado del pago de un pedido.
+     *
+     * @param int $orderId
+     * @param string $paymentStatus
+     * @return Order
+     */
+    public function setOrderAsPaid(int $orderId, string $paymentStatus): Order
+    {
+        $order = Order::findOrFail($orderId);
+        $oldStatus = $order->payment_status;
+
+        // Verificar si hay un cambio en el estado de pago
+        if ($oldStatus !== $paymentStatus) {
+            $order->payment_status = $paymentStatus;
+            $order->save();
+            // Registrar el cambio de estado
+            OrderStatusChange::create([
+                'order_id' => $orderId,
+                'user_id' => Auth::id(),
+                'change_type' => 'payment',
+                'old_status' => $oldStatus,
+                'new_status' => $paymentStatus,
+            ]);
+        }
+
+        return $order;
+    }
+
+
+    /**
      * Actualiza el estado del envío de un pedido.
      *
      * @param int $orderId
@@ -584,14 +614,6 @@ class OrderRepository
 
             $order->shipping_status = $shippingStatus;
             $order->save();
-
-            OrderStatusChange::create([
-                'order_id' => $orderId,
-                'user_id' => Auth::id(),
-                'change_type' => 'shipping',
-                'old_status' => $oldStatus,
-                'new_status' => $shippingStatus,
-            ]);
         }
 
         return $order;

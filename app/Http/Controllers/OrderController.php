@@ -94,9 +94,9 @@ class OrderController extends Controller
     {
         try {
             $order = $this->orderRepository->store($request, true);
-        
+
             $this->eventService->handleEvents(auth()->user()->store_id, [EventEnum::LOW_STOCK], ['order' => $order]);
-        
+
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -105,7 +105,7 @@ class OrderController extends Controller
                     'order_uuid' => $order->uuid,
                 ]);
             }
-        
+
             return redirect()->route('pdv.index')->with('success', 'Pedido realizado con éxito. ID de orden: ' . $order->id);
         } catch (\Exception $e) {
             if ($request->ajax()) {
@@ -114,10 +114,10 @@ class OrderController extends Controller
                     'message' => $e->getMessage(),
                 ], 400);
             }
-        
+
             return back()->withErrors($e->getMessage())->withInput();
         }
-        
+
     }
 
     /**
@@ -135,7 +135,7 @@ class OrderController extends Controller
         $invoice = $this->orderRepository->getSpecificInvoiceForOrder($order->id);
         $isStoreConfigEmailEnabled = $this->storesEmailConfigRepository->getConfigByStoreId(auth()->user()->store_id);
         // Verificar si existe un client_id antes de llamar a getClientOrdersCount
-        $clientOrdersCount = $order->client_id 
+        $clientOrdersCount = $order->client_id
             ? $this->orderRepository->getClientOrdersCount($order->client_id)
             : 0; // O cualquier valor predeterminado si no hay cliente
 
@@ -152,22 +152,22 @@ class OrderController extends Controller
     {
         try {
             $order = Order::findOrFail($id);
-    
+
             // Verificar si la orden tiene CFE's asociados
             if ($order->invoices()->exists()) {
                 return response()->json(['success' => false, 'message' => 'No se puede eliminar la venta porque tiene CFE\'s asociados.'], 400);
             }
-    
+
             // Proceder con la eliminación de la orden
             $this->orderRepository->destroyOrder($id);
-    
+
             return response()->json(['success' => true, 'message' => 'Venta eliminada correctamente.']);
         } catch (\Exception $e) {
             Log::info($e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error al eliminar la venta.'], 400);
         }
     }
-    
+
     /**
      * Obtiene los ventas para la DataTable.
      *
@@ -212,6 +212,29 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'No se pudo actualizar. Por favor, intente nuevamente');
         }
     }
+
+    /**
+     * Actualiza únicamente el estado de pago de un pedido.
+     *
+     * @param Request $request
+     * @param int $orderId
+     * @return JsonResponse
+     */
+    public function setOrderAsPaid(Request $request, int $orderId): JsonResponse
+    {
+        $request->validate([
+            'payment_status' => 'required|string',
+        ]);
+
+        try {
+            $this->orderRepository->setOrderAsPaid($orderId, $request->input('payment_status'));
+            return response()->json(['success' => true, 'message' => 'Estado del pago actualizado correctamente.']);
+        } catch (\Exception $e) {
+            Log::error("Error al actualizar estado de pago para el pedido {$orderId}: {$e->getMessage()}");
+            return response()->json(['success' => false, 'message' => 'No se pudo actualizar el estado de pago. Por favor, intente nuevamente.'], 400);
+        }
+    }
+
 
     /**
      * Maneja la emisión de la factura (CFE).

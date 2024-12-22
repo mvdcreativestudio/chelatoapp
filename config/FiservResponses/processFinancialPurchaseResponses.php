@@ -115,4 +115,11 @@ return [
         'icon' => 'error',
         'showCloseButton' => true
     ],
+    'CT' => [
+      'message' => 'Transacción cancelada por el dispositivo POS.',
+      'icon' => 'error',
+      'showCloseButton' => true,
+      'keepPolling' => false,
+      'transactionSuccess' => false
+    ],
 ];
