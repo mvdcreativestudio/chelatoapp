@@ -101,3 +101,46 @@ sshphp:
 
 sshnginx:
 	docker-compose exec $(NGINX) bash
+
+# Variables generales
+SUPERVISOR_CONF_DIR = /etc/supervisord.d
+SUPERVISOR_CMD = sudo supervisorctl
+PROJECT_NAME = chelatoapp
+PROJECT_CONF = $(SUPERVISOR_CONF_DIR)/$(PROJECT_NAME).conf
+WORKER_LOG = /home/chelatouy/public_html/storage/logs/worker.log
+
+# Crear un archivo de configuración para Supervisor
+create-conf:
+	@echo "Creando configuración para Supervisor..."
+	@sudo bash -c "printf '[program:$(PROJECT_NAME)-worker]\nprocess_name=%(program_name)s_%(process_num)02d\ncommand=php /home/chelatouy/public_html/artisan queue:work --sleep=3 --tries=3 --timeout=3600\nautostart=true\nautorestart=true\nuser=chelatouy\nnumprocs=1\nredirect_stderr=true\nstdout_logfile=$(WORKER_LOG)\nstopwaitsecs=3600\n' > $(PROJECT_CONF)"
+
+# Recargar configuraciones en Supervisor
+reload-supervisor:
+	@echo "Recargando configuraciones de Supervisor..."
+	@$(SUPERVISOR_CMD) reread
+	@$(SUPERVISOR_CMD) update
+
+# Iniciar el worker del proyecto
+start-worker:
+	@echo "Iniciando el worker para $(PROJECT_NAME)..."
+	@$(SUPERVISOR_CMD) start $(PROJECT_NAME)-worker:*
+
+# Detener el worker del proyecto
+stop-worker:
+	@echo "Deteniendo el worker para $(PROJECT_NAME)..."
+	@$(SUPERVISOR_CMD) stop $(PROJECT_NAME)-worker:*
+
+# Reiniciar el worker del proyecto
+restart-worker:
+	@echo "Reiniciando el worker para $(PROJECT_NAME)..."
+	@$(SUPERVISOR_CMD) restart $(PROJECT_NAME)-worker:*
+
+# Verificar el estado de los procesos
+status:
+	@echo "Verificando el estado de los workers..."
+	@$(SUPERVISOR_CMD) status
+
+# Verificar los logs del worker
+logs:
+	@echo "Mostrando los logs del worker..."
+	@tail -f $(WORKER_LOG)
