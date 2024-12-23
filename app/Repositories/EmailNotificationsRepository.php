@@ -144,7 +144,7 @@ class EmailNotificationsRepository
             // Mail::to($recipient)->send(new AdminNewOrderMail(null, $variables));
             $this->eventService->handleEvents($variables['store_id'], [EventEnum::NEW_ORDER_ADMIN_NOTIFICATION_ECCOMERCE], ['data' => $variables]);
 
-            // Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
+            Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
         } catch (\Exception $e) {
             dd($e);
             Log::channel('emails')->error('Error enviando correo: ' . $e->getMessage());
