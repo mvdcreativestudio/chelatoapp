@@ -195,7 +195,7 @@ class CheckoutRepository
                         'store_name' => $order->store->name,
                     ];
 
-                    // $this->emailNotificationsRepository->sendNewOrderEmail($variables);
+                    $this->emailNotificationsRepository->sendNewOrderEmail($variables);
                     $this->emailNotificationsRepository->sendNewOrderClientEmail($variables);
                 } catch (\Exception $e) {
                     dd($e->getMessage());
