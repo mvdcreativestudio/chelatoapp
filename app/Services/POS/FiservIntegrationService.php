@@ -13,6 +13,7 @@ class FiservIntegrationService implements PosIntegrationInterface
 {
     protected $apiUrl;  // Definir la propiedad para la URL de la API
 
+
     public function __construct()
     {
         $this->apiUrl = $this->getFiservApiUrl();  // Asignar la URL de la API cuando se crea la instancia
@@ -213,6 +214,60 @@ class FiservIntegrationService implements PosIntegrationInterface
         }
     }
 
+    public function reverseTransaction(array $transactionData): array
+    {
+        try {
+            Log::info('Iniciando proceso de reverso de transacción', $transactionData);
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . 'processFinancialReverse', $transactionData);
+
+            Log::info('Respuesta de reverso de Fiserv:', [
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+            ]);
+
+            if ($response->successful()) {
+                $jsonResponse = $response->json();
+
+                if ($jsonResponse['ResponseCode'] === 0) {
+                    Log::info('Reverso completado exitosamente', $jsonResponse);
+
+                    // Actualiza la transacción como reversada en la base de datos
+                    Transaction::where('TransactionId', $transactionData['TransactionId'])
+                        ->update(['status' => 'reversed']);
+
+                    return [
+                        'success' => true,
+                        'message' => 'Transacción reversada exitosamente.',
+                        'details' => $jsonResponse,
+                    ];
+                }
+
+                return [
+                    'success' => false,
+                    'message' => 'Error al realizar el reverso: ' . ($jsonResponse['Message'] ?? 'Código ' . $jsonResponse['ResponseCode']),
+                    'details' => $jsonResponse,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Error al conectarse a Fiserv.',
+                'details' => $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error durante el proceso de reverso de transacción: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Error interno al realizar el reverso.',
+                'details' => $e->getMessage(),
+            ];
+        }
+    }
+
 
     public function getResponses($responseCode)
     {
@@ -245,6 +300,304 @@ class FiservIntegrationService implements PosIntegrationInterface
             ];
         }
     }
+
+    public function voidTransaction(array $transactionData): array
+    {
+        try {
+            Log::info('Iniciando voidTransaction en FiservIntegrationService con los datos:', $transactionData);
+
+            // Buscar la transacción original utilizando order_id y status "pending"
+            $originalTransaction = Transaction::where('order_id', $transactionData['order_id'])
+                ->where('status', 'pending')
+                ->first();
+
+            Log::info('Transacción original encontrada:', $originalTransaction->toArray());
+
+            if (!isset($transactionData['order_id'])) {
+                  Log::error('El índice "order_id" no está definido en los datos de la transacción.');
+                  throw new \Exception('El índice "order_id" es obligatorio para procesar la anulación.');
+            }
+
+
+            if (!$originalTransaction) {
+                Log::error('No se encontró una transacción original con status "pending" para el order_id proporcionado.', [
+                    'order_id' => $transactionData['order_id']
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => 'No se encontró una transacción original con status "pending" para el order_id proporcionado.'
+                ];
+            }
+
+            Log::info('Transacción original encontrada:', $originalTransaction->toArray());
+
+            // Preparar los datos para la solicitud de anulación a Fiserv
+            $voidRequestData = [
+                'PosID' => $transactionData['PosID'] ?? $originalTransaction->PosID,
+                'SystemId' => $transactionData['SystemId'] ?? "E62FC666-5E4A-5E1D-B80A-EAB805050505", // Valor predeterminado
+                'Branch' => $transactionData['Branch'] ?? $originalTransaction->Branch ?? 'Sucursal1',
+                'ClientAppId' => $transactionData['ClientAppId'] ?? $originalTransaction->ClientAppId ?? 'Caja1',
+                'UserId' => $transactionData['UserId'] ?? $originalTransaction->UserId ?? 'Usuario1',
+                'TransactionDateTimeyyyyMMddHHmmssSSS' => $transactionData['TransactionDateTimeyyyyMMddHHmmssSSS'] ?? now()->format('YmdHis') . '000',
+                'TicketNumber' => $transactionData['TicketNumber'] ?? $originalTransaction->TicketNumber,
+            ];
+
+            Log::info('Enviando solicitud de anulación a Fiserv con los datos:', $voidRequestData);
+
+            // Realizar la solicitud de anulación a Fiserv
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . 'processFinancialPurchaseVoidByTicket', $voidRequestData);
+
+            if ($response->successful()) {
+                $jsonResponse = $response->json();
+                Log::info('Respuesta de Fiserv al realizar voidTransaction:', $jsonResponse);
+
+                if ($jsonResponse['ResponseCode'] === 0) {
+                    // Crear una nueva transacción de anulación
+                    $voidTransaction = Transaction::create([
+                        'TransactionId' => (string) $jsonResponse['TransactionId'], // Guardar como string
+                        'STransactionId' => (string) $jsonResponse['STransactionId'], // Guardar como string
+                        'order_id' => $originalTransaction->order_id, // Asociar con el mismo order_id
+                        'status' => 'voided',
+                        'formatted_data' => array_merge($voidRequestData, [
+                            'TransactionId' => (string) $jsonResponse['TransactionId'],
+                            'STransactionId' => (string) $jsonResponse['STransactionId'],
+                        ]),
+                    ]);
+
+                    Log::info('Transacción de anulación registrada en la base de datos:', $voidTransaction->toArray());
+
+                    return [
+                        'success' => true,
+                        'message' => 'Transacción de anulación completada exitosamente.',
+                        'details' => $jsonResponse,
+                    ];
+                }
+
+                return [
+                    'success' => false,
+                    'message' => $jsonResponse['Message'] ?? 'Error al anular la transacción.',
+                    'details' => $jsonResponse,
+                ];
+            }
+
+            Log::error('Error al realizar la solicitud de anulación a Fiserv:', $response->body());
+
+            return [
+                'success' => false,
+                'message' => 'Error al conectarse a Fiserv.',
+                'details' => $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error durante voidTransaction:', [
+                'message' => $e->getMessage(),
+                'transactionData' => $transactionData,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error interno al realizar la anulación.',
+                'details' => $e->getMessage(),
+            ];
+        }
+    }
+
+
+
+    public function pollVoidStatus(array $transactionData): array
+    {
+        try {
+            Log::info('Iniciando consulta de estado para transacción anulada (pollVoidStatus)', $transactionData);
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . 'processFinancialPurchaseQuery', $transactionData);
+
+            Log::info('Respuesta de Fiserv en pollVoidStatus:', [
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+            ]);
+
+            if ($response->successful()) {
+                $jsonResponse = $response->json();
+
+                if ($jsonResponse['ResponseCode'] === 0 && $jsonResponse['PosResponseCode'] === 'CT') {
+                    Log::info('La transacción fue anulada correctamente (ResponseCode 111)', $jsonResponse);
+
+                    // Actualizar el estado de la transacción en la base de datos
+                    Transaction::where('TransactionId', (string) $transactionData['TransactionId'])
+                        ->update(['status' => 'voided']);
+
+                    return [
+                        'success' => true,
+                        'message' => 'La transacción fue anulada correctamente.',
+                        'details' => $jsonResponse,
+                    ];
+                }
+
+                return [
+                    'success' => false,
+                    'keepPolling' => true,
+                    'message' => 'La transacción aún no ha sido anulada.',
+                    'details' => $jsonResponse,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Error al consultar el estado de la transacción.',
+                'details' => $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error en pollVoidStatus: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al realizar la consulta.',
+                'details' => $e->getMessage(),
+            ];
+        }
+    }
+
+
+    public function processQuery(array $queryData): array
+    {
+        try {
+            Log::info('Iniciando processQuery en Fiserv con datos:', $queryData);
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . 'processQuery', $queryData);
+
+            if ($response->successful()) {
+                $jsonResponse = $response->json();
+                Log::info('Respuesta de Fiserv para processQuery:', $jsonResponse);
+
+                return [
+                    'success' => true,
+                    'data' => $jsonResponse,
+                ];
+            }
+
+            Log::error('Error en processQuery de Fiserv: ' . $response->body());
+            return [
+                'success' => false,
+                'message' => 'Error en processQuery: ' . $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Excepción en processQuery de Fiserv: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Excepción en processQuery: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    public function fetchTransactionHistory(array $queryData): array
+    {
+        try {
+            // Obtener la URL base desde el método getFiservApiUrl
+            $baseUrl = $this->getFiservApiUrl();
+
+            // Endpoint específico para el historial de transacciones
+            $endpoint = $baseUrl . 'processQuery?QueryRequest';
+
+            // Validar datos antes de enviar la solicitud
+            Log::info('Preparando solicitud para obtener historial de transacciones:', [
+                'endpoint' => $endpoint,
+                'queryData' => $queryData,
+            ]);
+
+            // Enviar la solicitud utilizando sendRequest
+            $response = $this->sendRequest($endpoint, $queryData, 'POST');
+
+            // Validar la respuesta
+            if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
+                throw new \Exception('Error en la API de Fiserv: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+            }
+
+            return $response;
+        } catch (\Exception $e) {
+            Log::error('Error al obtener el historial de transacciones en FiservIntegrationService: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+
+
+
+
+    public function sendRequest(string $url, array $data, string $method = 'POST'): array
+    {
+        try {
+            // Configurar el cliente HTTP
+            $client = new \GuzzleHttp\Client([
+                'timeout' => 30.0, // Tiempo de espera en segundos
+            ]);
+
+            $options = [
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                ],
+            ];
+
+            if ($method === 'GET') {
+                // Si el método es GET, pasar los datos como query params
+                $options['query'] = $data;
+            } else {
+                // Para POST, enviar los datos como JSON
+                $options['json'] = $data;
+            }
+
+            // Registrar el URL y los datos que se están enviando
+            Log::info('Realizando solicitud HTTP:', [
+                'url' => $url,
+                'method' => $method,
+                'data' => $data,
+                'options' => $options,
+            ]);
+
+            // Realizar la solicitud HTTP
+            $response = $client->request($method, $url, $options);
+
+            // Decodificar la respuesta JSON
+            $responseData = json_decode($response->getBody()->getContents(), true);
+
+            // Verificar errores de decodificación
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Error al decodificar la respuesta JSON: ' . json_last_error_msg());
+            }
+
+            return $responseData;
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            Log::error('Error 4xx en la solicitud HTTP a Fiserv:', [
+                'message' => $e->getMessage(),
+                'response' => $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null,
+                'url' => $url,
+                'data' => $data,
+            ]);
+            throw new \Exception('Error en la solicitud HTTP: ' . $e->getMessage());
+        } catch (\GuzzleHttp\Exception\ServerException $e) {
+            Log::error('Error 5xx en la solicitud HTTP a Fiserv:', [
+                'message' => $e->getMessage(),
+                'response' => $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null,
+                'url' => $url,
+                'data' => $data,
+            ]);
+            throw new \Exception('Error del servidor en la solicitud HTTP: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Error general en sendRequest:', [
+                'message' => $e->getMessage(),
+                'url' => $url,
+                'data' => $data,
+            ]);
+            throw $e;
+        }
+    }
+
+
+
 
 
 

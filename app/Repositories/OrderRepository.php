@@ -310,6 +310,7 @@ class OrderRepository
             'coupon',
             'cashRegisterLog.cashRegister.user',
             'invoices',
+            'transaction'
         ]);
     }
 
@@ -569,24 +570,19 @@ class OrderRepository
      */
     public function setOrderAsPaid(int $orderId, string $paymentStatus): Order
     {
-        $order = Order::findOrFail($orderId);
-        $oldStatus = $order->payment_status;
-
-        // Verificar si hay un cambio en el estado de pago
-        if ($oldStatus !== $paymentStatus) {
-            $order->payment_status = $paymentStatus;
-            $order->save();
-            // Registrar el cambio de estado
-            OrderStatusChange::create([
-                'order_id' => $orderId,
-                'user_id' => Auth::id(),
-                'change_type' => 'payment',
-                'old_status' => $oldStatus,
-                'new_status' => $paymentStatus,
-            ]);
-        }
-
-        return $order;
+      Log::info('Entrando en setOrderAsPaid');
+      $order = Order::findOrFail($orderId);
+      Log::info('Orden encontrada: ' . $order->id);
+      $oldStatus = $order->payment_status;
+      Log::info('Estado de pago anterior: ' . $oldStatus);
+      // Verificar si hay un cambio en el estado de pago
+      if ($oldStatus !== $paymentStatus) {
+          $order->payment_status = $paymentStatus;
+          Log::info('Estado de pago actualizado a: ' . $paymentStatus);
+          $order->save();
+          Log::info('Orden guardada');
+      }
+      return $order;
     }
 
 
@@ -646,7 +642,7 @@ class OrderRepository
         $order->update(['is_billed' => true]);
     }
 
-    public function getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate)
+    public function getOrdersForExport($client, $store, $paymentStatus, $shippingStatus, $startDate, $endDate, $search = null)
     {
         $query = Order::select([
             'orders.id',
@@ -678,26 +674,41 @@ class OrderRepository
             'clients.email as client_email',
             'stores.name as store_name',
         ])
-            ->leftJoin('clients', 'orders.client_id', '=', 'clients.id') // Usar leftJoin para permitir client_id null
+            ->leftJoin('clients', 'orders.client_id', '=', 'clients.id')
             ->join('stores', 'orders.store_id', '=', 'stores.id');
-        // Aplicar los filtros
+
+        // Aplicar filtros
+        if ($search) {
+            $query->where(function ($query) use ($search) {
+                $query->where('orders.uuid', 'like', "%$search%")
+                    ->orWhere('orders.id', 'like', "%$search%")
+                    ->orWhere('clients.name', 'like', "%$search%")
+                    ->orWhere('clients.lastname', 'like', "%$search%")
+                    ->orWhere('stores.name', 'like', "%$search%");
+            });
+        }
+
         if ($client) {
             $query->where(DB::raw("CONCAT(clients.name, ' ', clients.lastname)"), 'like', "%$client%");
         }
-        if ($company) {
-            $query->where('stores.name', 'like', "%$company%");
+
+        if ($store) {
+            $query->where('stores.name', 'like', "%$store%");
         }
-        if ($payment) {
-            $query->where('orders.payment_status', $payment);
+
+        if ($paymentStatus) {
+            $query->where('orders.payment_status', $paymentStatus);
         }
-        if ($billed !== null) {
-            $query->where('orders.is_billed', $billed == 'Facturado' ? 1 : 0);
+
+        if ($shippingStatus) {
+            $query->where('orders.shipping_status', $shippingStatus);
         }
+
         if ($startDate && $endDate) {
             $query->whereBetween('orders.date', [$startDate, $endDate]);
         }
 
-        return $query->get(); // Retornar los resultados
+        return $query->get();
     }
 
     private function createInternalCredit(Order $order)

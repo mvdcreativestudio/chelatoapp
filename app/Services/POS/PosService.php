@@ -21,6 +21,25 @@ class PosService
         // ya que se determinará dinámicamente en cada función en base al store_id.
     }
 
+    protected function setIntegrationByProvider(PosProvider $posProvider)
+    {
+        switch ($posProvider->id) {
+            case 1: // Scanntech
+                Log::info('Configurando integración para Scanntech');
+                $this->posIntegration = new \App\Services\POS\ScanntechIntegrationService();
+                break;
+
+            case 2: // Fiserv
+                Log::info('Configurando integración para Fiserv');
+                $this->posIntegration = new \App\Services\POS\FiservIntegrationService();
+                break;
+
+            default:
+                throw new \Exception('Proveedor POS no soportado: ' . $posProvider->id);
+        }
+    }
+
+
     public function getProviderByStoreId($storeId)
     {
         // Buscar la integración de la tienda en la tabla pos_integrations_store_info
@@ -116,8 +135,10 @@ class PosService
     public function checkTransactionStatus(array $transactionData)
     {
         $this->setPosIntegration($transactionData['store_id']);
+
         return $this->posIntegration->checkTransactionStatus($transactionData);
     }
+
 
     // Obtener respuestas del proveedor POS
     public function getResponses($responseCode)
@@ -135,8 +156,7 @@ class PosService
     // Método para determinar el proveedor POS basado en el store_id
     protected function setPosIntegration($storeId)
     {
-        // Busca la relación en la tabla pivot 'pos_integrations_store_info'
-        $integrationInfo = \App\Models\PosIntegrationStoreInfo::where('store_id', $storeId)->first();
+        $integrationInfo = PosIntegrationStoreInfo::where('store_id', $storeId)->first();
 
         if (!$integrationInfo) {
             throw new \Exception('No se encontró la integración POS para esta tienda.');
@@ -144,7 +164,6 @@ class PosService
 
         Log::info('Estableciendo integración POS para store ID: ' . $storeId . ', Proveedor POS ID: ' . $integrationInfo->pos_provider_id);
 
-        // Determinar el proveedor de POS con base en el 'pos_provider_id' desde la tabla pivot
         switch ($integrationInfo->pos_provider_id) {
             case 1: // Scanntech
                 Log::info('Integración seleccionada: Scanntech');
@@ -153,12 +172,150 @@ class PosService
 
             case 2: // Fiserv
                 Log::info('Integración seleccionada: Fiserv');
-                $this->posIntegration = new FiservIntegrationService(); // Asegúrate de crear este servicio
+                $this->posIntegration = new FiservIntegrationService();
                 break;
 
             default:
                 throw new \Exception('Proveedor POS no soportado para esta tienda.');
         }
     }
+
+
+    /**
+     * Realizar un reverso de transacción seleccionando el proveedor POS dinámicamente.
+     *
+     * @param array $transactionData
+     * @return array
+     * @throws \Exception
+     */
+    public function reverseTransaction(array $transactionData): array
+    {
+        Log::info('Iniciando reverseTransaction con los datos:', $transactionData);
+
+        // Verificar que TransactionId esté presente
+        if (!isset($transactionData['TransactionId'])) {
+            throw new \Exception('La clave "TransactionId" no está definida en los datos de la transacción.');
+        }
+
+        // Obtener la transacción desde la base de datos utilizando TransactionId
+        $transaction = \App\Models\Transaction::where('TransactionId', $transactionData['TransactionId'])->first();
+
+        if (!$transaction) {
+            throw new \Exception('No se encontró una transacción con el TransactionId proporcionado.');
+        }
+
+        // Obtener el store_id a través del order_id relacionado en la tabla orders
+        $order = \App\Models\Order::find($transaction->order_id);
+
+        if (!$order || !$order->store_id) {
+            throw new \Exception('No se pudo obtener el store_id a través del order_id relacionado.');
+        }
+
+        $storeId = $order->store_id;
+
+        // Establecer el proveedor POS basado en el store_id
+        $this->setPosIntegration($storeId);
+
+        // Obtener los datos formateados desde la transacción
+        $formattedData = $transaction->formatted_data;
+
+        Log::info('Datos completos para el reverso desde formatted_data:', $formattedData);
+
+        // Delegar la lógica específica al proveedor POS
+        return $this->posIntegration->reverseTransaction($formattedData);
+    }
+
+
+    public function voidTransaction(array $transactionData): array
+    {
+        Log::info('Iniciando voidTransaction con los datos:', $transactionData);
+
+        // Configurar integración POS
+        $this->setPosIntegration($transactionData['store_id']);
+
+        // Obtener los datos del dispositivo POS seleccionado
+        $device = PosDevice::findOrFail($transactionData['pos_device_id']);
+
+        $formattedData = [
+            'PosID' => $transactionData['PosID'] ?? $device->identifier,
+            'SystemId' => $transactionData['SystemId'] ?? $device->provider->api_url,
+            'Branch' => $transactionData['Branch'] ?? $device->store->branch ?? 'Sucursal1',
+            'ClientAppId' => $transactionData['ClientAppId'] ?? 'Caja1',
+            'UserId' => $transactionData['UserId'] ?? $device->user,
+            'TransactionDateTimeyyyyMMddHHmmssSSS' => $transactionData['TransactionDateTimeyyyyMMddHHmmssSSS'] ?? now()->format('YmdHis') . '000',
+            'TicketNumber' => $transactionData['TicketNumber'],
+            'order_id' => $transactionData['order_id'] ?? null,
+
+        ];
+
+        Log::info('Datos formateados para enviar a voidTransaction:', $formattedData);
+
+        // Validar que posIntegration esté configurado
+        if (is_null($this->posIntegration)) {
+            throw new \Exception('No se configuró posIntegration antes de llamar a voidTransaction.');
+        }
+
+        return $this->posIntegration->voidTransaction($formattedData);
+    }
+
+
+    public function pollVoidStatus(array $transactionData): array
+    {
+        $this->setPosIntegration($transactionData['store_id']); // Configurar la integración según el store_id
+        return $this->posIntegration->pollVoidStatus($transactionData);
+    }
+
+
+    public function fetchTransactionHistory(array $validated): array
+{
+    try {
+        // Validar que el pos_device_id sea válido
+        $posDevice = PosDevice::findOrFail($validated['pos_device_id']);
+        $posProvider = PosProvider::findOrFail($posDevice->pos_provider_id);
+
+        // Usar el store_id directamente del $validated
+        $storeId = $validated['store_id'];
+
+        // Obtener el system_id desde pos_integrations_store_info usando store_id y pos_provider_id
+        $integrationInfo = PosIntegrationStoreInfo::where([
+            ['store_id', '=', $storeId],
+            ['pos_provider_id', '=', $posProvider->id]
+        ])->first();
+
+        if (!$integrationInfo || !$integrationInfo->system_id) {
+            Log::error('No se encontró el system_id para la tienda seleccionada.', [
+                'store_id' => $storeId,
+                'pos_provider_id' => $posProvider->id,
+            ]);
+            throw new \Exception('No se encontró el system_id para la tienda seleccionada.');
+        }
+
+        // Configurar la integración POS
+        $this->setIntegrationByProvider($posProvider);
+
+        // Preparar los datos para la consulta
+        $queryData = [
+            'FromDateyyyyMMddHHmmss' => $validated['from_date'],
+            'ToDateyyyyMMddHHmmss' => $validated['to_date'],
+            'OnlyConfirmedTransactions' => $validated['only_confirmed'],
+            'PosID' => $posDevice->identifier,
+            'SystemId' => $integrationInfo->system_id, // Agregar el system_id al queryData
+        ];
+
+        // Obtener las transacciones desde la integración configurada
+        $response = $this->posIntegration->fetchTransactionHistory($queryData);
+
+        if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
+            throw new \Exception('Error en la consulta del histórico: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+        }
+
+        return $response['Transactions'] ?? [];
+    } catch (\Exception $e) {
+        Log::error('Error al obtener el historial de transacciones: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
+
 
 }

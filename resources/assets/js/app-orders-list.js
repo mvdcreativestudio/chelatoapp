@@ -42,8 +42,8 @@ $(function () {
   $(document).on('click', '#clearFilters', function () {
     resetFilters();
   });
-  
-  
+
+
   // Función para obtener las órdenes
   function fetchOrders() {
     var ajaxUrl = dt_order_list_container.data('ajax-url');
@@ -236,6 +236,31 @@ $(function () {
       }
     });
   });
+
+  $('#exportExcel').on('click', function () {
+    // Obtener valores de los filtros
+    const searchQuery = $('#searchOrder').val();
+    const paymentStatus = $('#paymentStatusFilter').val();
+    const shippingStatus = $('#shippingStatusFilter').val();
+    const client = $('#clientFilter').val();
+    const store = $('#storeFilter').val();
+    const startDate = $('#startDate').val();
+    const endDate = $('#endDate').val();
+
+    // Construir la URL con los parámetros de los filtros
+    const exportUrl = new URL(window.location.origin + '/admin/orders-export-excel');
+    exportUrl.searchParams.append('search', searchQuery);
+    exportUrl.searchParams.append('payment_status', paymentStatus);
+    exportUrl.searchParams.append('shipping_status', shippingStatus);
+    exportUrl.searchParams.append('client', client);
+    exportUrl.searchParams.append('store', store);
+    exportUrl.searchParams.append('start_date', startDate);
+    exportUrl.searchParams.append('end_date', endDate);
+
+    // Redirigir a la URL de exportación
+    window.location.href = exportUrl;
+  });
+
 
   searchInput.on('input', function () {
     fetchOrders();

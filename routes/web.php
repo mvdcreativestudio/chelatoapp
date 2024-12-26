@@ -63,6 +63,7 @@ use App\Http\Controllers\PackagingController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PackageComponentController;
 use App\Http\Controllers\ProductCatalogueController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -528,6 +529,9 @@ Route::middleware([
         Route::post('/delete-multiple', [CurrencyController::class, 'deleteMultiple'])->name('currencies.deleteMultiple');
 
     });
+
+    // Transacciones
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 });
 
 // Recursos con acceso público

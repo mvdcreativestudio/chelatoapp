@@ -121,6 +121,7 @@ class CreatePermissions extends Command
                     'module' => 'ecommerce',
                     'submenus' => [
                         'orders',
+                        'transactions',
                         'products',
                         'settings',
                         'product-flavors',

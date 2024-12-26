@@ -16,5 +16,6 @@ return [
     'incomes' => 'Ingresos',
     'integrations' => 'Integraciones',
     'sales' => 'Ventas',
+    'transactions' => 'Transacciones',
     'products' => 'Productos',
 ];

@@ -257,20 +257,35 @@ class OrderController extends Controller
     public function exportExcel(Request $request)
     {
         try {
+            // Recibir los filtros desde el request
+            $search = $request->input('search');
+            $paymentStatus = $request->input('payment_status');
+            $shippingStatus = $request->input('shipping_status');
             $client = $request->input('client');
-            $company = $request->input('company');
-            $payment = $request->input('payment');
-            $billed = $request->input('billed');
+            $store = $request->input('store');
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
 
-            $orders = $this->orderRepository->getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate);
-            return Excel::download(new OrdersExport($orders), 'orders-'.date('Y-m-d_H-i-s').'.xlsx');
+            // Obtener las órdenes filtradas
+            $orders = $this->orderRepository->getOrdersForExport(
+                $client,
+                $store,
+                $paymentStatus,
+                $shippingStatus,
+                $startDate,
+                $endDate,
+                $search
+            );
+
+            // Exportar las órdenes a Excel
+            return Excel::download(new OrdersExport($orders), 'orders-' . date('Y-m-d_H-i-s') . '.xlsx');
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
         }
     }
+
+
 
     public function exportPdf(Request $request)
     {

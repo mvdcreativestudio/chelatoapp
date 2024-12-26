@@ -1,4 +1,6 @@
 $(document).ready(function () {
+
+  // Variables globales
   let cart = [];
   const baseUrl = window.baseUrl || '';
   const frontRoute = window.frontRoute || '';
@@ -21,7 +23,7 @@ $(document).ready(function () {
   });
 
 
-
+  // Limitar la cantidad de decimales en los campos de descuento y valor recibido
   function limitTwoDecimals(event) {
     const input = event.target;
     let value = input.value;
@@ -204,7 +206,7 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, token, orderI
               if (transactionSuccess) {
                   // Actualizar el estado de pago y confirmar la venta
                   $.ajax({
-                      url: `${baseUrl}orders/${orderId}/set-order-as-paid`,
+                      url: `${baseUrl}admin/orders/${orderId}/set-order-as-paid`,
                       type: 'POST',
                       data: {
                           _token: $('meta[name="csrf-token"]').attr('content'),

@@ -169,4 +169,9 @@ class Order extends Model
     {
         $this->attributes['discount'] = round($value, 2);
     }
+
+    public function transaction()
+    {
+        return $this->hasOne(Transaction::class, 'order_id', 'id');
+    }
 }
