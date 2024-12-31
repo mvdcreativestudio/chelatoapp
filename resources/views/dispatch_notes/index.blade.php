@@ -58,9 +58,9 @@
         <div class="card-body">
             <div class="row g-3">
                 @foreach ($products as $product)
-                <div class="col-md-4 mb-4"> <!-- Agregado margin-bottom para mejor espaciado -->
-                    <div class="card h-100 shadow-sm border-0 transition-transform hover:scale-105"> <!-- Agregados efectos hover y borde -->
-                        <div class="card-body d-flex flex-column p-4"> <!-- Más padding interno -->
+                <div class="col-md-4 mb-4"> 
+                    <div class="card h-100 shadow-sm border-0 transition-transform hover:scale-105"> 
+                        <div class="card-body d-flex flex-column p-4"> 
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title text-primary fw-bold m-0">{{ $product['name'] }}</h5>
                                 <span class="badge bg-light text-dark">{{ $product['quantity'] }} metro(s)</span>
@@ -72,7 +72,7 @@
                                 data-product-id="{{ $product['id'] }}"
                                 data-product-name="{{ $product['name'] }}"
                                 data-product-quantity="{{ $product['quantity'] }}">
-                                <i class="fas fa-file-alt me-2"></i> <!-- Ícono opcional -->
+                                <i class="fas fa-file-alt me-2"></i> 
                                 Crear remito
                             </button>
                         </div>
@@ -121,7 +121,7 @@
                                 @if($dispatchNote->bombing_type == 'Drag')
                                 Arrastre
                                 @elseif($dispatchNote->bombing_type == 'Throw')
-                                Lanzamiento
+                                Lanza
                                 @else
                                 No aplicable
                                 @endif
@@ -193,7 +193,7 @@
                 <select class="form-select" id="bombing_type" name="bombing_type" required>
                     <option value="">Seleccionar...</option>
                     <option value="Drag">Arrastre</option>
-                    <option value="Throw">Lanzamiento</option>
+                    <option value="Throw">Lanza</option>
                 </select>
             </div>
 
