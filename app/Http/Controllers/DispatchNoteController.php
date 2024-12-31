@@ -40,7 +40,7 @@ class DispatchNoteController extends Controller
         $dispatchNotes = $this->dispatchNoteRepository->getAll();
         return response()->json(['dispatchNotes' => $dispatchNotes]);
     }
-    
+
     /*
     * Muestra el formulario para crear un remito.
     */
@@ -134,7 +134,9 @@ class DispatchNoteController extends Controller
         $products = json_decode($order->products, true);
         $dispatchNotes = $data['dispatchNotes'];
 
-        $pdf = PDF::loadView('dispatch_notes.show-multiple', compact('order', 'products', 'dispatchNotes'));
+        $client = $order->client;
+
+        $pdf = PDF::loadView('dispatch_notes.show-multiple', compact('order', 'products', 'dispatchNotes', 'client'));
         return $pdf->download('remitos-orden-' . $order->uuid . '.pdf');
     }
 

@@ -22,7 +22,7 @@ class DispatchNoteRepository
     */
     public function find($id)
     {
-        return DispatchNote::findOrFail($id);
+        return DispatchNote::with('order.client', 'product')->findOrFail($id);
     }
 
     /*
@@ -100,11 +100,11 @@ class DispatchNoteRepository
     */
     public function getOrderWithDispatchNotes($uuid)
     {
-        $order = Order::where('uuid', $uuid)->firstOrFail();
+        $order = Order::with('client')->where('uuid', $uuid)->firstOrFail();
         $dispatchNotes = DispatchNote::where('order_id', $order->id)
-            ->with('noteDelivery') 
+            ->with('noteDelivery')
             ->get();
+
         return compact('order', 'dispatchNotes');
     }
-    
 }
