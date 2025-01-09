@@ -38,6 +38,7 @@ class UpdateStoreRequest extends FormRequest
             'accepts_peya_envios' => 'sometimes|boolean',
             'scanntech' => 'required|in:0,1',
             'fiserv' => 'required|in:0,1',
+            'handy' => 'required|in:0,1',
           ];
 
         if ($this->boolean('invoices_enabled')) {
@@ -70,11 +71,18 @@ class UpdateStoreRequest extends FormRequest
       }
 
       if ($this->boolean('fiserv')) {
-          $rules += [
-              'system_id' => 'required|string|max:255',
-          ];
+        $rules += [
+            'fiservSystemId' => 'required|string|max:255', // Cambiado de system_id a fiservSystemId
+        ];
       }
 
+
+
+      if ($this->boolean('handy')) {
+        $rules += [
+            'system_id' => 'required|string|max:255',
+        ];
+    }
 
         return $rules;
     }

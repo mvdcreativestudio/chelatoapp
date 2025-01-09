@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', function () {
     { id: 'invoicesEnabledSwitch', fieldsId: 'pymoFields', requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice'] },
     { id: 'scanntechSwitch', fieldsId: 'scanntechFields', requiredFields: ['scanntechCompany', 'scanntechBranch'] },
     { id: 'emailConfigSwitch', fieldsId: 'emailConfigFields', requiredFields: ['mailHost', 'mailPort', 'mailUsername', 'mailPassword', 'mailEncryption', 'mailFromAddress', 'mailFromName'] },
-    { id: 'fiservSwitch', fieldsId: 'fiservFields', requiredFields: ['systemId'] },
-
+    { id: 'fiservSwitch', fieldsId: 'fiservFields', requiredFields: ['fiservSystemId'] },
+    { id: 'handySwitch', fieldsId: 'handyFields', requiredFields: ['systemId'] },
   ];
 
   // Añadir animación de transición
@@ -118,14 +118,23 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
-document.getElementById('scanntechSwitch').addEventListener('change', function () {
-  if (this.checked) {
-      document.getElementById('fiservSwitch').checked = false;
-  }
-});
+// document.getElementById('scanntechSwitch').addEventListener('change', function () {
+//   if (this.checked) {
+//       document.getElementById('fiservSwitch').checked = false;
+//       document.getElementById('handySwitch').checked = false;
+//   }
+// });
 
-document.getElementById('fiservSwitch').addEventListener('change', function () {
-  if (this.checked) {
-      document.getElementById('scanntechSwitch').checked = false;
-  }
-});
+// document.getElementById('fiservSwitch').addEventListener('change', function () {
+//   if (this.checked) {
+//       document.getElementById('scanntechSwitch').checked = false;
+//       document.getElementById('handySwitch').checked = false;
+//   }
+// });
+
+// document.getElementById('handySwitch').addEventListener('change', function () {
+//   if (this.checked) {
+//       document.getElementById('scanntechSwitch').checked = false;
+//       document.getElementById('fiservSwitch').checked = false;
+//   }
+// });

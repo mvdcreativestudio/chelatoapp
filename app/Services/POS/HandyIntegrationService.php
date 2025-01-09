@@ -9,14 +9,14 @@ use App\Models\PosProvider;
 use App\Models\Transaction;
 
 
-class FiservIntegrationService implements PosIntegrationInterface
+class HandyIntegrationService implements PosIntegrationInterface
 {
     protected $apiUrl;  // Definir la propiedad para la URL de la API
 
 
     public function __construct()
     {
-        $this->apiUrl = $this->getFiservApiUrl();  // Asignar la URL de la API cuando se crea la instancia
+        $this->apiUrl = $this->getHandyApiUrl();  // Asignar la URL de la API cuando se crea la instancia
     }
 
     public function formatTransactionData(array $transactionData): array
@@ -44,25 +44,25 @@ class FiservIntegrationService implements PosIntegrationInterface
 
 
     // Obtener la URL de la API desde la tabla pos_providers
-    protected function getFiservApiUrl()
+    protected function getHandyApiUrl()
     {
-        // Obtener el pos_provider con el id 2 (que corresponde a Fiserv)
-        $posProvider = PosProvider::find(2); // Fiserv tiene el ID 2
+        // Obtener el pos_provider con el id 2 (que corresponde a Handy)
+        $posProvider = PosProvider::find(3); // Handy tiene el ID 3
 
         if ($posProvider && $posProvider->api_url) {
-            Log::info('URL de la API de Fiserv encontrada: ' . $posProvider->api_url);
+            Log::info('URL de la API de Handy encontrada: ' . $posProvider->api_url);
             return $posProvider->api_url;
         } else {
             // Registrar un error si no se encuentra el proveedor o no tiene URL definida
-            Log::error('No se encontró la URL de la API para el proveedor Fiserv.');
-            throw new \Exception('No se pudo encontrar la URL de la API para Fiserv');
+            Log::error('No se encontró la URL de la API para el proveedor Handy.');
+            throw new \Exception('No se pudo encontrar la URL de la API para Handy');
         }
     }
 
-    // No se necesita autenticación en Fiserv
+    // No se necesita autenticación en Handy
     public function getToken()
     {
-        return null; // No se necesita autenticación en Fiserv
+        return null; // No se necesita autenticación en Handy
     }
 
     public function processTransaction(array $transactionData): array
@@ -73,7 +73,7 @@ class FiservIntegrationService implements PosIntegrationInterface
         // Crear el registro inicial de la transacción
         $initialTransaction = Transaction::create([
             'order_id' => $transactionData['order_id'] ?? null, // Asignar el order_id desde los datos recibidos
-            'TransactionId' => null, // Inicialmente nulo, se actualizará con la respuesta de Fiserv
+            'TransactionId' => null, // Inicialmente nulo, se actualizará con la respuesta de Handy
             'STransactionId' => null, // Inicialmente nulo
             'status' => 'pending', // Estado inicial de la transacción
             'formatted_data' => $transactionData, // Guardar los datos iniciales de la transacción
@@ -89,19 +89,19 @@ class FiservIntegrationService implements PosIntegrationInterface
 
         Log::info('Registro inicial de transacción creado en la base de datos:', $initialTransaction->toArray());
 
-        // Realiza la solicitud a Fiserv
+        // Realiza la solicitud a Handy
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post($this->apiUrl . 'processFinancialPurchase', $transactionData);
 
-        Log::info('Estableciendo conexión Fiserv en ' . $this->apiUrl . 'processFinancialPurchase');
-        Log::info('Datos de la transacción enviados a Fiserv:', $transactionData);
+        Log::info('Estableciendo conexión Handy en ' . $this->apiUrl . 'processFinancialPurchase');
+        Log::info('Datos de la transacción enviados a Handy:', $transactionData);
 
         if ($response->successful()) {
             $jsonResponse = $response->json();
-            Log::info('Respuesta de Fiserv al procesar transacción:', $jsonResponse);
+            Log::info('Respuesta de Handy al procesar transacción:', $jsonResponse);
 
-            // Actualizar el registro de la transacción con los datos de la respuesta de Fiserv
+            // Actualizar el registro de la transacción con los datos de la respuesta de Handy
             $initialTransaction->update([
                 'TransactionId' => $jsonResponse['TransactionId'] ?? null,
                 'STransactionId' => $jsonResponse['STransactionId'] ?? null,
@@ -127,8 +127,8 @@ class FiservIntegrationService implements PosIntegrationInterface
             return $jsonResponse;
         }
 
-        // Manejar errores en la solicitud a Fiserv
-        Log::error('Error al procesar la transacción con Fiserv: ' . $response->body());
+        // Manejar errores en la solicitud a Handy
+        Log::error('Error al procesar la transacción con Handy: ' . $response->body());
 
         // En caso de error, puedes actualizar el estado de la transacción para indicar un fallo
         $initialTransaction->update([
@@ -138,46 +138,61 @@ class FiservIntegrationService implements PosIntegrationInterface
 
         return [
             'success' => false,
-            'message' => 'Error al procesar la transacción con Fiserv',
+            'message' => 'Error al procesar la transacción con Handy',
         ];
     }
 
     public function checkTransactionStatus(array $transactionData): array
     {
         try {
-            // Obtener la última transacción registrada
-            $lastTransaction = Transaction::latest()->first();
+            Log::info('Iniciando consulta de estado para transacción (checkTransactionStatus)', $transactionData);
 
-            if (!$lastTransaction || !$lastTransaction->TransactionId || !$lastTransaction->STransactionId) {
-                throw new \Exception('No se encontró información de la última transacción.');
-            }
-
-            // Preparar los datos para la consulta
-            $queryData = array_merge($lastTransaction->formatted_data, [
-                'TransactionId' => $lastTransaction->TransactionId,
-                'STransactionId' => $lastTransaction->STransactionId,
-            ]);
-
-            Log::info('Cuerpo de la solicitud para Fiserv processFinancialPurchaseQuery', $queryData);
-
-            // Realizar la solicitud a Fiserv
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-            ])->post($this->apiUrl . 'processFinancialPurchaseQuery', $queryData);
+            ])->post($this->apiUrl . 'processFinancialPurchaseQuery', $transactionData);
 
-            Log::info('Respuesta de Fiserv al consultar estado de transacción', [
+            Log::info('Respuesta de Handy en checkTransactionStatus:', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
 
             if ($response->successful()) {
                 $jsonResponse = $response->json();
-                Log::info('Estado de transacción recibido de Fiserv', $jsonResponse);
 
-                // Verificar el PosResponseCode si está presente
+                // Verificar si ResponseCode es 0 (transacción exitosa)
+                if (isset($jsonResponse['ResponseCode']) && $jsonResponse['ResponseCode'] === 0) {
+                    Log::info('Transacción exitosa según Handy (ResponseCode 0):', $jsonResponse);
+
+                    // Obtener el Acquirer y asegurarnos de que esté presente
+                    $acquirer = $jsonResponse['Acquirer'] ?? null;
+                    if ($acquirer) {
+                        Log::info('Acquirer obtenido de la respuesta de Handy:', ['Acquirer' => $acquirer]);
+
+                        // Actualizar el registro de la transacción en la base de datos
+                        Transaction::where('TransactionId', $transactionData['TransactionId'])
+                            ->update([
+                                'status' => 'completed', // Cambiar el estado a completado
+                                'formatted_data->Acquirer' => $acquirer, // Actualizar el campo Acquirer en los datos formateados
+                            ]);
+
+                        Log::info('Transacción actualizada con el Acquirer en la base de datos.');
+                    } else {
+                        Log::warning('Acquirer no presente en la respuesta de Handy.');
+                    }
+
+                    return [
+                        'responseCode' => 0,
+                        'message' => 'La transacción fue exitosa.',
+                        'icon' => 'success',
+                        'keepPolling' => false,
+                        'transactionSuccess' => true,
+                        'details' => $jsonResponse,
+                    ];
+                }
+
+                // Manejar el caso donde PosResponseCode esté presente
                 $posResponseCode = $jsonResponse['PosResponseCode'] ?? '';
                 if (!empty($posResponseCode)) {
-                    // Si PosResponseCode es 'CT', la transacción fue cancelada
                     if ($posResponseCode === 'CT') {
                         return [
                             'responseCode' => 999,
@@ -185,22 +200,6 @@ class FiservIntegrationService implements PosIntegrationInterface
                             'icon' => 'error',
                             'keepPolling' => false,
                             'transactionSuccess' => false,
-                            'details' => $jsonResponse,
-                        ];
-                    }
-
-                    // Si PosResponseCode es '00', la transacción fue exitosa
-                    if ($posResponseCode === '00') {
-                        // Actualizar el status de la transacción a 'paid'
-                        Transaction::where('TransactionId', $queryData['TransactionId'])
-                            ->update(['status' => 'completed']);
-
-                        return [
-                            'responseCode' => 0,
-                            'message' => 'La transacción fue exitosa.',
-                            'icon' => 'success',
-                            'keepPolling' => false,
-                            'transactionSuccess' => true,
                             'details' => $jsonResponse,
                         ];
                     }
@@ -221,14 +220,15 @@ class FiservIntegrationService implements PosIntegrationInterface
             }
 
             // Manejar errores HTTP
-            Log::error('Error al consultar estado de transacción con Fiserv: ' . $response->body());
+            Log::error('Error al consultar estado de transacción con Handy: ' . $response->body());
             return $this->getResponses(999);
 
         } catch (\Exception $e) {
-            Log::error('Excepción al consultar estado de transacción en Fiserv: ' . $e->getMessage());
+            Log::error('Excepción al consultar estado de transacción en Handy: ' . $e->getMessage());
             return $this->getResponses(999);
         }
     }
+
 
 
     public function reverseTransaction(array $transactionData): array
@@ -240,7 +240,7 @@ class FiservIntegrationService implements PosIntegrationInterface
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl . 'processFinancialReverse', $transactionData);
 
-            Log::info('Respuesta de reverso de Fiserv:', [
+            Log::info('Respuesta de reverso de Handy:', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
@@ -271,7 +271,7 @@ class FiservIntegrationService implements PosIntegrationInterface
 
             return [
                 'success' => false,
-                'message' => 'Error al conectarse a Fiserv.',
+                'message' => 'Error al conectarse a Handy.',
                 'details' => $response->body(),
             ];
         } catch (\Exception $e) {
@@ -289,7 +289,7 @@ class FiservIntegrationService implements PosIntegrationInterface
     public function getResponses($responseCode)
     {
         // Cargar respuestas desde la configuración
-        $responses = Config::get('FiservResponses.processFinancialPurchaseResponses');
+        $responses = Config::get('HandyResponses.processFinancialPurchaseResponses');
 
         // Validar que las respuestas existan
         if (!$responses || !is_array($responses)) {
@@ -319,108 +319,122 @@ class FiservIntegrationService implements PosIntegrationInterface
     }
 
     public function voidTransaction(array $transactionData): array
-    {
-        try {
-            Log::info('Iniciando voidTransaction en FiservIntegrationService con los datos:', $transactionData);
+{
+    try {
+        Log::info('Iniciando voidTransaction en HandyIntegrationService con los datos:', $transactionData);
 
-            // Buscar la transacción original utilizando order_id y status "pending"
-            $originalTransaction = Transaction::where('order_id', $transactionData['order_id'])
-                ->where('status', 'completed')
-                ->first();
+        // Buscar la transacción original utilizando order_id y status "completed"
+        $originalTransaction = Transaction::where('order_id', $transactionData['order_id'])
+            ->where('status', 'completed')
+            ->first();
 
-            Log::info('Transacción original encontrada:', $originalTransaction->toArray());
+        if (!$originalTransaction) {
+            Log::error('No se encontró una transacción original con status "completed" para el order_id proporcionado.', [
+                'order_id' => $transactionData['order_id']
+            ]);
+            throw new \Exception('No se encontró una transacción original con status "completed" para el order_id proporcionado.');
+        }
 
-            if (!isset($transactionData['order_id'])) {
-                  Log::error('El índice "order_id" no está definido en los datos de la transacción.');
-                  throw new \Exception('El índice "order_id" es obligatorio para procesar la anulación.');
-            }
+        Log::info('Transacción original encontrada:', $originalTransaction->toArray());
 
+        // Validar que formatted_data sea un array
+        $formattedData = $originalTransaction->formatted_data;
+        if (is_string($formattedData)) {
+            $formattedData = json_decode($formattedData, true);
+        }
 
-            if (!$originalTransaction) {
-                Log::error('No se encontró una transacción original con status "completed" para el order_id proporcionado.', [
-                    'order_id' => $transactionData['order_id']
+        if (!is_array($formattedData)) {
+            Log::error('formatted_data no es un array válido.', [
+                'formatted_data' => $originalTransaction->formatted_data
+            ]);
+            throw new \Exception('formatted_data no es un array válido.');
+        }
+
+        // Verificar que el Acquirer exista en formatted_data
+        if (!isset($formattedData['Acquirer'])) {
+            Log::error('Acquirer no encontrado en formatted_data.', [
+                'formatted_data' => $formattedData
+            ]);
+            throw new \Exception('Acquirer no encontrado en formatted_data de la transacción original.');
+        }
+
+        // Preparar los datos para la solicitud de anulación a Handy
+        $voidRequestData = [
+            'PosID' => $transactionData['PosID'] ?? $formattedData['PosID'],
+            'SystemId' => $transactionData['SystemId'] ?? $formattedData['SystemId'],
+            'Branch' => $transactionData['Branch'] ?? $formattedData['Branch'],
+            'ClientAppId' => $transactionData['ClientAppId'] ?? $formattedData['ClientAppId'],
+            'UserId' => $transactionData['UserId'] ?? $formattedData['UserId'],
+            'TransactionDateTimeyyyyMMddHHmmssSSS' => '20241121201131000',
+            'TicketNumber' => $transactionData['TicketNumber'] ?? $formattedData['TicketNumber'],
+            'Acquirer' => (string) ($transactionData['Acquirer'] ?? $formattedData['Acquirer']), // Convertir a string
+            'CiNoCheckDigict' => '4795307',
+            'Merchant' => 'Resonet',
+          ];
+
+        Log::info('Enviando solicitud de anulación a Handy con los datos:', $voidRequestData);
+
+        // Realizar la solicitud de anulación a Handy
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+        ])->post($this->apiUrl . 'processFinancialPurchaseVoidByTicket', $voidRequestData);
+
+        if ($response->successful()) {
+            $jsonResponse = $response->json();
+            Log::info('Respuesta de Handy al realizar voidTransaction:', $jsonResponse);
+
+            if ($jsonResponse['ResponseCode'] === 0) {
+                // Crear una nueva transacción de anulación
+                $voidTransaction = Transaction::create([
+                    'TransactionId' => (string) $jsonResponse['TransactionId'], // Guardar como string
+                    'STransactionId' => (string) $jsonResponse['STransactionId'], // Guardar como string
+                    'order_id' => $originalTransaction->order_id, // Asociar con el mismo order_id
+                    'type' => 'void',
+                    'status' => 'pending',
+                    'formatted_data' => array_merge($voidRequestData, [
+                        'TransactionId' => (string) $jsonResponse['TransactionId'],
+                        'STransactionId' => (string) $jsonResponse['STransactionId'],
+                    ]),
                 ]);
 
-                return [
-                    'success' => false,
-                    'message' => 'No se encontró una transacción original con status "completed" para el order_id proporcionado.'
-                ];
-            }
-
-            Log::info('Transacción original encontrada:', $originalTransaction->toArray());
-
-            // Preparar los datos para la solicitud de anulación a Fiserv
-            $voidRequestData = [
-                'PosID' => $transactionData['PosID'] ?? $originalTransaction->PosID,
-                'SystemId' => $transactionData['SystemId'] ?? "E62FC666-5E4A-5E1D-B80A-EAB805050505", // Valor predeterminado
-                'Branch' => $transactionData['Branch'] ?? $originalTransaction->Branch ?? 'Sucursal1',
-                'ClientAppId' => $transactionData['ClientAppId'] ?? $originalTransaction->ClientAppId ?? 'Caja1',
-                'UserId' => $transactionData['UserId'] ?? $originalTransaction->UserId ?? 'Usuario1',
-                'TransactionDateTimeyyyyMMddHHmmssSSS' => $transactionData['TransactionDateTimeyyyyMMddHHmmssSSS'] ?? now()->format('YmdHis') . '000',
-                'TicketNumber' => $transactionData['TicketNumber'] ?? $originalTransaction->TicketNumber,
-            ];
-
-            Log::info('Enviando solicitud de anulación a Fiserv con los datos:', $voidRequestData);
-
-            // Realizar la solicitud de anulación a Fiserv
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-            ])->post($this->apiUrl . 'processFinancialPurchaseVoidByTicket', $voidRequestData);
-
-            if ($response->successful()) {
-                $jsonResponse = $response->json();
-                Log::info('Respuesta de Fiserv al realizar voidTransaction:', $jsonResponse);
-
-                if ($jsonResponse['ResponseCode'] === 0) {
-                    // Crear una nueva transacción de anulación
-                    $voidTransaction = Transaction::create([
-                        'TransactionId' => (string) $jsonResponse['TransactionId'], // Guardar como string
-                        'STransactionId' => (string) $jsonResponse['STransactionId'], // Guardar como string
-                        'order_id' => $originalTransaction->order_id, // Asociar con el mismo order_id
-                        'type' => 'void',
-                        'status' => 'pending',
-                        'formatted_data' => array_merge($voidRequestData, [
-                            'TransactionId' => (string) $jsonResponse['TransactionId'],
-                            'STransactionId' => (string) $jsonResponse['STransactionId'],
-                        ]),
-                    ]);
-
-                    Log::info('Transacción de anulación registrada en la base de datos:', $voidTransaction->toArray());
-
-                    return [
-                        'success' => true,
-                        'message' => 'Transacción de anulación completada exitosamente.',
-                        'details' => $jsonResponse,
-                    ];
-                }
+                Log::info('Transacción de anulación registrada en la base de datos:', $voidTransaction->toArray());
 
                 return [
-                    'success' => false,
-                    'message' => $jsonResponse['Message'] ?? 'Error al anular la transacción.',
+                    'success' => true,
+                    'message' => 'Transacción de anulación completada exitosamente.',
                     'details' => $jsonResponse,
                 ];
             }
 
-            Log::error('Error al realizar la solicitud de anulación a Fiserv:', $response->body());
-
             return [
                 'success' => false,
-                'message' => 'Error al conectarse a Fiserv.',
-                'details' => $response->body(),
-            ];
-        } catch (\Exception $e) {
-            Log::error('Error durante voidTransaction:', [
-                'message' => $e->getMessage(),
-                'transactionData' => $transactionData,
-            ]);
-
-            return [
-                'success' => false,
-                'message' => 'Error interno al realizar la anulación.',
-                'details' => $e->getMessage(),
+                'message' => $jsonResponse['Message'] ?? 'Error al anular la transacción.',
+                'details' => $jsonResponse,
             ];
         }
+
+        Log::error('Error al realizar la solicitud de anulación a Handy:', $response->body());
+
+        return [
+            'success' => false,
+            'message' => 'Error al conectarse a Handy.',
+            'details' => $response->body(),
+        ];
+    } catch (\Exception $e) {
+        Log::error('Error durante voidTransaction:', [
+            'message' => $e->getMessage(),
+            'transactionData' => $transactionData,
+        ]);
+
+        return [
+            'success' => false,
+            'message' => 'Error interno al realizar la anulación.',
+            'details' => $e->getMessage(),
+        ];
     }
+}
+
+
 
 
 
@@ -433,7 +447,7 @@ class FiservIntegrationService implements PosIntegrationInterface
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl . 'processFinancialPurchaseQuery', $transactionData);
 
-            Log::info('Respuesta de Fiserv en pollVoidStatus:', [
+            Log::info('Respuesta de Handy en pollVoidStatus:', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
@@ -441,7 +455,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             if ($response->successful()) {
                 $jsonResponse = $response->json();
 
-                if ($jsonResponse['ResponseCode'] === 0 && $jsonResponse['PosResponseCode'] === 'CT') {
+                if ($jsonResponse['ResponseCode'] === 0 && $jsonResponse['PosResponseCode'] === '00') {
                     Log::info('La transacción fue anulada correctamente (ResponseCode 111)', $jsonResponse);
 
                     // Actualizar el estado de la transacción en la base de datos
@@ -482,7 +496,7 @@ class FiservIntegrationService implements PosIntegrationInterface
     public function processQuery(array $queryData): array
     {
         try {
-            Log::info('Iniciando processQuery en Fiserv con datos:', $queryData);
+            Log::info('Iniciando processQuery en Handy con datos:', $queryData);
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
@@ -490,7 +504,7 @@ class FiservIntegrationService implements PosIntegrationInterface
 
             if ($response->successful()) {
                 $jsonResponse = $response->json();
-                Log::info('Respuesta de Fiserv para processQuery:', $jsonResponse);
+                Log::info('Respuesta de Handy para processQuery:', $jsonResponse);
 
                 return [
                     'success' => true,
@@ -498,13 +512,13 @@ class FiservIntegrationService implements PosIntegrationInterface
                 ];
             }
 
-            Log::error('Error en processQuery de Fiserv: ' . $response->body());
+            Log::error('Error en processQuery de Handy: ' . $response->body());
             return [
                 'success' => false,
                 'message' => 'Error en processQuery: ' . $response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Excepción en processQuery de Fiserv: ' . $e->getMessage());
+            Log::error('Excepción en processQuery de Handy: ' . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Excepción en processQuery: ' . $e->getMessage(),
@@ -515,8 +529,8 @@ class FiservIntegrationService implements PosIntegrationInterface
     public function fetchTransactionHistory(array $queryData): array
     {
         try {
-            // Obtener la URL base desde el método getFiservApiUrl
-            $baseUrl = $this->getFiservApiUrl();
+            // Obtener la URL base desde el método getHandyApiUrl
+            $baseUrl = $this->getHandyApiUrl();
 
             // Endpoint específico para el historial de transacciones
             $endpoint = $baseUrl . 'processQuery?QueryRequest';
@@ -532,12 +546,12 @@ class FiservIntegrationService implements PosIntegrationInterface
 
             // Validar la respuesta
             if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
-                throw new \Exception('Error en la API de Fiserv: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+                throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
             }
 
             return $response;
         } catch (\Exception $e) {
-            Log::error('Error al obtener el historial de transacciones en FiservIntegrationService: ' . $e->getMessage());
+            Log::error('Error al obtener el historial de transacciones en HandyIntegrationService: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -587,7 +601,7 @@ class FiservIntegrationService implements PosIntegrationInterface
 
             return $responseData;
         } catch (\GuzzleHttp\Exception\ClientException $e) {
-            Log::error('Error 4xx en la solicitud HTTP a Fiserv:', [
+            Log::error('Error 4xx en la solicitud HTTP a Handy:', [
                 'message' => $e->getMessage(),
                 'response' => $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null,
                 'url' => $url,
@@ -595,7 +609,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             ]);
             throw new \Exception('Error en la solicitud HTTP: ' . $e->getMessage());
         } catch (\GuzzleHttp\Exception\ServerException $e) {
-            Log::error('Error 5xx en la solicitud HTTP a Fiserv:', [
+            Log::error('Error 5xx en la solicitud HTTP a Handy:', [
                 'message' => $e->getMessage(),
                 'response' => $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null,
                 'url' => $url,
@@ -620,8 +634,8 @@ class FiservIntegrationService implements PosIntegrationInterface
             // Crear una nueva transacción en la base de datos con estado 'pending'
             $refundTransaction = Transaction::create([
                 'order_id' => $refundData['order_id'] ?? null,
-                'TransactionId' => null, // Será actualizado con la respuesta de Fiserv
-                'STransactionId' => null, // Será actualizado con la respuesta de Fiserv
+                'TransactionId' => null, // Será actualizado con la respuesta de Handy
+                'STransactionId' => null, // Será actualizado con la respuesta de Handy
                 'status' => 'pending',
                 'type' => 'refund', // Identificar que esta es una transacción de devolución
                 'formatted_data' => $refundData, // Guardar los datos iniciales de la devolución
@@ -632,7 +646,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             // Transformar el monto a centavos
             $amount = $refundData['Amount'] * 100;
 
-            // Formatear los datos para la solicitud a Fiserv
+            // Formatear los datos para la solicitud a Handy
             $requestPayload = [
                 'PosID' => $refundData['PosID'],
                 'SystemId' => $refundData['SystemId'],
@@ -651,23 +665,23 @@ class FiservIntegrationService implements PosIntegrationInterface
                 'InvoiceAmount' => $refundData['InvoiceAmount'] ?? $refundData['Amount'],
             ];
 
-            Log::info('Datos formateados para la solicitud de devolución a Fiserv:', $requestPayload);
+            Log::info('Datos formateados para la solicitud de devolución a Handy:', $requestPayload);
 
-            // Realizar la solicitud a Fiserv
+            // Realizar la solicitud a Handy
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl . 'processFinancialPurchaseRefund', $requestPayload);
 
-            Log::info('Respuesta de Fiserv para la solicitud de devolución:', [
+            Log::info('Respuesta de Handy para la solicitud de devolución:', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
 
-            // Manejar la respuesta de Fiserv
+            // Manejar la respuesta de Handy
             if ($response->successful()) {
                 $jsonResponse = $response->json();
 
-                // Actualizar la transacción con los datos de Fiserv
+                // Actualizar la transacción con los datos de Handy
                 $refundTransaction->update([
                     'TransactionId' => $jsonResponse['TransactionId'] ?? null,
                     'STransactionId' => $jsonResponse['STransactionId'] ?? null,
@@ -688,7 +702,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             }
 
             // Manejar errores en la solicitud
-            Log::error('Error en la solicitud de devolución a Fiserv:', $response->body());
+            Log::error('Error en la solicitud de devolución a Handy:', $response->body());
 
             // Actualizar la transacción con el estado de fallo
             $refundTransaction->update([
@@ -723,16 +737,16 @@ class FiservIntegrationService implements PosIntegrationInterface
             $url = $this->apiUrl . 'processQueryLastNClose?QueryLastNCloseRequest';
             $response = $this->sendRequest($url, $queryData, 'POST');
 
-            Log::info('Respuesta completa de Fiserv para fetchBatchCloses:', $response);
+            Log::info('Respuesta completa de Handy para fetchBatchCloses:', $response);
 
             // Validar que la respuesta contiene los datos esperados
             if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
-                throw new \Exception('Error en la API de Fiserv: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+                throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
             }
 
             return $response;
         } catch (\Exception $e) {
-            Log::error('Error al obtener el historial de cierres en FiservIntegrationService: ' . $e->getMessage());
+            Log::error('Error al obtener el historial de cierres en HandyIntegrationService: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -745,16 +759,16 @@ class FiservIntegrationService implements PosIntegrationInterface
         $url = $this->apiUrl . 'ProcessCurrentTransactionsBatchQuery';
         $response = $this->sendRequest($url, $queryData, 'POST');
 
-        Log::info('Respuesta completa de Fiserv para fetchOpenBatches:', $response);
+        Log::info('Respuesta completa de Handy para fetchOpenBatches:', $response);
 
         // Validar que la respuesta contiene los datos esperados
         if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
-            throw new \Exception('Error en la API de Fiserv: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+            throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
         }
 
         return $response;
     } catch (\Exception $e) {
-        Log::error('Error al obtener los lotes abiertos en FiservIntegrationService: ' . $e->getMessage());
+        Log::error('Error al obtener los lotes abiertos en HandyIntegrationService: ' . $e->getMessage());
         throw $e;
     }
 }

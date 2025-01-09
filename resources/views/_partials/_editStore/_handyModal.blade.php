@@ -1,12 +1,12 @@
-<div class="modal fade" id="fiservModal" tabindex="-1" aria-labelledby="fiservModalLabel" aria-hidden="true">
+<div class="modal fade" id="handyModal" tabindex="-1" aria-labelledby="handyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
       <div class="modal-content">
           <div class="modal-header">
-              <h5 class="modal-title" id="fiservModalLabel">Terminales de Fiserv</h5>
+              <h5 class="modal-title" id="handyModalLabel">Terminales de Handy</h5>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-              <table class="table table-striped" id="fiservTerminalsTable">
+              <table class="table table-striped" id="handyTerminalsTable">
                   <thead>
                       <tr>
                           <th>Nombre</th>
@@ -19,22 +19,22 @@
                   <tbody>
                       @foreach($devices as $device)
                       <tr data-id="{{ $device->id }}">
-                          <td><input type="text" class="form-control fiserv-terminal-name" value="{{ $device->name }}" /></td>
-                          <td><input type="text" class="form-control fiserv-terminal-identifier" value="{{ $device->identifier }}" /></td>
-                          <td><input type="text" class="form-control fiserv-terminal-user" value="{{ $device->user }}" /></td>
-                          <td><input type="text" class="form-control fiserv-terminal-cash-register" value="{{ $device->cash_register }}" /></td>
+                          <td><input type="text" class="form-control handy-terminal-name" value="{{ $device->name }}" /></td>
+                          <td><input type="text" class="form-control handy-terminal-identifier" value="{{ $device->identifier }}" /></td>
+                          <td><input type="text" class="form-control handy-terminal-user" value="{{ $device->user }}" /></td>
+                          <td><input type="text" class="form-control handy-terminal-cash-register" value="{{ $device->cash_register }}" /></td>
                           <td class="text-center">
-                              <button type="button" class="btn btn-outline-danger btn-sm fiserv-remove-terminal"><i class="bx bx-trash"></i></button>
+                              <button type="button" class="btn btn-outline-danger btn-sm handy-remove-terminal"><i class="bx bx-trash"></i></button>
                           </td>
                       </tr>
                       @endforeach
                   </tbody>
               </table>
-              <button type="button" class="btn btn-success mt-3" id="fiservAddTerminalRow">Agregar Nueva Terminal</button>
+              <button type="button" class="btn btn-success mt-3" id="handyAddTerminalRow">Agregar Nueva Terminal</button>
           </div>
           <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-              <button type="button" class="btn btn-primary" id="fiservSaveTerminals">Guardar Cambios</button>
+              <button type="button" class="btn btn-primary" id="handySaveTerminals">Guardar Cambios</button>
           </div>
       </div>
   </div>
@@ -42,28 +42,28 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const fiservTerminalsTable = document.querySelector('#fiservTerminalsTable tbody');
-    const fiservAddTerminalRowButton = document.getElementById('fiservAddTerminalRow');
-    const fiservSaveTerminalsButton = document.getElementById('fiservSaveTerminals');
+    const handyTerminalsTable = document.querySelector('#handyTerminalsTable tbody');
+    const handyAddTerminalRowButton = document.getElementById('handyAddTerminalRow');
+    const handySaveTerminalsButton = document.getElementById('handySaveTerminals');
 
     // Agregar nueva fila
-    fiservAddTerminalRowButton.addEventListener('click', function () {
+    handyAddTerminalRowButton.addEventListener('click', function () {
         const newRow = `
             <tr>
-                <td><input type="text" class="form-control fiserv-terminal-name" placeholder="Nombre" /></td>
-                <td><input type="text" class="form-control fiserv-terminal-identifier" placeholder="Identificador" /></td>
-                <td><input type="text" class="form-control fiserv-terminal-user" placeholder="Usuario" /></td>
-                <td><input type="text" class="form-control fiserv-terminal-cash-register" placeholder="Caja" /></td>
+                <td><input type="text" class="form-control handy-terminal-name" placeholder="Nombre" /></td>
+                <td><input type="text" class="form-control handy-terminal-identifier" placeholder="Identificador" /></td>
+                <td><input type="text" class="form-control handy-terminal-user" placeholder="Usuario" /></td>
+                <td><input type="text" class="form-control handy-terminal-cash-register" placeholder="Caja" /></td>
                 <td class="text-center">
-                    <button type="button" class="btn btn-outline-danger btn-sm fiserv-remove-terminal"><i class="bx bx-trash"></i></button>
+                    <button type="button" class="btn btn-outline-danger btn-sm handy-remove-terminal"><i class="bx bx-trash"></i></button>
                 </td>
             </tr>`;
-        fiservTerminalsTable.insertAdjacentHTML('beforeend', newRow);
+        handyTerminalsTable.insertAdjacentHTML('beforeend', newRow);
     });
 
     // Eliminar una fila
-    fiservTerminalsTable.addEventListener('click', function (event) {
-        if (event.target.classList.contains('fiserv-remove-terminal') || event.target.closest('.fiserv-remove-terminal')) {
+    handyTerminalsTable.addEventListener('click', function (event) {
+        if (event.target.classList.contains('handy-remove-terminal') || event.target.closest('.handy-remove-terminal')) {
             const row = event.target.closest('tr');
             const terminalId = row.getAttribute('data-id');
 
@@ -128,17 +128,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Guardar terminales
-    fiservSaveTerminalsButton.addEventListener('click', function () {
-        const terminalRows = fiservTerminalsTable.querySelectorAll('tr');
+    handySaveTerminalsButton.addEventListener('click', function () {
+        const terminalRows = handyTerminalsTable.querySelectorAll('tr');
         const terminals = [];
-        const posProviderId = 2; // ID para Fiserv
+        const posProviderId = 3; // ID para Handy
 
         terminalRows.forEach(row => {
             const id = row.getAttribute('data-id') || null; // ID si existe
-            const name = row.querySelector('.fiserv-terminal-name').value.trim();
-            const identifier = row.querySelector('.fiserv-terminal-identifier').value.trim();
-            const user = row.querySelector('.fiserv-terminal-user').value.trim();
-            const cashRegister = row.querySelector('.fiserv-terminal-cash-register').value.trim();
+            const name = row.querySelector('.handy-terminal-name').value.trim();
+            const identifier = row.querySelector('.handy-terminal-identifier').value.trim();
+            const user = row.querySelector('.handy-terminal-user').value.trim();
+            const cashRegister = row.querySelector('.handy-terminal-cash-register').value.trim();
 
             // Validar campos
             if (!name || !identifier) {

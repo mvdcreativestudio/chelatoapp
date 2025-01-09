@@ -33,6 +33,10 @@ class PosService
                 Log::info('Configurando integración para Fiserv');
                 $this->posIntegration = new \App\Services\POS\FiservIntegrationService();
                 break;
+            case 3: // Handy
+                Log::info('Configurando integración para Handy');
+                $this->posIntegration = new \App\Services\POS\HandyIntegrationService();
+                break;
 
             default:
                 throw new \Exception('Proveedor POS no soportado: ' . $posProvider->id);
@@ -42,17 +46,36 @@ class PosService
 
     public function getProviderByStoreId($storeId)
     {
-        // Buscar la integración de la tienda en la tabla pos_integrations_store_info
-        $integrationInfo = PosIntegrationStoreInfo::where('store_id', $storeId)->first();
+        try {
+            // Buscar la integración de la tienda en la tabla pos_integrations_store_info
+            $integrationInfo = PosIntegrationStoreInfo::where('store_id', $storeId)->first();
 
-        if ($integrationInfo && $integrationInfo->pos_provider_id) {
-            // Obtener el proveedor POS correspondiente
-            $posProvider = PosProvider::find($integrationInfo->pos_provider_id);
-            return $posProvider;
+            if ($integrationInfo && $integrationInfo->pos_provider_id) {
+                // Obtener el proveedor POS correspondiente
+                $posProvider = PosProvider::find($integrationInfo->pos_provider_id);
+                $branch = $integrationInfo->branch ?? 'Ni idea';
+
+                if (!$posProvider) {
+                    throw new \Exception('Proveedor POS no encontrado');
+                }
+
+                // Retornar un objeto con la información necesaria
+                return (object) [
+                    'provider' => $posProvider,
+                    'system_id' => $integrationInfo->system_id,
+                    'branch' => $branch,
+                ];
+            }
+
+            throw new \Exception('Integración POS no encontrada para esta tienda');
+        } catch (\Exception $e) {
+            // Loguear el error para debug
+            Log::error('Error al obtener el proveedor POS y SystemId para el store ID: ' . $storeId . ' - Error: ' . $e->getMessage());
+            return null; // Retornar null en caso de error
         }
-
-        return null;
     }
+
+
 
     // Procesar la transacción seleccionando el proveedor POS dinámicamente
     public function processTransaction(array $transactionData): array
@@ -174,6 +197,10 @@ class PosService
                 Log::info('Integración seleccionada: Fiserv');
                 $this->posIntegration = new FiservIntegrationService();
                 break;
+            case 3: // Handy
+                Log::info('Integración seleccionada: Handy');
+                $this->posIntegration = new HandyIntegrationService();
+                break;
 
             default:
                 throw new \Exception('Proveedor POS no soportado para esta tienda.');
@@ -227,36 +254,54 @@ class PosService
 
 
     public function voidTransaction(array $transactionData): array
-    {
-        Log::info('Iniciando voidTransaction con los datos:', $transactionData);
+  {
+      try {
+          Log::info('Iniciando voidTransaction con los datos:', $transactionData);
 
-        // Configurar integración POS
-        $this->setPosIntegration($transactionData['store_id']);
+          // Validar que 'store_id' esté presente en los datos
+          if (!isset($transactionData['store_id'])) {
+              throw new \Exception('El store_id es obligatorio para realizar la anulación.');
+          }
 
-        // Obtener los datos del dispositivo POS seleccionado
-        $device = PosDevice::findOrFail($transactionData['pos_device_id']);
+          // Configurar la integración POS dinámica basada en el store_id
+          $this->setPosIntegration($transactionData['store_id']);
 
-        $formattedData = [
-            'PosID' => $transactionData['PosID'] ?? $device->identifier,
-            'SystemId' => $transactionData['SystemId'] ?? $device->provider->api_url,
-            'Branch' => $transactionData['Branch'] ?? $device->store->branch ?? 'Sucursal1',
-            'ClientAppId' => $transactionData['ClientAppId'] ?? 'Caja1',
-            'UserId' => $transactionData['UserId'] ?? $device->user,
-            'TransactionDateTimeyyyyMMddHHmmssSSS' => $transactionData['TransactionDateTimeyyyyMMddHHmmssSSS'] ?? now()->format('YmdHis') . '000',
-            'TicketNumber' => $transactionData['TicketNumber'],
-            'order_id' => $transactionData['order_id'] ?? null,
+          // Verificar que 'pos_device_id' esté presente en los datos
+          if (!isset($transactionData['pos_device_id'])) {
+              throw new \Exception('El pos_device_id es obligatorio para realizar la anulación.');
+          }
 
-        ];
+          // Obtener los datos del dispositivo POS seleccionado
+          $device = PosDevice::findOrFail($transactionData['pos_device_id']);
 
-        Log::info('Datos formateados para enviar a voidTransaction:', $formattedData);
+          // Preparar los datos formateados para la anulación
+          $formattedData = [
+              'PosID' => $transactionData['PosID'] ?? $device->identifier,
+              'SystemId' => $transactionData['SystemId'] ?? $device->provider->api_url,
+              'Branch' => $transactionData['Branch'] ?? $device->store->branch ?? 'Sucursal1',
+              'ClientAppId' => $transactionData['ClientAppId'] ?? 'Caja1',
+              'UserId' => $transactionData['UserId'] ?? $device->user,
+              'TransactionDateTimeyyyyMMddHHmmssSSS' => $transactionData['TransactionDateTimeyyyyMMddHHmmssSSS'] ?? now()->format('YmdHis') . '000',
+              'TicketNumber' => $transactionData['TicketNumber'],
+              'order_id' => $transactionData['order_id'] ?? null,
+              'Acquirer' => $transactionData['Acquirer'],
+          ];
 
-        // Validar que posIntegration esté configurado
-        if (is_null($this->posIntegration)) {
-            throw new \Exception('No se configuró posIntegration antes de llamar a voidTransaction.');
-        }
+          Log::info('Datos formateados para enviar a voidTransaction:', $formattedData);
 
-        return $this->posIntegration->voidTransaction($formattedData);
-    }
+
+          // Llamar al método específico del proveedor POS para anular la transacción
+          $response = $this->posIntegration->voidTransaction($formattedData);
+
+          Log::info('Respuesta de voidTransaction del proveedor POS:', $response);
+
+          return $response;
+      } catch (\Exception $e) {
+          Log::error('Error al procesar voidTransaction:', ['message' => $e->getMessage(), 'transactionData' => $transactionData]);
+          throw $e;
+      }
+  }
+
 
 
     public function pollVoidStatus(array $transactionData): array
@@ -315,6 +360,141 @@ class PosService
         throw $e;
     }
 }
+
+public function processRefund(array $refundData): array
+{
+    Log::info('Iniciando processRefund con los datos:', $refundData);
+
+    $this->setPosIntegration($refundData['store_id']); // Configurar el proveedor POS basado en el store_id
+
+    return $this->posIntegration->processRefundTransaction($refundData); // Delegar al proveedor POS
+}
+
+
+public function fetchBatchCloses(array $validated): array
+{
+    try {
+        Log::info('Iniciando fetchBatchCloses con datos validados:', $validated);
+
+        // Obtener el dispositivo POS y validar
+        $posDevice = PosDevice::where('identifier', $validated['pos_device_id'])->firstOrFail();
+        Log::info('Dispositivo POS encontrado:', $posDevice->toArray());
+
+        // Obtener el proveedor POS y validar
+        $posProvider = PosProvider::findOrFail($posDevice->pos_provider_id);
+        Log::info('Proveedor POS encontrado:', $posProvider->toArray());
+
+        // Verificar la configuración de integración
+        $integrationInfo = PosIntegrationStoreInfo::where([
+            ['store_id', '=', $validated['store_id']],
+            ['pos_provider_id', '=', $posProvider->id]
+        ])->firstOrFail();
+
+        Log::info('Información de integración encontrada:', $integrationInfo->toArray());
+
+        if (!$integrationInfo->system_id) {
+            Log::error('El system_id no está configurado para esta integración.');
+            throw new \Exception('El system_id no está configurado para esta integración.');
+        }
+
+        // Configurar la integración correspondiente
+        $this->setIntegrationByProvider($posProvider);
+
+        // Preparar los datos para la consulta
+        $queryData = [
+            'FromDateyyyyMMddHHmmss' => $validated['FromDateyyyyMMddHHmmss'],
+            'ToDateyyyyMMddHHmmss' => $validated['ToDateyyyyMMddHHmmss'],
+            'TerminalNum' => $posDevice->identifier,
+            'SystemId' => $integrationInfo->system_id,
+            'LastNCloseReg' => 0,
+        ];
+
+        Log::info('Datos preparados para fetchBatchCloses en posIntegration:', $queryData);
+
+        // Realizar la consulta a través del integrador configurado
+        $response = $this->posIntegration->fetchBatchCloses($queryData);
+
+        Log::info('Respuesta recibida de posIntegration->fetchBatchCloses:', $response);
+
+        // Validar la respuesta
+        if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
+            throw new \Exception('Error en la consulta del histórico: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+        }
+
+        $acquirers = $response['Acquirers'] ?? [];
+
+        // **Ordenar los lotes por número de lote (Batch) en orden descendente**
+        foreach ($acquirers as &$acquirer) {
+            if (isset($acquirer['AcquirersClose']) && is_array($acquirer['AcquirersClose'])) {
+                $acquirer['AcquirersClose'] = collect($acquirer['AcquirersClose'])->sortByDesc('Batch')->values()->toArray();
+            }
+        }
+
+        return $acquirers;
+    } catch (\Exception $e) {
+        Log::error('Error al obtener el historial de cierres en el PosService: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
+
+public function fetchOpenBatches(array $validated): array
+{
+    try {
+        Log::info('Iniciando fetchOpenBatches con datos validados:', $validated);
+
+        // Obtener el dispositivo POS
+        $posDevice = PosDevice::where('identifier', $validated['pos_device_id'])->firstOrFail();
+        Log::info('Dispositivo POS encontrado:', $posDevice->toArray());
+
+        // Obtener el proveedor POS
+        $posProvider = PosProvider::findOrFail($posDevice->pos_provider_id);
+        Log::info('Proveedor POS encontrado:', $posProvider->toArray());
+
+        // Verificar la configuración de integración
+        $integrationInfo = PosIntegrationStoreInfo::where([
+            ['store_id', '=', $validated['store_id']],
+            ['pos_provider_id', '=', $posProvider->id]
+        ])->firstOrFail();
+
+        Log::info('Información de integración encontrada:', $integrationInfo->toArray());
+
+        if (!$integrationInfo->system_id) {
+            Log::error('El system_id no está configurado para esta integración.');
+            throw new \Exception('El system_id no está configurado para esta integración.');
+        }
+
+        // Configurar la integración correspondiente
+        $this->setIntegrationByProvider($posProvider);
+
+        // Preparar los datos para la consulta (solo PosID y SystemId)
+        $queryData = [
+            'PosID' => $posDevice->identifier,
+            'SystemId' => $integrationInfo->system_id,
+        ];
+
+        Log::info('Datos preparados para fetchOpenBatches en posIntegration:', $queryData);
+
+        // Realizar la consulta a través del integrador configurado
+        $response = $this->posIntegration->fetchOpenBatches($queryData);
+
+        Log::info('Respuesta recibida de posIntegration->fetchOpenBatches:', $response);
+
+        // Validar la respuesta
+        if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
+            throw new \Exception('Error en la consulta de lotes abiertos: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+        }
+
+        // Cambiar aquí para devolver "Transactions" en lugar de "Batches"
+        return $response['Transactions'] ?? [];
+    } catch (\Exception $e) {
+        Log::error('Error al obtener los lotes abiertos en el PosService: ' . $e->getMessage());
+        throw $e;
+    }
+}
+
+
+
 
 
 

@@ -125,57 +125,64 @@ class StoreController extends Controller
      */
     public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
     {
-      Log::info('Datos enviados al actualizar la tienda:', $request->all());
 
-        // Validar los datos enviados en la request
-        $storeData = $request->validated();
+    Log::info('Datos enviados al actualizar la tienda:', $request->all());
+
+      // Validar los datos enviados en la request
+      $storeData = $request->validated();
 
       Log::info('Datos validados:', $storeData);
 
-    // Validar exclusividad entre Scanntech y Fiserv
-    if ($request->boolean('scanntech') && $request->boolean('fiserv')) {
-      return redirect()->back()->withErrors([
-          'error' => 'Solo puede estar activo un proveedor de POS a la vez. Desactive una opción antes de activar la otra.'
-      ]);
-  }
+      // Validar exclusividad entre Scanntech y Fiserv
+      if ($request->boolean('scanntech') && $request->boolean('fiserv')) {
+        return redirect()->back()->withErrors([
+            'error' => 'Solo puede estar activo un proveedor de POS a la vez. Desactive una opción antes de activar la otra.'
+        ]);
+      }
 
-    // Determinar el valor de pos_provider_id
-    if ($request->boolean('scanntech')) {
-      $storeData['pos_provider_id'] = 1; // Scanntech
-      Log::info('Scanntech activado');
-  } elseif ($request->boolean('fiserv')) {
-      $storeData['pos_provider_id'] = 2; // Fiserv
-      Log::info('Fiserv activado');
-  } else {
-      $storeData['pos_provider_id'] = null; // Ninguno
-      Log::info('Ningún proveedor POS activado');
-  }
-
-
-  $this->storeRepository->update($store, $storeData);
-
-  Log::info('Estado de la tienda después de la actualización:', $store->toArray());
+      // Determinar el valor de pos_provider_id
+      if ($request->boolean('scanntech')) {
+        $storeData['pos_provider_id'] = 1; // Scanntech
+        Log::info('Scanntech activado');
+      } elseif ($request->boolean('fiserv')) {
+          $storeData['pos_provider_id'] = 2; // Fiserv
+          Log::info('Fiserv activado');
+      } elseif($request->boolean('handy')) {
+          $storeData['pos_provider_id'] = 3; // Handy
+          Log::info('Handy activado');
+      } else {
+          $storeData['pos_provider_id'] = null; // Ninguno
+          Log::info('Ningún proveedor POS activado');
+      }
 
 
-        // Manejo de la integración de MercadoPago
-        $this->handleMercadoPagoIntegration($request, $store);
+      $this->storeRepository->update($store, $storeData);
 
-        // Manejo de la integración de Pedidos Ya Envíos
-        $this->handlePedidosYaEnviosIntegration($request, $store);
+      Log::info('Estado de la tienda después de la actualización:', $store->toArray());
 
-        // Manejo de la integración de Scanntech
-        $this->handleScanntechIntegration($request, $store);
 
-        // Manejo de la integración de Pymo (Facturación Electrónica)
-        $this->handlePymoIntegration($request, $store);
+            // Manejo de la integración de MercadoPago
+            $this->handleMercadoPagoIntegration($request, $store);
 
-        // Manejo de la integración de configuración de correo
-        $this->handleEmailConfigIntegration($request, $store);
+            // Manejo de la integración de Pedidos Ya Envíos
+            $this->handlePedidosYaEnviosIntegration($request, $store);
 
-        // Manejo de la integración de Fiserv
-        $this->handleFiservIntegration($request, $store);
+            // Manejo de la integración de Scanntech
+            $this->handleScanntechIntegration($request, $store);
 
-        return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
+            // Manejo de la integración de Pymo (Facturación Electrónica)
+            $this->handlePymoIntegration($request, $store);
+
+            // Manejo de la integración de configuración de correo
+            $this->handleEmailConfigIntegration($request, $store);
+
+            // Manejo de la integración de Fiserv
+            $this->handleFiservIntegration($request, $store);
+
+            // Manejo de la integración de Fiserv
+            $this->handleHandyIntegration($request, $store);
+
+            return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
     }
 
     /**
@@ -330,7 +337,7 @@ class StoreController extends Controller
             $store->posIntegrationInfo()->updateOrCreate(
                 ['store_id' => $store->id, 'pos_provider_id' => 2], // Fiserv
                 [
-                    'system_id' => $request->input('system_id'),
+                    'system_id' => $request->input('fiservSystemId'), // Usar el nuevo nombre del input
                 ]
             );
 
@@ -341,6 +348,34 @@ class StoreController extends Controller
             // Elimina la integración si se desactiva
             $store->posIntegrationInfo()->where('pos_provider_id', 2)->delete();
             Log::info('Integración Fiserv eliminada.');
+        }
+    }
+
+
+    /**
+     * Manejo de la integración de Handy
+     *
+     * @param UpdateStoreRequest $request
+     * @param Store $store
+     * @return void
+     */
+    private function handleHandyIntegration(UpdateStoreRequest $request, Store $store): void
+    {
+        if ($request->boolean('handy')) {
+            $store->posIntegrationInfo()->updateOrCreate(
+                ['store_id' => $store->id, 'pos_provider_id' => 3], // Handy
+                [
+                    'system_id' => $request->input('system_id'),
+                ]
+            );
+
+            // Asegurarse de que pos_provider_id esté actualizado correctamente
+            $store->update(['pos_provider_id' => 3]);
+            Log::info('Integración Handy actualizada con éxito.');
+        } else {
+            // Elimina la integración si se desactiva
+            $store->posIntegrationInfo()->where('pos_provider_id', 3)->delete();
+            Log::info('Integración Handy eliminada.');
         }
     }
 

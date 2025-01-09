@@ -477,39 +477,39 @@ class AccountingRepository
         $client = Client::find($order->client_id);
         $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
         $proportion = ($amountToBill < $order->total) ? $amountToBill / $order->total : 1;
-    
+
         // Activar para facturación en dolares
         // $usdRate = CurrencyRate::where('name', 'Dólar')
         //     ->first()
         //     ->histories()
         //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
         //     ->first();
-    
+
         // if ($usdRate) {
         //     $exchangeRate = (float) $usdRate->sell;
         // } else {
         //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
         // }
-    
+
         $ivaTasaBasica = 22;
         $subtotalConIVA = 0;
         $totalDescuento = 0;
-    
+
         $items = array_map(function ($product, $index) use ($proportion, $order, &$subtotalConIVA, &$totalDescuento, $ivaTasaBasica) {
             $adjustedAmount = round($product['quantity'] * $proportion, 2);
-            
+
             // Ajuste en el cálculo del descuento basado en el precio original de cada producto
             $productPriceConIVA = round($product['price'], 2);
             $discountPercentage = (($order->subtotal - $order->total) / $order->subtotal) * 100;
             $discountAmount = round($productPriceConIVA * ($discountPercentage / 100), 2);
-            
+
             $totalDescuento += $discountAmount * $adjustedAmount;
             $subtotalConIVA += ($productPriceConIVA - $discountAmount) * $adjustedAmount;
-    
+
             $cleanedProductName = $this->cleanProductName($product['name']);
 
             Log::info('Descuentos:', ['PrecioConIVA' => $productPriceConIVA, 'Descuento %' => $discountPercentage, 'Descuento $' => $discountAmount]);
-    
+
             return [
                 'NroLinDet' => $index + 1,
                 'IndFact' => 3,
@@ -522,10 +522,10 @@ class AccountingRepository
                 'PrecioUnitario' => $productPriceConIVA,
             ];
         }, $products, array_keys($products));
-    
+
         // Redondeo final del subtotal
         $subtotalConIVA = round($subtotalConIVA, 2);
-    
+
         // Creación de los datos finales del CFE
         $cfeData = [
             'clientEmissionId' => $order->uuid,
@@ -541,7 +541,7 @@ class AccountingRepository
             ],
             'Items' => $items,
         ];
-    
+
         if ($client) {
             $cfeData['Receptor'] = [
                 'TipoDocRecep' => $client->type === 'company' ? 2 : 3,
@@ -551,7 +551,7 @@ class AccountingRepository
                 'CiudadRecep' => $client->city,
                 'DeptoRecep' => $client->state,
             ];
-    
+
             if ($client->type === 'company' && $client->rut) {
                 $cfeData['Receptor']['DocRecep'] = $client->rut;
             } elseif ($client->type === 'individual' && $client->ci) {
@@ -560,11 +560,11 @@ class AccountingRepository
                 Log::error('Error: Cliente sin documento adecuado para DocRecep en la orden ' . $order->id);
             }
         }
-    
+
         if ($cfeType === '101') {
             $cfeData['IdDoc']['FchEmis'] = now()->toIso8601String();
         }
-    
+
         return $cfeData;
     }
 
