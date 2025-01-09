@@ -447,7 +447,7 @@ class StoreController extends Controller
      * @param UpdateStoreRequest $request
      * @param Store $store
      */
-    private function handleEmailConfigIntegration(UpdateStoreRequest $request, Store $store): void
+    public function handleEmailConfigIntegration(UpdateStoreRequest $request, Store $store): void
     {
         if ($request->boolean('stores_email_config')) {
             $store->emailConfig()->updateOrCreate(

@@ -841,111 +841,105 @@ $(document).ready(function () {
     }
   });
 
-  // Guardar cliente con validaciones
-  document.getElementById('guardarCliente').addEventListener('click', function () {
-    const nombre = document.getElementById('nombreCliente');
-    const apellido = document.getElementById('apellidoCliente');
-    const tipo = document.getElementById('tipoCliente');
-    const email = document.getElementById('emailCliente');
-    const ci = document.getElementById('ciCliente');
-    const rut = document.getElementById('rutCliente');
-    const direccion = document.getElementById('direccionCliente');
-    const razonSocial = document.getElementById('razonSocialCliente');
-    const priceList = document.getElementById('price_list_id');
+  // Crear un nuevo cliente
+  document.getElementById('guardarCliente').addEventListener('click', function (e) {
+    e.preventDefault();
 
-    let hasError = false;
-    clearErrors();
+    const form = document.getElementById('formCrearCliente');
+    const formData = new FormData(form);
+    const clientType = document.getElementById('tipoCliente').value;
 
-    // Validación básica...
-    if (tipo.value.trim() === '') {
-      showError(tipo, 'Este campo es obligatorio');
-      hasError = true;
+    let requiredFields = {
+      nombreCliente: 'Nombre',
+      apellidoCliente: 'Apellido',
+      emailCliente: 'Correo electrónico',
+      direccionCliente: 'Dirección'
+    };
+
+    if (clientType === 'individual') {
+      requiredFields.ciCliente = 'Cédula de Identidad';
+    } else if (clientType === 'company') {
+      requiredFields.razonSocialCliente = 'Razón Social';
+      requiredFields.rutCliente = 'RUT';
     }
 
-    // Si el tipo de cliente es "individual", validar nombre y apellido
-    if (tipo.value === 'individual') {
-      if (nombre.value.trim() === '') {
-        showError(nombre, 'El nombre es obligatorio para clientes individuales');
-        hasError = true;
+    // Check required fields
+    let missingFields = [];
+    Object.keys(requiredFields).forEach(field => {
+      const element = document.getElementById(field);
+      if (!element.value || element.value.trim() === '') {
+        missingFields.push(requiredFields[field]);
       }
+    });
 
-      if (apellido.value.trim() === '') {
-        showError(apellido, 'El apellido es obligatorio para clientes individuales');
-        hasError = true;
-      }
+    if (missingFields.length > 0) {
+      const offcanvas = document.getElementById('crearClienteOffcanvas');
+      const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+      bsOffcanvas.hide();
 
-      if (ci.value.trim() === '') {
-        showError(ci, 'El documento de identidad es obligatorio para clientes individuales');
-        hasError = true;
-      }
-    }
-
-    // Validar que el campo "email" no esté vacío
-    if (email.value.trim() === '') {
-      showError(email, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    // Validar que "dirección" no esté vacía (si es aplicable a ambos tipos de cliente)
-    if (direccion.value.trim() === '') {
-      showError(direccion, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    if (tipo.value === 'company') {
-      if (rut.value.trim() === '') {
-        showError(rut, 'Este campo es obligatorio');
-        hasError = true;
-      }
-
-      if (razonSocial.value.trim() === '') {
-        showError(razonSocial, 'Este campo es obligatorio');
-        hasError = true;
-      }
-    }
-
-    // Si hubo errores, detener la ejecución.
-    if (hasError) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campos requeridos',
+        html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
+        confirmButtonText: 'Entendido'
+      });
       return;
     }
 
-    // Crear el objeto con los datos a enviar
     let data = {
-      store_id: sessionStoreId,
-      name: nombre.value.trim(),
-      lastname: apellido.value.trim(),
-      type: tipo.value,
-      email: email.value.trim(),
-      address: direccion.value.trim(),
-      price_list_id: priceList.value
+      name: document.getElementById('nombreCliente').value.trim(),
+      lastname: document.getElementById('apellidoCliente').value.trim(),
+      type: clientType,
+      email: document.getElementById('emailCliente').value.trim(),
+      address: document.getElementById('direccionCliente').value.trim(),
+      price_list_id: document.getElementById('price_list_id').value
     };
 
-    if (tipo.value === 'individual') {
-      data.ci = ci.value.trim();
-    } else if (tipo.value === 'company') {
-      data.rut = rut.value.trim();
-      data.company_name = razonSocial.value.trim();
+    if (clientType === 'individual') {
+      data.ci = document.getElementById('ciCliente').value.trim();
+    } else if (clientType === 'company') {
+      data.rut = document.getElementById('rutCliente').value.trim();
+      data.company_name = document.getElementById('razonSocialCliente').value.trim();
     }
-    // Realizar la petición para crear el cliente
+
     fetch(`${baseUrl}admin/clients`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        'X-CSRF-TOKEN': window.csrfToken,
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       },
       body: JSON.stringify(data)
     })
       .then(response => response.json())
       .then(data => {
-        let offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('crearClienteOffcanvas'));
-        offcanvas.hide();
+        if (data.success) {
+          const offcanvas = document.getElementById('crearClienteOffcanvas');
+          const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+          bsOffcanvas.hide();
 
-        // Limpiar el formulario de creación de cliente
-        document.getElementById('formCrearCliente').reset();
+          Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Cliente creado correctamente',
+            showConfirmButton: false,
+            timer: 1500
+          });
+
+          form.reset();
+          if (typeof updateClientList === 'function') {
+            updateClientList();
+          }
+        }
       })
       .catch(error => {
-        mostrarError('Error al guardar el cliente: ' + error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al crear el cliente: ' + error,
+          confirmButtonText: 'Aceptar'
+        });
       });
   });
 

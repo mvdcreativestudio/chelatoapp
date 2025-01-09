@@ -1,27 +1,30 @@
-<!-- Integración Ecommerce -->
-<div class="col-lg-3 col-sm-6 mb-4">
-    <div class="card position-relative border">
+<div class="integration-card ecommerce-card" id="ecommerce-card-{{ $store->id }}">
+    <div class="card">
         <div class="card-header text-center bg-light">
-            <div class="border-0 rounded-circle mx-auto">
+            <div class="integration-icon mx-auto">
                 <img src="{{ asset('assets/img/integrations/ecommerce-logo.png') }}"
-                    alt="E-Commerce Logo" class="img-fluid" style="width: 80px;">
+                    alt="E-Commerce Logo" class="img-fluid">
             </div>
-            <!-- Icono de check para mostrar la vinculación activa -->
-            @if ($store->ecommerce)
-            <span
-                class="position-absolute top-0 end-0 translate-middle p-2 bg-success rounded-circle">
+            <span class="status-indicator {{ $store->ecommerce ? '' : 'd-none' }}">
                 <i class="bx bx-check text-white"></i>
             </span>
-            @endif
-
         </div>
-        <div class="card-body text-center">
-            <h3 class="card-title mb-1 me-2">E-Commerce</h3>
-            <small class="d-block mb-2">Activa la venta en línea para tu tienda</small>
+        <div class="card-body text-center d-flex flex-column justify-content-between">
+            <div>
+                <h3 class="card-title mb-1">E-Commerce</h3>
+                <small class="d-block mb-3">Activa la venta en línea para tu tienda</small>
+            </div>
             <div class="form-check form-switch d-flex justify-content-center">
                 <input type="hidden" name="ecommerce" value="0">
-                <input class="form-check-input" type="checkbox" id="ecommerceSwitch"
-                    name="ecommerce" value="1" {{ $store->ecommerce ? 'checked' : '' }}>
+                <input 
+                    class="form-check-input" 
+                    type="checkbox" 
+                    id="ecommerceSwitch-{{ $store->id }}" 
+                    name="ecommerce" 
+                    value="1" 
+                    {{ $store->ecommerce ? 'checked' : '' }}
+                    data-store-id="{{ $store->id }}"
+                >
             </div>
         </div>
     </div>

@@ -445,4 +445,55 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    const companyModal = document.querySelector('#companyModal');
+    const companyModalHeader = companyModal.querySelector('.modal-header');
+    const backButton = document.createElement('button');
+    backButton.className = 'btn btn-icon btn-light btn-sm me-2';
+    backButton.innerHTML = '<i class="bx bx-arrow-back"></i>';
+    companyModalHeader.insertBefore(backButton, companyModalHeader.firstChild);
+
+    let currentLeadData = null;
+
+    // Guardado de la info del LEAD para luego cuando se vaya para atras con la flechita del modal de compañia,
+    // se pueda volver a cargar la info del LEAD.
+    document.querySelector('#companyButton').addEventListener('click', function() {
+        currentLeadData = {
+            id: document.querySelector('#leadId').value,
+            name: document.querySelector('#name').value,
+            email: document.querySelector('#email').value,
+            phone: document.querySelector('#phone').value,
+            description: document.querySelector('#description').value,
+            amount: document.querySelector('#amount_of_money').value,
+            type: document.querySelector('#type').value,
+            category_id: document.querySelector('#category_id').value,
+            position: document.querySelector('#position').value
+        };
+    });
+
+    // Volver a cargar la info del LEAD cuando se vuelve para atras con la flechita del modal de compañia
+    backButton.addEventListener('click', function() {
+        // Ocultar modal de compañía
+        const companyModalInstance = bootstrap.Modal.getInstance(companyModal);
+        companyModalInstance.hide();
+
+        // Mostrar modal de LEAD
+        if (currentLeadData) {
+            const leadModal = document.querySelector('#leadModal');
+            const leadModalInstance = new bootstrap.Modal(leadModal);
+            
+            // Cargar los datos del LEAD
+            document.querySelector('#leadId').value = currentLeadData.id;
+            document.querySelector('#name').value = currentLeadData.name;
+            document.querySelector('#email').value = currentLeadData.email;
+            document.querySelector('#phone').value = currentLeadData.phone;
+            document.querySelector('#description').value = currentLeadData.description;
+            document.querySelector('#amount_of_money').value = currentLeadData.amount;
+            document.querySelector('#type').value = currentLeadData.type;
+            document.querySelector('#category_id').value = currentLeadData.category_id;
+            document.querySelector('#position').value = currentLeadData.position;
+
+            leadModalInstance.show();
+        }
+    });
 });

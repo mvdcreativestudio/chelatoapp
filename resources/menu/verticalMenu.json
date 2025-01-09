@@ -109,6 +109,13 @@
       "url": "/admin/stores"
     },
     {
+      "id": "tour-integrations",
+      "name": "Integraciones",
+      "icon": "menu-icon tf-icons bx bx-link",
+      "slug": "integrations",
+      "url": "/admin/integrations"
+    },
+    {
       "id": "tour-gestion-proveedores",
       "name": "Fabricación",
       "icon": "menu-icon tf-icons bx bx-briefcase",
@@ -144,7 +151,7 @@
         },
         {
           "id": "batches",
-          "name": "Remitos",
+          "name": "Lotes",
           "icon": "menu-icon tf-icons bx bx-package",
           "slug": "batches",
           "url": "/admin/batches"

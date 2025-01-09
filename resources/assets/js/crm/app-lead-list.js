@@ -1,48 +1,65 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const columns = document.querySelectorAll('.kanban-items');
-    columns.forEach(column => {
-      new Sortable(column, {
-        group: 'leads',
-        animation: 150,
-        onEnd: function(evt) {
-          const leadId = evt.item.dataset.id;
-          const newCategoryId = evt.to.dataset.category;
-          const newPosition = Array.from(evt.to.children).indexOf(evt.item);
-          
-          // Obtener todos los elementos en la nueva columna
-          const itemsInNewColumn = Array.from(evt.to.children).map((item, index) => ({
-            id: item.dataset.id,
-            position: index
-          }));
+document.addEventListener('DOMContentLoaded', function () {
+
+  function updateColumnCounters(fromCategory, toCategory) {
+    const fromBadge = document.querySelector(`[data-category="${fromCategory}"]`)
+      .closest('.kanban-column')
+      .querySelector('.badge');
+    const fromCount = parseInt(fromBadge.textContent) - 1;
+    fromBadge.textContent = fromCount;
+
+    const toBadge = document.querySelector(`[data-category="${toCategory}"]`)
+      .closest('.kanban-column')
+      .querySelector('.badge');
+    const toCount = parseInt(toBadge.textContent) + 1;
+    toBadge.textContent = toCount;
+  }
+
+  const columns = document.querySelectorAll('.kanban-items');
+  columns.forEach(column => {
+    new Sortable(column, {
+      group: 'leads',
+      animation: 150,
+      onEnd: function (evt) {
+        const leadId = evt.item.dataset.id;
+        const newCategoryId = evt.to.dataset.category;
+        const newPosition = Array.from(evt.to.children).indexOf(evt.item);
+
+        // Obtener todos los elementos en la nueva columna
+        const itemsInNewColumn = Array.from(evt.to.children).map((item, index) => ({
+          id: item.dataset.id,
+          position: index
+        }));
+
+        updateColumnCounters(evt.from.dataset.category, evt.to.dataset.category);
 
         $.ajax({
-            url: `/admin/leads/${leadId}/update-category`,
-            method: 'PUT',
-            headers: {
-              'X-CSRF-TOKEN': window.csrfToken
-            },
-            data: {
-              category_id: newCategoryId,
-              position: newPosition,
-              items_order: itemsInNewColumn
-            },
-            error: function(error) {
-              console.error('Error:', error);
-              evt.from.appendChild(evt.item);
-            }
-          });
-        }
-      });
+          url: `${baseUrl}admin/leads/${leadId}/update-category`,
+          method: 'PUT',
+          headers: {
+            'X-CSRF-TOKEN': window.csrfToken
+          },
+          data: {
+            category_id: newCategoryId,
+            position: newPosition,
+            items_order: itemsInNewColumn
+          },
+          error: function (error) {
+            console.error('Error:', error);
+            evt.from.appendChild(evt.item);
+          }
+        });
+      }
     });
+  });
 
   // Agregar nuevo lead
   const addLeadBtns = document.querySelectorAll('.add-lead-btn');
 
   addLeadBtns.forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function () {
       const category_id = this.dataset.category_id;
       const column = this.closest('.kanban-column').querySelector('.kanban-items');
-      
+
       const tempCard = document.createElement('div');
       tempCard.className = 'kanban-item card cursor-move mb-3';
       tempCard.innerHTML = `
@@ -79,11 +96,11 @@ document.addEventListener('DOMContentLoaded', function() {
       cancelBtn.addEventListener('click', () => tempCard.remove());
 
       const saveBtn = tempCard.querySelector('.save-temp-lead');
-      saveBtn.addEventListener('click', function() {
+      saveBtn.addEventListener('click', function () {
         const name = tempCard.querySelector('.lead-name').value.trim();
         const email = tempCard.querySelector('.lead-email').value.trim();
         const phone = tempCard.querySelector('.lead-phone').value.trim();
-        
+
         if (!name) {
           nameInput.classList.add('is-invalid');
           return;
@@ -101,18 +118,18 @@ document.addEventListener('DOMContentLoaded', function() {
             phone: phone,
             category_id: category_id
           },
-          success: function(data) {
-            if(data.success) {
+          success: function (data) {
+            if (data.success) {
               Swal.fire({
                 icon: 'success',
                 title: 'Éxito',
                 text: 'Lead creado correctamente'
-            }).then(() => {
-                location.reload(); 
-            });
-              }
+              }).then(() => {
+                location.reload();
+              });
+            }
           },
-          error: function(error) {
+          error: function (error) {
             console.error('Error:', error);
             tempCard.remove();
           }
@@ -128,11 +145,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  document.addEventListener('click', function(e) {
+  document.addEventListener('click', function (e) {
     if (e.target.closest('.delete-lead')) {
       const card = e.target.closest('.kanban-item');
       const leadId = card.dataset.id;
-      
+
       Swal.fire({
         title: '¿Estás seguro?',
         text: "Esta acción no se puede deshacer",
@@ -150,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
               'X-CSRF-TOKEN': window.csrfToken
             },
-            success: function(response) {
+            success: function (response) {
               card.remove();
               Swal.fire(
                 '¡Eliminado!',
@@ -160,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 location.reload();
               });
             },
-            error: function(error) {
+            error: function (error) {
               console.error('Error:', error);
               Swal.fire(
                 'Error',

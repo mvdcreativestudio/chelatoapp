@@ -22,6 +22,7 @@
 <script type="text/javascript">
     window.packageComponents = @json($packageComponents);
     window.csrfToken = "{{ csrf_token() }}";
+    window.baseUrl = "{{ url('') }}/";
 </script>
 @vite(['resources/assets/js/app-package-components-list.js'])
 @endsection
@@ -50,6 +51,11 @@
 <h4 class="py-3 mb-4">
     <span class="text-muted fw-light">Stock /</span> Tapas y etiquetas
 </h4>
+
+<a href="{{ url('admin/packages/') }}" class="text-dark text-decoration-none mt-2 mb-4 d-flex align-items-center">
+  <i class="bx bx-arrow-back me-2"></i> Volver a envases
+</a>
+
 
 <!-- Card general que envuelve todo el contenido -->
 <div class="card">

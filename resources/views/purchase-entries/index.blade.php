@@ -63,8 +63,8 @@
       $remainingQuantity = max($purchaseOrderItem->quantity - $totalReceived, 0);
       @endphp
       @if ($remainingQuantity > 0)
-      <div data-repeater-item class="row mb-3">
-        <div class="col-3">
+      <div data-repeater-item class="row mb-3 align-items-end">
+      <div class="col-3">
           <label class="form-label" for="item">Producto/Materia Prima</label>
           <select class="form-select item-select" name="purchase_entries[{{ $index }}][purchase_order_items_id]" disabled >
             @if ($purchaseOrderItem->raw_material_id)
@@ -82,7 +82,7 @@
 
         <div class="col-2">
           <label class="form-label" for="remaining_quantity">Cantidad Restante</label>
-          <input type="number" class="form-control" name="purchase_entries[{{ $index }}][remaining_quantity]" value="{{ $remainingQuantity }}" readonly>
+          <input type="number" class="form-control" name="purchase_entries[{{ $index }}][remaining_quantity]" value="{{ $remainingQuantity }}" disabled readonly>
         </div>
 
         <div class="col-2">
@@ -90,7 +90,7 @@
           <input type="number" class="form-control" name="purchase_entries[{{ $index }}][received_quantity]" placeholder="Cantidad Recibida" required>
         </div>
 
-        <div class="col-3" style="width: 13%;">
+        <div class="col-2" style="width: 13%;">
           <label class="form-label" for="entry_date">Fecha de Entrada</label>
           <input type="date" class="form-control" name="purchase_entries[{{ $index }}][entry_date]" required>
         </div>
@@ -111,7 +111,7 @@
 
 @if($purchaseEntries->count() > 0 )
 <h4 class="py-3 mb-4">
-  Remitos de la Orden
+  Lotes de la Orden
 </h4>
 @endif
 <!-- LISTADO DE LOTEADO -->
@@ -129,12 +129,12 @@
       </div>
       <div class="card-actions d-flex align-items-center justify-content-end">
         @if($entry->has_batches)
-        <span class="badge bg-success">¡Remito(s) ingresados!</span>
+        <span class="badge bg-success">¡lote(s) ingresados!</span>
         @else
         <button class="btn btn-primary open-lot-modal"
           data-entry-id="{{ $entry->id }}"
           data-entry-quantity="{{ $entry->quantity }}">
-          Ingresar remito(s)
+          Ingresar lote(s)
         </button>
         @endif
       </div>
@@ -150,7 +150,7 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="batchModalLabel">Ingresar Número de Remito</h5>
+        <h5 class="modal-title" id="batchModalLabel">Ingresar Número de lote</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -160,7 +160,7 @@
               <div data-repeater-item class="card mb-3">
                 <div class="card-body row">
                   <div class="col-3">
-                    <label for="batch_number" class="form-label">Número de Remito</label>
+                    <label for="batch_number" class="form-label">Número de lote</label>
                     <input type="text" name="batch_number" class="form-control" required>
                   </div>
                   <div class="col-2">
@@ -183,13 +183,13 @@
                 </div>
               </div>
             </div>
-            <button type="button" data-repeater-create class="btn btn-success">Agregar Número de Remito</button>
+            <button type="button" data-repeater-create class="btn btn-success">Agregar Lote</button>
           </div>
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <button type="button" class="btn btn-primary" id="save-lots">Guardar Remitos</button>
+        <button type="button" class="btn btn-primary" id="save-lots">Guardar Lotes</button>
       </div>
     </div>
   </div>

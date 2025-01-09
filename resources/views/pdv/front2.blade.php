@@ -26,6 +26,7 @@
     const posResponsesConfig = @json(config('posResponses'));
     window.currencySymbol = '{{ $currencySymbol }}';
     window.userPermissions = @json(auth()->user()->getAllPermissions()->pluck('name')->toArray());
+    window.csrfToken = "{{ csrf_token() }}";
 </script>
 
 @section('content')
@@ -304,6 +305,7 @@
   </div>
   <div class="offcanvas-body">
     <form id="formCrearCliente">
+    @csrf
       <div class="mb-3">
         <label for="tipoCliente" class="form-label">Tipo de Cliente</label>
         <select class="form-select" id="tipoCliente" required>

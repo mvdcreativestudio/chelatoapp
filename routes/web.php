@@ -67,6 +67,7 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadTaskController;
 use App\Http\Controllers\LeadAttachedFileController;
 use App\Http\Controllers\LeadConversationController;
+use App\Http\Controllers\IntegrationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -373,6 +374,16 @@ Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::clas
         Route::post('toggle-event', [EventStoreConfigurationController::class, 'toggleEvent'])->name('events.toggle-status');
     });
 
+    // Gestión de integraciones
+    Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
+    Route::post('/integrations/{store}/toggle-ecommerce', [IntegrationController::class, 'toggleEcommerce'])->name('integration.toggle-ecommerce');
+    Route::post('/integrations/{store}/email-config', [IntegrationController::class, 'saveEmailConfig'])->name('integration.save-email-config');
+    Route::post('/integrations/{store}/mercadopago-online', [IntegrationController::class, 'saveMercadoPagoOnline'])->name('integration.save-mercadopago-online');
+    Route::post('/integrations/{store}/mercadopago-presencial', [IntegrationController::class, 'saveMercadoPagoPresencial'])->name('integration.save-mercadopago-presencial');
+    Route::post('/integrations/{store}/pymo', [IntegrationController::class, 'handlePymoIntegration'])->name('integration.pymo.update');
+    Route::post('/integrations/{store}/pedidosya', [IntegrationController::class, 'handlePedidosYaIntegration'])->name('integration.pedidosya.update');
+    Route::get('/integrations/pymo-connection/{storeId}', [IntegrationController::class, 'checkPymoConnection'])->name('integrations.pymo-connection');
+    
     // Gestión de Roles
     Route::prefix('roles/{role}')->name('roles.')->group(function () {
         Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('manageUsers');

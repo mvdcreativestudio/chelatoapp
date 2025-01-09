@@ -1,54 +1,74 @@
-<!-- Tarjeta para pagos online -->
-<div class="col-lg-3 col-sm-6 mb-4">
-    <div class="card position-relative border">
+<div class="integration-card">
+    <div class="card">
         <div class="card-header text-center bg-light">
-            <div class="border-0 rounded-circle mx-auto">
+            <div class="integration-icon mx-auto">
                 <img src="{{ asset('assets/img/integrations/mercadopago-logo.png') }}"
-                    alt="MercadoPago Logo" class="img-fluid" style="width: 80px;">
+                    alt="MercadoPago Logo" class="img-fluid">
             </div>
-            <!-- Icono de check para mostrar la vinculación activa -->
             @if ($mercadoPagoOnline !== null)
-            <span
-                class="position-absolute top-0 end-0 translate-middle p-2 bg-success rounded-circle">
+            <span class="status-indicator">
                 <i class="bx bx-check text-white"></i>
             </span>
             @endif
         </div>
-        <div class="card-body text-center">
-            <h3 class="card-title mb-1 me-2">MercadoPago - Pagos Online</h3>
-            <small class="d-block mb-2">Acepta pagos en línea a través de MercadoPago en tu
-                E-Commerce</small>
+        <div class="card-body text-center d-flex flex-column justify-content-between">
+            <div>
+                <h3 class="card-title mb-1">MercadoPago Online</h3>
+                <small class="d-block mb-3">Acepta pagos en línea a través de MercadoPago</small>
+            </div>
             <div class="form-check form-switch d-flex justify-content-center">
                 <input type="hidden" name="accepts_mercadopago_online" value="0">
-                <input class="form-check-input" type="checkbox" id="mercadoPagoSwitchOnline"
-                    name="accepts_mercadopago_online" value="1" {{ $mercadoPagoOnline
-                    !==null ? 'checked' : '' }}>
+                <input class="form-check-input" type="checkbox" 
+                       id="mercadoPagoSwitchOnline-{{ $store->id }}"
+                       name="accepts_mercadopago_online" 
+                       value="1" 
+                       {{ $mercadoPagoOnline !== null ? 'checked' : '' }}
+                       >
             </div>
-            <div id="mercadoPagoFieldsOnline" class="integration-fields"
-                style="display: none;">
-                <div class="mb-3">
-                    <label class="form-label mt-2" for="mercadoPagoPublicKeyOnline">Public
-                        Key</label>
-                    <input type="text" class="form-control" id="mercadoPagoPublicKeyOnline"
-                        name="mercadoPagoPublicKeyOnline"
-                        placeholder="Public Key de MercadoPago"
-                        value="{{ $mercadoPagoOnline->public_key ?? '' }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" for="mercadoPagoAccessTokenOnline">Access
-                        Token</label>
-                    <input type="text" class="form-control"
-                        id="mercadoPagoAccessTokenOnline"
-                        name="mercadoPagoAccessTokenOnline"
-                        placeholder="Access Token de MercadoPago"
-                        value="{{ $mercadoPagoOnline->access_token ?? '' }}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" for="mercadoPagoSecretKeyOnline">Secret Key</label>
-                    <input type="text" class="form-control" id="mercadoPagoSecretKeyOnline"
-                        name="mercadoPagoSecretKeyOnline" placeholder="Secret Key de MercadoPago"
-                        value="{{ $mercadoPagoOnline->secret_key ?? '' }}">
-                </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="mercadoPagoOnlineModal-{{ $store->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configuración MercadoPago Online</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="mercadoPagoOnlineForm-{{ $store->id }}" class="mercadoPagoOnlineForm">
+                    <div id="mercadoPagoFieldsOnline-{{ $store->id }}" class="integration-fields"
+                        style="display: {{ $mercadoPagoOnline !== null ? 'block' : 'none' }}">
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">Credenciales de MercadoPago</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label" for="mercadoPagoPublicKeyOnline">Public Key</label>
+                                    <input type="text" class="form-control" name="mercadoPagoPublicKeyOnline"
+                                        value="{{ $mercadoPagoOnline->public_key ?? '' }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="mercadoPagoAccessTokenOnline">Access Token</label>
+                                    <input type="text" class="form-control" name="mercadoPagoAccessTokenOnline"
+                                        value="{{ $mercadoPagoOnline->access_token ?? '' }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="mercadoPagoSecretKeyOnline">Secret Key</label>
+                                    <input type="text" class="form-control" name="mercadoPagoSecretKeyOnline"
+                                        value="{{ $mercadoPagoOnline->secret_key ?? '' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

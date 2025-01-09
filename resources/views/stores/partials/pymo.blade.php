@@ -1,197 +1,156 @@
-<!-- Integración Pymo -->
-<div class="col-lg-3 col-sm-6 mb-4">
-    <div class="card position-relative border">
+<div class="integration-card">
+    <div class="card">
         <div class="card-header text-center bg-light">
-            <div class="border-0 rounded-circle mx-auto">
+            <div class="integration-icon mx-auto">
                 <img src="{{ asset('assets/img/integrations/pymo-logo.png') }}"
-                    alt="Pymo Logo" class="img-fluid" style="width: 80px;">
+                    alt="Pymo Logo" class="img-fluid">
             </div>
-
-            <!-- Icono de check para mostrar la vinculación activa -->
             @if ($store->invoices_enabled)
-            <span
-                class="position-absolute top-0 end-0 translate-middle p-2 bg-success rounded-circle">
+            <span class="status-indicator">
                 <i class="bx bx-check text-white"></i>
             </span>
             @endif
+            <button type="button" class="btn btn-icon btn-sm position-absolute top-0 end-0 mt-2 me-2"
+                data-store-id="{{ $store->id }}"
+                onclick="checkPymoConnection({{ $store->id }})">
+                <i class="bx bx-show"></i>
+            </button>
         </div>
-        <div class="card-body text-center">
-            <h3 class="card-title mb-1 me-2">Pymo</h3>
-            <small class="d-block mb-2">Facturación Electrónica a través de Pymo</small>
+        <div class="card-body text-center d-flex flex-column justify-content-between">
+            <div>
+                <h3 class="card-title mb-1">Pymo</h3>
+                <small class="d-block mb-3">Facturación Electrónica a través de Pymo</small>
+            </div>
             <div class="form-check form-switch d-flex justify-content-center">
-                <!-- Campo oculto para asegurar que se envíe el valor '0' si el checkbox no está marcado -->
                 <input type="hidden" name="invoices_enabled" value="0">
-                <input class="form-check-input" type="checkbox" id="invoicesEnabledSwitch"
-                    name="invoices_enabled" value="1" {{ $store->invoices_enabled ?
-                'checked' : '' }}>
+                <input class="form-check-input" type="checkbox"
+                    id="pymoSwitch-{{ $store->id }}"
+                    name="invoices_enabled"
+                    value="1"
+                    data-store-id="{{ $store->id }}"
+                    {{ $store->invoices_enabled ? 'checked' : '' }}>
             </div>
+        </div>
+    </div>
+</div>
 
-            @if ($store->invoices_enabled == 0)
-            <div class="mt-4">
-                <small class="">¿Aún no tienes cuenta? <a href="https://pymo.uy/"
-                        target="_blank">Registrate
-                        aquí</a></small>
+
+<!-- Modal -->
+<div class="modal fade" id="pymoConfigModal-{{ $store->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Configuración de Pymo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            @endif
-
-
-            <!-- Campos de Configuración de PyMo (ocultos por defecto) -->
-            <div id="pymoFields" style="display: none;">
+            <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label mt-2" for="pymoUser">Usuario PyMo</label>
+                    <label class="form-label" for="pymoUser">Usuario PyMo</label>
                     <input type="text" class="form-control" id="pymoUser" name="pymo_user"
                         value="{{ $store->pymo_user }}">
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label" for="pymoPassword">Contraseña PyMo</label>
-                    <input type="password" class="form-control" id="pymoPassword"
-                        name="pymo_password" value="{{ $store->pymo_password }}">
+                    <input type="password" class="form-control" id="pymoPassword" name="pymo_password"
+                        value="{{ $store->pymo_password }}">
                 </div>
 
-                @if ($branchOffices)
                 <div class="mb-3">
-                    <label class="form-label" for="pymoBranchOfficeSelect">Seleccionar
-                        Sucursal</label>
-                    <select id="pymoBranchOfficeSelect" name="pymo_branch_office"
-                        class="form-select">
-                        <option value="">Selecciona una sucursal</option>
-                        @foreach ($branchOffices as $branchOffice)
-                        <option value="{{ $branchOffice['number'] }}"
-                            data-callback-url="{{ $branchOffice['callbackNotificationUrl'] }}"
-                            {{ $store->pymo_branch_office == $branchOffice['number'] ?
-                            'selected' : '' }}>
-                            {{ $branchOffice['fiscalAddress'] }}, {{ $branchOffice['city']
-                            }}, {{ $branchOffice['state'] }} | Sucursal: {{
-                            $branchOffice['number'] }}
+                    <label class="form-label" for="pymoBranchOffice">Sucursal PyMo</label>
+                    <input type="number" class="form-control" id="pymoBranchOffice" name="pymoBranchOffice"
+                        value="{{ $store->pymo_branch_office }}">
+                </div>
+
+                @if (!empty($branchOffices))
+                <div class="mb-3">
+                    <label class="form-label" for="pymoBranchOffice">Sucursal</label>
+                    <select class="form-select" id="pymoBranchOffice" name="pymo_branch_office">
+                        <option value="">Seleccionar sucursal</option>
+                        @foreach ($branchOffices as $office)
+                        <option value="{{ $office['number'] }}"
+                            {{ $store->pymo_branch_office == $office['number'] ? 'selected' : '' }}>
+                            {{ $office['fiscalAddress'] }}, {{ $office['city'] }}, {{ $office['state'] }}
                         </option>
                         @endforeach
                     </select>
                 </div>
+                @endif
 
-                <div class="mb-3 d-none">
-                    <label class="form-label" for="callbackNotificationUrl">URL de
-                        notificaciones de la Sucursal</label>
-                    <input type="text" class="form-control" id="callbackNotificationUrl"
-                        name="callbackNotificationUrl" value="">
+                @if ($store->invoices_enabled && $store->pymo_user && !empty($companyInfo))
+                <div class="mt-4">
+                    <h6>Información de la empresa</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tbody>
+                                <tr>
+                                    <td>Nombre</td>
+                                    <td>{{ $companyInfo['name'] ?? '' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>RUT</td>
+                                    <td>{{ $companyInfo['rut'] ?? '' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Email</td>
+                                    <td>{{ $companyInfo['email'] ?? '' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 @endif
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary save-pymo-config" data-store-id="{{ $store->id }}">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-            @if ($store->invoices_enabled && $store->pymo_user && $store->pymo_password &&
-            !empty($companyInfo))
-            <div class="col-12 mt-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title">Logo de la empresa en Pymo</h4>
-                    </div>
-                    <div class="card-body">
-                        @if ($logoUrl)
-                        <div class="mb-3">
-                            <img src="{{ asset($logoUrl) }}" alt="Company Logo"
-                                class="img-thumbnail" style="max-width: 200px;">
+
+<!-- Modal for Connection Info -->
+<div class="modal fade" id="pymoConnectionModal-{{ $store->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Información de Conexión PYMO</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="connection-info">
+                    <div class="text-center mb-3" id="pymoConnectionLoader-{{ $store->id }}">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
                         </div>
-                        @endif
-                        <form action="{{ route('accounting.uploadLogo') }}" method="POST"
-                            enctype="multipart/form-data">
-                            @csrf
-                            <div class="form-group">
-                                <input type="file" class="form-control-file" id="logo"
-                                    name="logo">
-                            </div>
-                            <button type="submit" class="btn btn-primary mt-3">Actualizar
-                                Logo</button>
-                        </form>
+                    </div>
+                    <div id="pymoConnectionData-{{ $store->id }}" style="display: none;">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td><strong>Nombre:</strong></td>
+                                    <td class="company-name"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>RUT:</strong></td>
+                                    <td class="company-rut"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td class="company-email"></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sucursal:</strong></td>
+                                    <td class="company-branch"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="pymoConnectionError-{{ $store->id }}" class="alert alert-danger" style="display: none;">
                     </div>
                 </div>
             </div>
-
-            <div class="col-12 mt-4">
-                <div class="card">
-                    <div class="card-header">
-                        <h4 class="card-title">Información de la empresa en Pymo
-                        </h4>
-                    </div>
-                    <div class="card-body">
-                        <form>
-                            @if (!empty($companyInfo['name']))
-                            <div class="form-group">
-                                <label for="companyName">Nombre de la
-                                    Empresa</label>
-                                <input type="text" class="form-control my-3"
-                                    id="companyName" value="{{ $companyInfo['name'] }}"
-                                    disabled>
-                            </div>
-                            @endif
-
-                            @if (!empty($companyInfo['rut']))
-                            <div class="form-group">
-                                <label for="companyRUT">RUT</label>
-                                <input type="text" class="form-control my-3" id="companyRUT"
-                                    value="{{ $companyInfo['rut'] }}" disabled>
-                            </div>
-                            @endif
-
-                            @if (!empty($companyInfo['socialPurpose']))
-                            <div class="form-group">
-                                <label for="socialPurpose">Propósito
-                                    Social</label>
-                                <input type="text" class="form-control my-3"
-                                    id="socialPurpose"
-                                    value="{{ $companyInfo['socialPurpose'] }}" disabled>
-                            </div>
-                            @endif
-
-                            @if (!empty($companyInfo['resolutionNumber']))
-                            <div class="form-group">
-                                <label for="resolutionNumber">Número de
-                                    Resolución</label>
-                                <input type="text" class="form-control my-3"
-                                    id="resolutionNumber"
-                                    value="{{ $companyInfo['resolutionNumber'] }}" disabled>
-                            </div>
-                            @endif
-
-                            @if (!empty($companyInfo['email']))
-                            <div class="form-group">
-                                <label for="companyEmail">Correo
-                                    Electrónico</label>
-                                <input type="email" class="form-control my-3"
-                                    id="companyEmail" value="{{ $companyInfo['email'] }}"
-                                    disabled>
-                            </div>
-                            @endif
-
-                            @if (!empty($companyInfo['createdAt']))
-                            <div class="form-group">
-                                <label for="createdAt">Fecha de
-                                    Creación</label>
-                                <input type="text" class="form-control my-3" id="createdAt"
-                                    value="{{ $companyInfo['createdAt'] }}" disabled>
-                            </div>
-                            @endif
-
-                            @if (!empty($companyInfo['updatedAt']))
-                            <div class="form-group">
-                                <label for="updatedAt">Fecha de
-                                    Actualización</label>
-                                <input type="text" class="form-control my-3" id="updatedAt"
-                                    value="{{ $companyInfo['updatedAt'] }}" disabled>
-                            </div>
-                            @endif
-                        </form>
-                    </div>
-                </div>
-            </div>
-            @endif
-
-            @if ($errors->any())
-            @foreach ($errors->all() as $error)
-            <div class="alert alert-danger">
-                {{ $error }}
-            </div>
-            @endforeach
-            @endif
         </div>
     </div>
 </div>

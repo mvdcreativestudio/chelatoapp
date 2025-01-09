@@ -335,4 +335,93 @@ $(document).ready(function () {
     sessionStorage.clear(); // Limpiar sessionStorage al guardar cliente
   });
 
+
+  document.getElementById('guardarCliente').addEventListener('click', function (e) {
+    e.preventDefault();
+
+    const form = document.getElementById('eCommerceCustomerAddForm');
+    const formData = new FormData(form);
+    const clientType = document.querySelector('input[name="type"]:checked').value;
+
+    let requiredFields = {
+      name: 'Nombre',
+      lastname: 'Apellido',
+      email: 'Correo electrónico',
+      address: 'Dirección'
+    };
+
+    if (clientType === 'individual') {
+      requiredFields.ci = 'Cédula de Identidad';
+    } else if (clientType === 'company') {
+      requiredFields.company_name = 'Razón Social';
+      requiredFields.rut = 'RUT';
+      requiredFields.city = 'Ciudad';
+      requiredFields.state = 'Departamento';
+    }
+
+    let missingFields = [];
+    for (let field in requiredFields) {
+      const value = formData.get(field);
+      if (!value || value.trim() === '') {
+        missingFields.push(requiredFields[field]);
+      }
+    }
+    
+    const offcanvasInstance = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
+    offcanvasInstance.hide();
+
+    if (missingFields.length > 0) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Campos requeridos',
+        html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    $.ajax({
+      url: `${window.baseUrl}admin/clients`,
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      },
+      success: function (response) {
+        if (response.success) {
+          const modal = bootstrap.Modal.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
+          modal.hide();
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Cliente creado correctamente',
+            showConfirmButton: false,
+            timer: 1500
+          });
+
+          form.reset();
+          fetchClients();
+        }
+      },
+      error: function (xhr) {
+        const errors = xhr.responseJSON?.errors || {};
+        let errorMessage = 'Ocurrieron los siguientes errores:<br><br>';
+
+        Object.keys(errors).forEach(key => {
+          errorMessage += `${errors[key][0]}<br>`;
+        });
+
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          html: errorMessage,
+          confirmButtonText: 'Entendido'
+        });
+      }
+    });
+  });
+
 });

@@ -114,6 +114,16 @@ document.addEventListener('DOMContentLoaded', function () {
         // Almacena el entryId en una variable global para usarlo más tarde
         var entryId = $(this).data('entry-id');
         var maxQuantity = $(this).data('entry-quantity');
+        const itemName = $(this).closest('.card').find('.card-title').text().replace('Entrada: ', '').trim();
+
+
+        $('#batchModalLabel').html(`
+            <div class="mb-2">Ingresar Lotes</div>
+            <div class="d-flex flex-column">
+                <small class="text-muted">Materia Prima: <strong>${itemName}</strong></small>
+                <small class="text-muted">Cantidad Total a Asignar: <strong>${maxQuantity}</strong></small>
+            </div>
+        `);
 
         $('#batchModal').modal('show');
 

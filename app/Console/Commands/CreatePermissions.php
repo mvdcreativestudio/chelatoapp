@@ -179,6 +179,11 @@ class CreatePermissions extends Command
                     'view_all' => true,
                 ],
                 [
+                    'slug' => 'integrations',
+                    'module' => 'management',
+                    'view_all' => true,
+                ],
+                [
                     'slug' => 'roles',
                     'module' => 'management',
                     'view_all' => false,

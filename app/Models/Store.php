@@ -85,6 +85,16 @@ class Store extends Model
     }
 
     /**
+     * Obtiene la cuenta de Mercado Pago asociada a la tienda.
+     *
+     * @return HasOne
+    */
+    public function mercadoPagoAccountStore(): HasOne
+    {
+        return $this->hasOne(MercadoPagoAccountStore::class);
+    }
+
+    /**
      * Genera un slug para la tienda automáticamente.
      *
      * @return SlugOptions

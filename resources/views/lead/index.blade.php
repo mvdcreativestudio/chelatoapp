@@ -20,6 +20,7 @@
 
 @section('page-script')
 <script type="text/javascript">
+  window.baseUrl = "{{ url('/') }}";
   window.csrfToken = "{{ csrf_token() }}";
   var leads = @json($leads);
   var users = @json($users);

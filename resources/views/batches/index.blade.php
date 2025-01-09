@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Remitos')
+@section('title', 'Lotes')
 
 @section('vendor-style')
 @vite([
@@ -32,7 +32,7 @@
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Remitos /</span> Listado
+  <span class="text-muted fw-light">Lotes /</span> Listado
 </h4>
 
 @if (session('success'))
@@ -65,7 +65,7 @@
             <div class="card">
               <div class="d-flex justify-content-between align-items-start p-3">
                 <div>
-                  <h6 class="mb-2">Remitos</h6>
+                  <h6 class="mb-2">Lotes</h6>
                   <h4 class="mb-2 total-steps">{{ $totalBatches }}</h4>
                   <p class="mb-0 text-muted">Total</p>
                 </div>
@@ -82,7 +82,7 @@
         <div class="card">
           <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
-              <h5 class="card-title mb-3">Remitos</h5>
+              <h5 class="card-title mb-3">Lotes</h5>
             </div>
             <div class="d-flex">
               <p class="text-muted small">
@@ -128,7 +128,7 @@
               <table class="table datatables-batches border-top">
                 <thead>
                   <tr>
-                    <th>N° Remito</th>
+                    <th>N° lote</th>
                     <th>Materia prima / Producto</th>
                     <th>Cantidad</th>
                     <th>Fecha producción</th>

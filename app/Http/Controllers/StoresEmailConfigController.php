@@ -37,10 +37,10 @@ class StoresEmailConfigController extends Controller
      * @param int $storeId
      * @return JsonResponse
      */
-    public function storeOrUpdate(Request $request, int $storeId): JsonResponse
+    public function storeOrUpdate(array $validatedData, int $storeId): JsonResponse
     {
         try {
-            $config = $this->emailConfigRepository->saveConfig($storeId, $request->validated());
+            $config = $this->emailConfigRepository->saveConfig($storeId, $validatedData);
             return response()->json(['success' => true, 'data' => $config], 200);
         } catch (\Exception $e) {
             Log::error("Error al guardar la configuración de correo para la tienda ID {$storeId}: " . $e->getMessage());

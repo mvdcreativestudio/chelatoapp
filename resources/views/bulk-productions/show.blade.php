@@ -73,7 +73,7 @@
 <body>
     <header class="dashboard-header text-center">
         <div class="container">
-            <h1 class="dashboard-title">Información de Remitos utilizados</h1>
+            <h1 class="dashboard-title">Información de Lotes utilizados</h1>
         </div>
     </header>
 
@@ -84,7 +84,7 @@
                 <div class="card batch-card h-100">
                     <div class="card-body text-center">
                         <i class="fas fa-box card-icon"></i>
-                        <h5 class="card-title batch-id">Número de remito: {{ $batch->batch_name }}</h5>
+                        <h5 class="card-title batch-id">Número de lote: {{ $batch->batch_name }}</h5>
                         <p class="card-text quantity-used">
                             Cantidad utilizada: {{ $batch->quantity_used }} {{ $batch->unit_of_measure }} 
                         </p>

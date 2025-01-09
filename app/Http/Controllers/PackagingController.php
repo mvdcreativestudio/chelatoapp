@@ -6,20 +6,24 @@ use App\Http\Requests\StorePackagingRequest;
 use App\Http\Requests\UpdatePackagingRequest;
 use App\Repositories\PackagingRepository;
 use Illuminate\Http\Request;
+use App\Repositories\PackageRepository;
 
 class PackagingController extends Controller
 {
     protected $packagingRepository;
+    protected $packageRepository;
 
-    public function __construct(PackagingRepository $packagingRepository)
+    public function __construct(PackagingRepository $packagingRepository, PackageRepository $packageRepository)
     {
         $this->packagingRepository = $packagingRepository;
+        $this->packageRepository = $packageRepository;
     }
 
     public function index()
     {
         $packagings = $this->packagingRepository->getAll();
-        return view('packaging.index', compact('packagings'));
+        $packages = $this->packageRepository->getAll();
+        return view('packaging.index', compact('packagings','packages'));
     }
 
     public function create()
