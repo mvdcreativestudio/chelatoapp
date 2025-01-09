@@ -108,50 +108,37 @@
                             </select>
                         </div>
 
-                        <!-- Tarjetas de Integraciones -->
-                        <div class="row pt-3">
-                            @include('stores.partials.integracion-ecommerce')
 
-                            @include('stores.partials.mercado-pago-pagos-online')
-
-                            @include('stores.partials.mercado-pago-pagos-presenciales')
-
-                            @include('stores.partials.pedidos-ya')
-
-                            @include('stores.partials.pymo')
-
-                            @include('stores.partials.configuracion-correo')
-                            <!-- Botones -->
-                            <div class="d-flex justify-content-end mt-5">
-                                <button type="submit" class="btn btn-primary">Actualizar Tienda</button>
-                            </div>
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end mt-5">
+                            <button type="submit" class="btn btn-primary">Actualizar Tienda</button>
                         </div>
     </form>
 </div>
 <script>
     let autocomplete;
 
-        function initAutocomplete() {
-            autocomplete = new google.maps.places.Autocomplete(document.getElementById('store-address'), {
-                types: ['geocode']
-            });
-            autocomplete.setFields(['address_component']);
-        }
+    function initAutocomplete() {
+        autocomplete = new google.maps.places.Autocomplete(document.getElementById('store-address'), {
+            types: ['geocode']
+        });
+        autocomplete.setFields(['address_component']);
+    }
 
-        function geolocate() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    const geolocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    const circle = new google.maps.Circle({
-                        center: geolocation,
-                        radius: position.coords.accuracy
-                    });
-                    autocomplete.setBounds(circle.getBounds());
+    function geolocate() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const geolocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                const circle = new google.maps.Circle({
+                    center: geolocation,
+                    radius: position.coords.accuracy
                 });
-            }
+                autocomplete.setBounds(circle.getBounds());
+            });
         }
+    }
 </script>
 @endsection
