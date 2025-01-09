@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function downloadTemplate() {
-        const csvContent = "raw_material_id,quantity_required,step,clarification\n";
+        const csvContent = "ID Materia prima,Cantidad requerida,Aclaracion,Paso\n";
         
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");

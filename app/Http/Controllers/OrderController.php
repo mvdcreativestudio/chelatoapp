@@ -93,6 +93,7 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): JsonResponse
     {
         try {
+          
             $order = $this->orderRepository->store($request, true);
 
             $this->eventService->handleEvents(auth()->user()->store_id, [EventEnum::LOW_STOCK], ['order' => $order]);
@@ -306,5 +307,28 @@ class OrderController extends Controller
             return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
 
         }
+    }
+
+
+    public function getMercadoPagoQrDynamic(Request $request, int $id)
+    {
+        $qrTramma = $this->orderRepository->createMercadoPagoQrDynamic($id);
+        return response()->json([
+            'success' => true,
+            'qrTramma' => $qrTramma,
+        ]);
+    }
+
+
+    public function getMercadoPagoOrderStatus(Request $request, $id)
+    {
+        $order = $this->orderRepository->getMercadoPagoOrderStatus($id);
+        return response()->json($order);
+    }
+
+    public function refundMercadoPagoOrder(Request $request, $id)
+    {
+        $order = $this->orderRepository->refundMercadoPagoOrder($id);
+        return response()->json($order);
     }
 }

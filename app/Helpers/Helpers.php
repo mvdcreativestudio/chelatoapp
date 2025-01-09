@@ -242,4 +242,36 @@ class Helpers
     {
         return app(EmailService::class);
     }
+
+    /**
+     * Mapeo de errores de MercadoPago
+     */
+    public static function formatMercadoPagoErrors(array $details): string
+    {
+        $errorMessages = [];
+
+        // Verifica si existen causas específicas en los detalles
+        if (isset($details['causes']) && is_array($details['causes'])) {
+            foreach ($details['causes'] as $cause) {
+                $description = $cause['description'] ?? '';
+
+                // Comparar mensajes específicos
+                if (str_contains($description, 'location.state_name was invalid')) {
+                    $errorMessages[] = 'La provincia proporcionada no es válida. Por favor verifique que coincida con algunas de estas:' .
+                    substr($description, strpos($description, 'Valid values are:') + 17);
+                } elseif (str_contains($description, 'another_specific_error')) {
+                    $errorMessages[] = 'Otro error específico ocurrió. Por favor, verifica los datos.';
+                } else {
+                    $errorMessages[] = $description;
+                }
+            }
+        } else {
+            // Si no hay causas, agrega un error genérico
+            $errorMessages[] = $details['message'] ?? 'Ocurrió un error desconocido con MercadoPago.';
+        }
+
+        // Combina todos los mensajes en un solo string
+        return implode(' | ', $errorMessages);
+    }
+
 }

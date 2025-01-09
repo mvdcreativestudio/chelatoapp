@@ -7,9 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\StoreCashRegisterRequest;
 use App\Http\Requests\UpdateCashRegisterRequest;
+use App\Http\Requests\UpdateStoreCashRegisterPostMercadoPagoRequest;
 use Illuminate\View\View;
 use App\Repositories\CashRegisterRepository;
 use App\Repositories\CashRegisterLogRepository;
+use App\Repositories\MercadoPagoAccountPOSRepository;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use App\Models\CashRegister;
@@ -21,11 +23,13 @@ class CashRegisterController extends Controller
 {
     protected $cashRegisterRepository;
     protected $cashRegisterLogRepository;
+    protected $mercadoPagoAccountPOSRepository;
 
-    public function __construct(CashRegisterRepository $cashRegisterRepository, CashRegisterLogRepository $cashRegisterLogRepository)
+    public function __construct(CashRegisterRepository $cashRegisterRepository, CashRegisterLogRepository $cashRegisterLogRepository, MercadoPagoAccountPOSRepository $mercadoPagoAccountPOSRepository)
     {
         $this->cashRegisterRepository = $cashRegisterRepository;
         $this->cashRegisterLogRepository = $cashRegisterLogRepository;
+        $this->mercadoPagoAccountPOSRepository = $mercadoPagoAccountPOSRepository;
     }
 
     /**
@@ -194,6 +198,7 @@ class CashRegisterController extends Controller
         return $pdf->stream('cash_register_sales.pdf');
     }
 
+
     public function getPosDevices(Request $request)
     {
         $request->validate([
@@ -234,8 +239,82 @@ class CashRegisterController extends Controller
     }
 
 
+    /**
+     * Devuelve el POS de Mercado Pago.
+     * 
+     * @param $id
+     *  @return JsonResponse
+     */
+
+    public function getPosMercadoPago($id){
+        try {
+            $mercadoPagoPos = $this->mercadoPagoAccountPOSRepository->getPOSByCashRegisterId($id);
+            return response()->json([
+                'success' => true,
+                'message' => 'POS de Mercado Pago obtenido con éxito.',
+                'mercadopago_pos' => $mercadoPagoPos
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'No se pudo obtener el POS de Mercado Pago.'], 404);
+        }
+    }
+
+    /**
+     * Guardar o editar el POS de Mercado Pago.
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+
+    public function updatePosMercadoPago(UpdateStoreCashRegisterPostMercadoPagoRequest $request, $id){
+        $data = $request->all();
+        $data['cash_register_id'] = $id;
+        $mercadoPagoPos = $this->mercadoPagoAccountPOSRepository->getPOSByCashRegisterId($id);
+        if ($mercadoPagoPos) {
+            try {
+                $this->mercadoPagoAccountPOSRepository->update($mercadoPagoPos, $data);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'POS de Mercado Pago actualizado con éxito.'
+                ]);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'No se pudo actualizar el POS de Mercado Pago.'], 404);
+            }
+        } else {
+            try {
+                $this->mercadoPagoAccountPOSRepository->store($data);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'POS de Mercado Pago creado con éxito.'
+                ]);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'No se pudo crear el POS de Mercado Pago.'], 404);
+            }
+        }
+    }
 
 
+    /**
+     * Elimina un POS de Mercado Pago.
+     * 
+     * @param $id
+     * @return JsonResponse
+     */
 
-
+    public function deletePosMercadoPago($id){
+        try {
+            $mercadoPagoPos = $this->mercadoPagoAccountPOSRepository->getPOSByCashRegisterId($id);
+            if ($mercadoPagoPos) {
+                $this->mercadoPagoAccountPOSRepository->destroy($mercadoPagoPos->cash_register_id);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'POS de Mercado Pago eliminado con éxito.'
+                ]);
+            } else {
+                return response()->json(['message' => 'No se pudo encontrar el POS de Mercado Pago para eliminar.'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'No se pudo eliminar el POS de Mercado Pago.'], 404);
+        }
+    }
 }

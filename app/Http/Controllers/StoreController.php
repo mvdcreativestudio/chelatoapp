@@ -2,18 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MercadoPago\MercadoPagoApplicationTypeEnum;
+use App\Exceptions\MercadoPagoException;
+use App\Helpers\Helpers;
+use App\Http\Middleware\EnsureUserCanAccessStore;
 use App\Http\Requests\StoreStoreRequest;
 use App\Http\Requests\UpdateStoreRequest;
 use App\Models\Store;
 use App\Repositories\AccountingRepository;
+use App\Repositories\MercadoPagoAccountStoreRepository;
 use App\Repositories\StoreRepository;
+use App\Services\MercadoPagoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Middleware\EnsureUserCanAccessStore;
+use Illuminate\View\View;
+
 class StoreController extends Controller
 {
     /**
@@ -31,17 +38,33 @@ class StoreController extends Controller
     protected AccountingRepository $accountingRepository;
 
     /**
+     * El servicio de MercadoPago.
+     *
+     * @var MercadoPagoService
+     */
+    protected $mpService;
+
+    /**
+     * El repositorio de Mercado Pago Account Store.
+     *
+     * @var MercadoPagoAccountStoreRepository
+     */
+    protected $mercadoPagoAccountStoreRepository;
+
+    /**
      * Constructor para inyectar el repositorio.
      *
      * @param StoreRepository $storeRepository
      * @param AccountingRepository $accountingRepository
      */
-    public function __construct(StoreRepository $storeRepository, AccountingRepository $accountingRepository, EnsureUserCanAccessStore $ensureUserCanAccessStore)
+    public function __construct(StoreRepository $storeRepository, AccountingRepository $accountingRepository, EnsureUserCanAccessStore $ensureUserCanAccessStore, MercadoPagoService $mpService, MercadoPagoAccountStoreRepository $mercadoPagoAccountStoreRepository)
     {
         $this->storeRepository = $storeRepository;
         $this->accountingRepository = $accountingRepository;
+        $this->mpService = $mpService;
+        $this->mercadoPagoAccountStoreRepository = $mercadoPagoAccountStoreRepository;
         $this->middleware('ensure_user_can_access_store')->only(['edit', 'update', 'destroy']);
-      }
+    }
 
     /**
      * Muestra una lista de todas las empresa.
@@ -102,6 +125,10 @@ class StoreController extends Controller
         $companyInfo = null;
         $logoUrl = null;
         $branchOffices = [];
+        $mercadoPagoStores = [];
+        // Cargar la tienda con las relaciones necesarias
+        $store->load('mercadoPagoAccount');
+
 
         // Carga la información de la empresa si la facturación está habilitada
         if ($store->invoices_enabled && $store->pymo_user && $store->pymo_password) {
@@ -113,52 +140,80 @@ class StoreController extends Controller
         // Cargar dispositivos vinculados a Scanntech para esta tienda
         $devices = $store->posDevices()->get();
 
-        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'branchOffices', 'devices'));
+        // Dividir cuentas de MercadoPago por tipo
+        $mercadoPagoOnline = $store->mercadoPagoAccount->firstWhere('type', MercadoPagoApplicationTypeEnum::PAID_ONLINE);
+        $mercadoPagoPresencial = $store->mercadoPagoAccount->firstWhere('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL);
+        $mercadoPagoAccountStore = $this->mercadoPagoAccountStoreRepository->getStoreByExternalId($store->id);
+        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'branchOffices', 'devices', 'mercadoPagoOnline', 'mercadoPagoPresencial', 'mercadoPagoAccountStore'));
     }
 
-    /**
-     * Actualiza una Empresa específica en la base de datos.
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     * @return RedirectResponse
-     */
-    public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
-    {
-      Log::info('Datos enviados al actualizar la tienda:', $request->all());
+/**
+ * Actualiza una Empresa específica en la base de datos.
+ *
+ * @param UpdateStoreRequest $request
+ * @param Store $store
+ * @return RedirectResponse
+ */
+public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
+{
+    Log::info('Datos enviados al actualizar la tienda:', $request->all());
 
+    try {
         // Validar los datos enviados en la request
         $storeData = $request->validated();
+        Log::info('Datos validados:', $storeData);
 
-      Log::info('Datos validados:', $storeData);
+        // Validar exclusividad entre Scanntech y Fiserv
+        if ($request->boolean('scanntech') && $request->boolean('fiserv')) {
+            return redirect()->back()->withErrors([
+                'error' => 'Solo puede estar activo un proveedor de POS a la vez. Desactive una opción antes de activar la otra.'
+            ]);
+        }
 
-    // Validar exclusividad entre Scanntech y Fiserv
-    if ($request->boolean('scanntech') && $request->boolean('fiserv')) {
-      return redirect()->back()->withErrors([
-          'error' => 'Solo puede estar activo un proveedor de POS a la vez. Desactive una opción antes de activar la otra.'
-      ]);
-  }
+        // Determinar el valor de pos_provider_id
+        if ($request->boolean('scanntech')) {
+            $storeData['pos_provider_id'] = 1; // Scanntech
+            Log::info('Scanntech activado');
+        } elseif ($request->boolean('fiserv')) {
+            $storeData['pos_provider_id'] = 2; // Fiserv
+            Log::info('Fiserv activado');
+        } else {
+            $storeData['pos_provider_id'] = null; // Ninguno
+            Log::info('Ningún proveedor POS activado');
+        }
 
-    // Determinar el valor de pos_provider_id
-    if ($request->boolean('scanntech')) {
-      $storeData['pos_provider_id'] = 1; // Scanntech
-      Log::info('Scanntech activado');
-  } elseif ($request->boolean('fiserv')) {
-      $storeData['pos_provider_id'] = 2; // Fiserv
-      Log::info('Fiserv activado');
-  } else {
-      $storeData['pos_provider_id'] = null; // Ninguno
-      Log::info('Ningún proveedor POS activado');
-  }
+        // Actualización de la tienda excluyendo datos de integraciones específicas
+        $this->storeRepository->update($store, Arr::except($storeData, [
+            'mercadoPagoPublicKey',
+            'mercadoPagoAccessToken',
+            'mercadoPagoSecretKey',
+            'accepts_mercadopago_online',
+            'accepts_mercadopago_presencial',
+            'pymo_user',
+            'pymo_password',
+            'pymo_branch_office',
+            'accepts_peya_envios',
+            'peya_envios_key',
+            'callbackNotificationUrl',
+            'scanntechCompany',
+            'scanntechBranch',
+            'scanntechUser',
+            'mail_host',
+            'mail_port',
+            'mail_username',
+            'mail_password',
+            'mail_encryption',
+            'mail_from_address',
+            'mail_from_name',
+        ]));
 
+        Log::info('Estado de la tienda después de la actualización:', $store->toArray());
 
-  $this->storeRepository->update($store, $storeData);
+        // Manejo de la integración de MercadoPago Online
+        $this->handleMercadoPagoIntegrationOnline($request, $store);
 
-  Log::info('Estado de la tienda después de la actualización:', $store->toArray());
-
-
-        // Manejo de la integración de MercadoPago
-        $this->handleMercadoPagoIntegration($request, $store);
+        // Manejo de la integración de MercadoPago Presencial
+        $this->handleMercadoPagoIntegrationPresencial($request, $store);
 
         // Manejo de la integración de Pedidos Ya Envíos
         $this->handlePedidosYaEnviosIntegration($request, $store);
@@ -176,7 +231,20 @@ class StoreController extends Controller
         $this->handleFiservIntegration($request, $store);
 
         return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
+    } catch (MercadoPagoException $e) {
+        Log::error('Error al actualizar la empresa: ' . $e->getMessage());
+        $errorMessage = Helpers::formatMercadoPagoErrors($e->getDetails());
+        return redirect()
+            ->route('stores.edit', $store->id)
+            ->with('mercado_pago_errors', 'Error durante la actualización: ' . $errorMessage);
+    } catch (\Exception $e) {
+        Log::error('Error al actualizar la empresa: ' . $e->getMessage());
+        return redirect()
+            ->route('stores.edit', $store->id)
+            ->with('error', 'Ocurrió un error durante la actualización: ' . $e->getMessage());
     }
+}
+
 
     /**
      * Maneja la lógica de la integración con MercadoPago.
@@ -184,19 +252,140 @@ class StoreController extends Controller
      * @param UpdateStoreRequest $request
      * @param Store $store
      */
-    private function handleMercadoPagoIntegration(UpdateStoreRequest $request, Store $store): void
+    private function handleMercadoPagoIntegrationOnline(UpdateStoreRequest $request, Store $store): void
     {
-        if ($request->boolean('accepts_mercadopago')) {
-            $store->mercadoPagoAccount()->updateOrCreate(
-                ['store_id' => $store->id],
+        DB::beginTransaction();
+        try {
+            if ($request->boolean('accepts_mercadopago_online')) {
+                $store->mercadoPagoAccount()->updateOrCreate(
+                    ['store_id' => $store->id, 'type' => MercadoPagoApplicationTypeEnum::PAID_ONLINE],
+                    [
+                        'public_key' => $request->input('mercadoPagoPublicKeyOnline'),
+                        'access_token' => $request->input('mercadoPagoAccessTokenOnline'),
+                        'secret_key' => $request->input('mercadoPagoSecretKeyOnline'),
+                    ]
+                );
+            } else {
+                $store->mercadoPagoAccount()->where('type', MercadoPagoApplicationTypeEnum::PAID_ONLINE)->delete();
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error en la integración con MercadoPago.', [
+                'store_id' => $store->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new \Exception('Error en la integración con MercadoPago: ' . $e->getMessage());
+        }
+    }
+
+    private function handleMercadoPagoIntegrationPresencial(UpdateStoreRequest $request, Store $store): bool
+    {
+        DB::beginTransaction();
+        try {
+
+            if (!$request->boolean('accepts_mercadopago_presencial')) {
+                $this->mpService->setCredentials($store->id, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+                // Eliminar la sucursal de MercadoPago si existe
+                $mercadoPagoAccountStore = $this->mercadoPagoAccountStoreRepository->getStoreByExternalId($store->id);
+                $mercadoPagoAccountStore->load('mercadopagoAccountPOS');
+                // Eliminar POS de MercadoPago si existe
+                foreach ($mercadoPagoAccountStore->mercadopagoAccountPOS as $pos) {
+                    $this->mpService->deletePOS($pos->id_pos);
+                    $pos->delete();
+                }
+                if ($mercadoPagoAccountStore) {
+                    $this->mpService->deleteStore($mercadoPagoAccountStore->store_id);
+                    $mercadoPagoAccountStore->delete();
+                }
+
+                $store->mercadoPagoAccount()->where('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL)->delete();
+
+                DB::commit();
+                return true; // Detiene la ejecución si se eliminó correctamente
+            }
+            $mercadoPagoAccount = $store->mercadoPagoAccount()->updateOrCreate(
+                ['store_id' => $store->id, 'type' => MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL],
                 [
-                    'public_key' => $request->input('mercadoPagoPublicKey'),
-                    'access_token' => $request->input('mercadoPagoAccessToken'),
-                    'secret_key' => $request->input('mercadoPagoSecretKey'),
+                    'public_key' => $request->input('mercadoPagoPublicKeyPresencial'),
+                    'access_token' => $request->input('mercadoPagoAccessTokenPresencial'),
+                    'secret_key' => $request->input('mercadoPagoSecretKeyPresencial'),
+                    'user_id_mp' => $request->input('mercadoPagoUserIdPresencial'),
                 ]
             );
-        } else {
-            $store->mercadoPagoAccount()->delete();
+            $this->mpService->setCredentials($store->id, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+
+            $name = $store->name;
+            $externalId = 'SUC' . $store->id;
+            $streetNumber = $request->input('street_number');
+            $streetName = $request->input('street_name');
+            $cityName = $request->input('city_name');
+            $stateName = $request->input('state_name');
+            $latitude = (float) $request->input('latitude');
+            $longitude = (float) $request->input('longitude');
+            $reference = $request->input('reference');
+
+            // Verificar si la sucursal ya existe
+            $mercadoPagoAccountStoreExist = $this->mercadoPagoAccountStoreRepository->getStoreByExternalId($store->id);
+
+            // Preparar datos de la sucursal
+            $storeData = [
+                'name' => $name,
+                'external_id' => $externalId,
+                'location' => [
+                    'street_number' => $streetNumber,
+                    'street_name' => $streetName,
+                    'city_name' => $cityName,
+                    'state_name' => $stateName,
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'reference' => $reference,
+                ],
+            ];
+            if (!$mercadoPagoAccountStoreExist) {
+                $resultMercadoPagoStore = $this->mpService->createStore($storeData);
+
+                $this->mercadoPagoAccountStoreRepository->store([
+                    'name' => $name,
+                    'external_id' => $externalId,
+                    'street_number' => $streetNumber,
+                    'street_name' => $streetName,
+                    'city_name' => $cityName,
+                    'state_name' => $stateName,
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'reference' => $reference,
+                    'store_id' => $resultMercadoPagoStore['id'],
+                    'mercado_pago_account_id' => $mercadoPagoAccount->id,
+                ]);
+            } else {
+                unset($storeData['external_id']);
+                $resultMercadoPagoStore = $this->mpService->updateStore($mercadoPagoAccountStoreExist->store_id, $storeData);
+                $this->mercadoPagoAccountStoreRepository->update($mercadoPagoAccountStoreExist, [
+                    'name' => $name,
+                    'street_number' => $streetNumber,
+                    'street_name' => $streetName,
+                    'city_name' => $cityName,
+                    'state_name' => $stateName,
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'reference' => $reference,
+                    'store_id' => $resultMercadoPagoStore['id'],
+                    'mercado_pago_account_id' => $mercadoPagoAccount->id,
+                ]);
+            }
+
+            DB::commit();
+            return true; // Indica éxito
+        } catch (MercadoPagoException $e) {
+            DB::rollBack();
+            // Si es un error de MercadoPago, lanzar una excepción específica
+            throw new MercadoPagoException($e->getMessage(), $e->getDetails());
+        }catch (\Exception $e) {
+            DB::rollBack();
+            // Si no es un error de MercadoPago, lanzar una excepción genérica
+            throw new \Exception('Error en la integración con MercadoPago: ' . $e->getMessage());
         }
     }
 
@@ -287,15 +476,13 @@ class StoreController extends Controller
         }
     }
 
-
-
     /**
      * Maneja la lógica de la integración de configuración de correo.
      *
      * @param UpdateStoreRequest $request
      * @param Store $store
      */
-    private function handleEmailConfigIntegration(UpdateStoreRequest $request, Store $store): void
+    public function handleEmailConfigIntegration(UpdateStoreRequest $request, Store $store): void
     {
         if ($request->boolean('stores_email_config')) {
             $store->emailConfig()->updateOrCreate(
@@ -316,6 +503,7 @@ class StoreController extends Controller
             $store->emailConfig()->delete();
         }
     }
+
 
     /**
      * Manejo de la integración de Fiserv
@@ -343,7 +531,6 @@ class StoreController extends Controller
             Log::info('Integración Fiserv eliminada.');
         }
     }
-
 
 
     /**

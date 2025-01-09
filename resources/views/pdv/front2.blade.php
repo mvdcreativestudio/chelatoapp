@@ -16,6 +16,7 @@
 @php
   $currencySymbol = $settings->currency_symbol;
 @endphp
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <script>
     window.cashRegisterId = "{{ Session::get('open_cash_register_id') }}";
@@ -25,6 +26,7 @@
     const posResponsesConfig = @json(config('posResponses'));
     window.currencySymbol = '{{ $currencySymbol }}';
     window.userPermissions = @json(auth()->user()->getAllPermissions()->pluck('name')->toArray());
+    window.csrfToken = "{{ csrf_token() }}";
 </script>
 
 @section('content')
@@ -222,6 +224,22 @@
               <i class="bx bx-credit-card-front me-2"></i> Crédito Interno
             </label>
           </div>
+
+          @if($enableMercadoPagoAccountPos)
+          <div class="payment-option flex-grow-1">
+            <input class="btn-check" type="radio" name="paymentMethod" id="mercadoPago" autocomplete="off">
+            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="mercadoPago" data-bs-toggle="modal" data-bs-target="#modalMercadopago" style="min-width: 100px;">
+              <i class="bx bxl-mercadopago me-2"></i> Mercado Pago
+            </label>
+          </div>
+          @else
+          <div class="payment-option flex-grow-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Debe crear un POS para usar esta opción">
+            <input class="btn-check" type="radio" name="paymentMethod" id="mercadoPago" autocomplete="off" disabled>
+            <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="mercadoPago" style="min-width: 100px;">
+                <i class="bx bxl-mercadopago me-2"></i> Mercado Pago
+            </label>
+          </div>
+          @endif
         </div>
 
         <div class="mt-3 cash-details" id="cashDetails">
@@ -287,6 +305,7 @@
   </div>
   <div class="offcanvas-body">
     <form id="formCrearCliente">
+    @csrf
       <div class="mb-3">
         <label for="tipoCliente" class="form-label">Tipo de Cliente</label>
         <select class="form-select" id="tipoCliente" required>
@@ -367,7 +386,7 @@
     </div>
   </div>
 </div>
-
+@include('pdv.mercado-pago-qr.index')
 @endsection
 
 @section('vendor-script')
@@ -375,6 +394,7 @@
     // 'resources/assets/vendor/libs/jquery/jquery.min.js',
     // 'resources/assets/vendor/libs/popper/popper.min.js',
     // 'resources/assets/vendor/libs/bootstrap/bootstrap.min.js',
-    'resources/assets/js/pdvCheckout.js'
+    'resources/assets/js/pdvCheckout.js',
+    // 'resources/assets/js/pdv/app-mercado-pago-pdv.js',
 ])
 @endsection

@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var table = $('.datatables-batches').DataTable({
         data: batches, // Datos de las fórmulas
         columns: [
-            { data: 'batch_number', title: 'Nro Lote' },
+            { data: 'batch_number', title: 'N° lote' },
             { data: 'item_name', title: 'Materia prima / Producto' }, // Materia prima o Producto
             { data: 'quantity', title: 'Cantidad' },
             { data: 'production_date', title: 'Fecha producción' },

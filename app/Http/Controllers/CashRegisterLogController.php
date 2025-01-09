@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCashRegisterLogRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateCashRegisterLogRequest;
+use App\Models\MercadoPagoAccountPOS;
 use App\Models\Product;
 use App\Repositories\CashRegisterLogRepository;
 use App\Repositories\CashRegisterRepository;
@@ -52,7 +53,8 @@ class CashRegisterLogController extends Controller
     public function front2()
     {
       $priceLists = PriceList::all();
-      return view('pdv.front2', compact('priceLists'));
+      $enableMercadoPagoAccountPos = MercadoPagoAccountPOS::where('cash_register_id', Session::get('open_cash_register_id'))->exists();
+      return view('pdv.front2', compact('priceLists', 'enableMercadoPagoAccountPos'));
     }
 
     /**

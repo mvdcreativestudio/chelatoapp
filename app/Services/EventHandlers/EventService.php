@@ -33,6 +33,9 @@ class EventService
         foreach ($events as $eventEnum) {
             try {
                 $event = Event::where('event_name', $eventEnum->value)->first();
+                if(!$event) {
+                    return;
+                }
                 $data['event_id'] = $event->id;
 
                 if (!$event) {

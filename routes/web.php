@@ -64,6 +64,11 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PackageComponentController;
 use App\Http\Controllers\ProductCatalogueController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\LeadController;
+use App\Http\Controllers\LeadTaskController;
+use App\Http\Controllers\LeadAttachedFileController;
+use App\Http\Controllers\LeadConversationController;
+use App\Http\Controllers\IntegrationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -100,6 +105,9 @@ Route::middleware([
     Route::get('/product-categories/datatable', [ProductCategoryController::class, 'datatable'])->name('product-categories.datatable');
     Route::get('/orders/datatable', [OrderController::class, 'datatable'])->name('orders.datatable');
     Route::get('/orders/{order}/datatable', [OrderController::class, 'orderProductsDatatable'])->name('order-products.datatable');
+    Route::get('/orders/mercado-pago/{order}', [OrderController::class, 'getMercadoPagoOrderStatus'])->name('orders.getMercadoPagoOrderStatus');
+    Route::get('/orders/mercado-pago/qr-dinamico/{order}', [OrderController::class, 'getMercadoPagoQrDynamic'])->name('orders.getMercadoPagoQrDynamic');
+    Route::post('/orders/mercado-pago/refund/{order}', [OrderController::class, 'refundMercadoPagoOrder'])->name('orders.refundMercadoPago');
     Route::get('/marketing/coupons/datatable', [CouponController::class, 'datatable'])->name('coupons.datatable');
     Route::get('/products/flavors/datatable', [ProductController::class, 'flavorsDatatable'])->name('products.flavors.datatable');
     Route::get('/productions/datatable', [ProductionController::class, 'datatable'])->name('productions.datatable');
@@ -200,6 +208,30 @@ Route::middleware([
         'currencies' => CurrencyController::class,
     ]);
 
+    // CRM
+    Route::get('crm', [LeadController::class, 'index']);
+    Route::post('leads', [LeadController::class, 'store']);
+    Route::put('leads/{leadId}/update-category', [LeadController::class, 'updateCategory']);
+    Route::delete('leads/{id}', [LeadController::class, 'destroy']); 
+    Route::put('leads/{id}', [LeadController::class, 'update']); 
+    Route::post('lead-tasks', [LeadTaskController::class, 'store']);
+    Route::get('lead-tasks', [LeadTaskController::class, 'getAll']);
+    Route::delete('lead-tasks/{id}', [LeadTaskController::class, 'destroy']); 
+    Route::put('lead-tasks/{leadId}/{status}', [LeadTaskController::class, 'updateStatus']);
+    Route::post('lead-attached-files', [LeadAttachedFileController::class, 'store']);
+    Route::get('lead-attached-files/{leadId}', [LeadAttachedFileController::class, 'getFilesByLead']);
+    Route::delete('lead-attached-files/{leadId}', [LeadAttachedFileController::class, 'destroy']);
+    Route::put('/leads/{id}/company-information', [LeadController::class, 'updateCompanyInformation']);
+    Route::get('leads/{id}', [LeadController::class, 'show']);
+    Route::get('leads/{leadId}/conversations', [LeadConversationController::class, 'index']);
+    Route::post('leads/{leadId}/conversations', [LeadConversationController::class, 'store']);
+    Route::get('leads/{leadId}/conversations/{id}', [LeadConversationController::class, 'show']);
+    Route::put('leads/{leadId}/conversations/{id}', [LeadConversationController::class, 'update']);
+    Route::delete('leads/{leadId}/conversations/{id}', [LeadConversationController::class, 'destroy']);
+    Route::post('leads/{id}/convert-to-client', [LeadController::class, 'convertToClient']);
+    Route::post('leads/{leadId}/assign-user', [LeadController::class, 'assignUser']);
+Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::class, 'removeAssignment']);
+
     // Rutas específicas modulo de dalí
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
     Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
@@ -270,6 +302,9 @@ Route::middleware([
     Route::get('/point-of-sale/details/{id}', [CashRegisterController::class, 'getDetails']);
     Route::get('/point-of-sale/details/sales/{id}', [CashRegisterController::class, 'getSales']);
     Route::get('/point-of-sale/details/sales/pdf/{id}', [CashRegisterController::class, 'getSalesPdf']);
+    Route::get('/point-of-sale/mercado-pago/edit-pos/{id}', [CashRegisterController::class, 'getPosMercadoPago']);
+    Route::post('/point-of-sale/mercado-pago/update-pos/{id}', [CashRegisterController::class, 'updatePosMercadoPago']);
+    Route::delete('/point-of-sale/mercado-pago/delete-pos/{id}', [CashRegisterController::class, 'deletePosMercadoPago']);
 
     // Vinculación de POS a los PDV
     Route::post('/cash-registers/{cashRegister}/link-pos', [CashRegisterController::class, 'linkPos']);
@@ -346,6 +381,16 @@ Route::middleware([
         Route::post('toggle-event', [EventStoreConfigurationController::class, 'toggleEvent'])->name('events.toggle-status');
     });
 
+    // Gestión de integraciones
+    Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
+    Route::post('/integrations/{store}/toggle-ecommerce', [IntegrationController::class, 'toggleEcommerce'])->name('integration.toggle-ecommerce');
+    Route::post('/integrations/{store}/email-config', [IntegrationController::class, 'saveEmailConfig'])->name('integration.save-email-config');
+    Route::post('/integrations/{store}/mercadopago-online', [IntegrationController::class, 'saveMercadoPagoOnline'])->name('integration.save-mercadopago-online');
+    Route::post('/integrations/{store}/mercadopago-presencial', [IntegrationController::class, 'saveMercadoPagoPresencial'])->name('integration.save-mercadopago-presencial');
+    Route::post('/integrations/{store}/pymo', [IntegrationController::class, 'handlePymoIntegration'])->name('integration.pymo.update');
+    Route::post('/integrations/{store}/pedidosya', [IntegrationController::class, 'handlePedidosYaIntegration'])->name('integration.pedidosya.update');
+    Route::get('/integrations/pymo-connection/{storeId}', [IntegrationController::class, 'checkPymoConnection'])->name('integrations.pymo-connection');
+    
     // Gestión de Roles
     Route::prefix('roles/{role}')->name('roles.')->group(function () {
         Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('manageUsers');
@@ -364,8 +409,7 @@ Route::middleware([
     Route::get('/product-flavors/{id}', [ProductController::class, 'editFlavor'])->name('flavors.edit');
     Route::put('/product-flavors/{id}', [ProductController::class, 'updateFlavor'])->name('flavors.update');
 
-    // CRM y Contabilidad
-    Route::get('crm', [CrmController::class, 'index'])->name('crm');
+    //  Contabilidad
     Route::get('receipts', [AccountingController::class, 'receipts'])->name('receipts');
     // Route::get('entries', [AccountingController::class, 'entries'])->name('entries');
     Route::get('entrie', [AccountingController::class, 'entrie'])->name('entrie');

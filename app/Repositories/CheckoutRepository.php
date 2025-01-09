@@ -133,14 +133,14 @@ class CheckoutRepository
             // Verificar si el método de pago es 'card' (tarjeta)
             if ($request->payment_method === 'card') {
                 // Obtener las credenciales de MercadoPago para la tienda
-                $mercadoPagoAccount = MercadoPagoAccount::where('store_id', $storeId)->first();
+                // $mercadoPagoAccount = MercadoPagoAccount::where('store_id', $storeId)->first();
 
-                if (!$mercadoPagoAccount) {
-                    throw new \Exception('No se encontraron las credenciales de MercadoPago para la tienda asociada al pedido.');
-                }
+                // if (!$mercadoPagoAccount) {
+                //     throw new \Exception('No se encontraron las credenciales de MercadoPago para la tienda asociada al pedido.');
+                // }
 
                 // Configurar el SDK de MercadoPago con las credenciales de la tienda
-                $mercadoPagoService->setCredentials($mercadoPagoAccount->public_key, $mercadoPagoAccount->access_token);
+                $mercadoPagoService->setCredentials($storeId);
 
                 // Procesar el pago con tarjeta
                 $redirectUrl = $this->processCardPayment($request, $order, $mercadoPagoService, $storeId);
@@ -256,14 +256,14 @@ class CheckoutRepository
         }, $cartItems);
 
         // Obtener las credenciales de MercadoPago de la tienda
-        $mercadoPagoAccount = MercadoPagoAccount::where('store_id', $storeId)->first();
+        // $mercadoPagoAccount = MercadoPagoAccount::where('store_id', $storeId)->first();
 
-        if (!$mercadoPagoAccount) {
-            throw new \Exception('No se encontraron las credenciales de MercadoPago para la tienda asociada al pedido.');
-        }
+        // if (!$mercadoPagoAccount) {
+        //     throw new \Exception('No se encontraron las credenciales de MercadoPago para la tienda asociada al pedido.');
+        // }
 
         // Configurar el SDK de MercadoPago con las credenciales de la tienda
-        $mercadoPagoService->setCredentials($mercadoPagoAccount->public_key, $mercadoPagoAccount->access_token);
+        $mercadoPagoService->setCredentials($storeId);
 
         $preferenceData = [
           'items' => $items,

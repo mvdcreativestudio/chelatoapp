@@ -15,6 +15,13 @@
       "url": "/admin/datacenter-sales"
     },
     {
+      "id": "tour-crm",
+      "name": "CRM",
+      "icon": "menu-icon tf-icons bx bx-table",
+      "slug": "crm",
+      "url": "/admin/crm"
+    },
+    {
       "id": "tour-punto-de-venta",
       "name": "Punto de Venta",
       "icon": "menu-icon tf-icons bx bx-home-circle",
@@ -107,6 +114,13 @@
       "icon": "menu-icon tf-icons bx bx-store-alt",
       "slug": "stores",
       "url": "/admin/stores"
+    },
+    {
+      "id": "tour-integrations",
+      "name": "Integraciones",
+      "icon": "menu-icon tf-icons bx bx-link",
+      "slug": "integrations",
+      "url": "/admin/integrations"
     },
     {
       "id": "tour-gestion-proveedores",
