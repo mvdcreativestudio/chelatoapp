@@ -26,18 +26,6 @@ return [
         'showCloseButton' => false,
         'keepPolling' => true
     ],
-    13 => [
-        'message' => 'Error reportado por el pinpad procesando la transacción',
-        'icon' => 'error',
-        'showCloseButton' => true,
-        'keepPolling' => false
-    ],
-    14 => [
-        'message' => 'La transacción fue cancelada en el PINPad',
-        'icon' => 'error',
-        'showCloseButton' => true,
-        'keepPolling' => false
-    ],
     100 => [
         'message' => 'Número de PINPad no válido.',
         'icon' => 'error',
@@ -108,8 +96,7 @@ return [
         'message' => 'Transacción finalizada.',
         'icon' => 'success',
         'showCloseButton' => true,
-        'keepPolling' => false,
-        'transactionSuccess' => true
+        'keepPolling' => false
     ],
     112 => [
         'message' => 'Identificador de sistema no válido.',
@@ -121,12 +108,18 @@ return [
         'message' => 'Se debe consultar por la transacción.',
         'icon' => 'info',
         'showCloseButton' => false,
-        'keepPolling' => true
+        'keepPolling' => false
     ],
     999 => [
         'message' => 'Error desconocido.',
         'icon' => 'error',
-        'showCloseButton' => true,
-        'keepPolling' => false
+        'showCloseButton' => true
+    ],
+    'CT' => [
+      'message' => 'Transacción cancelada por el dispositivo POS.',
+      'icon' => 'error',
+      'showCloseButton' => true,
+      'keepPolling' => false,
+      'transactionSuccess' => false
     ],
 ];

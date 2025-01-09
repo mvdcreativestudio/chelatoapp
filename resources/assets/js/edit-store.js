@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
       requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice']
     },
     { id: 'scanntechSwitch', fieldsId: 'scanntechFields', requiredFields: ['scanntechCompany', 'scanntechBranch'] },
+
     {
       id: 'emailConfigSwitch',
       fieldsId: 'emailConfigFields',
@@ -42,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
         'mailFromName'
       ]
     }
+
   ];
 
   // Añadir animación de transición
@@ -238,5 +240,17 @@ document.addEventListener('DOMContentLoaded', function () {
   // Rellenar automáticamente si ya está activado al cargar la página
   if (mercadoPagoSwitchPresencial.checked) {
     parseAddress();
+  }
+});
+
+document.getElementById('scanntechSwitch').addEventListener('change', function () {
+  if (this.checked) {
+      document.getElementById('fiservSwitch').checked = false;
+  }
+});
+
+document.getElementById('fiservSwitch').addEventListener('change', function () {
+  if (this.checked) {
+      document.getElementById('scanntechSwitch').checked = false;
   }
 });

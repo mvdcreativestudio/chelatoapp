@@ -129,6 +129,7 @@ class StoreController extends Controller
         // Cargar la tienda con las relaciones necesarias
         $store->load('mercadoPagoAccount');
 
+
         // Carga la información de la empresa si la facturación está habilitada
         if ($store->invoices_enabled && $store->pymo_user && $store->pymo_password) {
             $companyInfo = $this->accountingRepository->getCompanyInfo($store);
@@ -146,75 +147,104 @@ class StoreController extends Controller
         return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'branchOffices', 'devices', 'mercadoPagoOnline', 'mercadoPagoPresencial', 'mercadoPagoAccountStore'));
     }
 
-    /**
-     * Actualiza una Empresa específica en la base de datos.
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     * @return RedirectResponse
-     */
-    public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
-    {
+/**
+ * Actualiza una Empresa específica en la base de datos.
+ *
+ * @param UpdateStoreRequest $request
+ * @param Store $store
+ * @return RedirectResponse
+ */
+public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
+{
+    Log::info('Datos enviados al actualizar la tienda:', $request->all());
+
+    try {
         // Validar los datos enviados en la request
         $storeData = $request->validated();
-        try {
-            // Actualización de la tienda excluyendo los datos de integraciones específicas
-            $this->storeRepository->update($store, Arr::except($storeData, [
-                'mercadoPagoPublicKey',
-                'mercadoPagoAccessToken',
-                'mercadoPagoSecretKey',
-                'accepts_mercadopago_online',
-                'accepts_mercadopago_presencial',
-                'pymo_user',
-                'pymo_password',
-                'pymo_branch_office',
-                'accepts_peya_envios',
-                'peya_envios_key',
-                'callbackNotificationUrl',
-                'scanntechCompany',
-                'scanntechBranch',
-                'scanntechUser',
-                'mail_host',
-                'mail_port',
-                'mail_username',
-                'mail_password',
-                'mail_encryption',
-                'mail_from_address',
-                'mail_from_name',
-            ]));
+        Log::info('Datos validados:', $storeData);
 
-            // Manejo de la integración de MercadoPago Online
-            $this->handleMercadoPagoIntegrationOnline($request, $store);
-
-            // Manejo de la integración de MercadoPago Presencial
-            $this->handleMercadoPagoIntegrationPresencial($request, $store);
-
-            // Manejo de la integración de Pedidos Ya Envíos
-            $this->handlePedidosYaEnviosIntegration($request, $store);
-
-            // Manejo de la integración de Scanntech
-            $this->handleScanntechIntegration($request, $store);
-
-            // Manejo de la integración de Pymo (Facturación Electrónica)
-            $this->handlePymoIntegration($request, $store);
-
-            // Manejo de la integración de configuración de correo
-            $this->handleEmailConfigIntegration($request, $store);
-
-            return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
-        }catch (MercadoPagoException $e) {
-            Log::error('Error al actualizar la empresa: ' . $e->getMessage());
-            $errorMessage = Helpers::formatMercadoPagoErrors($e->getDetails());
-            return redirect()
-                ->route('stores.edit', $store->id)
-                ->with('mercado_pago_errors', 'Error durante la actualización: ' . $errorMessage);
-        }catch (\Exception $e) {
-            Log::error('Error al actualizar la empresa: ' . $e->getMessage());
-            return redirect()
-                ->route('stores.edit', $store->id)
-                ->with('error', 'Ocurrió un error durante la actualización: ' . $e->getMessage());
+        // Validar exclusividad entre Scanntech y Fiserv
+        if ($request->boolean('scanntech') && $request->boolean('fiserv')) {
+            return redirect()->back()->withErrors([
+                'error' => 'Solo puede estar activo un proveedor de POS a la vez. Desactive una opción antes de activar la otra.'
+            ]);
         }
+
+        // Determinar el valor de pos_provider_id
+        if ($request->boolean('scanntech')) {
+            $storeData['pos_provider_id'] = 1; // Scanntech
+            Log::info('Scanntech activado');
+        } elseif ($request->boolean('fiserv')) {
+            $storeData['pos_provider_id'] = 2; // Fiserv
+            Log::info('Fiserv activado');
+        } else {
+            $storeData['pos_provider_id'] = null; // Ninguno
+            Log::info('Ningún proveedor POS activado');
+        }
+
+        // Actualización de la tienda excluyendo datos de integraciones específicas
+        $this->storeRepository->update($store, Arr::except($storeData, [
+            'mercadoPagoPublicKey',
+            'mercadoPagoAccessToken',
+            'mercadoPagoSecretKey',
+            'accepts_mercadopago_online',
+            'accepts_mercadopago_presencial',
+            'pymo_user',
+            'pymo_password',
+            'pymo_branch_office',
+            'accepts_peya_envios',
+            'peya_envios_key',
+            'callbackNotificationUrl',
+            'scanntechCompany',
+            'scanntechBranch',
+            'scanntechUser',
+            'mail_host',
+            'mail_port',
+            'mail_username',
+            'mail_password',
+            'mail_encryption',
+            'mail_from_address',
+            'mail_from_name',
+        ]));
+
+        Log::info('Estado de la tienda después de la actualización:', $store->toArray());
+
+        // Manejo de la integración de MercadoPago Online
+        $this->handleMercadoPagoIntegrationOnline($request, $store);
+
+        // Manejo de la integración de MercadoPago Presencial
+        $this->handleMercadoPagoIntegrationPresencial($request, $store);
+
+        // Manejo de la integración de Pedidos Ya Envíos
+        $this->handlePedidosYaEnviosIntegration($request, $store);
+
+        // Manejo de la integración de Scanntech
+        $this->handleScanntechIntegration($request, $store);
+
+        // Manejo de la integración de Pymo (Facturación Electrónica)
+        $this->handlePymoIntegration($request, $store);
+
+        // Manejo de la integración de configuración de correo
+        $this->handleEmailConfigIntegration($request, $store);
+
+        // Manejo de la integración de Fiserv
+        $this->handleFiservIntegration($request, $store);
+
+        return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
+    } catch (MercadoPagoException $e) {
+        Log::error('Error al actualizar la empresa: ' . $e->getMessage());
+        $errorMessage = Helpers::formatMercadoPagoErrors($e->getDetails());
+        return redirect()
+            ->route('stores.edit', $store->id)
+            ->with('mercado_pago_errors', 'Error durante la actualización: ' . $errorMessage);
+    } catch (\Exception $e) {
+        Log::error('Error al actualizar la empresa: ' . $e->getMessage());
+        return redirect()
+            ->route('stores.edit', $store->id)
+            ->with('error', 'Ocurrió un error durante la actualización: ' . $e->getMessage());
     }
+}
+
 
     /**
      * Maneja la lógica de la integración con MercadoPago.
@@ -435,9 +465,14 @@ class StoreController extends Controller
                     'branch' => $request->input('scanntechBranch'),
                 ]
             );
+
+            // Asegurarse de que pos_provider_id esté actualizado correctamente
+            $store->update(['pos_provider_id' => 1]);
+            Log::info('Integración Scanntech actualizada con éxito.');
         } else {
             // Elimina la integración si se desactiva
             $store->posIntegrationInfo()->where('pos_provider_id', 1)->delete();
+            Log::info('Integración Scanntech eliminada.');
         }
     }
 
@@ -468,6 +503,35 @@ class StoreController extends Controller
             $store->emailConfig()->delete();
         }
     }
+
+
+    /**
+     * Manejo de la integración de Fiserv
+     *
+     * @param UpdateStoreRequest $request
+     * @param Store $store
+     * @return void
+     */
+    private function handleFiservIntegration(UpdateStoreRequest $request, Store $store): void
+    {
+        if ($request->boolean('fiserv')) {
+            $store->posIntegrationInfo()->updateOrCreate(
+                ['store_id' => $store->id, 'pos_provider_id' => 2], // Fiserv
+                [
+                    'system_id' => $request->input('system_id'),
+                ]
+            );
+
+            // Asegurarse de que pos_provider_id esté actualizado correctamente
+            $store->update(['pos_provider_id' => 2]);
+            Log::info('Integración Fiserv actualizada con éxito.');
+        } else {
+            // Elimina la integración si se desactiva
+            $store->posIntegrationInfo()->where('pos_provider_id', 2)->delete();
+            Log::info('Integración Fiserv eliminada.');
+        }
+    }
+
 
     /**
      * Elimina la Empresa.

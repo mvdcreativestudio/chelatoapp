@@ -2,11 +2,27 @@
 
 @section('title', 'Editar Empresa')
 
+@section('vendor-script')
+@vite([
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
+])
+@endsection
+
+@section('vendor-style')
+@vite([
+  'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss',
+  ])
+@endsection
+
+
 @section('page-script')
 @vite(['resources/assets/js/edit-store.js'])
 <script
     src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsApiKey }}&libraries=places&callback=initAutocomplete"
     async defer></script>
+    <script>
+        window.baseUrl = "{{ url('') }}/";
+    </script>
 @endsection
 
 @section('content')
@@ -107,14 +123,18 @@
                                 </option>
                             </select>
                         </div>
-
-
                         <!-- Botones -->
                         <div class="d-flex justify-content-end mt-5">
                             <button type="submit" class="btn btn-primary">Actualizar Tienda</button>
                         </div>
     </form>
 </div>
+
+@include('_partials/_editStore/_fiservModal')
+@include('_partials/_editStore/_scanntechModal')
+
+
+
 <script>
     let autocomplete;
 

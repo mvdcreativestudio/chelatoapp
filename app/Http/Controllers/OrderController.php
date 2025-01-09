@@ -93,11 +93,11 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): JsonResponse
     {
         try {
+          
+            $order = $this->orderRepository->store($request, true);
 
-            $order = $this->orderRepository->store($request, false);
-        
             $this->eventService->handleEvents(auth()->user()->store_id, [EventEnum::LOW_STOCK], ['order' => $order]);
-        
+
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -106,7 +106,7 @@ class OrderController extends Controller
                     'order_uuid' => $order->uuid,
                 ]);
             }
-        
+
             return redirect()->route('pdv.index')->with('success', 'Pedido realizado con éxito. ID de orden: ' . $order->id);
         } catch (\Exception $e) {
             if ($request->ajax()) {
@@ -115,10 +115,10 @@ class OrderController extends Controller
                     'message' => $e->getMessage(),
                 ], 400);
             }
-        
+
             return back()->withErrors($e->getMessage())->withInput();
         }
-        
+
     }
 
     /**
@@ -136,7 +136,7 @@ class OrderController extends Controller
         $invoice = $this->orderRepository->getSpecificInvoiceForOrder($order->id);
         $isStoreConfigEmailEnabled = $this->storesEmailConfigRepository->getConfigByStoreId(auth()->user()->store_id);
         // Verificar si existe un client_id antes de llamar a getClientOrdersCount
-        $clientOrdersCount = $order->client_id 
+        $clientOrdersCount = $order->client_id
             ? $this->orderRepository->getClientOrdersCount($order->client_id)
             : 0; // O cualquier valor predeterminado si no hay cliente
 
@@ -153,22 +153,22 @@ class OrderController extends Controller
     {
         try {
             $order = Order::findOrFail($id);
-    
+
             // Verificar si la orden tiene CFE's asociados
             if ($order->invoices()->exists()) {
                 return response()->json(['success' => false, 'message' => 'No se puede eliminar la venta porque tiene CFE\'s asociados.'], 400);
             }
-    
+
             // Proceder con la eliminación de la orden
             $this->orderRepository->destroyOrder($id);
-    
+
             return response()->json(['success' => true, 'message' => 'Venta eliminada correctamente.']);
         } catch (\Exception $e) {
             Log::info($e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error al eliminar la venta.'], 400);
         }
     }
-    
+
     /**
      * Obtiene los ventas para la DataTable.
      *
@@ -215,6 +215,29 @@ class OrderController extends Controller
     }
 
     /**
+     * Actualiza únicamente el estado de pago de un pedido.
+     *
+     * @param Request $request
+     * @param int $orderId
+     * @return JsonResponse
+     */
+    public function setOrderAsPaid(Request $request, int $orderId): JsonResponse
+    {
+        $request->validate([
+            'payment_status' => 'required|string',
+        ]);
+
+        try {
+            $this->orderRepository->setOrderAsPaid($orderId, $request->input('payment_status'));
+            return response()->json(['success' => true, 'message' => 'Estado del pago actualizado correctamente.']);
+        } catch (\Exception $e) {
+            Log::error("Error al actualizar estado de pago para el pedido {$orderId}: {$e->getMessage()}");
+            return response()->json(['success' => false, 'message' => 'No se pudo actualizar el estado de pago. Por favor, intente nuevamente.'], 400);
+        }
+    }
+
+
+    /**
      * Maneja la emisión de la factura (CFE).
      *
      * @param Request $request
@@ -235,20 +258,35 @@ class OrderController extends Controller
     public function exportExcel(Request $request)
     {
         try {
+            // Recibir los filtros desde el request
+            $search = $request->input('search');
+            $paymentStatus = $request->input('payment_status');
+            $shippingStatus = $request->input('shipping_status');
             $client = $request->input('client');
-            $company = $request->input('company');
-            $payment = $request->input('payment');
-            $billed = $request->input('billed');
+            $store = $request->input('store');
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
 
-            $orders = $this->orderRepository->getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate);
-            return Excel::download(new OrdersExport($orders), 'orders-'.date('Y-m-d_H-i-s').'.xlsx');
+            // Obtener las órdenes filtradas
+            $orders = $this->orderRepository->getOrdersForExport(
+                $client,
+                $store,
+                $paymentStatus,
+                $shippingStatus,
+                $startDate,
+                $endDate,
+                $search
+            );
+
+            // Exportar las órdenes a Excel
+            return Excel::download(new OrdersExport($orders), 'orders-' . date('Y-m-d_H-i-s') . '.xlsx');
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
         }
     }
+
+
 
     public function exportPdf(Request $request)
     {

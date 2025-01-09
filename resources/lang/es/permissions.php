@@ -42,6 +42,7 @@ return [
     // E-Commerce
     'access_ecommerce' => 'Acceder a E-Commerce',
     'access_orders' => 'Acceder a Pedidos',
+    'access_transactions' => 'Acceder a Transacciones',
     'view_all_orders' => 'Ver todos los Pedidos',
     'view_all_ecommerce' => 'Ver datos globales de E-Commerce',
     'access_products' => 'Acceder a Productos',

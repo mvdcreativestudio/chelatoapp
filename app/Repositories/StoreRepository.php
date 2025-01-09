@@ -6,22 +6,138 @@ use App\Models\Store;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class StoreRepository
 {
-    /**
-     * Devuelve todas las tiendas.
-     *
-     * @return Collection
-     */
-    public function getAll(): Collection
-    {
-        if (auth()->user()->can('view_all_stores')) {
-            return Store::withCount('users')->with('phoneNumber')->get();
-        } else {
-            return Store::where('id', auth()->user()->store_id)->withCount('users')->with('phoneNumber')->get();
-        }
+
+  /**
+   * Devuelve todas las tiendas.
+   *
+   * @return Collection
+  */
+  public function getAll(): Collection
+  {
+      if (auth()->user()->can('view_all_stores')) {
+        return Store::withCount('users')->with('phoneNumber')->get();
+      } else {
+        return Store::where('id', auth()->user()->store_id)->withCount('users')->with('phoneNumber')->get();
+      }
+  }
+
+  /**
+   * Crea una nueva tienda con los datos proporcionados.
+   *
+   * @param array $data
+   * @return Store
+  */
+  public function create(array $data): Store
+  {
+      return Store::create($data);
+  }
+
+
+  public function update(Store $store, array $data)
+  {
+      $result = $store->update($data);
+      \Log::info('Resultado de la actualización:', ['success' => $result, 'data' => $data, 'store' => $store->toArray()]);
+      return $result;
+  }
+
+  /**
+   * Cambia el estado de la tienda.
+   *
+   * @param Store $store
+   * @return RedirectResponse
+  */
+  public function toggleStoreStatus(Store $store): ?bool
+  {
+    try {
+
+        $store->status = !$store->status;
+        $store->save();
+        return true;
+
+    } catch (\Exception $e) {
+        return false;
     }
+  }
+
+
+  /**
+   * Cambia el abierto/cerrado de la tienda.
+   *
+   * @param $id
+   * @return bool
+  */
+  public function toggleStoreStatusClosed($id): ?bool
+  {
+      try {
+          $store = Store::findOrFail($id);
+          $store->closed = !$store->closed;
+          $store->manual_override_at = now();
+          $store->save();
+          return true;
+      } catch (\Exception $e) {
+          return false;
+      }
+  }
+
+
+
+  /**
+   * Elimina una tienda de la base de datos.
+   *
+   * @param Store $store
+   * @return bool|null
+  */
+  public function delete(Store $store): ?bool
+  {
+      return $store->delete();
+  }
+
+  /**
+   * Devuelve usuarios que no están asociados a ninguna tienda.
+   *
+   * @return Collection|User[]
+  */
+  public function getUnassociatedUsers(): Collection
+  {
+      return User::whereNull('store_id')->get();
+  }
+
+  /**
+   * Asocia un usuario a una tienda.
+   *
+   * @param Store $store
+   * @param int $userId
+   * @return Store
+  */
+  public function associateUser(Store $store, int $userId): Store
+  {
+      $user = User::findOrFail($userId);
+      $user->store_id = $store->id;
+      $user->save();
+
+      return $store;
+  }
+
+  /**
+   * Desasocia un usuario de una tienda.
+   *
+   * @param Store $store
+   * @param int $userId
+   * @return Store
+  */
+  public function disassociateUser(Store $store, int $userId): Store
+  {
+      $user = User::findOrFail($userId);
+      $user->store_id = null;
+      $user->save();
+
+      return $store;
+  }
+
 
     /**
      * Crea una nueva tienda con los datos proporcionados.
