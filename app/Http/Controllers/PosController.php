@@ -94,6 +94,23 @@ class PosController extends Controller
         return response()->json($responses);
     }
 
+    public function getProviderByStoreId($storeId)
+    {
+      try {
+        // Obtener el proveedor POS asociado a la tienda
+        $posProvider = $this->posService->getProviderByStoreId($storeId);
+
+        if (!$posProvider) {
+          return response()->json(['error' => 'No se pudo encontrar el proveedor POS para la tienda'], 404);
+        }
+
+        return response()->json(['provider' => $posProvider]);
+      } catch (\Exception $e) {
+        Log::error('Error al obtener el proveedor POS para el store ID: ' . $storeId . ' - Error: ' . $e->getMessage());
+        return response()->json(['error' => 'Error al obtener el proveedor POS'], 500);
+      }
+    }
+
     // Obtener el token de acceso para el proveedor POS
     public function getPosToken(Request $request)
     {
@@ -107,15 +124,16 @@ class PosController extends Controller
             Log::info("Obteniendo token para el store ID: " . $storeId);
 
             // Obtener el proveedor POS asociado a la tienda
-            $posProvider = $this->posService->getProviderByStoreId($storeId);
+            $posProviderInfo = $this->posService->getProviderByStoreId($storeId);
 
-            if (!$posProvider) {
+            if (!$posProviderInfo) {
                 Log::error("No se pudo encontrar el proveedor POS para el store ID: " . $storeId);
                 return response()->json(['error' => 'No se pudo encontrar el proveedor POS para la tienda'], 500);
             }
 
-            // Obtener el token si el proveedor lo requiere
-            if ($posProvider->requires_token) {
+            // Validar si el proveedor requiere un token
+            if ($posProviderInfo->provider->requires_token) {
+                Log::info('El proveedor POS requiere token de acceso');
                 $accessToken = $this->posService->getPosToken($storeId);
 
                 if (!$accessToken) {
@@ -126,12 +144,14 @@ class PosController extends Controller
                 return response()->json(['access_token' => $accessToken]);
             }
 
+            Log::info('El proveedor POS no requiere token');
             return response()->json(['message' => 'El proveedor POS no requiere token']);
         } catch (\Exception $e) {
             Log::error('Error al obtener el token del POS para el store ID: ' . $storeId . ' - Error: ' . $e->getMessage());
             return response()->json(['error' => 'Error al obtener el token del POS'], 500);
         }
     }
+
 
 
 
@@ -346,31 +366,42 @@ class PosController extends Controller
             'Branch' => 'required|string',
             'ClientAppId' => 'required|string',
             'UserId' => 'required|string',
-            'TransactionDateTimeyyyyMMddHHmmssSSS' => 'required|string|size:20',
+            'TransactionDateTimeyyyyMMddHHmmssSSS' => 'required|string|size:17',
             'TicketNumber' => 'required|string',
             'order_id' => 'nullable|integer|exists:orders,id', // Permitir que sea opcional
         ]);
 
-        // Si no viene el order_id en el request, buscarlo en la transacción original
+        // Buscar el Acquirer en la transacción original usando `order_id` en formatted_data
         if (!isset($validated['order_id']) || is_null($validated['order_id'])) {
-          // Buscar la transacción pendiente por TicketNumber
-          $originalTransaction = \App\Models\Transaction::where('STransactionId', $validated['STransactionId'])
-              ->where('status', 'pending')
-              ->first();
-
-          if (!$originalTransaction || !$originalTransaction->order_id) {
-              Log::error('No se encontró una transacción pendiente para el TicketNumber proporcionado.');
-              throw new \Exception('No se encontró una transacción válida para el número de ticket proporcionado.');
-          }
-
-          // Asignar el order_id encontrado a los datos validados
-          $validated['order_id'] = $originalTransaction->order_id;
+            throw new \Exception('El order_id es obligatorio para esta operación.');
         }
 
+        $originalTransaction = \App\Models\Transaction::where('formatted_data->order_id', $validated['order_id'])
+            ->where('status', 'completed') // Solo buscar en transacciones completadas
+            ->first();
 
-        Log::info('Datos validados para voidTransaction:', $validated);
+        if (!$originalTransaction) {
+            throw new \Exception('No se encontró una transacción con el order_id proporcionado en formatted_data.');
+        }
 
-        // Llamar al servicio POS
+        // Obtener el Acquirer de formatted_data
+        $formattedData = $originalTransaction->formatted_data;
+        if (is_string($formattedData)) {
+            $formattedData = json_decode($formattedData, true); // Decodificar si es una cadena JSON
+        }
+
+        if (!is_array($formattedData) || !isset($formattedData['Acquirer'])) {
+            throw new \Exception('El campo Acquirer no está presente en formatted_data.');
+        }
+
+        $acquirer = $formattedData['Acquirer'];
+
+        // Agregar el Acquirer al request validado
+        $validated['Acquirer'] = $acquirer;
+
+        Log::info('Datos validados para voidTransaction con Acquirer:', $validated);
+
+        // Llamar al servicio POS para realizar la anulación
         $response = $this->posService->voidTransaction($validated);
 
         return response()->json($response);
@@ -391,6 +422,8 @@ class PosController extends Controller
         ], 500);
     }
 }
+
+
 
 
 
@@ -558,7 +591,6 @@ class PosController extends Controller
     }
 
 
-
     public function getDevicesByStore($storeId)
     {
         // Obtener la información de integración basada en el store_id
@@ -611,5 +643,104 @@ class PosController extends Controller
     }
 
 
+    public function processRefund(Request $request)
+    {
+        try {
+            // Validar datos del request
+            $validated = $request->validate([
+                'store_id' => 'required|integer|exists:stores,id',
+                'order_id' => 'required|integer|exists:orders,id',
+                'transaction_id' => 'required|string',
+                's_transaction_id' => 'required|string',
+                'Amount' => 'required|numeric|min:0.01',
+                'reason' => 'required|string',
+                'TicketNumber' => 'required|string',
+                'PosID' => 'required|string',
+                'SystemId' => 'required|string',
+                'Branch' => 'required|string',
+                'ClientAppId' => 'required|string',
+                'UserId' => 'required|string',
+                'TransactionDateTimeyyyyMMddHHmmssSSS' => 'required|string',
+                'OriginalTransactionDateyyMMdd' => 'required|string',
+            ]);
+
+            Log::info('Iniciando refund con los datos validados:', $validated);
+
+            // Llamar al servicio POS para procesar el refund
+            $response = $this->posService->processRefund($validated);
+
+            return response()->json($response);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Error de validación en processRefund:', $e->errors());
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al procesar el refund:', $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el refund.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function fetchBatchCloses(Request $request)
+    {
+        $validated = $request->validate([
+            'pos_device_id' => 'required|string',
+            'FromDateyyyyMMddHHmmss' => 'required|string',
+            'ToDateyyyyMMddHHmmss' => 'required|string',
+            'store_id' => 'required|integer',
+        ]);
+
+        try {
+            $result = $this->posService->fetchBatchCloses($validated);
+
+            return response()->json([
+                'success' => true,
+                'data' => $result,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error en fetchBatchCloses: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function fetchOpenBatches(Request $request)
+    {
+        $validated = $request->validate([
+            'pos_device_id' => 'required|string',
+            'store_id' => 'required|integer',
+        ]);
+
+        try {
+            $result = $this->posService->fetchOpenBatches($validated);
+
+            return response()->json([
+              'success' => true,
+              'data' => $result, // Ahora $result contendrá los datos de "Transactions"
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error en fetchOpenBatches: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+
 
 }
+
+

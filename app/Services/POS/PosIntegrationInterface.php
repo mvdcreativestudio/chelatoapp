@@ -12,6 +12,7 @@ interface PosIntegrationInterface {
   public function voidTransaction(array $transactionData): array;
   public function pollVoidStatus(array $transactionData): array;
   public function fetchTransactionHistory(array $queryData): array;
-
+  public function fetchBatchCloses(array $queryData): array;
+  public function fetchOpenBatches(array $queryData): array;
 }
 
