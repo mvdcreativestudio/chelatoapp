@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Repositories\StoreRepository;
+use App\Models\PosDevice;
 use App\Http\Requests\StoreEmailConfigRequest;
 use App\Enums\MercadoPago\MercadoPagoApplicationTypeEnum;
 use App\Http\Controllers\StoresEmailConfigController;
@@ -25,13 +26,21 @@ class IntegrationController extends Controller
         $this->accountingRepository = $accountingRepository;
     }
 
+    /**
+     * Muestra la vista principal de integraciones
+     *
+     * @return \Illuminate\View\View
+     */
     public function index()
     {
+        // Cargar las tiendas con todas las relaciones necesarias
         $stores = $this->storeRepository->getAll()->load([
             'mercadoPagoAccount',
-            'mercadoPagoAccountStore'
+            'mercadoPagoAccountStore',
+            'posDevices', // Relación de dispositivos POS
         ]);
 
+        // Transformar las tiendas para incluir atributos adicionales
         $stores = $stores->map(function ($store) {
             if ($store->invoices_enabled && $store->pymo_user && $store->pymo_password) {
                 $companyInfo = $this->accountingRepository->getCompanyInfo($store);
@@ -39,13 +48,23 @@ class IntegrationController extends Controller
                 $store->branchOffices = $companyInfo['branchOffices'] ?? [];
             }
 
+            // Filtrar los dispositivos para cada integración
+            $store->handyDevices = $store->posDevices->where('pos_provider_id', 3);
+            $store->fiservDevices = $store->posDevices->where('pos_provider_id', 2);
+            $store->scanntechDevices = $store->posDevices->where('pos_provider_id', 1);
+            $store->otherDevices = $store->posDevices->whereNotIn('pos_provider_id', [1, 2, 3]);
+
+            // Añadir el atributo MercadoPagoOnline
             return $store->setAttribute(
                 'mercadoPagoOnline',
                 $store->mercadoPagoAccount->firstWhere('type', MercadoPagoApplicationTypeEnum::PAID_ONLINE)
             );
         });
+
         return view('integrations.index', compact('stores'));
     }
+
+
 
     public function toggleEcommerce(Request $request, $id)
     {
@@ -397,6 +416,223 @@ class IntegrationController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Maneja la integración con Handy
+     *
+     * @param Request $request
+     * @param int $storeId
+     * @return \Illuminate\Http\JsonResponse
+    */
+    public function handleHandyIntegration(Request $request, $storeId)
+    {
+        try {
+            $store = $this->storeRepository->find($storeId);
+
+            if (!$store) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tienda no encontrada.'
+                ], 404);
+            }
+
+            $acceptsHandy = $request->boolean('accepts_handy');
+
+            if ($acceptsHandy) {
+                $validatedData = $request->validate([
+                    'system_id' => 'required|string|max:255',
+                    'branch' => 'required|string|max:255',
+                ]);
+
+                \DB::transaction(function () use ($store, $validatedData) {
+                    // Eliminar cualquier entrada previa para esta tienda
+                    $store->posIntegrationInfo()->delete();
+
+                    // Crear una nueva entrada
+                    $store->posIntegrationInfo()->create([
+                        'store_id' => $store->id,
+                        'pos_provider_id' => 3,
+                        'system_id' => $validatedData['system_id'],
+                        'branch' => $validatedData['branch'],
+                        'company' => null
+                    ]);
+
+                    // Actualizar el pos_provider_id en la tabla stores
+                    $store->update(['pos_provider_id' => 3]);
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Handy activado con éxito.'
+                ]);
+            } else {
+                \DB::transaction(function () use ($store) {
+                    // Eliminar la entrada de pos_integrations_store_info
+                    $store->posIntegrationInfo()->where('pos_provider_id', 3)->delete();
+
+                    // Actualizar pos_provider_id a null en la tabla stores
+                    $store->update(['pos_provider_id' => null]);
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Handy desactivado con éxito.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al manejar la integración con Handy: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al procesar la integración con Handy.'
+            ], 500);
+        }
+    }
+
+
+    /**
+     * Maneja la integración con Fiserv
+     *
+     * @param Request $request
+     * @param int $storeId
+     * @return \Illuminate\Http\JsonResponse
+    */
+    public function handleFiservIntegration(Request $request, $storeId)
+    {
+        try {
+            $store = $this->storeRepository->find($storeId);
+
+            if (!$store) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tienda no encontrada.'
+                ], 404);
+            }
+
+            $acceptsFiserv = $request->boolean('accepts_fiserv');
+
+            if ($acceptsFiserv) {
+                $validatedData = $request->validate([
+                    'system_id' => 'required|string|max:255',
+                    'branch' => 'required|string|max:255',
+                ]);
+
+                \DB::transaction(function () use ($store, $validatedData) {
+                    // Eliminar cualquier entrada previa para esta tienda
+                    $store->posIntegrationInfo()->delete();
+
+                    // Crear una nueva entrada
+                    $store->posIntegrationInfo()->create([
+                        'store_id' => $store->id,
+                        'pos_provider_id' => 2,
+                        'system_id' => $validatedData['system_id'],
+                        'branch' => $validatedData['branch'],
+                        'company' => null
+                    ]);
+
+                    // Actualizar el pos_provider_id en la tabla stores
+                    $store->update(['pos_provider_id' => 2]);
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Fiserv activado con éxito.'
+                ]);
+            } else {
+                \DB::transaction(function () use ($store) {
+                    // Eliminar la entrada de pos_integrations_store_info
+                    $store->posIntegrationInfo()->where('pos_provider_id', 2)->delete();
+
+                    // Actualizar pos_provider_id a null en la tabla stores
+                    $store->update(['pos_provider_id' => null]);
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Fiserv desactivado con éxito.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al manejar la integración con Fiserv: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al procesar la integración con Fiserv.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Maneja la integración con Scanntech
+     *
+     * @param Request $request
+     * @param int $storeId
+     * @return \Illuminate\Http\JsonResponse
+    */
+    public function handleScanntechIntegration(Request $request, $storeId)
+    {
+        try {
+            $store = $this->storeRepository->find($storeId);
+
+            if (!$store) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tienda no encontrada.'
+                ], 404);
+            }
+
+            $acceptsScanntech = $request->boolean('accepts_scanntech');
+
+            if ($acceptsScanntech) {
+                $validatedData = $request->validate([
+                    'system_id' => 'required|string|max:255',
+                    'branch' => 'required|string|max:255',
+                    'company' => 'required|string|max:255'
+                ]);
+
+                \DB::transaction(function () use ($store, $validatedData) {
+                    // Eliminar cualquier entrada previa para esta tienda
+                    $store->posIntegrationInfo()->delete();
+
+                    // Crear una nueva entrada
+                    $store->posIntegrationInfo()->create([
+                        'store_id' => $store->id,
+                        'pos_provider_id' => 1,
+                        'system_id' => $validatedData['system_id'],
+                        'branch' => $validatedData['branch'],
+                        'company' => $validatedData['company'],
+                    ]);
+
+                    // Actualizar el pos_provider_id en la tabla stores
+                    $store->update(['pos_provider_id' => 1]);
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Scanntech activado con éxito.'
+                ]);
+            } else {
+                \DB::transaction(function () use ($store) {
+                    // Eliminar la entrada de pos_integrations_store_info
+                    $store->posIntegrationInfo()->where('pos_provider_id', 1)->delete();
+
+                    // Actualizar pos_provider_id a null en la tabla stores
+                    $store->update(['pos_provider_id' => null]);
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Scanntech desactivado con éxito.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al manejar la integración con Scanntech: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al procesar la integración con Scanntech.'
+            ], 500);
+        }
+    }
+
+
 
     public function create()
     {

@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             function handleError(message) {
                 console.error('Error:', message);
-                switchElement.checked = !isChecked; 
+                switchElement.checked = !isChecked;
 
                 Swal.fire({
                     icon: 'error',

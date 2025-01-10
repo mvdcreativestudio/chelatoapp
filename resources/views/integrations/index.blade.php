@@ -1,6 +1,6 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Integraciones')
+@section('title', 'Herramientas')
 
 @section('vendor-style')
 @vite([
@@ -30,11 +30,17 @@
 @vite(['resources/assets/js/integrations/app-integration-pymo.js'])
 @vite(['resources/assets/js/integrations/app-integration-email.js'])
 @vite(['resources/assets/js/integrations/app-integration-ecommerce.js'])
+@vite(['resources/assets/js/integrations/app-integration-handy.js'])
+@vite(['resources/assets/js/integrations/app-integration-fiserv.js'])
+@vite(['resources/assets/js/integrations/app-integration-scanntech.js'])
+
+
 @endsection
 
 @section('content')
+
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Empresa /</span> Integraciones
+  <span class="text-muted fw-light"></span> Herramientas
 </h4>
 
 @if (session('success'))
@@ -84,6 +90,9 @@
       data-store-id="{{ $store->id }}"
       role="tabpanel">
       <div class="integration-grid">
+        @include('stores.partials.handy', ['store' => $store, 'devices' => $store->posDevices])
+        @include('stores.partials.fiserv', ['store' => $store, 'devices' => $store->posDevices])
+        @include('stores.partials.scanntech', ['store' => $store, 'devices' => $store->posDevices])
         @include('stores.partials.integracion-ecommerce')
         @include('stores.partials.configuracion-correo')
         @include('stores.partials.pedidos-ya')

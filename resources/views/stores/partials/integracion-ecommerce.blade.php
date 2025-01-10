@@ -16,12 +16,12 @@
             </div>
             <div class="form-check form-switch d-flex justify-content-center">
                 <input type="hidden" name="ecommerce" value="0">
-                <input 
-                    class="form-check-input" 
-                    type="checkbox" 
-                    id="ecommerceSwitch-{{ $store->id }}" 
-                    name="ecommerce" 
-                    value="1" 
+                <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="ecommerceSwitch-{{ $store->id }}"
+                    name="ecommerce"
+                    value="1"
                     {{ $store->ecommerce ? 'checked' : '' }}
                     data-store-id="{{ $store->id }}"
                 >

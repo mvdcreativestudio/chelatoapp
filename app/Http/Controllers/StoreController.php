@@ -126,6 +126,7 @@ class StoreController extends Controller
         $logoUrl = null;
         $branchOffices = [];
         $mercadoPagoStores = [];
+        $devices = [];
         // Cargar la tienda con las relaciones necesarias
         $store->load('mercadoPagoAccount');
 
@@ -137,7 +138,7 @@ class StoreController extends Controller
             $branchOffices = $companyInfo['branchOffices'] ?? [];
         }
 
-        // Cargar dispositivos vinculados a Scanntech para esta tienda
+        // Cargar dispositivos vinculados a esta tienda
         $devices = $store->posDevices()->get();
 
         // Dividir cuentas de MercadoPago por tipo

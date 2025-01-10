@@ -212,11 +212,11 @@ Route::middleware([
     Route::get('crm', [LeadController::class, 'index']);
     Route::post('leads', [LeadController::class, 'store']);
     Route::put('leads/{leadId}/update-category', [LeadController::class, 'updateCategory']);
-    Route::delete('leads/{id}', [LeadController::class, 'destroy']); 
-    Route::put('leads/{id}', [LeadController::class, 'update']); 
+    Route::delete('leads/{id}', [LeadController::class, 'destroy']);
+    Route::put('leads/{id}', [LeadController::class, 'update']);
     Route::post('lead-tasks', [LeadTaskController::class, 'store']);
     Route::get('lead-tasks', [LeadTaskController::class, 'getAll']);
-    Route::delete('lead-tasks/{id}', [LeadTaskController::class, 'destroy']); 
+    Route::delete('lead-tasks/{id}', [LeadTaskController::class, 'destroy']);
     Route::put('lead-tasks/{leadId}/{status}', [LeadTaskController::class, 'updateStatus']);
     Route::post('lead-attached-files', [LeadAttachedFileController::class, 'store']);
     Route::get('lead-attached-files/{leadId}', [LeadAttachedFileController::class, 'getFilesByLead']);
@@ -390,7 +390,11 @@ Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::clas
     Route::post('/integrations/{store}/pymo', [IntegrationController::class, 'handlePymoIntegration'])->name('integration.pymo.update');
     Route::post('/integrations/{store}/pedidosya', [IntegrationController::class, 'handlePedidosYaIntegration'])->name('integration.pedidosya.update');
     Route::get('/integrations/pymo-connection/{storeId}', [IntegrationController::class, 'checkPymoConnection'])->name('integrations.pymo-connection');
-    
+    Route::post('/integrations/{store}/handy', [IntegrationController::class, 'handleHandyIntegration']);
+    Route::post('/integrations/{store}/fiserv', [IntegrationController::class, 'handleFiservIntegration']);
+    Route::post('/integrations/{store}/scanntech', [IntegrationController::class, 'handleScanntechIntegration']);
+
+
     // Gestión de Roles
     Route::prefix('roles/{role}')->name('roles.')->group(function () {
         Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('manageUsers');
