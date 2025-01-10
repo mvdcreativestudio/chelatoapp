@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('store_event_configurations');
+        Schema::dropIfExists('event_store_configurations');
     }
 };

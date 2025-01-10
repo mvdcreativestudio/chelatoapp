@@ -174,6 +174,42 @@ document.addEventListener('DOMContentLoaded', function () {
         });
       });
   });
+
+});
+$(document).on('click', '.refund-payment', function () {
+  const orderId = $(this).data('id');
+  Swal.fire({
+    title: '¿Estás seguro?',
+    text: 'Esta acción devolverá el dinero al cliente. Este proceso no se puede revertir.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Sí, devolver!',
+    cancelButtonText: 'Cancelar'
+  }).then(result => {
+    if (result.isConfirmed) {
+      $.ajax({
+        url: `${baseUrl}admin/orders/mercado-pago/refund/${orderId}`,
+        type: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+          if (response.success) {
+            Swal.fire('Reembolso realizado!', 'El dinero ha sido devuelto al cliente.', 'success').then(() => {
+              location.reload(); // Recargar la página o realizar alguna acción adicional
+            });
+          } else {
+            Swal.fire('Error!', response.message || 'No se pudo realizar el reembolso.', 'error');
+          }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+          Swal.fire('Error!', xhr.responseJSON.message || 'No se pudo procesar el reembolso.', 'error');
+        }
+      });
+    }
+  });
 });
 
 document.addEventListener('DOMContentLoaded', function () {

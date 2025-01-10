@@ -163,6 +163,7 @@
        <div class="mb-3">
         <label for="unit_of_measure" class="form-label">Unidad de Medida</label>
         <select class="form-control" id="unit_of_measure" name="unit_of_measure" required>
+          <option value="g">Kilogramo (Kg)</option>
           <option value="L">Litro (L)</option>
           <option value="ml">Mililitro (ml)</option>
         </select>

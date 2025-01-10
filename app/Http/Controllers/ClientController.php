@@ -70,7 +70,7 @@ class ClientController extends Controller
      * @return RedirectResponse
      */
     public function store(StoreClientRequest $request)
-    {
+    {   
         try {
             // Validar los datos del cliente
             $validatedData = $request->validated();

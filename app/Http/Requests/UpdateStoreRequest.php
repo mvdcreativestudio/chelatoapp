@@ -31,59 +31,8 @@ class UpdateStoreRequest extends FormRequest
             'address' => 'sometimes|string|max:255',
             'email' => ['sometimes', 'email'],
             'rut' => ['sometimes', 'string'],
-            'ecommerce' => 'sometimes|boolean',
             'status' => 'sometimes|boolean',
-            'accepts_mercadopago' => 'required|boolean',
-            'invoices_enabled' => 'boolean',
-            'accepts_peya_envios' => 'sometimes|boolean',
-            'scanntech' => 'required|in:0,1',
-            'fiserv' => 'required|in:0,1',
-            'handy' => 'required|in:0,1',
-          ];
-
-        if ($this->boolean('invoices_enabled')) {
-            $rules += [
-                'pymo_user' => 'required|string|max:255',
-                'pymo_password' => 'required|string|max:255',
-                'automatic_billing' => 'boolean',
-            ];
-        }
-
-
-        if ($this->boolean('accepts_peya_envios')) {
-            $rules += [
-                'peya_envios_key' => 'required|string|max:255',
-            ];
-        }
-
-        if ($this->boolean('accepts_mercadopago')) {
-            $rules += [
-                'mercadoPagoPublicKey' => 'required|string|max:255',
-                'mercadoPagoAccessToken' => 'required|string|max:255',
-            ];
-        }
-
-        if ($this->boolean('scanntech')) {
-          $rules += [
-              'scanntechCompany' => 'required|string|max:255',
-              'scanntechBranch' => 'required|string|max:255',
-          ];
-      }
-
-      if ($this->boolean('fiserv')) {
-        $rules += [
-            'fiservSystemId' => 'required|string|max:255', // Cambiado de system_id a fiservSystemId
         ];
-      }
-
-
-
-      if ($this->boolean('handy')) {
-        $rules += [
-            'system_id' => 'required|string|max:255',
-        ];
-    }
-
         return $rules;
     }
 }

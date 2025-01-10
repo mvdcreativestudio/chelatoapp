@@ -30,10 +30,13 @@ class CashRegisterRepository
                 'stores.name as store_name',
                 'users.name as user_name',
                 'cash_register_logs.open_time',  // Último open_time
-                'cash_register_logs.close_time'  // Último close_time
+                'cash_register_logs.close_time',  // Último close_time
+                'mercado_pago_account_pos.cash_register_id',
+                'mercado_pago_account_pos.template_document',
             ])
             ->join('stores', 'cash_registers.store_id', '=', 'stores.id')
             ->join('users', 'cash_registers.user_id', '=', 'users.id')
+            ->leftJoin('mercado_pago_account_pos', 'cash_registers.id', '=', 'mercado_pago_account_pos.cash_register_id')
             ->leftJoin('cash_register_logs', function ($join) {
                 $join->on('cash_register_logs.cash_register_id', '=', 'cash_registers.id')
                      ->whereRaw('cash_register_logs.id = (select max(id) from cash_register_logs where cash_register_logs.cash_register_id = cash_registers.id)');

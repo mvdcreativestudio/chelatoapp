@@ -128,7 +128,7 @@
               <table class="table datatables-batches border-top">
                 <thead>
                   <tr>
-                    <th>Nro Lote</th>
+                    <th>N° lote</th>
                     <th>Materia prima / Producto</th>
                     <th>Cantidad</th>
                     <th>Fecha producción</th>

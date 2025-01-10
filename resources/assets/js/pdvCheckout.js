@@ -16,9 +16,9 @@ $(document).ready(function () {
 
   document.querySelectorAll('.card-header').forEach(header => {
     header.addEventListener('click', function () {
-        const icon = this.querySelector('i');
-        icon.classList.toggle('bx-chevron-down');
-        icon.classList.toggle('bx-chevron-up');
+      const icon = this.querySelector('i');
+      icon.classList.toggle('bx-chevron-down');
+      icon.classList.toggle('bx-chevron-up');
     });
   });
 
@@ -59,16 +59,16 @@ $(document).ready(function () {
   // Cargar la configuración de respuestas POS desde el backend
   function loadPosResponses() {
     $.ajax({
-        url: `${baseUrl}api/pos/responses`,
-        type: 'GET',
-        dataType: 'json',
-        success: function (response) {
-            // Almacenar la configuración en la variable global
-            posResponsesConfig = response;
-        },
-        error: function (xhr, status, error) {
-            console.error('Error al cargar la configuración de respuestas:', error);
-        }
+      url: `${baseUrl}api/pos/responses`,
+      type: 'GET',
+      dataType: 'json',
+      success: function (response) {
+        // Almacenar la configuración en la variable global
+        posResponsesConfig = response;
+      },
+      error: function (xhr, status, error) {
+        console.error('Error al cargar la configuración de respuestas:', error);
+      }
     });
   }
 
@@ -77,21 +77,21 @@ $(document).ready(function () {
 
   function obtenerTokenPos() {
     return $.ajax({
-        url: `${baseUrl}api/pos/token`,
-        type: 'GET',
-        data: {
-            store_id: sessionStoreId
-        },
-        success: function (response) {
-            if (response.access_token) {
-                return response.access_token;
-            } else {
-                console.error('Error: no se recibió un token válido');
-            }
-        },
-        error: function (xhr, status, error) {
-            console.error('Error al obtener el token del POS:', error);
+      url: `${baseUrl}api/pos/token`,
+      type: 'GET',
+      data: {
+        store_id: sessionStoreId
+      },
+      success: function (response) {
+        if (response.access_token) {
+          return response.access_token;
+        } else {
+          console.error('Error: no se recibió un token válido');
         }
+      },
+      error: function (xhr, status, error) {
+        console.error('Error al obtener el token del POS:', error);
+      }
     });
   }
 
@@ -174,8 +174,6 @@ $(document).ready(function () {
 }
 
 
-
-
 function consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid) {
   let attempts = 0;
   const maxAttempts = 30;
@@ -248,10 +246,6 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, token, orderI
   poll();
 }
 
-
-
-
-
 function confirmarVenta(response, paymentMethod) {
   Swal.fire({
       title: 'Venta Realizada con Éxito',
@@ -270,8 +264,6 @@ function confirmarVenta(response, paymentMethod) {
       }
   });
 }
-
-
 
   let swalInstance;
 
@@ -312,36 +304,39 @@ function confirmarVenta(response, paymentMethod) {
   // Función para mostrar el mensaje de respuesta POS en SweetAlert
   function showSweetAlert(responseConfig, isInitial) {
     if (isInitial) {
-        swalInstance = Swal.fire({
-            icon: responseConfig.icon || 'question',
-            title: 'Estado de Transacción',
-            html: responseConfig.message,
-            showConfirmButton: false,
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-    } else {
-        if (swalInstance) {
-            swalInstance.update({
-                icon: responseConfig.icon,
-                html: responseConfig.message,
-                showConfirmButton: responseConfig.showCloseButton,
-                confirmButtonText: 'Cerrar',
-                allowOutsideClick: responseConfig.showCloseButton
-            });
-
-            if (!responseConfig.message.includes('en progreso') && !responseConfig.message.includes('Esperando por operación en el PINPad')) {
-                Swal.hideLoading();
-            }
-
-            if (responseConfig.showCloseButton) {
-                swalInstance.then(() => {
-                    Swal.close();
-                });
-            }
+      swalInstance = Swal.fire({
+        icon: responseConfig.icon || 'question',
+        title: 'Estado de Transacción',
+        html: responseConfig.message,
+        showConfirmButton: false,
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
         }
+      });
+    } else {
+      if (swalInstance) {
+        swalInstance.update({
+          icon: responseConfig.icon,
+          html: responseConfig.message,
+          showConfirmButton: responseConfig.showCloseButton,
+          confirmButtonText: 'Cerrar',
+          allowOutsideClick: responseConfig.showCloseButton
+        });
+
+        if (
+          !responseConfig.message.includes('en progreso') &&
+          !responseConfig.message.includes('Esperando por operación en el PINPad')
+        ) {
+          Swal.hideLoading();
+        }
+
+        if (responseConfig.showCloseButton) {
+          swalInstance.then(() => {
+            Swal.close();
+          });
+        }
+      }
     }
   }
 
@@ -376,7 +371,6 @@ function confirmarVenta(response, paymentMethod) {
       console.error('ID de caja registradora no definido');
     }
   }
-
 
   function loadCartFromSession() {
     $.ajax({
@@ -416,7 +410,6 @@ function confirmarVenta(response, paymentMethod) {
           } else {
             $('#client-price-list').text('Sin lista de precios');
           }
-
         }
       },
       error: function (xhr) {
@@ -433,17 +426,16 @@ function confirmarVenta(response, paymentMethod) {
     const priceListIdToUse = selectedPriceListId || clientPriceListId;
 
     if (priceListIdToUse) {
-        updateCartPricesWithPriceList(priceListIdToUse);
+      updateCartPricesWithPriceList(priceListIdToUse);
     } else {
-        loadCartFromSessionWithNormalPrices(); // Si no hay lista de precios seleccionada, usar precios normales
+      loadCartFromSessionWithNormalPrices(); // Si no hay lista de precios seleccionada, usar precios normales
     }
   }
 
   // Escucha cambios en el selector manual de listas de precios
   $('#manual_price_list_id').on('change', updateCartPrices);
 
-
-
+  
   function loadStoreIdFromSession() {
     $.ajax({
       url: `storeid-session`,
@@ -473,7 +465,9 @@ function confirmarVenta(response, paymentMethod) {
     $('#client-price-list').text(clientPriceList);
 
     if (client.type === 'company') {
-      $('#client-company').html(`<strong class="text-muted">Razón Social:</strong> <span class="text-body fw-bold">${client.company_name || '-'}</span>`);
+      $('#client-company').html(
+        `<strong class="text-muted">Razón Social:</strong> <span class="text-body fw-bold">${client.company_name || '-'}</span>`
+      );
       $('#client-company').show();
     } else {
       $('#client-company').hide();
@@ -486,7 +480,6 @@ function confirmarVenta(response, paymentMethod) {
   }
 
 
-
   function saveCartToSession() {
     return $.ajax({
       url: 'cart',
@@ -495,10 +488,9 @@ function confirmarVenta(response, paymentMethod) {
         _token: $('meta[name="csrf-token"]').attr('content'),
         cart: cart
       }
-    })
-      .fail(function (xhr) {
-        mostrarError('Error al guardar el carrito en la sesión: ' + xhr.responseText);
-      });
+    }).fail(function (xhr) {
+      mostrarError('Error al guardar el carrito en la sesión: ' + xhr.responseText);
+    });
   }
 
   function calcularTotal() {
@@ -551,13 +543,13 @@ function confirmarVenta(response, paymentMethod) {
     let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     if (coupon.coupon.type === 'percentage') {
-        discount = (coupon.coupon.amount / 100) * subtotal;
+      discount = (coupon.coupon.amount / 100) * subtotal;
     } else if (coupon.coupon.type === 'fixed') {
-        discount = coupon.coupon.amount;
+      discount = coupon.coupon.amount;
     }
 
     if (discount > subtotal) {
-        discount = subtotal;
+      discount = subtotal;
     }
 
     discount = Math.round(discount);
@@ -597,7 +589,6 @@ function confirmarVenta(response, paymentMethod) {
     $('#quitarDescuento').show(); // Mostrar el botón de eliminar descuento
   }
 
-
   function removeDiscount() {
     // Reiniciar variables de descuento
     discount = 0;
@@ -630,19 +621,19 @@ function confirmarVenta(response, paymentMethod) {
     let subtotal = 0;
 
     cart.forEach(item => {
-        const itemPrice = item.price && !isNaN(item.price) ? item.price : 0;  // Asegurar que el precio es válido
-        const itemTotal = itemPrice * item.quantity;
-        subtotal += itemTotal;
+      const itemPrice = item.price && !isNaN(item.price) ? item.price : 0; // Asegurar que el precio es válido
+      const itemTotal = itemPrice * item.quantity;
+      subtotal += itemTotal;
 
-        // Redondear el precio del producto y el total del ítem a dos decimales
-        const formattedItemPrice = (Math.round(itemPrice * 100) / 100).toLocaleString('es-ES', {
-            minimumFractionDigits: 2
-        });
-        const formattedItemTotal = (Math.round(itemTotal * 100) / 100).toLocaleString('es-ES', {
-            minimumFractionDigits: 2
-        });
+      // Redondear el precio del producto y el total del ítem a dos decimales
+      const formattedItemPrice = (Math.round(itemPrice * 100) / 100).toLocaleString('es-ES', {
+        minimumFractionDigits: 2
+      });
+      const formattedItemTotal = (Math.round(itemTotal * 100) / 100).toLocaleString('es-ES', {
+        minimumFractionDigits: 2
+      });
 
-        cartHtml += `
+      cartHtml += `
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center">
                 <img src="${baseUrl}${item.image}" alt="${item.name}" class="img-thumbnail me-2" style="width: 50px;">
@@ -703,19 +694,20 @@ function confirmarVenta(response, paymentMethod) {
     clientList.empty(); // Limpiar la lista existente
 
     clients.forEach(client => {
-        const clientType = client.type === 'company' ? 'Empresa' : 'Persona';
-        const clientDoc = client.type === 'company' ? client.rut : client.ci;
-        const clientDocLabel = client.type === 'company' ? 'RUT' : 'CI';
+      const clientType = client.type === 'company' ? 'Empresa' : 'Persona';
+      const clientDoc = client.type === 'company' ? client.rut : client.ci;
+      const clientDocLabel = client.type === 'company' ? 'RUT' : 'CI';
 
-        // Si es una empresa, mostrar company_name, si es una persona, mostrar name y lastname
-        const displayName = client.type === 'company'
-            ? client.company_name || '-'
-            : `${client.name || '-'} ${client.lastname || '-'}`;
+      // Si es una empresa, mostrar company_name, si es una persona, mostrar name y lastname
+      const displayName =
+        client.type === 'company' ? client.company_name || '-' : `${client.name || '-'} ${client.lastname || '-'}`;
 
-        const razonSocial =
-            client.type === 'company' ? `<p class="client-info"><strong>Razón Social:</strong> ${client.company_name || '-'}</p>` : '';
+      const razonSocial =
+        client.type === 'company'
+          ? `<p class="client-info"><strong>Razón Social:</strong> ${client.company_name || '-'}</p>`
+          : '';
 
-        const clientCard = `
+      const clientCard = `
             <div class="client-card card mb-2" style="border: none; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
                 <div class="card-body d-flex justify-content-between align-items-center p-2">
                     <div class="client-details">
@@ -729,7 +721,7 @@ function confirmarVenta(response, paymentMethod) {
             </div>
         `;
 
-        clientList.append(clientCard);
+      clientList.append(clientCard);
     });
 
     // Event listener para el botón "Seleccionar"
@@ -743,23 +735,23 @@ function confirmarVenta(response, paymentMethod) {
       offcanvas.hide();
 
       saveClientToSession(selectedClient)
-          .done(function () {
-              client = selectedClient; // Actualizamos la variable global 'client' al nuevo cliente
-              if(client.price_list_id) {
-                updateCartPricesWithPriceList(client.price_list_id); // Actualizar precios con la lista del nuevo cliente seleccionado
-              } else {
-                loadCartFromSessionWithNormalPrices(); // Si no hay lista de precios, cargar precios normales
-              }
-              console.log('Cliente seleccionado y lista de precios aplicada:', client);
-          })
-          .fail(function (xhr) {
-              mostrarError('Error al guardar el cliente en la sesión: ' + xhr.responseText);
-          });
+        .done(function () {
+          client = selectedClient; // Actualizamos la variable global 'client' al nuevo cliente
+          if (client.price_list_id) {
+            updateCartPricesWithPriceList(client.price_list_id); // Actualizar precios con la lista del nuevo cliente seleccionado
+          } else {
+            loadCartFromSessionWithNormalPrices(); // Si no hay lista de precios, cargar precios normales
+          }
+          console.log('Cliente seleccionado y lista de precios aplicada:', client);
+        })
+        .fail(function (xhr) {
+          mostrarError('Error al guardar el cliente en la sesión: ' + xhr.responseText);
+        });
     });
   }
 
   function loadClientAndPriceList(clientId) {
-     $.ajax({
+    $.ajax({
       url: `${baseUrl}admin/client-price-list/${clientId}`, // Aquí se usa el ID del cliente
       type: 'GET',
       success: function (response) {
@@ -773,8 +765,9 @@ function confirmarVenta(response, paymentMethod) {
           // Si el cliente tiene una lista de precios, actualizamos los precios del carrito
           if (client.price_list_id) {
             updateCartPricesWithPriceList(client.price_list_id); // Esto debería funcionar si el ID es correcto
-            $('#client-price-list').text(client.price_list_name || 'No se pudo obtener el nombre de la lista de precios');
-
+            $('#client-price-list').text(
+              client.price_list_name || 'No se pudo obtener el nombre de la lista de precios'
+            );
           } else {
             loadCartFromSessionWithNormalPrices();
           }
@@ -805,21 +798,20 @@ function confirmarVenta(response, paymentMethod) {
                     // Si el producto no está en la lista, restaura el precio original
                     item.price = item.original_price;
                 }
+              
+          cartUpdated = true;
+        });
 
-                cartUpdated = true;
-            });
-
-            // Actualiza la vista del carrito si se ha modificado
-            if (cartUpdated) {
-                updateCheckoutCart();
-            }
-        },
-        error: function (xhr) {
-            mostrarError('Error al actualizar los precios con la lista de precios: ' + xhr.responseText);
+        // Actualiza la vista del carrito si se ha modificado
+        if (cartUpdated) {
+          updateCheckoutCart();
         }
+      },
+      error: function (xhr) {
+        mostrarError('Error al actualizar los precios con la lista de precios: ' + xhr.responseText);
+      }
     });
   }
-
 
   $('#search-client').on('input', function () {
     const searchText = $(this).val().toLowerCase();
@@ -853,12 +845,10 @@ function confirmarVenta(response, paymentMethod) {
         _token: $('meta[name="csrf-token"]').attr('content'),
         client: client
       }
-    })
-      .fail(function (xhr) {
-        mostrarError('Error al guardar el cliente en la sesión: ' + xhr.responseText);
-      });
+    }).fail(function (xhr) {
+      mostrarError('Error al guardar el cliente en la sesión: ' + xhr.responseText);
+    });
   }
-
 
   $('#offcanvasEnd').on('show.bs.offcanvas', function () {
     loadClients();
@@ -875,7 +865,6 @@ function confirmarVenta(response, paymentMethod) {
       // Mostrar los asteriscos en nombre y apellido
       document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'inline';
       document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'inline';
-
     } else if (tipo === 'company') {
       document.getElementById('ciField').style.display = 'none';
       document.getElementById('rutField').style.display = 'block';
@@ -887,115 +876,107 @@ function confirmarVenta(response, paymentMethod) {
     }
   });
 
-  // Guardar cliente con validaciones
-  document.getElementById('guardarCliente').addEventListener('click', function () {
-    const nombre = document.getElementById('nombreCliente');
-    const apellido = document.getElementById('apellidoCliente');
-    const tipo = document.getElementById('tipoCliente');
-    const email = document.getElementById('emailCliente');
-    const ci = document.getElementById('ciCliente');
-    const rut = document.getElementById('rutCliente');
-    const direccion = document.getElementById('direccionCliente');
-    const razonSocial = document.getElementById('razonSocialCliente');
-    const priceList = document.getElementById('price_list_id');
+  // Crear un nuevo cliente
+  document.getElementById('guardarCliente').addEventListener('click', function (e) {
+    e.preventDefault();
 
-    let hasError = false;
-    clearErrors();
+    const form = document.getElementById('formCrearCliente');
+    const formData = new FormData(form);
+    const clientType = document.getElementById('tipoCliente').value;
 
-    // Validación básica...
-    if (tipo.value.trim() === '') {
-      showError(tipo, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    // Si el tipo de cliente es "individual", validar nombre y apellido
-    if (tipo.value === 'individual') {
-      if (nombre.value.trim() === '') {
-          showError(nombre, 'El nombre es obligatorio para clientes individuales');
-          hasError = true;
-      }
-
-      if (apellido.value.trim() === '') {
-          showError(apellido, 'El apellido es obligatorio para clientes individuales');
-          hasError = true;
-      }
-
-      if (ci.value.trim() === '') {
-          showError(ci, 'El documento de identidad es obligatorio para clientes individuales');
-          hasError = true;
-      }
-    }
-
-    // Validar que el campo "email" no esté vacío
-    if (email.value.trim() === '') {
-      showError(email, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    // Validar que "dirección" no esté vacía (si es aplicable a ambos tipos de cliente)
-    if (direccion.value.trim() === '') {
-      showError(direccion, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    if (tipo.value === 'company') {
-        if (rut.value.trim() === '') {
-            showError(rut, 'Este campo es obligatorio');
-            hasError = true;
-        }
-
-        if (razonSocial.value.trim() === '') {
-            showError(razonSocial, 'Este campo es obligatorio');
-            hasError = true;
-        }
-    }
-
-    // Si hubo errores, detener la ejecución.
-    if (hasError) {
-        return;
-    }
-
-    // Crear el objeto con los datos a enviar
-    let data = {
-        store_id: sessionStoreId,
-        name: nombre.value.trim(),
-        lastname: apellido.value.trim(),
-        type: tipo.value,
-        email: email.value.trim(),
-        address: direccion.value.trim(),
-        price_list_id: priceList.value
+    let requiredFields = {
+      nombreCliente: 'Nombre',
+      apellidoCliente: 'Apellido',
+      emailCliente: 'Correo electrónico',
+      direccionCliente: 'Dirección'
     };
 
-    if (tipo.value === 'individual') {
-        data.ci = ci.value.trim();
-    } else if (tipo.value === 'company') {
-        data.rut = rut.value.trim();
-        data.company_name = razonSocial.value.trim();
+    if (clientType === 'individual') {
+      requiredFields.ciCliente = 'Cédula de Identidad';
+    } else if (clientType === 'company') {
+      requiredFields.razonSocialCliente = 'Razón Social';
+      requiredFields.rutCliente = 'RUT';
     }
-    // Realizar la petición para crear el cliente
-    fetch(`${baseUrl}admin/clients`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-                let offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('crearClienteOffcanvas'));
-                offcanvas.hide();
 
-                // Limpiar el formulario de creación de cliente
-                document.getElementById('formCrearCliente').reset();
-
-    })
-    .catch(error => {
-        mostrarError('Error al guardar el cliente: ' + error);
+    // Check required fields
+    let missingFields = [];
+    Object.keys(requiredFields).forEach(field => {
+      const element = document.getElementById(field);
+      if (!element.value || element.value.trim() === '') {
+        missingFields.push(requiredFields[field]);
+      }
     });
-  });
 
+    if (missingFields.length > 0) {
+      const offcanvas = document.getElementById('crearClienteOffcanvas');
+      const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+      bsOffcanvas.hide();
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Campos requeridos',
+        html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
+    }
+
+    let data = {
+      name: document.getElementById('nombreCliente').value.trim(),
+      lastname: document.getElementById('apellidoCliente').value.trim(),
+      type: clientType,
+      email: document.getElementById('emailCliente').value.trim(),
+      address: document.getElementById('direccionCliente').value.trim(),
+      price_list_id: document.getElementById('price_list_id').value
+    };
+
+    if (clientType === 'individual') {
+      data.ci = document.getElementById('ciCliente').value.trim();
+    } else if (clientType === 'company') {
+      data.rut = document.getElementById('rutCliente').value.trim();
+      data.company_name = document.getElementById('razonSocialCliente').value.trim();
+    }
+
+    fetch(`${baseUrl}admin/clients`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': window.csrfToken,
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify(data)
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const offcanvas = document.getElementById('crearClienteOffcanvas');
+          const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+          bsOffcanvas.hide();
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Éxito',
+            text: 'Cliente creado correctamente',
+            showConfirmButton: false,
+            timer: 1500
+          });
+
+          form.reset();
+          if (typeof updateClientList === 'function') {
+            updateClientList();
+          }
+        }
+      })
+      .catch(error => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error al crear el cliente: ' + error,
+          confirmButtonText: 'Aceptar'
+        });
+      });
+  });
 
   // Función para mostrar el mensaje de error
   function showError(input, message) {
@@ -1032,7 +1013,7 @@ function confirmarVenta(response, paymentMethod) {
 
   // Función para deseleccionar al cliente
   function deselectClient() {
-    client = [];  // Limpiar los datos del cliente
+    client = []; // Limpiar los datos del cliente
     saveClientToSession(client)
       .done(function () {
         // Volver a cargar el carrito desde la sesión y restaurar los precios originales
@@ -1043,7 +1024,7 @@ function confirmarVenta(response, paymentMethod) {
         $('#client-name').text('');
         $('#client-type').text('');
         $('#client-doc').text('');
-        $('#client-company').hide();  // Ocultar razón social si había un cliente empresa seleccionado
+        $('#client-company').hide(); // Ocultar razón social si había un cliente empresa seleccionado
         $('#client-info').hide();
         $('#client-selection-container').show();
 
@@ -1055,25 +1036,23 @@ function confirmarVenta(response, paymentMethod) {
       });
   }
 
-
   // Función para cargar el carrito desde la sesión con precios normales
   function loadCartFromSessionWithNormalPrices() {
     cart = cart.map(item => {
-        // Verifica si original_price es un número
-        if (typeof item.original_price === 'number' && !isNaN(item.original_price)) {
-            item.price = parseFloat(item.original_price); // Redondeamos a dos decimales
-            console.log(`Producto con Nombre ${item.name} restaurado a precio original: ${item.price}`);
-        } else {
-            console.error(`Producto con ID ${item.id} no tiene original_price definido correctamente o no es un número`);
-            item.price = 0; // Valor predeterminado en caso de error
-        }
-        return item;
+      // Verifica si original_price es un número
+      if (typeof item.original_price === 'number' && !isNaN(item.original_price)) {
+        item.price = parseFloat(item.original_price); // Redondeamos a dos decimales
+        console.log(`Producto con Nombre ${item.name} restaurado a precio original: ${item.price}`);
+      } else {
+        console.error(`Producto con ID ${item.id} no tiene original_price definido correctamente o no es un número`);
+        item.price = 0; // Valor predeterminado en caso de error
+      }
+      return item;
     });
 
     // Actualizamos la vista para reflejar los cambios
     updateCheckoutCart(); // Refresca la interfaz gráfica con el carrito actualizado
   }
-
 
   loadCartFromSession();
   loadClientFromSession();
@@ -1082,13 +1061,24 @@ function confirmarVenta(response, paymentMethod) {
 
   function postOrder(paymentMethod, paymentStatus) {
     ocultarError();
-
+    let paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
     const shippingStatus = $('#shippingStatus').val();
     let cashSales = 0;
     let posSales = 0;
 
-    const total = parseFloat($('.total').text().replace(/[^\d.-]/g, '')) || 0;
-    const subtotal = parseFloat($('.subtotal').text().replace(/[^\d.-]/g, '')) || 0;
+    const total =
+      parseFloat(
+        $('.total')
+          .text()
+          .replace(/[^\d.-]/g, '')
+      ) || 0;
+    const subtotal =
+      parseFloat(
+        $('.subtotal')
+          .text()
+          .replace(/[^\d.-]/g, '')
+      ) || 0;
+
 
     if (total > 25000 && (!client || !client.id)) {
         mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
@@ -1096,9 +1086,9 @@ function confirmarVenta(response, paymentMethod) {
     }
 
     if (paymentMethod === 'cash') {
-        cashSales = total;
+      cashSales = total;
     } else {
-        posSales = total;
+      posSales = total;
     }
 
     if (paymentMethod === 'internalCredit' && (!client || !client.id)) {
@@ -1107,35 +1097,63 @@ function confirmarVenta(response, paymentMethod) {
     }
 
     const orderData = {
-        date: new Date().toISOString().split('T')[0],
-        hour: new Date().toLocaleTimeString('it-IT'),
-        cash_register_log_id: cashRegisterLogId,
-        cash_sales: cashSales,
-        pos_sales: posSales,
-        discount: discount,
-        products: JSON.stringify(cart.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            is_composite: item.isComposite || false
-        }))),
-        subtotal: subtotal,
-        total: total - discount,
-        notes: $('textarea').val() || '',
-        store_id: sessionStoreId,
-        shipping_status: shippingStatus
+      date: new Date().toISOString().split('T')[0],
+      hour: new Date().toLocaleTimeString('it-IT'),
+      cash_register_log_id: cashRegisterLogId,
+      cash_sales: cashSales,
+      pos_sales: posSales,
+      discount: discount,
+      products: JSON.stringify(
+        cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          is_composite: item.isComposite || false
+        }))
+      ),
+      subtotal: subtotal,
+      total: total - discount,
+      notes: $('textarea').val() || '',
+      store_id: sessionStoreId,
+      shipping_status: shippingStatus
     };
 
     if (client && client.id) {
-        orderData.client_id = client.id;
+      orderData.client_id = client.id;
     }
 
+
     // Crear la orden en pos-orders primero
+    if (selectedQrMethod === 'qr_attended') paymentMethod = 'qr_attended';
+    if (selectedQrMethod === 'qr_dynamic') paymentMethod = 'qr_dynamic';
     $.ajax({
-        url: `${baseUrl}admin/pos-orders`,
-        type: 'POST',
-        data: {
+      url: `${baseUrl}admin/pos-orders`,
+      type: 'POST',
+      data: {
+        _token: $('meta[name="csrf-token"]').attr('content'),
+        ...orderData
+      },
+      success: function (response) {
+        const ordersData = {
+          ...orderData,
+          origin: 'physical',
+          payment_status: 'paid',
+          payment_method: paymentMethod,
+          shipping_method: 'standard',
+          coupon_id: coupon ? coupon.coupon.id : null,
+          coupon_amount: coupon ? coupon.coupon.amount : 0,
+          estimate_id: null,
+          shipping_id: null,
+          preference_id: null,
+          shipping_tracking: null,
+          is_billed: 0
+        };
+
+        $.ajax({
+          url: `${baseUrl}admin/orders`,
+          type: 'POST',
+          data: {
             _token: $('meta[name="csrf-token"]').attr('content'),
             ...orderData
         },
@@ -1177,6 +1195,14 @@ function confirmarVenta(response, paymentMethod) {
                             console.error('Error al obtener token POS:', error);
                             mostrarError('Error al procesar el pago con POS.');
                         });
+                    } elseif (paymentMethod === 'qr_attended') {
+                      handleMercadoPagoAtendido(response);
+                      return;
+                      
+                    } elseif (paymentMethod === 'qr_dynamic') {
+                      handleMercadoPagoDinamico(response);
+                      return;
+                      
                     } else {
                         // Para otros métodos de pago, confirmar venta directamente
                         confirmarVenta(orderResponse, paymentMethod);
@@ -1192,28 +1218,27 @@ function confirmarVenta(response, paymentMethod) {
             console.error('Error al guardar en /admin/pos-orders:', xhr);
             mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
         }
+      }
     });
-}
-
-
+  }
 
 
 
   function clearCartAndClient() {
     return new Promise((resolve, reject) => {
-        try {
-            // Limpia el carrito almacenado localmente
-            cart = [];
-            saveCartToSession();
-            // Limpia los datos del cliente localmente
-            client = null;
-            saveClientToSession(client);
+      try {
+        // Limpia el carrito almacenado localmente
+        cart = [];
+        saveCartToSession();
+        // Limpia los datos del cliente localmente
+        client = null;
+        saveClientToSession(client);
 
-            // Resuelve la promesa si todo fue exitoso
-            resolve();
-        } catch (error) {
-            reject('Error al limpiar el carrito y cliente.');
-        }
+        // Resuelve la promesa si todo fue exitoso
+        resolve();
+      } catch (error) {
+        reject('Error al limpiar el carrito y cliente.');
+      }
     });
   }
 
@@ -1271,7 +1296,12 @@ function confirmarVenta(response, paymentMethod) {
 
   function calcularVuelto() {
     var valorRecibido = parseFloat($('#valorRecibido').val()) || 0;
-    var total = parseFloat($('.total').text().replace(/[^\d.-]/g, '')) || 0;
+    var total =
+      parseFloat(
+        $('.total')
+          .text()
+          .replace(/[^\d.-]/g, '')
+      ) || 0;
 
     var vuelto = valorRecibido - total;
 
@@ -1287,5 +1317,211 @@ function confirmarVenta(response, paymentMethod) {
 
     // Mostrar el vuelto formateado
     $('#vuelto').text(`${currencySymbol}${formattedVuelto}`);
+  }
+
+  // Crear instancias de los modales con Bootstrap
+  const modalQRAtendido = new bootstrap.Modal(document.getElementById('modalQRAtendido'));
+  const modalQRDinamico = new bootstrap.Modal(document.getElementById('modalQRDinamico'));
+  const modalMercadopago = new bootstrap.Modal(document.getElementById('modalMercadopago'));
+
+  // Variable global para almacenar el método de QR seleccionado
+  let selectedQrMethod = null;
+
+  // Evento para QR Modelo Atendido
+  $('#btnModeloAtendido').on('click', function () {
+    selectedQrMethod = 'qr_attended'; // Guardar el método de pago como 'qr_attended'
+    modalMercadopago.hide(); // Cerrar el modal de opciones
+    postOrder();
+  });
+
+  // Evento para QR Modelo Dinámico
+  $('#btnModeloDinamico').on('click', function () {
+    selectedQrMethod = 'qr_dynamic'; // Guardar el método de pago como 'qr_dynamic'
+    modalMercadopago.hide(); // Cerrar el modal de opciones
+    postOrder();
+  });
+
+  // Cerrar el modal "QR Atendido" y volver al de opciones
+  $('#modalQRAtendido').on('hidden.bs.modal', function () {
+    if (selectedQrMethod === 'qr_attended') {
+      modalMercadopago.show();
+    }
+  });
+
+  // Cerrar el modal "QR Dinámico" y volver al de opciones
+  $('#modalQRDinamico').on('hidden.bs.modal', function () {
+    if (selectedQrMethod === 'qr_dynamic') {
+      modalMercadopago.show();
+    }
+  });
+
+  // Función para manejar el cierre forzado de un modal en caso de error
+  function handleMercadoPagoAtendido(response) {
+    modalMercadopago.hide();
+    Swal.fire({
+      title: 'Esperando Pago...',
+      html: 'Por favor escanea el código QR asociada al punto de venta con la aplicación de Mercado Pago.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    trackOrderStatus(response);
+  }
+
+  function handleMercadoPagoDinamico(response) {
+    Swal.fire({
+      title: 'Generando QR de Pago...',
+      html: 'Por favor espera mientras se genera el código QR dinámico.',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+    // Generar el QR dinámico después de crear la orden
+    $.ajax({
+      url: `${baseUrl}admin/orders/mercado-pago/qr-dinamico/${response.order_id}`,
+      type: 'GET',
+      contentType: 'application/json',
+      success: function (qrResponse) {
+        Swal.close(); // Cerrar el mensaje de carga
+        // Actualizar el QR en el modal
+        const qrContainer = document.getElementById('qrImageDinamicoContainer');
+        qrContainer.innerHTML = ''; // Limpiar el contenedor
+
+        if (qrResponse.qrTramma) {
+          // Generar el QR usando la librería
+          new QRCode(qrContainer, {
+            text: qrResponse.qrTramma,
+            width: 256,
+            height: 256,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+          });
+        } else {
+          qrContainer.innerHTML = '<p>QR no disponible</p>'; // Mensaje de respaldo
+        }
+
+        // Mostrar el modal del QR
+        const modalQRDinamico = new bootstrap.Modal(document.getElementById('modalQRDinamico'));
+        modalQRDinamico.show();
+      },
+      error: function (xhr) {
+        console.error('Error al generar el QR Dinámico:', xhr.responseText);
+        mostrarError('Error al generar el QR Dinámico: ' + xhr.responseText);
+      }
+    });
+
+    // Iniciar el seguimiento del estado de la orden sin mostrar Swal
+    trackOrderStatus(response);
+  }
+
+  // Función para rastrear el estado de la orden
+  function trackOrderStatus(response) {
+    // Intervalo para verificar el estado de la orden
+    const interval = setInterval(() => {
+      $.ajax({
+        url: `${baseUrl}admin/orders/mercado-pago/${response.order_id}`,
+        type: 'GET',
+        contentType: 'application/json',
+        success: function (response) {
+          if (response.status === 'paid') {
+            // Cerrar todos los modales
+            const modals = ['modalQRAtendido', 'modalQRDinamico', 'modalMercadopago'];
+            modals.forEach(modalId => {
+              const modalElement = document.getElementById(modalId);
+              if (modalElement) {
+                modalElement.remove(); // Elimina el modal del DOM
+              }
+            });
+
+            // Eliminar cualquier backdrop remanente
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            clearInterval(interval); // Detener las verificaciones
+            Swal.close();
+            clearCartAndClient()
+              .then(() => {
+                return Swal.fire({
+                  customClass: {
+                    popup: 'swal-popup',
+                    title: 'swal-title',
+                    content: 'swal-content',
+                    confirmButton: 'btn btn-outline-primary',
+                    cancelButton: 'btn btn-outline-danger'
+                  },
+                  title: 'Venta Realizada con Éxito',
+                  text: 'La venta se ha realizado exitosamente.',
+                  icon: 'success',
+                  showCancelButton: userHasPermission('access_orders'),
+                  confirmButtonText: userHasPermission('access_orders') ? 'Ver Venta' : 'Cerrar',
+                  cancelButtonText: 'Cerrar',
+                  timer: 5000,
+                  timerProgressBar: true,
+                  didOpen: toast => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                  }
+                });
+              })
+              .then(result => {
+                if (result.isConfirmed && userHasPermission('access_orders')) {
+                  clearCartAndClient()
+                    .then(() => {
+                      window.location.href = `${baseUrl}admin/orders/${response.order_uuid}/show`;
+                    })
+                    .catch(error => {
+                      console.error('Error al limpiar carrito y cliente:', error);
+                      mostrarError(error);
+                    });
+                } else {
+                  clearCartAndClient()
+                    .then(() => {
+                      window.location.href = frontRoute;
+                    })
+                    .catch(error => {
+                      console.error('Error al limpiar carrito y cliente:', error);
+                      mostrarError(error);
+                    });
+                }
+              })
+              .catch(error => {
+                console.error('Error al limpiar carrito y cliente:', error);
+                mostrarError(error);
+              });
+          } else if (response.status === 'failed') {
+            clearInterval(interval); // Detener las verificaciones
+            Swal.close();
+            Swal.fire({
+              title: 'Pago Cancelado',
+              text: 'El pago ha sido cancelado.',
+              icon: 'error',
+              showCancelButton: userHasPermission('access_orders'),
+              confirmButtonText: userHasPermission('access_orders') ? 'Ver Venta' : 'Cerrar',
+              cancelButtonText: 'Cerrar',
+              timer: 5000,
+              timerProgressBar: true,
+              didOpen: toast => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+              }
+            });
+          }
+        },
+        error: function (xhr) {
+          clearInterval(interval); // Detener las verificaciones en caso de error
+          Swal.close();
+          setTimeout(() => {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error al procesar la orden',
+              text: xhr.responseJSON?.message || 'Ocurrió un error al intentar procesar la orden.'
+            });
+          }, 500);
+        }
+      });
+    }, 5000); // Intervalo de 5 segundos
   }
 });

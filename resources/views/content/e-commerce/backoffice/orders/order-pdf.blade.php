@@ -78,7 +78,7 @@
             <p><strong>Hora del pedido:</strong> {{ $order->time }}</p>
             <p><strong>Empresa:</strong> {{ $order->store->name }}</p>
             <p><strong>Método de pago:</strong>
-              @if($order->payment_method === 'card')
+              @if($order->payment_method === 'card' || $order->payment_method === 'qr_attended' || $order->payment_method === 'qr_dynamic')
               <span class="badge bg-label-primary me-2 ms-2">MercadoPago</span>
               @elseif($order->payment_method === 'efectivo')
                 <span class="me-2 ms-2">Efectivo</span>

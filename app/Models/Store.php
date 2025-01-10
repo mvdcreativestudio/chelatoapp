@@ -80,9 +80,19 @@ class Store extends Model
      *
      * @return HasOne
     */
-    public function mercadoPagoAccount(): HasOne
+    public function mercadoPagoAccount(): HasMany
     {
-        return $this->hasOne(MercadoPagoAccount::class);
+        return $this->hasMany(MercadoPagoAccount::class);
+    }
+
+    /**
+     * Obtiene la cuenta de Mercado Pago asociada a la tienda.
+     *
+     * @return HasOne
+    */
+    public function mercadoPagoAccountStore(): HasOne
+    {
+        return $this->hasOne(MercadoPagoAccountStore::class);
     }
 
     /**

@@ -72,7 +72,7 @@ class SupplierRepository
      */
     public function create(array $data): Supplier
     {
-        $data['store_id'] = auth()->user()->store_id ?? throw new ModelNotFoundException('No se puede crear un proveedor sin una tienda asignada.');
+        // $data['store_id'] = auth()->user()->store_id ?? throw new ModelNotFoundException('No se puede crear un proveedor sin una tienda asignada.');
 
         return Supplier::create($data);
     }

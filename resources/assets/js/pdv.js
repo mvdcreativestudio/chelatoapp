@@ -1,6 +1,6 @@
 'use strict';
 
-    
+
 
 $(document).ready(function () {
     const cashRegisterId = window.cashRegisterId;
@@ -25,11 +25,11 @@ $(document).ready(function () {
     });
 
     loadClientFromSession(); // Ejecuta esta función al cargar
-    
+
     if (client && client.id) {
         $('#seleccionar-cliente-btn').hide(); // Ocultar el botón si el cliente existe
     }
-    
+
 
     // Inicializar Select2 en elementos con clase .select2
     $(function () {
@@ -65,7 +65,7 @@ $(document).ready(function () {
     // Cargar el cliente de la sesión
     function loadClientFromSession() {
         console.log('Ejecutando loadClientFromSession...'); // Marca el inicio de la ejecución de la función
-        
+
         $.ajax({
             url: `client-session`,
             type: 'GET',
@@ -178,28 +178,28 @@ $(document).ready(function () {
 
     $('#search-client').on('input', function () {
         const searchText = $(this).val().toLowerCase();
-    
+
         // Seleccionar las tarjetas de cliente correctas
         $('#client-list .client-card').each(function () {
-          const name = $(this).find('.card-title').text().toLowerCase(); // Obtener el nombre del cliente desde la tarjeta
-          const ci = $(this).find('.client-info:contains("CI")').text().toLowerCase(); // Obtener CI
-          const rut = $(this).find('.client-info:contains("RUT")').text().toLowerCase(); // Obtener RUT
-          const company_name = $(this).find('.client-info:contains("Razón Social")').text().toLowerCase(); // Obtener Razón Social
-    
-          // Comprobar si el texto de búsqueda coincide con nombre, CI o RUT
-          if (
-            name.includes(searchText) ||
-            ci.includes(searchText) ||
-            rut.includes(searchText) ||
-            company_name.includes(searchText)
-          ) {
-            $(this).removeClass('d-none'); // Mostrar tarjeta
-          } else {
-            $(this).addClass('d-none'); // Ocultar tarjeta
-          }
+            const name = $(this).find('.card-title').text().toLowerCase(); // Obtener el nombre del cliente desde la tarjeta
+            const ci = $(this).find('.client-info:contains("CI")').text().toLowerCase(); // Obtener CI
+            const rut = $(this).find('.client-info:contains("RUT")').text().toLowerCase(); // Obtener RUT
+            const company_name = $(this).find('.client-info:contains("Razón Social")').text().toLowerCase(); // Obtener Razón Social
+
+            // Comprobar si el texto de búsqueda coincide con nombre, CI o RUT
+            if (
+                name.includes(searchText) ||
+                ci.includes(searchText) ||
+                rut.includes(searchText) ||
+                company_name.includes(searchText)
+            ) {
+                $(this).removeClass('d-none'); // Mostrar tarjeta
+            } else {
+                $(this).addClass('d-none'); // Ocultar tarjeta
+            }
         });
     });
-    
+
 
     // Función para actualizar el menú desplegable de categorías en la vista
     function actualizarCategoriasEnVista(categoriesToDisplay = productCategory) {
@@ -264,7 +264,7 @@ $(document).ready(function () {
                         }
                         return product;
                     });
-    
+
                     if (isListView) {
                         displayProductsList(products); // Mostrar la vista de lista por defecto
                     } else {
@@ -279,7 +279,7 @@ $(document).ready(function () {
             }
         });
     }
-  
+
     // Cargar variaciones desde el backend
     function cargarVariaciones() {
         $.ajax({
@@ -550,13 +550,13 @@ $(document).ready(function () {
         cartHtml = `
         <div class="row gy-3 overflow-auto" style="max-height: 400px;">
       `;
-      
-      cart.forEach(item => {
-          const itemTotal = item.price * item.quantity;
-          subtotal += itemTotal;
-          totalItems += item.quantity;
-      
-          cartHtml += `
+
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
+            totalItems += item.quantity;
+
+            cartHtml += `
             <div class="col-12">
               <div class="product-cart-card">
                 <div class="col-4 d-flex align-items-center">
@@ -578,10 +578,10 @@ $(document).ready(function () {
               </div>
             </div>
           `;
-      });
-      
-      cartHtml += `</div>`; // Cerrar el contenedor de desplazamiento
-      
+        });
+
+        cartHtml += `</div>`; // Cerrar el contenedor de desplazamiento
+
 
         // Actualiza el contenido del carrito
         $('#cart-items').html(cartHtml);
@@ -754,7 +754,7 @@ $(document).ready(function () {
             });
         }
     }
-    
+
 
 
 
@@ -768,7 +768,7 @@ $(document).ready(function () {
         });
         displayProductsList(products); // Renderizar con los precios actualizados
     }
-    
+
 
     function loadStoreIdFromSession() {
         $.ajax({
@@ -873,21 +873,21 @@ $(document).ready(function () {
             saveClientToSession(client).then(() => {
                 showClientInfo(client);
                 console.log('Cliente guardado en la sesión:', client);
-            
+
                 $('#seleccionar-cliente-btn').addClass('d-none'); // Oculta el botón
-            
+
                 if (client.price_list_id) {
                     loadClientPriceList(client.price_list_id).then(updateCartPrices);
                 } else {
                     updateProductPrices();
                     updateCartPrices();
                 }
-            
+
                 // Cerrar el offcanvas
                 let offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEnd'));
                 offcanvas.hide();
             });
-            
+
 
             if (client.price_list_id) {
                 loadClientPriceList(client.price_list_id).then(updateCartPrices);
@@ -922,166 +922,159 @@ $(document).ready(function () {
     });
 
     // Mostrar/Ocultar campos según el tipo de cliente seleccionado
-  document.getElementById('tipoCliente').addEventListener('change', function () {
-    let tipo = this.value;
-    if (tipo === 'individual') {
-      document.getElementById('ciField').style.display = 'block';
-      document.getElementById('rutField').style.display = 'none';
-      document.getElementById('razonSocialField').style.display = 'none';
+    document.getElementById('tipoCliente').addEventListener('change', function () {
+        let tipo = this.value;
+        if (tipo === 'individual') {
+            document.getElementById('ciField').style.display = 'block';
+            document.getElementById('rutField').style.display = 'none';
+            document.getElementById('razonSocialField').style.display = 'none';
 
-      // Mostrar los asteriscos en nombre y apellido
-      document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'inline';
-      document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'inline';
+            // Mostrar los asteriscos en nombre y apellido
+            document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'inline';
+            document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'inline';
 
-    } else if (tipo === 'company') {
-      document.getElementById('ciField').style.display = 'none';
-      document.getElementById('rutField').style.display = 'block';
-      document.getElementById('razonSocialField').style.display = 'block';
+        } else if (tipo === 'company') {
+            document.getElementById('ciField').style.display = 'none';
+            document.getElementById('rutField').style.display = 'block';
+            document.getElementById('razonSocialField').style.display = 'block';
 
-      // Ocultar los asteriscos en nombre y apellido
-      document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'none';
-      document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'none';
-    }
-  });
+            // Ocultar los asteriscos en nombre y apellido
+            document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'none';
+            document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'none';
+        }
+    });
 
-  // Guardar cliente con validaciones
-  document.getElementById('guardarCliente').addEventListener('click', function () {
-    const nombre = document.getElementById('nombreCliente');
-    const apellido = document.getElementById('apellidoCliente');
-    const tipo = document.getElementById('tipoCliente');
-    const email = document.getElementById('emailCliente');
-    const ci = document.getElementById('ciCliente');
-    const rut = document.getElementById('rutCliente');
-    const direccion = document.getElementById('direccionCliente');
-    const razonSocial = document.getElementById('razonSocialCliente');
-    const priceList = document.getElementById('price_list_id');
+    // Crear un nuevo cliente
+    document.getElementById('guardarCliente').addEventListener('click', function (e) {
+        e.preventDefault();
 
-    let hasError = false;
-    clearErrors();
+        const form = document.getElementById('formCrearCliente');
+        const formData = new FormData(form);
+        const clientType = document.getElementById('tipoCliente').value;
 
-    // Validación básica...
-    if (tipo.value.trim() === '') {
-      showError(tipo, 'Este campo es obligatorio');
-      hasError = true;
-    }
+        let requiredFields = {
+            nombreCliente: 'Nombre',
+            apellidoCliente: 'Apellido',
+            emailCliente: 'Correo electrónico',
+            direccionCliente: 'Dirección'
+        };
 
-    // Si el tipo de cliente es "individual", validar nombre y apellido
-    if (tipo.value === 'individual') {
-      if (nombre.value.trim() === '') {
-          showError(nombre, 'El nombre es obligatorio para clientes individuales');
-          hasError = true;
-      }
-
-      if (apellido.value.trim() === '') {
-          showError(apellido, 'El apellido es obligatorio para clientes individuales');
-          hasError = true;
-      }
-
-      if (ci.value.trim() === '') {
-          showError(ci, 'El documento de identidad es obligatorio para clientes individuales');
-          hasError = true;
-      }
-    }
-
-    // Validar que el campo "email" no esté vacío
-    if (email.value.trim() === '') {
-      showError(email, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    // Validar que "dirección" no esté vacía (si es aplicable a ambos tipos de cliente)
-    if (direccion.value.trim() === '') {
-      showError(direccion, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    if (tipo.value === 'company') {
-        if (rut.value.trim() === '') {
-            showError(rut, 'Este campo es obligatorio');
-            hasError = true;
+        if (clientType === 'individual') {
+            requiredFields.ciCliente = 'Cédula de Identidad';
+        } else if (clientType === 'company') {
+            requiredFields.razonSocialCliente = 'Razón Social';
+            requiredFields.rutCliente = 'RUT';
         }
 
-        if (razonSocial.value.trim() === '') {
-            showError(razonSocial, 'Este campo es obligatorio');
-            hasError = true;
+        // Check required fields
+        let missingFields = [];
+        Object.keys(requiredFields).forEach(field => {
+            const element = document.getElementById(field);
+            if (!element.value || element.value.trim() === '') {
+                missingFields.push(requiredFields[field]);
+            }
+        });
+
+        if (missingFields.length > 0) {
+            const offcanvas = document.getElementById('crearClienteOffcanvas');
+            const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+            bsOffcanvas.hide();
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Campos requeridos',
+                html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
+                confirmButtonText: 'Entendido'
+            });
+            return;
         }
-    }
 
-    // Si hubo errores, detener la ejecución.
-    if (hasError) {
-        return;
-    }
+        let data = {
+            name: document.getElementById('nombreCliente').value.trim(),
+            lastname: document.getElementById('apellidoCliente').value.trim(),
+            type: clientType,
+            email: document.getElementById('emailCliente').value.trim(),
+            address: document.getElementById('direccionCliente').value.trim(),
+            price_list_id: document.getElementById('price_list_id').value
+        };
 
-    // Crear el objeto con los datos a enviar
-    let data = {
-        store_id: sessionStoreId,
-        name: nombre.value.trim(),
-        lastname: apellido.value.trim(),
-        type: tipo.value,
-        email: email.value.trim(),
-        address: direccion.value.trim(),
-        price_list_id: priceList.value
-    };
+        if (clientType === 'individual') {
+            data.ci = document.getElementById('ciCliente').value.trim();
+        } else if (clientType === 'company') {
+            data.rut = document.getElementById('rutCliente').value.trim();
+            data.company_name = document.getElementById('razonSocialCliente').value.trim();
+        }
 
-    if (tipo.value === 'individual') {
-        data.ci = ci.value.trim();
-    } else if (tipo.value === 'company') {
-        data.rut = rut.value.trim();
-        data.company_name = razonSocial.value.trim();
-    }
+        fetch(`${baseUrl}admin/clients`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.csrfToken,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const offcanvas = document.getElementById('crearClienteOffcanvas');
+                    const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+                    bsOffcanvas.hide();
 
-    // Realizar la petición para crear el cliente
-    fetch('client', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-                let offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('crearClienteOffcanvas'));
-                offcanvas.hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Éxito',
+                        text: 'Cliente creado correctamente',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
 
-                // Limpiar el formulario de creación de cliente
-                document.getElementById('formCrearCliente').reset();
-
-    })
-    .catch(error => {
-        mostrarError('Error al guardar el cliente: ' + error);
+                    form.reset();
+                    if (typeof updateClientList === 'function') {
+                        updateClientList();
+                    }
+                }
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al crear el cliente: ' + error,
+                    confirmButtonText: 'Aceptar'
+                });
+            });
     });
-  });
 
 
-  // Función para mostrar el mensaje de error
-  function showError(input, message) {
-    const errorElement = document.createElement('small');
-    errorElement.className = 'text-danger';
-    errorElement.innerText = message;
-    input.parentElement.appendChild(errorElement);
-  }
+    // Función para mostrar el mensaje de error
+    function showError(input, message) {
+        const errorElement = document.createElement('small');
+        errorElement.className = 'text-danger';
+        errorElement.innerText = message;
+        input.parentElement.appendChild(errorElement);
+    }
 
-  // Función para limpiar los mensajes de error anteriores
-  function clearErrors() {
-    const errorMessages = document.querySelectorAll('.text-danger');
-    errorMessages.forEach(function (error) {
-      error.remove();
-    });
-  }
+    // Función para limpiar los mensajes de error anteriores
+    function clearErrors() {
+        const errorMessages = document.querySelectorAll('.text-danger');
+        errorMessages.forEach(function (error) {
+            error.remove();
+        });
+    }
 
 
     // Función para deseleccionar al cliente
     function deselectClient() {
         client = [];  // Limpiar los datos del cliente
         priceListProducts = []; // Vaciar lista de precios para usar precios originales
-    
+
         saveClientToSession(client)
             .done(function () {
                 // Restaurar precios de productos y carrito a los originales
                 loadNormalPrices();
                 updateCartPrices();
-    
+
                 // Actualizar la UI para deseleccionar al cliente
                 $('#client-id').text('');
                 $('#client-name').text('');
@@ -1119,22 +1112,22 @@ $(document).ready(function () {
     }
 
     function loadManualPriceListProducts(priceListId) {
-        if (priceListId === "0") { 
+        if (priceListId === "0") {
             loadNormalPrices(); // Restaurar precios originales en la vista
-    
+
             // Restaurar precios originales en el carrito
             cart = cart.map(item => {
                 const originalProduct = products.find(p => p.id === item.id);
                 item.price = originalProduct ? originalProduct.original_price : item.price;
                 return item;
             });
-    
+
             updateCart(); // Actualizar precios en el carrito
             return;
         } else if (priceListId === "") { // Si selecciona "Lista de precios manual"
             loadClientPriceList(client.price_list_id).then(updateCartPrices);
         }
-    
+
         $.ajax({
             url: `${baseUrl}admin/price-list/${priceListId}/products`,
             type: 'GET',
@@ -1148,8 +1141,8 @@ $(document).ready(function () {
             }
         });
     }
-    
-    
+
+
 
     // Inicializar funciones
     loadProducts();

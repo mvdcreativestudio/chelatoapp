@@ -90,8 +90,8 @@
     <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body mx-0 flex-grow-0">
-    <form class="ecommerce-customer-add pt-0" id="eCommerceCustomerAddForm" method="POST" action="{{ route('clients.store') }}" onsubmit="return false">
-      @csrf
+  <form id="eCommerceCustomerAddForm" method="POST" onsubmit="return false">
+  @csrf
       <div class="ecommerce-customer-add-basic mb-3">
         <h6 class="mb-3">Información básica</h6>
         <div class="col-md mb-3">

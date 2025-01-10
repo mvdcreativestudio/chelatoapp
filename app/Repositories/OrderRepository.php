@@ -4,16 +4,21 @@ namespace App\Repositories;
 
 use App\Enums\CurrentAccounts\StatusPaymentEnum;
 use App\Enums\CurrentAccounts\TransactionTypeEnum;
+use App\Enums\MercadoPago\MercadoPagoApplicationTypeEnum;
 use App\Helpers\Helpers;
+use App\Models\CashRegisterLog;
 use App\Models\CFE;
 use App\Models\Client;
 use App\Models\CurrentAccount;
 use App\Models\CurrentAccountInitialCredit;
+use App\Models\MercadoPagoAccount;
+use App\Models\MercadoPagoAccountOrder;
 use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\OrderStatusChange;
 use App\Models\Product;
 use App\Repositories\AccountingRepository;
+use App\Services\MercadoPagoService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,14 +35,24 @@ class OrderRepository
      */
     protected $accountingRepository;
 
+
+    /**
+     * Inyecta el servicio de Mercado Pago
+     * 
+     * @param MercadoPagoService $mercadoPagoService
+     */
+
+    protected $mercadoPagoService;
+
     /**
      * Inyecta el repositorio de contabilidad.
      *
      * @param AccountingRepository $accountingRepository
      */
-    public function __construct(AccountingRepository $accountingRepository)
+    public function __construct(AccountingRepository $accountingRepository, MercadoPagoService $mercadoPagoService)
     {
         $this->accountingRepository = $accountingRepository;
+        $this->mercadoPagoService = $mercadoPagoService;
     }
 
     /**
@@ -148,6 +163,18 @@ class OrderRepository
 
             if ($request->payment_method === 'internalCredit' && $client) {
                 $this->createInternalCredit($order);
+            }
+
+            // Mercado Pago
+            if ($request->payment_method === 'qr_attended') {
+                $this->createMercadoPagoQrAttend($order);
+                $order->payment_status = 'pending';
+                $order->save();
+            }
+
+            if ($request->payment_method === 'qr_dynamic') {
+                $order->payment_status = 'pending';
+                $order->save();
             }
 
             DB::commit();
@@ -738,6 +765,158 @@ class OrderRepository
                 'current_account_id' => $currentAccount->id,
                 'current_account_settings_id' => 1,
             ]);
+        }
+    }
+
+    private function createMercadoPagoQrAttend(Order $order)
+    {
+        // Preparar el cuerpo de la solicitud
+        $data = [
+            "external_reference" => strval($order->id), // Identificador único de la orden
+            "title" => "Orden de Compra", // Título general de la orden
+            "description" => "Orden de compra.", // Descripción de la compra
+            "notification_url" => app()->environment('local') ? env('MERCADO_PAGO_WEBHOOK') : route('mpagohook'), // URL para notificaciones según entorno
+            "total_amount" => $order->total, // Total de la orden
+            "items" => [], // Ítems del pedido
+            "cash_out" => [
+                "amount" => 0, // Sin retiro de efectivo
+            ],
+        ];
+
+        // Agregar los productos al arreglo de ítems
+        foreach ($order->products as $product) {
+            $data['items'][] = [
+                "sku_number" => strval($product['id']), // SKU o identificador del producto
+                "category" => "marketplace", // Categoría del producto
+                "title" => $product['name'], // Nombre del producto
+                "description" => "Compra de {$product['name']}", // Descripción
+                "unit_price" => $product['price'], // Precio unitario
+                "quantity" => $product['quantity'], // Cantidad
+                "unit_measure" => "unit", // Unidad de medida
+                "total_amount" => $product['price'] * $product['quantity'], // Monto total del ítem
+            ];
+        }
+
+        // Invocar el método para crear la orden QR en Mercado Pago
+        $cashRegister = CashRegisterLog::with('cashRegister')->findOrFail($order->cash_register_log_id)->cashRegister;
+        $cashRegisterId = $cashRegister->id;
+        $storeId = $cashRegister->store_id;
+
+        $mercadoPagoAccountStore = MercadoPagoAccount::where('store_id', $storeId)
+            ->where('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL)
+            ->with([
+                'mercadopagoAccountStore.mercadopagoAccountPOS' => function ($query) use ($cashRegisterId) {
+                    $query->where('cash_register_id', $cashRegisterId);
+                }
+            ])
+            ->first();
+
+        $userIdMercadPago = $mercadoPagoAccountStore->user_id_mp;
+        $storeIdMercadoPago = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->external_id;
+        $posId = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->mercadopagoAccountPOS[0]->external_id;
+        try {
+            $this->mercadoPagoService->setCredentials($storeId, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+            $this->mercadoPagoService->createOrder($userIdMercadPago, $storeIdMercadoPago, $posId, $data);
+        } catch (\Exception $e) {
+            // Manejar el error
+            Log::error("Error al generar el QR para Mercado Pago: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function createMercadoPagoQrDynamic(int $id)
+    {
+
+        $order = Order::with('client')->findOrFail($id);
+        $order->products = json_decode($order->products, true);
+        // Preparar el cuerpo de la solicitud
+        $data = [
+            "external_reference" => strval($order->id), // Identificador único de la orden
+            "title" => "Orden de Compra", // Título general de la orden
+            "description" => "Orden de compra.", // Descripción de la compra
+            "notification_url" => app()->environment('local') ? env('MERCADO_PAGO_WEBHOOK') : route('mpagohook'), // URL para notificaciones según entorno
+            "total_amount" => $order->total, // Total de la orden
+            "items" => [], // Ítems del pedido
+            "cash_out" => [
+                "amount" => 0, // Sin retiro de efectivo
+            ],
+        ];
+
+        // Agregar los productos al arreglo de ítems
+        foreach ($order->products as $product) {
+            $data['items'][] = [
+                "sku_number" => strval($product['id']), // SKU o identificador del producto
+                "category" => "marketplace", // Categoría del producto
+                "title" => $product['name'], // Nombre del producto
+                "description" => "Compra de {$product['name']}", // Descripción
+                "unit_price" => $product['price'], // Precio unitario
+                "quantity" => $product['quantity'], // Cantidad
+                "unit_measure" => "unit", // Unidad de medida
+                "total_amount" => $product['price'] * $product['quantity'], // Monto total del ítem
+            ];
+        }
+
+        // Invocar el método para crear la orden QR en Mercado Pago
+        $cashRegister = CashRegisterLog::with('cashRegister')->findOrFail($order->cash_register_log_id)->cashRegister;
+        $cashRegisterId = $cashRegister->id;
+        $storeId = $cashRegister->store_id;
+
+        $mercadoPagoAccountStore = MercadoPagoAccount::where('store_id', $storeId)
+            ->where('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL)
+            ->with([
+                'mercadopagoAccountStore.mercadopagoAccountPOS' => function ($query) use ($cashRegisterId) {
+                    $query->where('cash_register_id', $cashRegisterId);
+                }])
+            ->first();
+        
+        $userIdMercadPago = $mercadoPagoAccountStore->user_id_mp;
+        $storeIdMercadoPago = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->external_id;
+        $posId = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->mercadopagoAccountPOS[0]->external_id;
+        try {
+            $this->mercadoPagoService->setCredentials($storeId, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+            $qrTramma = $this->mercadoPagoService->createOrderTramma($userIdMercadPago, $posId, $data);
+            return $qrTramma['qr_data'];
+        } catch (\Exception $e) {
+            // Manejar el error
+            Log::error("Error al generar el QR para Mercado Pago: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function getMercadoPagoOrderStatus($orderId)
+    {
+        try {
+            $order = Order::findOrFail($orderId);
+            return [
+                'order_id' => $order->id,
+                'order_uuid' => $order->uuid,
+                'status' => $order->payment_status,
+            ];
+        } catch (\Exception $e) {
+            Log::error("Error al obtener el estado de la orden en Mercado Pago: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function refundMercadoPagoOrder($orderId)
+    {
+        try {
+            $order = Order::findOrFail($orderId);
+            $cashRegister = CashRegisterLog::with('cashRegister')->findOrFail($order->cash_register_log_id)->cashRegister;
+            $storeId = $cashRegister->store_id;
+
+            $paymentId = MercadoPagoAccountOrder::where('order_id', $orderId)->where('status', 'paid')->first();
+            if (!$paymentId) {
+                throw new Exception("No se encontró el ID de pago en Mercado Pago para la orden.");
+            }
+            $this->mercadoPagoService->setCredentials($storeId, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+            $this->mercadoPagoService->refundOrder($paymentId->payment_id, [
+                "amount" => $order->total,
+            ]);
+            $paymentId->update(['status' => 'refunded']);
+        } catch (\Exception $e) {
+            Log::error("Error al realizar el reembolso de la orden en Mercado Pago: " . $e->getMessage());
+            throw $e;
         }
     }
 }

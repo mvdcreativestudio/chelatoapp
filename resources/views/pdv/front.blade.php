@@ -29,6 +29,7 @@ $currencySymbol = $settings->currency_symbol;
   window.cashRegisterId = "{{ Session::get('open_cash_register_id') }}";
   window.baseUrl = "{{ url('') }}/";
   window.currencySymbol = '{{ $currencySymbol }}';
+  window.csrfToken = "{{ csrf_token() }}";
 </script>
 
 @if ($openCashRegister !== null)
@@ -212,6 +213,7 @@ $currencySymbol = $settings->currency_symbol;
   </div>
   <div class="offcanvas-body animate__animated animate__fadeIn">
     <form id="formCrearCliente">
+    @csrf
       <div class="mb-3 animate__animated animate__fadeInLeft">
         <label for="tipoCliente" class="form-label">Tipo de Cliente</label>
         <select class="form-select" id="tipoCliente" required>

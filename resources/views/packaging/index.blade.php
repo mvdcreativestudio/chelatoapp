@@ -91,13 +91,13 @@
             <div class="col-sm-12 col-lg-4">
               <div class="d-flex justify-content-between align-items-start pb-3 pb-sm-0 card-widget-3">
                 <div>
-                  <h6 class="mb-2">Envasados del día</h6>
-                  <h4 class="mb-2">{{ $packagings->where('created_at', '>=', now()->startOfDay())->count() }}</h4>
+                  <h6 class="mb-2">Envases disponibles para envasar</h6>
+                  <h4 class="mb-2">{{ $packages->sum('stock') }}</h4>
                   <p class="mb-0 text-muted">Hoy</p>
                 </div>
                 <div class="avatar me-sm-4">
                   <span class="avatar-initial rounded bg-label-secondary">
-                    <i class="bx bx-time-five bx-sm"></i>
+                    <i class="bx bx-package bx-sm"></i>
                   </span>
                 </div>
               </div>
