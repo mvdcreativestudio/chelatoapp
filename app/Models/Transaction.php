@@ -16,6 +16,7 @@ class Transaction extends Model
         'STransactionId',
         'order_id',
         'formatted_data',
+        'type',
         'status',
     ];
 

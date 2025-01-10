@@ -249,8 +249,16 @@ document.getElementById('scanntechSwitch').addEventListener('change', function (
   }
 });
 
-document.getElementById('fiservSwitch').addEventListener('change', function () {
-  if (this.checked) {
-      document.getElementById('scanntechSwitch').checked = false;
-  }
-});
+// document.getElementById('fiservSwitch').addEventListener('change', function () {
+//   if (this.checked) {
+//       document.getElementById('scanntechSwitch').checked = false;
+//       document.getElementById('handySwitch').checked = false;
+//   }
+// });
+
+// document.getElementById('handySwitch').addEventListener('change', function () {
+//   if (this.checked) {
+//       document.getElementById('scanntechSwitch').checked = false;
+//       document.getElementById('fiservSwitch').checked = false;
+//   }
+// });

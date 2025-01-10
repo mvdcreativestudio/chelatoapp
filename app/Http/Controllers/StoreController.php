@@ -215,17 +215,17 @@ public function update(UpdateStoreRequest $request, Store $store): RedirectRespo
         // Manejo de la integración de MercadoPago Presencial
         $this->handleMercadoPagoIntegrationPresencial($request, $store);
 
-        // Manejo de la integración de Pedidos Ya Envíos
-        $this->handlePedidosYaEnviosIntegration($request, $store);
+            // Manejo de la integración de Pedidos Ya Envíos
+            $this->handlePedidosYaEnviosIntegration($request, $store);
 
-        // Manejo de la integración de Scanntech
-        $this->handleScanntechIntegration($request, $store);
+            // Manejo de la integración de Scanntech
+            $this->handleScanntechIntegration($request, $store);
 
-        // Manejo de la integración de Pymo (Facturación Electrónica)
-        $this->handlePymoIntegration($request, $store);
+            // Manejo de la integración de Pymo (Facturación Electrónica)
+            $this->handlePymoIntegration($request, $store);
 
-        // Manejo de la integración de configuración de correo
-        $this->handleEmailConfigIntegration($request, $store);
+            // Manejo de la integración de configuración de correo
+            $this->handleEmailConfigIntegration($request, $store);
 
         // Manejo de la integración de Fiserv
         $this->handleFiservIntegration($request, $store);
@@ -518,7 +518,7 @@ public function update(UpdateStoreRequest $request, Store $store): RedirectRespo
             $store->posIntegrationInfo()->updateOrCreate(
                 ['store_id' => $store->id, 'pos_provider_id' => 2], // Fiserv
                 [
-                    'system_id' => $request->input('system_id'),
+                    'system_id' => $request->input('fiservSystemId'), // Usar el nuevo nombre del input
                 ]
             );
 

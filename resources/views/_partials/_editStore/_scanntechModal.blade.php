@@ -6,7 +6,7 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-              <table class="table table-striped" id="terminalsTable">
+              <table class="table table-striped" id="scanntechTerminalsTable">
                   <thead>
                       <tr>
                           <th>Nombre</th>
@@ -42,7 +42,7 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const terminalsTable = document.querySelector('#terminalsTable tbody');
+    const scanntechTerminalsTable = document.querySelector('#scanntechTerminalsTable tbody');
     const addTerminalRowButton = document.getElementById('addTerminalRow');
     const saveTerminalsButton = document.getElementById('saveTerminals');
 
@@ -58,7 +58,7 @@
                     <button type="button" class="btn btn-outline-danger btn-sm remove-terminal"><i class="bx bx-trash"></i></button>
                 </td>
             </tr>`;
-        terminalsTable.insertAdjacentHTML('beforeend', newRow);
+        scanntechTerminalsTable.insertAdjacentHTML('beforeend', newRow);
     }
 
     // Asociar el evento al botón
@@ -66,7 +66,7 @@
 
     // Guardar terminales (resto del código aquí)
     saveTerminalsButton.addEventListener('click', function () {
-        const terminalRows = terminalsTable.querySelectorAll('tr');
+        const terminalRows = scanntechTerminalsTable.querySelectorAll('tr');
         const terminals = [];
         const posProviderId = 1; // Ajusta este ID al que corresponda para Scanntech.
 
@@ -134,7 +134,7 @@
 
     // Guardar terminales
     saveTerminalsButton.addEventListener('click', function () {
-        const terminalRows = terminalsTable.querySelectorAll('tr');
+        const terminalRows = scanntechTerminalsTable.querySelectorAll('tr');
         const terminals = [];
         const posProviderId = 1; // Ajusta este ID al que corresponda para Scanntech.
 

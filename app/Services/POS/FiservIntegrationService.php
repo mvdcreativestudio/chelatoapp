@@ -38,6 +38,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             'TaxableAmount' => number_format($transactionData['Amount'], 0, '', ''), // Cambiar a 'Amount'
             'InvoiceAmount' => number_format($transactionData['Amount'], 0, '', ''), // Cambiar a 'Amount'
             'order_id' => $transactionData['order_id'] ?? null,
+            'TransactionTimeOut' => '30', // 30 segundos o timeout
         ];
     }
 
@@ -74,6 +75,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             'order_id' => $transactionData['order_id'] ?? null, // Asignar el order_id desde los datos recibidos
             'TransactionId' => null, // Inicialmente nulo, se actualizará con la respuesta de Fiserv
             'STransactionId' => null, // Inicialmente nulo
+            'status' => 'pending', // Estado inicial de la transacción
             'formatted_data' => $transactionData, // Guardar los datos iniciales de la transacción
         ]);
 
@@ -187,8 +189,21 @@ class FiservIntegrationService implements PosIntegrationInterface
                         ];
                     }
 
-                    // Manejar otros códigos de PosResponseCode si es necesario
-                    // Puedes mapear otros códigos a mensajes específicos si lo necesitas
+                    // Si PosResponseCode es '00', la transacción fue exitosa
+                    if ($posResponseCode === '00') {
+                        // Actualizar el status de la transacción a 'paid'
+                        Transaction::where('TransactionId', $queryData['TransactionId'])
+                            ->update(['status' => 'completed']);
+
+                        return [
+                            'responseCode' => 0,
+                            'message' => 'La transacción fue exitosa.',
+                            'icon' => 'success',
+                            'keepPolling' => false,
+                            'transactionSuccess' => true,
+                            'details' => $jsonResponse,
+                        ];
+                    }
                 }
 
                 // Obtener la configuración del código de respuesta desde el archivo
@@ -208,11 +223,13 @@ class FiservIntegrationService implements PosIntegrationInterface
             // Manejar errores HTTP
             Log::error('Error al consultar estado de transacción con Fiserv: ' . $response->body());
             return $this->getResponses(999);
+
         } catch (\Exception $e) {
             Log::error('Excepción al consultar estado de transacción en Fiserv: ' . $e->getMessage());
             return $this->getResponses(999);
         }
     }
+
 
     public function reverseTransaction(array $transactionData): array
     {
@@ -308,7 +325,7 @@ class FiservIntegrationService implements PosIntegrationInterface
 
             // Buscar la transacción original utilizando order_id y status "pending"
             $originalTransaction = Transaction::where('order_id', $transactionData['order_id'])
-                ->where('status', 'pending')
+                ->where('status', 'completed')
                 ->first();
 
             Log::info('Transacción original encontrada:', $originalTransaction->toArray());
@@ -320,13 +337,13 @@ class FiservIntegrationService implements PosIntegrationInterface
 
 
             if (!$originalTransaction) {
-                Log::error('No se encontró una transacción original con status "pending" para el order_id proporcionado.', [
+                Log::error('No se encontró una transacción original con status "completed" para el order_id proporcionado.', [
                     'order_id' => $transactionData['order_id']
                 ]);
 
                 return [
                     'success' => false,
-                    'message' => 'No se encontró una transacción original con status "pending" para el order_id proporcionado.'
+                    'message' => 'No se encontró una transacción original con status "completed" para el order_id proporcionado.'
                 ];
             }
 
@@ -360,7 +377,8 @@ class FiservIntegrationService implements PosIntegrationInterface
                         'TransactionId' => (string) $jsonResponse['TransactionId'], // Guardar como string
                         'STransactionId' => (string) $jsonResponse['STransactionId'], // Guardar como string
                         'order_id' => $originalTransaction->order_id, // Asociar con el mismo order_id
-                        'status' => 'voided',
+                        'type' => 'void',
+                        'status' => 'pending',
                         'formatted_data' => array_merge($voidRequestData, [
                             'TransactionId' => (string) $jsonResponse['TransactionId'],
                             'STransactionId' => (string) $jsonResponse['STransactionId'],
@@ -428,7 +446,7 @@ class FiservIntegrationService implements PosIntegrationInterface
 
                     // Actualizar el estado de la transacción en la base de datos
                     Transaction::where('TransactionId', (string) $transactionData['TransactionId'])
-                        ->update(['status' => 'voided']);
+                        ->update(['status' => 'completed']);
 
                     return [
                         'success' => true,
@@ -526,8 +544,6 @@ class FiservIntegrationService implements PosIntegrationInterface
 
 
 
-
-
     public function sendRequest(string $url, array $data, string $method = 'POST'): array
     {
         try {
@@ -596,8 +612,152 @@ class FiservIntegrationService implements PosIntegrationInterface
         }
     }
 
+    public function processRefundTransaction(array $refundData): array
+    {
+        try {
+            Log::info('Iniciando proceso de devolución con los datos:', $refundData);
 
+            // Crear una nueva transacción en la base de datos con estado 'pending'
+            $refundTransaction = Transaction::create([
+                'order_id' => $refundData['order_id'] ?? null,
+                'TransactionId' => null, // Será actualizado con la respuesta de Fiserv
+                'STransactionId' => null, // Será actualizado con la respuesta de Fiserv
+                'status' => 'pending',
+                'type' => 'refund', // Identificar que esta es una transacción de devolución
+                'formatted_data' => $refundData, // Guardar los datos iniciales de la devolución
+            ]);
 
+            Log::info('Registro inicial de devolución creado en la base de datos:', $refundTransaction->toArray());
+
+            // Transformar el monto a centavos
+            $amount = $refundData['Amount'] * 100;
+
+            // Formatear los datos para la solicitud a Fiserv
+            $requestPayload = [
+                'PosID' => $refundData['PosID'],
+                'SystemId' => $refundData['SystemId'],
+                'Branch' => $refundData['Branch'],
+                'ClientAppId' => $refundData['ClientAppId'],
+                'UserId' => $refundData['UserId'],
+                'TransactionDateTimeyyyyMMddHHmmssSSS' => now()->format('YmdHis') . '000',
+                'TicketNumber' => $refundData['TicketNumber'],
+                'OriginalTransactionDateyyMMdd' => $refundData['OriginalTransactionDateyyMMdd'],
+                'Amount' => (string)$amount,
+                'Currency' => $refundData['Currency'] ?? '858', // Default a pesos
+                'Quotas' => $refundData['Quotas'] ?? 1,
+                'Plan' => $refundData['Plan'] ?? 0,
+                'TaxableAmount' => $refundData['TaxableAmount'] ?? $refundData['Amount'],
+                'TaxRefund' => $refundData['TaxRefund'] ?? 0,
+                'InvoiceAmount' => $refundData['InvoiceAmount'] ?? $refundData['Amount'],
+            ];
+
+            Log::info('Datos formateados para la solicitud de devolución a Fiserv:', $requestPayload);
+
+            // Realizar la solicitud a Fiserv
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . 'processFinancialPurchaseRefund', $requestPayload);
+
+            Log::info('Respuesta de Fiserv para la solicitud de devolución:', [
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+            ]);
+
+            // Manejar la respuesta de Fiserv
+            if ($response->successful()) {
+                $jsonResponse = $response->json();
+
+                // Actualizar la transacción con los datos de Fiserv
+                $refundTransaction->update([
+                    'TransactionId' => $jsonResponse['TransactionId'] ?? null,
+                    'STransactionId' => $jsonResponse['STransactionId'] ?? null,
+                    'status' => 'completed', // Marcar como completada
+                    'formatted_data' => array_merge($refundData, [
+                        'TransactionId' => $jsonResponse['TransactionId'] ?? null,
+                        'STransactionId' => $jsonResponse['STransactionId'] ?? null,
+                    ]),
+                ]);
+
+                Log::info('Transacción de devolución actualizada en la base de datos:', $refundTransaction->toArray());
+
+                return [
+                    'success' => true,
+                    'message' => 'Devolución procesada exitosamente.',
+                    'details' => $jsonResponse,
+                ];
+            }
+
+            // Manejar errores en la solicitud
+            Log::error('Error en la solicitud de devolución a Fiserv:', $response->body());
+
+            // Actualizar la transacción con el estado de fallo
+            $refundTransaction->update([
+                'status' => 'failed',
+                'error_message' => $response->body(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error al procesar la devolución.',
+                'details' => $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Excepción durante el proceso de devolución:', [
+                'message' => $e->getMessage(),
+                'refundData' => $refundData,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error interno al procesar la devolución.',
+                'details' => $e->getMessage(),
+            ];
+        }
+    }
+
+    public function fetchBatchCloses(array $queryData): array
+    {
+        try {
+            Log::info('Preparando solicitud para obtener historial de cierres:', $queryData);
+
+            $url = $this->apiUrl . 'processQueryLastNClose?QueryLastNCloseRequest';
+            $response = $this->sendRequest($url, $queryData, 'POST');
+
+            Log::info('Respuesta completa de Fiserv para fetchBatchCloses:', $response);
+
+            // Validar que la respuesta contiene los datos esperados
+            if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
+                throw new \Exception('Error en la API de Fiserv: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+            }
+
+            return $response;
+        } catch (\Exception $e) {
+            Log::error('Error al obtener el historial de cierres en FiservIntegrationService: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function fetchOpenBatches(array $queryData): array
+{
+    try {
+        Log::info('Preparando solicitud para obtener lotes abiertos:', $queryData);
+
+        $url = $this->apiUrl . 'ProcessCurrentTransactionsBatchQuery';
+        $response = $this->sendRequest($url, $queryData, 'POST');
+
+        Log::info('Respuesta completa de Fiserv para fetchOpenBatches:', $response);
+
+        // Validar que la respuesta contiene los datos esperados
+        if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
+            throw new \Exception('Error en la API de Fiserv: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+        }
+
+        return $response;
+    } catch (\Exception $e) {
+        Log::error('Error al obtener los lotes abiertos en FiservIntegrationService: ' . $e->getMessage());
+        throw $e;
+    }
+}
 
 
 
