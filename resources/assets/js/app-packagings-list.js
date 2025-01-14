@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     $('#bulk_production').append(
                         $('<option>', {
                             value: bulkProduction.bulk_production_id,
-                            text: bulkProduction.formula_name + ' - ' + totalQuantity + ' ' + bulkProduction.formula_unit_of_measure +' - ' + bulkProduction.batch_number,
+                            text: bulkProduction.formula_name + ' - ' + totalQuantity + ' ' + bulkProduction.formula_unit_of_measure + ' - ' + bulkProduction.batch_number,
                             'data-quantity-produced': totalQuantity,
                             'data-unit-of-measure': bulkProduction.formula_unit_of_measure,
                             'data-formula-quantity': formulaQuantity
@@ -186,8 +186,14 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             success: function (response) {
                 $('#productionModal').modal('hide');
-                swal.fire('Éxito', 'Empaque iniciado con éxito.', 'success').then(() => {
-                    window.location.reload();
+                const unitsAddedText = response.units_added == 1 ? 'unidad' : 'unidades';
+                const finalStockText = response.final_stock == 1 ? 'unidad' : 'unidades';
+                swal.fire({
+                    title: 'Éxito',
+                    html: `Del producto <strong>"${response.product_name}"</strong> se agregaron <strong>${response.units_added} ${unitsAddedText}</strong> y quedó con un stock final de <strong>${response.final_stock} ${finalStockText}</strong>.`,
+                    icon: 'success'
+                }).then(() => {
+                    location.reload();
                 });
             },
             error: function () {

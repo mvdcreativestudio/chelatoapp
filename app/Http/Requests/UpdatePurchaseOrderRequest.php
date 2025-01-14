@@ -15,8 +15,7 @@ class UpdatePurchaseOrderRequest extends FormRequest
     {
         return [
             'supplier_id' => 'required|exists:suppliers,id',
-            'status' => 'required|in:0,1,2',
-            'due_date' => 'nullable|date',
+            'due_date' => 'required|date',
         ];
     }
 }

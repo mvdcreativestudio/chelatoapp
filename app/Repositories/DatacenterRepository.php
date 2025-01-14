@@ -16,7 +16,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use App\Models\PosOrder;
-
+use Illuminate\Support\Facades\Log;
 
 
 class DatacenterRepository
@@ -122,14 +122,14 @@ class DatacenterRepository
      */
     public function countProducts(string $startDate, string $endDate, int $storeId = null): int
     {
-      $query = Product::query(); // Inicializa la consulta para contar productos
+        $query = Product::query(); // Inicializa la consulta para contar productos
 
-      // Filtra por store_id si es proporcionado
-      if ($storeId) {
-          $query->where('store_id', $storeId);
-      }
+        // Filtra por store_id si es proporcionado
+        if ($storeId) {
+            $query->where('store_id', $storeId);
+        }
 
-      return $query->count(); // Retorna el total de productos contados
+        return $query->count(); // Retorna el total de productos contados
     }
 
     /**
@@ -142,13 +142,13 @@ class DatacenterRepository
      */
     public function countCategories(int $storeId = null): int
     {
-      $query = ProductCategory::query();
+        $query = ProductCategory::query();
 
-      if ($storeId) {
-          $query->where('store_id', $storeId);
-      }
+        if ($storeId) {
+            $query->where('store_id', $storeId);
+        }
 
-      return $query->count();
+        return $query->count();
     }
 
     /**
@@ -264,8 +264,8 @@ class DatacenterRepository
             DB::raw('YEAR(date) as year'),
             DB::raw('MONTH(date) as month')
         )
-        ->where('payment_status', 'paid')
-        ->groupBy(DB::raw('YEAR(date)'), DB::raw('MONTH(date)'));
+            ->where('payment_status', 'paid')
+            ->groupBy(DB::raw('YEAR(date)'), DB::raw('MONTH(date)'));
 
         // Aplicar filtro por store_id si es proporcionado
         if ($storeId) {
@@ -343,43 +343,57 @@ class DatacenterRepository
             case 'today':
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)'), DB::raw('DAY(date)'), DB::raw('HOUR(time)')];
                 $selectFields = ['total', 'year', 'month', 'day', 'hour'];
+                $select = [
+                    DB::raw('SUM(total) as total'),
+                    DB::raw('YEAR(date) as year'),
+                    DB::raw('MONTH(date) as month'),
+                    DB::raw('DAY(date) as day'),
+                    DB::raw('HOUR(time) as hour')
+                ];
                 break;
             case 'week':
             case 'month':
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)'), DB::raw('DAY(date)')];
                 $selectFields = ['total', 'year', 'month', 'day'];
+                $select = [
+                    DB::raw('SUM(total) as total'),
+                    DB::raw('YEAR(date) as year'),
+                    DB::raw('MONTH(date) as month'),
+                    DB::raw('DAY(date) as day')
+                ];
                 break;
             case 'year':
             case 'always':
             default:
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)')];
                 $selectFields = ['total', 'year', 'month'];
+                $select = [
+                    DB::raw('SUM(total) as total'),
+                    DB::raw('YEAR(date) as year'),
+                    DB::raw('MONTH(date) as month')
+                ];
                 break;
         }
-
+    
         // Consulta de ventas del módulo de e-commerce y ventas físicas
-        $orderQuery = Order::select(
-            DB::raw('SUM(total) as total'),
-            DB::raw('YEAR(date) as year'),
-            DB::raw('MONTH(date) as month'),
-            DB::raw('DAY(date) as day'),
-            DB::raw('HOUR(time) as hour')
-        )
-        ->where('payment_status', 'paid')
-        ->whereBetween('date', [$startDate, $endDate])
-        ->groupBy($groupBy);
-
+        $orderQuery = Order::select($select)
+            ->where('payment_status', 'paid')
+            ->whereBetween('date', [$startDate, $endDate])
+            ->groupBy($groupBy);
+    
         // Aplicar filtro por store_id si se proporciona
         if ($storeId) {
             $orderQuery->where('store_id', $storeId);
         }
-
+    
         // Obtener los resultados de la consulta
         $results = $orderQuery->get();
-
+        Log::info('Resultados de getIncomeData:', $results->toArray());
+    
         // Agregar cualquier campo faltante al resultado final
         $filledResults = $this->fillMissingData($results, $startDate, $endDate, $selectFields);
-
+    
+    
         return new EloquentCollection($filledResults);
     }
 
@@ -502,7 +516,7 @@ class DatacenterRepository
 
         $stores = Store::with(['orders' => function ($query) use ($startDate, $endDate) {
             $query->whereBetween('date', [$startDate, $endDate])
-                  ->where('payment_status', 'paid');
+                ->where('payment_status', 'paid');
         }])->get();
 
         $data = [];
@@ -531,81 +545,81 @@ class DatacenterRepository
 
 
 
-/**
- * Obtener porcentaje de ventas por producto para tabla con filtro de fecha y local.
- *
- * @param string $startDate
- * @param string $endDate
- * @param int|null $storeId
- * @return array
- */
-public function getSalesPercentByProduct(string $startDate, string $endDate, int $storeId = null): array
-{
-    // Consulta de ventas con filtro de fecha y local
-    $query = Order::whereBetween('date', [$startDate, $endDate])
-        ->where('payment_status', 'paid');
+    /**
+     * Obtener porcentaje de ventas por producto para tabla con filtro de fecha y local.
+     *
+     * @param string $startDate
+     * @param string $endDate
+     * @param int|null $storeId
+     * @return array
+     */
+    public function getSalesPercentByProduct(string $startDate, string $endDate, int $storeId = null): array
+    {
+        // Consulta de ventas con filtro de fecha y local
+        $query = Order::whereBetween('date', [$startDate, $endDate])
+            ->where('payment_status', 'paid');
 
-    if ($storeId) {
-        $query->where('store_id', $storeId);
-    }
+        if ($storeId) {
+            $query->where('store_id', $storeId);
+        }
 
-    $orders = $query->get();
+        $orders = $query->get();
 
-    $productSales = [];
+        $productSales = [];
 
-    // Procesar todos los ventas
-    foreach ($orders as $order) {
-        $products = json_decode($order->products, true);
+        // Procesar todos los ventas
+        foreach ($orders as $order) {
+            $products = json_decode($order->products, true);
 
-        if (is_array($products) && count($products) > 0) {
-            $subtotal = $order->subtotal; // Total sin descuentos
-            $total = $order->total; // Total cobrado al cliente (después de descuentos)
+            if (is_array($products) && count($products) > 0) {
+                $subtotal = $order->subtotal; // Total sin descuentos
+                $total = $order->total; // Total cobrado al cliente (después de descuentos)
 
-            foreach ($products as $product) {
-                if (is_array($product) && isset($product['name'], $product['price'], $product['quantity'])) {
-                    if (!isset($productSales[$product['name']])) {
-                        $productSales[$product['name']] = [
-                            'total' => 0,
-                            'count' => 0
-                        ];
+                foreach ($products as $product) {
+                    if (is_array($product) && isset($product['name'], $product['price'], $product['quantity'])) {
+                        if (!isset($productSales[$product['name']])) {
+                            $productSales[$product['name']] = [
+                                'total' => 0,
+                                'count' => 0
+                            ];
+                        }
+
+                        // Calcular el porcentaje del subtotal que representa este producto
+                        $productSubtotal = $product['price'] * $product['quantity'];
+                        $productPercentageOfSubtotal = $subtotal > 0 ? $productSubtotal / $subtotal : 0;
+
+                        // Calcular el total ajustado de este producto en base al total cobrado al cliente
+                        $productAdjustedTotal = $productPercentageOfSubtotal * $total;
+
+                        // Acumular las ventas ajustadas y la cantidad
+                        $productSales[$product['name']]['total'] += $productAdjustedTotal;
+                        $productSales[$product['name']]['count'] += $product['quantity'];
                     }
-
-                    // Calcular el porcentaje del subtotal que representa este producto
-                    $productSubtotal = $product['price'] * $product['quantity'];
-                    $productPercentageOfSubtotal = $subtotal > 0 ? $productSubtotal / $subtotal : 0;
-
-                    // Calcular el total ajustado de este producto en base al total cobrado al cliente
-                    $productAdjustedTotal = $productPercentageOfSubtotal * $total;
-
-                    // Acumular las ventas ajustadas y la cantidad
-                    $productSales[$product['name']]['total'] += $productAdjustedTotal;
-                    $productSales[$product['name']]['count'] += $product['quantity'];
                 }
             }
         }
+
+        $totalSales = array_sum(array_map(function ($product) {
+            return $product['total'];
+        }, $productSales));
+
+        $data = [];
+        foreach ($productSales as $name => $info) {
+            $percent = $totalSales > 0 ? ($info['total'] / $totalSales) * 100 : 0;
+            $data[] = [
+                'product' => $name,
+                'percent' => round($percent, 2),
+                'productTotal' => $info['total'],
+            ];
+        }
+
+        // Ordenar los productos por el total de ventas en orden descendente
+        usort($data, function ($a, $b) {
+            return $b['productTotal'] <=> $a['productTotal'];
+        });
+
+        return $data;
     }
-
-    $totalSales = array_sum(array_map(function ($product) {
-        return $product['total'];
-    }, $productSales));
-
-    $data = [];
-    foreach ($productSales as $name => $info) {
-        $percent = $totalSales > 0 ? ($info['total'] / $totalSales) * 100 : 0;
-        $data[] = [
-            'product' => $name,
-            'percent' => round($percent, 2),
-            'productTotal' => $info['total'],
-        ];
-    }
-
-    // Ordenar los productos por el total de ventas en orden descendente
-    usort($data, function ($a, $b) {
-        return $b['productTotal'] <=> $a['productTotal'];
-    });
-
-    return $data;
-}
 
 
 
@@ -845,7 +859,4 @@ public function getSalesPercentByProduct(string $startDate, string $endDate, int
             ];
         })->toArray();
     }
-
-
-
 }

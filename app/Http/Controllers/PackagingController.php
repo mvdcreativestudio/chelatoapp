@@ -23,7 +23,7 @@ class PackagingController extends Controller
     {
         $packagings = $this->packagingRepository->getAll();
         $packages = $this->packageRepository->getAll();
-        return view('packaging.index', compact('packagings','packages'));
+        return view('packaging.index', compact('packagings', 'packages'));
     }
 
     public function create()
@@ -36,11 +36,18 @@ class PackagingController extends Controller
         // Usar el repositorio para manejar la lógica de empaquetado
         $packaging = $this->packagingRepository->createAndHandlePackaging($request->validated());
 
+        // Obtener el producto relacionado
+        $product = $this->packagingRepository->getProductByPackaging($packaging->id);
+        $finalStock = $product->stock;
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Empaque creado con éxito.',
-                'packaging' => $packaging
+                'packaging' => $packaging,
+                'product_name' => $product->name,
+                'units_added' => $packaging->quantity_packaged,
+                'final_stock' => $finalStock
             ]);
         }
 

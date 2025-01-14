@@ -152,4 +152,15 @@ class PackagingRepository
         }
         return $value; // Already in milliliters
     }
+
+    public function getProductByPackaging($packagingId)
+    {
+        return DB::table('packagings')
+            ->join('bulk_productions', 'packagings.bulk_production_id', '=', 'bulk_productions.id')
+            ->join('formulas', 'bulk_productions.formula_id', '=', 'formulas.id')
+            ->join('products', 'formulas.final_product_id', '=', 'products.id')
+            ->select('products.*')
+            ->where('packagings.id', $packagingId)
+            ->first();
+    }
 }

@@ -17,9 +17,9 @@ class SupplierRepository
     public function getAllWithOrders(): array
     {
         if (auth()->user() && auth()->user()->can('view_all_suppliers')) {
-          $suppliers = Supplier::all();
+            $suppliers = Supplier::all();
         } else {
-          $suppliers = Supplier::where('store_id', auth()->user()->store_id)->get();
+            $suppliers = Supplier::where('store_id', auth()->user()->store_id)->get();
         }
 
         $recentOrders = $suppliers->map(function ($supplier) {
@@ -37,9 +37,11 @@ class SupplierRepository
     public function getAll()
     {
         if (Auth::user()->can('view_all_suppliers')) {
-            return Supplier::all();
+            return Supplier::orderBy('name')->get();
         } else {
-            return Supplier::where('store_id', Auth::user()->store_id)->get();
+            return Supplier::where('store_id', Auth::user()->store_id)
+                ->orderBy('name')
+                ->get();
         }
     }
 
@@ -48,7 +50,7 @@ class SupplierRepository
      *
      * @param int $store_id
      * @return Collection
-    */
+     */
     public function findByStoreId($store_id): Collection
     {
         return Supplier::where('store_id', $store_id)->get();
@@ -58,7 +60,7 @@ class SupplierRepository
      * Busca todos los proveedores
      *
      * @return Collection
-    */
+     */
     public function findAll(): Collection
     {
         return Supplier::all();

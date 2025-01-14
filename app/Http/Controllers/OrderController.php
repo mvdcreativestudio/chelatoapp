@@ -95,9 +95,9 @@ class OrderController extends Controller
         try {
 
             $order = $this->orderRepository->store($request, false);
-        
+
             $this->eventService->handleEvents(auth()->user()->store_id, [EventEnum::LOW_STOCK], ['order' => $order]);
-        
+
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -106,7 +106,7 @@ class OrderController extends Controller
                     'order_uuid' => $order->uuid,
                 ]);
             }
-        
+
             return redirect()->route('pdv.index')->with('success', 'Pedido realizado con éxito. ID de orden: ' . $order->id);
         } catch (\Exception $e) {
             if ($request->ajax()) {
@@ -115,10 +115,9 @@ class OrderController extends Controller
                     'message' => $e->getMessage(),
                 ], 400);
             }
-        
+
             return back()->withErrors($e->getMessage())->withInput();
         }
-        
     }
 
     /**
@@ -136,7 +135,7 @@ class OrderController extends Controller
         $invoice = $this->orderRepository->getSpecificInvoiceForOrder($order->id);
         $isStoreConfigEmailEnabled = $this->storesEmailConfigRepository->getConfigByStoreId(auth()->user()->store_id);
         // Verificar si existe un client_id antes de llamar a getClientOrdersCount
-        $clientOrdersCount = $order->client_id 
+        $clientOrdersCount = $order->client_id
             ? $this->orderRepository->getClientOrdersCount($order->client_id)
             : 0; // O cualquier valor predeterminado si no hay cliente
 
@@ -153,22 +152,22 @@ class OrderController extends Controller
     {
         try {
             $order = Order::findOrFail($id);
-    
+
             // Verificar si la orden tiene CFE's asociados
             if ($order->invoices()->exists()) {
                 return response()->json(['success' => false, 'message' => 'No se puede eliminar la venta porque tiene CFE\'s asociados.'], 400);
             }
-    
+
             // Proceder con la eliminación de la orden
             $this->orderRepository->destroyOrder($id);
-    
+
             return response()->json(['success' => true, 'message' => 'Venta eliminada correctamente.']);
         } catch (\Exception $e) {
             Log::info($e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error al eliminar la venta.'], 400);
         }
     }
-    
+
     /**
      * Obtiene los ventas para la DataTable.
      *
@@ -221,14 +220,18 @@ class OrderController extends Controller
      * @param int $orderId
      * @return RedirectResponse
      */
-    public function emitCFE(Request $request, int $orderId): RedirectResponse
+    public function emitCFE(Request $request, $id)
     {
         try {
-            $this->orderRepository->emitCFE($orderId, $request);
-            return redirect()->back()->with('success', 'Factura emitida correctamente.');
+            $order = Order::findOrFail($id);
+            $this->accountingRepository->emitCFE(
+                $order,
+                $request->amountToBill,
+                $request->payType
+            );
+            return redirect()->back()->with('success', 'CFE emitido correctamente');
         } catch (\Exception $e) {
-            Log::error("Error al emitir CFE para la orden {$orderId}: {$e->getMessage()}");
-            return redirect()->back()->with('error', 'Error al emitir la factura. Por favor, intente nuevamente.');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -243,7 +246,7 @@ class OrderController extends Controller
             $endDate = $request->input('end_date');
 
             $orders = $this->orderRepository->getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate);
-            return Excel::download(new OrdersExport($orders), 'orders-'.date('Y-m-d_H-i-s').'.xlsx');
+            return Excel::download(new OrdersExport($orders), 'orders-' . date('Y-m-d_H-i-s') . '.xlsx');
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
@@ -262,12 +265,11 @@ class OrderController extends Controller
 
             $orders = $this->orderRepository->getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate);
             $pdf = Pdf::loadView('content.e-commerce.backoffice.orders.order-pdf', compact('orders'));
-            return $pdf->download('orders-'.date('Y-m-d_H-i-s').'.pdf');
+            return $pdf->download('orders-' . date('Y-m-d_H-i-s') . '.pdf');
         } catch (\Exception $e) {
             dd($e->getMessage());
             Log::error($e->getMessage());
             return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
-
         }
     }
 

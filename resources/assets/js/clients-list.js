@@ -22,13 +22,20 @@ $(function () {
           `);
         } else {
           clients.forEach(function (client) {
-            const fullName = client.lastname ? `${client.name} ${client.lastname}` : client.name;
-            const truncatedName = fullName.length > 20 ? fullName.substring(0, 20) + '...' : fullName;
+            let displayName;
+            if (!client.name && !client.lastname) {
+              displayName = client.company_name;
+            } else {
+              displayName = client.lastname ? `${client.name} ${client.lastname}` : client.name;
+            }
+
+            const truncatedName = displayName?.length > 20 ? displayName.substring(0, 20) + '...' : displayName;
+
 
             // Capitalizar nombres y otros campos
-            const capitalizedFullName = capitalizeFirstLetter(fullName);
+            const capitalizedFullName = capitalizeFirstLetter(displayName || '');
             const capitalizedCompanyName = client.company_name ? capitalizeFirstLetter(client.company_name) : '';
-            const capitalizedTruncatedName = capitalizeFirstLetter(truncatedName);
+            const capitalizedTruncatedName = capitalizeFirstLetter(truncatedName || '');
 
             // Generar enlaces de contacto
             let phoneNumber = client.phone ? client.phone.replace(/\D/g, '') : '';
@@ -194,19 +201,26 @@ $(document).ready(function () {
     clearErrors();
     if (this.value == 'individual') {
       $('#ciField').show();
-      $('#ci').attr('required', true);
-      $('#rutField').hide();
-      $('#company_name').removeAttr('required');
-      $('#rut').removeAttr('required');
+      $('#ci').attr('required', false);
+
+      $('#nameAsterisk, #lastnameAsterisk').show();
+      $('#name, #lastname').attr('required', true);
+
+      $('#rutField, #razonSocialField').hide();
+      $('#company_name, #rut').val('').removeAttr('required');
+
       $('#ciudadAsterisk').hide();
       $('#departamentoAsterisk').hide();
     } else if (this.value == 'company') {
       $('#ciField').hide();
-      $('#ci').removeAttr('required');
-      $('#rutField').show();
-      $('#razonSocialField').show();
-      $('#company_name').attr('required', true);
-      $('#rut').attr('required', true);
+      $('#ci').val('').removeAttr('required');
+
+      $('#nameAsterisk, #lastnameAsterisk').hide();
+      $('#name, #lastname').removeAttr('required');
+
+      $('#rutField, #razonSocialField').show();
+      $('#company_name, #rut').attr('required', true);
+
       $('#ciudadAsterisk').show();
       $('#departamentoAsterisk').show();
     }
@@ -215,63 +229,30 @@ $(document).ready(function () {
 
 document.getElementById('guardarCliente').addEventListener('click', function (e) {
   e.preventDefault();
-  const nombre = document.getElementById('ecommerce-customer-add-name');
-  const apellido = document.getElementById('ecommerce-customer-add-lastname');
-  const tipo = document.querySelector('input[name="type"]:checked');
-  const email = document.getElementById('ecommerce-customer-add-email');
-  const ci = document.getElementById('ci');
-  const rut = document.getElementById('rut');
-  const razonSocial = document.getElementById('company_name');
-  const direccion = document.getElementById('ecommerce-customer-add-address');
-  const ciudad = document.getElementById('ecommerce-customer-add-town');
-  const departamento = document.getElementById('ecommerce-customer-add-state');
   clearErrors();
   let hasError = false;
-  if (nombre.value.trim() === '') {
-    showError(nombre, 'Este campo es obligatorio');
-    hasError = true;
-  }
-  if (apellido.value.trim() === '') {
-    showError(apellido, 'Este campo es obligatorio');
-    hasError = true;
-  }
-  if (email.value.trim() === '') {
-    showError(email, 'Este campo es obligatorio');
-    hasError = true;
-  }
-  if (direccion.value.trim() === '') {
-    showError(direccion, 'Este campo es obligatorio');
-    hasError = true;
-  }
+  const tipo = document.querySelector('input[name="type"]:checked');
+
   if (tipo.value === 'individual') {
-    if (ci.value.trim() === '') {
-      showError(ci, 'Este campo es obligatorio');
+    // Validate individual fields
+    if ($('#ecommerce-customer-add-name').val().trim() === '') {
+      showError($('#ecommerce-customer-add-name')[0], 'El nombre es obligatorio');
       hasError = true;
     }
-    document.getElementById('rutField').style.display = 'none';
-    document.getElementById('ciField').style.display = 'block';
+    if ($('#ecommerce-customer-add-lastname').val().trim() === '') {
+      showError($('#ecommerce-customer-add-lastname')[0], 'El apellido es obligatorio');
+      hasError = true;
+    }
   } else if (tipo.value === 'company') {
-    if (razonSocial.value.trim() === '') {
-      showError(razonSocial, 'Este campo es obligatorio');
+    // Validate company fields
+    if ($('#company_name').val().trim() === '') {
+      showError($('#company_name')[0], 'La razón social es obligatoria');
       hasError = true;
     }
-    if (rut.value.trim() === '') {
-      if (!rut.parentElement.querySelector('.error-message')) {
-        showError(rut, 'Este campo es obligatorio');
-      }
+    if ($('#rut').val().trim() === '') {
+      showError($('#rut')[0], 'El RUT es obligatorio');
       hasError = true;
     }
-    if (ciudad.value.trim() === '') {
-      showError(ciudad, 'Este campo es obligatorio');
-      hasError = true;
-    }
-    if (departamento.value.trim() === '') {
-      showError(departamento, 'Este campo es obligatorio');
-      hasError = true;
-    }
-    document.getElementById('rutField').style.display = 'block';
-    document.getElementById('razonSocialField').style.display = 'block';
-    document.getElementById('ciField').style.display = 'none';
   }
   if (hasError) return;
   let data = {
@@ -343,20 +324,15 @@ $(document).ready(function () {
     const formData = new FormData(form);
     const clientType = document.querySelector('input[name="type"]:checked').value;
 
-    let requiredFields = {
-      name: 'Nombre',
-      lastname: 'Apellido',
-      email: 'Correo electrónico',
-      address: 'Dirección'
-    };
+    let requiredFields = {};
 
     if (clientType === 'individual') {
-      requiredFields.ci = 'Cédula de Identidad';
+      3
+      requiredFields.name = 'Nombre';
+      requiredFields.lastname = 'Apellido';
     } else if (clientType === 'company') {
       requiredFields.company_name = 'Razón Social';
       requiredFields.rut = 'RUT';
-      requiredFields.city = 'Ciudad';
-      requiredFields.state = 'Departamento';
     }
 
     let missingFields = [];
@@ -366,7 +342,7 @@ $(document).ready(function () {
         missingFields.push(requiredFields[field]);
       }
     }
-    
+
     const offcanvasInstance = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
     offcanvasInstance.hide();
 

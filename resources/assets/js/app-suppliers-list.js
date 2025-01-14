@@ -1,199 +1,132 @@
 document.addEventListener('DOMContentLoaded', function () {
-  var dt_suppliers_table = $('.datatables-suppliers');
+  const supplierListContainer = $('.supplier-list-container');
 
-  var supplierAdd = window.supplierAdd;
-  var supplierEdit = window.supplierEditTemplate;
-  var supplierDelete = window.supplierDeleteTemplate;
-  var hasViewAllSuppliersPermission = window.hasViewAllSuppliersPermission;
+  $('[place-id="buttonCreate"]').html(`
+    <a href="suppliers/create" class="btn btn-primary d-flex align-items-center gap-1">
+      <i class="bx bx-plus"></i>
+      <span>Nuevo Proveedor</span>
+    </a>
+  `);
 
-  var columns = [
-    { data: 'name' },
-    { data: 'phone' },
-    { data: 'email' },
-    { data: 'city' },
-    { data: 'state' },
-    { data: 'country' },
-    { data: 'doc_type' },
-    { data: 'doc_number' }
-  ];
-  columns.push({ data: null, orderable: false, searchable: false });
+  function translateDocType(docType) {
+    const translations = {
+      'CI': 'CI',
+      'PASSPORT': 'Pasaporte',
+      'OTHER': 'Otro',
+      'RUT': 'RUT'
+    };
+    return translations[docType] || docType;
+  }
 
-  var columnDefs = [
-    {
-      targets: 0,
-      searchable: true,
-      responsivePriority: 1,
-      orderable: true,
-      render: function (data, type, row, meta) {
-        return '<span>' + data + '</span>';
-      }
-    },
-    {
-      targets: 1,
-      searchable: true,
-      responsivePriority: 2,
-      orderable: true,
-      render: function (data, type, row, meta) {
-        return '<span>' + data + '</span>';
-      }
-    },
-    {
-      targets: 2,
-      searchable: true,
-      responsivePriority: 3,
-      orderable: true,
-      render: function (data, type, row, meta) {
-        return '<span>' + data + '</span>';
-      }
-    },
-    {
-      targets: 3,
-      searchable: true,
-      responsivePriority: 4,
-      orderable: true,
-      render: function (data, type, row, meta) {
-        return '<span>' + data + '</span>';
-      }
-    },
-    {
-      targets: 4,
-      searchable: true,
-      responsivePriority: 5,
-      orderable: true,
-      render: function (data, type, row, meta) {
-        return '<span>' + data + '</span>';
-      }
-    },
-    {
-      targets: 5,
-      searchable: true,
-      responsivePriority: 6,
-      orderable: true,
-      render: function (data, type, row, meta) {
-        return '<span>' + data + '</span>';
-      }
-    },
-    {
-      targets: 6,
-      searchable: true,
-      responsivePriority: 7,
-      orderable: true,
-      render: function (data, type, row, meta) {
-        if (data === 'DNI') {
-          data = 'CI';  
-        }
-        return '<span>' + data + '</span>';
-      }
-    },
-    
-    {
-      targets: 7,
-      searchable: true,
-      responsivePriority: 8,
-      orderable: true,
-      render: function (data, type, row, meta) {
-        return '<span>' + data + '</span>';
-      }
-    },
-    {
-      targets: 8,
-      render: function (data, type, row) {
-        var editUrl = supplierEdit.replace(':id', row.id);
-        var deleteUrl = supplierDelete.replace(':id', row.id);
-        return `
-            <div class="dropdown">
-              <button class="btn btn-icon btn-icon-only" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="bx bx-dots-horizontal-rounded"></i>
-              </button>
-              <div class="dropdown-menu dropdown-menu-end">
-                <a class="dropdown-item" href="${editUrl}">
-                  <i class="bx bx-pencil"></i> Editar
-                </a>
-                <form class="delete-form-${row.id}" action="${deleteUrl}" method="POST">
-                  <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
-                  <input type="hidden" name="_method" value="DELETE">
-                  <div class="dropdown-item text-danger delete-button" style="cursor: pointer;">
-                    <i class="bx bx-trash"></i> Eliminar
-                  </div>
-                </form>
+  function translatePaymentMethod(method) {
+    const translations = {
+      'cash': 'Efectivo',
+      'credit': 'Crédito',
+      'debit': 'Débito',
+      'check': 'Cheque'
+    };
+    return translations[method] || method;
+  }
+
+
+
+  function fetchSuppliers() {
+    $.ajax({
+      url: 'suppliers-all',
+      method: 'GET',
+      success: function (response) {
+        supplierListContainer.html('');
+
+        if (response.length === 0) {
+          supplierListContainer.html(`
+            <div class="col-12">
+              <div class="alert alert-info text-center">
+                <i class="bx bx-info-circle"></i> No hay proveedores disponibles.
               </div>
             </div>
-          `;
-      }
-    }
-  ];
+          `);
+        } else {
+          response.forEach(function (supplier) {
+            const card = `
+              <div class="col-md-6 col-lg-4 col-12 supplier-card-wrapper">
+                <div class="clients-card-container">
+                  <div class="clients-card position-relative">
+                    <div class="clients-card-header d-flex justify-content-between align-items-center">
+                      <h5 class="clients-name mb-0" title="${supplier.name}">
+                        ${supplier.name}
+                      </h5>
+                      <div class="d-flex align-items-center">
+                        <div class="clients-card-toggle">
+                          <i class="bx bx-chevron-down fs-3"></i>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="clients-card-body" style="display: none;">
+                      <div class="d-flex flex-column h-100">
+                        <div>
+                          <p class="mb-2"><i class="bx bx-envelope me-2"></i> ${supplier.email || 'No disponible'}</p>
+                          <p class="mb-2"><i class="bx bx-phone me-2"></i> ${supplier.phone || 'No disponible'}</p>
+                          <p class="mb-2"><i class="bx bx-map me-2"></i> ${supplier.city || ''}, ${supplier.state || ''}, ${supplier.country || ''}</p>
+                        <p class="mb-2"><i class="bx bx-id-card me-2"></i> ${translateDocType(supplier.doc_type)}: ${supplier.doc_number || 'No disponible'}</p>
+                        <p class="mb-2"><i class="bx bx-credit-card me-2"></i> Método de pago: ${translatePaymentMethod(supplier.default_payment_method)}</p>
+                        </div>
+                        <div class="d-inline-flex justify-content-end mt-auto mb-2 gap-1">
+                          <a href="suppliers/${supplier.id}/edit" class="btn view-clients p-1"><i class="bx bx-edit"></i></a>
+                          <form class="delete-form-${supplier.id}" action="suppliers/${supplier.id}" method="POST" style="display: inline;">
+                            <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="button" class="btn view-clients p-1 delete-button mt-3" title="Eliminar Proveedor">       
+                       <i class="bx bx-trash"></i>
+                            </button>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>`;
+            supplierListContainer.append(card);
+          });
 
-  if (hasViewAllSuppliersPermission) {
-    columnDefs.push({
-      targets: 8,
-      render: function (data, type, row) {
-        return row.store ? row.store.name : 'Empresa sin nombre';
-      }
-    });
-  }
+          // Card toggle functionality
+          $('.clients-card').on('click', function (e) {
+            if (!$(e.target).closest('.view-clients').length) {
+              const $icon = $(this).find('.clients-card-toggle i');
+              const $body = $(this).find('.clients-card-body');
 
-  if (dt_suppliers_table.length) {
-    var table = dt_suppliers_table.DataTable({
-      data: suppliers,
-      columns: columns,
-      columnDefs: columnDefs,
-      language: {
-        searchPlaceholder: 'Buscar...',
-        sLengthMenu: '_MENU_',
-        info: 'Mostrando _START_ a _END_ de _TOTAL_ Proveedores',
-        paginate: {
-          first: 'Primero',
-          last: 'Último',
-          next: '<span class="mx-2">Siguiente</span>',
-          previous: '<span class="mx-2">Anterior</span>'
-        },
-        aria: {
-          sortAscending: ': activar para ordenar la columna ascendente',
-          sortDescending: ': activar para ordenar la columna descendente'
-        },
-        emptyTable: 'No hay datos disponibles en la tabla',
-        zeroRecords: 'No se encontraron coincidencias',
-        lengthMenu: '_MENU_',
-        loadingRecords: 'Cargando...',
-        processing: 'Procesando...',
-        search: '',
-        infoFiltered: '(filtrado de un total de _MAX_ Proveedores)',
-        infoEmpty: 'Mostrando 0 a 0 de 0 Proveedores'
-      },
-      dom:
-        '<"card-header d-flex border-top rounded-0 flex-wrap py-md-0"' +
-        '<"me-5 ms-n2 pe-5"f>' +
-        '<"d-flex justify-content-start justify-content-md-end align-items-baseline"<"dt-action-buttons d-flex align-items-start align-items-md-center justify-content-sm-center mb-3 mb-sm-0"lB>>' +
-        '>t' +
-        '<"row mx-2"' +
-        '<"col-sm-12 col-md-6"i>' +
-        '<"col-sm-12 col-md-6"p>' +
-        '>',
-      buttons: [
-        {
-          text: '<i class="bx bx-plus me-0 me-sm-1"></i><span class="d-none d-sm-inline-block">Crear</span>',
-          className: 'btn btn-primary ml-3',
-          action: function () {
-            window.location.href = supplierAdd;
-          }
+              $icon.toggleClass('bx-chevron-down bx-chevron-up');
+              $body.slideToggle();
+            }
+          });
         }
-      ]
+      },
+      error: function (xhr, status, error) {
+        console.error('Error al obtener los datos de proveedores:', error);
+        supplierListContainer.html(`
+          <div class="col-12">
+            <div class="alert alert-danger text-center">
+              <i class="bx bx-error-circle"></i> Error al cargar los proveedores. Por favor, intente nuevamente.
+            </div>
+          </div>
+        `);
+      }
     });
-    $('.toggle-column').on('change', function() {
-      var column = table.column($(this).attr('data-column'));
-      column.visible(!column.visible());
-  });
   }
 
-  $('.dataTables_length').addClass('mt-0 mt-md-3 me-3');
-  $('.dt-buttons > .btn-group > button').removeClass('btn-secondary');
-  $('.dt-buttons').addClass('d-flex flex-wrap');
+  fetchSuppliers();
 
-  $('div.dataTables_filter input').addClass('form-control');
-  $('div.dataTables_length select').addClass('form-select');
+  $('#searchSupplier').on('input', function () {
+    var searchTerm = $(this).val().toLowerCase();
+    $('.supplier-card-wrapper').each(function () {
+      var supplierInfo = $(this).text().toLowerCase();
+      $(this).toggle(supplierInfo.includes(searchTerm));
+    });
+  });
 
-  dt_suppliers_table.on('click', '.delete-button', function () {
-    var form = $(this).closest('form');
+  $(document).on('click', '.delete-button', function(e) {
+    e.preventDefault();
+    const form = $(this).closest('form');
+    
     Swal.fire({
       title: '¿Estás seguro?',
       text: 'Esta acción eliminará completamente al proveedor, perdiendo definitivamente sus datos',
@@ -203,9 +136,11 @@ document.addEventListener('DOMContentLoaded', function () {
       cancelButtonColor: '#d33',
       confirmButtonText: 'Sí, eliminar!',
       cancelButtonText: 'Cancelar'
-    }).then(result => {
+    }).then((result) => {
       if (result.isConfirmed) {
         form.submit();
-      }});
+      }
+    });
   });
+
 });

@@ -200,8 +200,8 @@ class StoreController extends Controller
 
             // Manejo de la integración de configuración de correo
             $this->handleEmailConfigIntegration($request, $store);
-
-            return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
+            
+            return redirect()->route('stores', $store->id)->with('success', 'Empresa actualizada con éxito.');
         }catch (MercadoPagoException $e) {
             Log::error('Error al actualizar la empresa: ' . $e->getMessage());
             $errorMessage = Helpers::formatMercadoPagoErrors($e->getDetails());

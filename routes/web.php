@@ -134,7 +134,7 @@ Route::middleware([
 
     // Stock de productos
     Route::get('/products/stock', [ProductController::class, 'stock'])->name('products.stock');
-
+    
     // Exportaciones
     Route::get('/products/export', [ProductController::class, 'exportToExcel'])->name('products.export');
     Route::get('/products/download-template', [ProductController::class, 'downloadTemplate'])->name('products.download-template');
@@ -207,6 +207,9 @@ Route::middleware([
         'currencies' => CurrencyController::class,
     ]);
 
+    //Freemium 
+    Route::get('/raw-material-freemium', [RawMaterialController::class, 'createFreemium'])->name('raw-materials.createFreemium');
+
     // CRM
     Route::get('crm', [LeadController::class, 'index']);
     Route::post('leads', [LeadController::class, 'store']);
@@ -229,15 +232,17 @@ Route::middleware([
     Route::delete('leads/{leadId}/conversations/{id}', [LeadConversationController::class, 'destroy']);
     Route::post('leads/{id}/convert-to-client', [LeadController::class, 'convertToClient']);
     Route::post('leads/{leadId}/assign-user', [LeadController::class, 'assignUser']);
-Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::class, 'removeAssignment']);
+    Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::class, 'removeAssignment']);
 
     // Rutas específicas modulo de dalí
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
     Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+    Route::get('purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.create');
     Route::get('purchase-orders/{id}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
     Route::delete('purchase-orders/{id}', [PurchaseOrderController::class, 'destroy'])->name('purchase-orders.destroy');
     Route::get('/suppliers-all', [SupplierController::class, 'getAll']);
     Route::post('purchase-orders/pdf', [PurchaseOrderController::class, 'generatePdf']);
+    Route::put('purchase-orders/{id}', [PurchaseOrderController::class, 'update'])->name('purchase-orders.update');
 
     Route::get('purchase-orders-items', [PurchaseOrderItemController::class, 'index'])->name('purchase-orders-items.index');
     Route::get('purchase-orders-items-raw-materials', [PurchaseOrderItemController::class, 'getRawMaterials']);

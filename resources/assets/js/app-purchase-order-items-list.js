@@ -38,12 +38,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 { data: 'id' },
                 { data: 'raw_material_name' },
                 { data: 'quantity' },
-                { data: 'currency' },
-                { data: 'unit_price' },
+                {
+                    data: 'unit_price', render: function (data, type, row) {
+                        return row.currency + ' ' + parseFloat(data).toFixed(2);
+                    },
+                },                
                 {
                     data: null,
                     render: function (data, type, row) {
-                        return (row.quantity * row.unit_price).toFixed(2);
+                        return row.currency + ' ' + (row.quantity * row.unit_price).toFixed(2);
                     }
                 },
                 {

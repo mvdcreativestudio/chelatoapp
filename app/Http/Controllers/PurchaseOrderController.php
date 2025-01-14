@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePurchaseOrderRequest;
 use App\Repositories\PurchaseOrderRepository;
 use Illuminate\Http\Request;
 use PDF;
+use Log;
 
 class PurchaseOrderController extends Controller
 {
@@ -48,7 +49,8 @@ class PurchaseOrderController extends Controller
     public function show($id)
     {
         $purchaseOrder = $this->purchaseOrderRepository->find($id);
-        return view('purchase_orders.show', compact('purchaseOrder'));
+
+        return response()->json($purchaseOrder);
     }
 
     public function edit($id)
@@ -59,8 +61,13 @@ class PurchaseOrderController extends Controller
 
     public function update(UpdatePurchaseOrderRequest $request, $id)
     {
-        $this->purchaseOrderRepository->update($id, $request->validated());
-        return redirect()->route('purchase-orders.index')->with('success', 'Orden de compra actualizada con éxito.');
+        $purchaseOrder = $this->purchaseOrderRepository->update($id, $request->validated());
+
+        if ($request->ajax()) {
+            return response()->json($purchaseOrder);
+        }
+
+        return redirect()->route('purchase-orders.index')->with('success', 'Orden de compra actualizada exitosamente.');
     }
 
     public function destroy($id)
@@ -70,7 +77,7 @@ class PurchaseOrderController extends Controller
             return response()->json(['message' => 'Log de orden de compra borrada exitosamente.']);
         } else {
             return response()->json(['message' => 'No se pudo encontrar el log de la orden de compra que se deseó borrar.'], 404);
-        }    
+        }
     }
 
     public function generatePdf(Request $request)

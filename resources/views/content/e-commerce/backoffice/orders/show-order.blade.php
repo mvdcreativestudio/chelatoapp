@@ -205,6 +205,15 @@ $changeTypeTranslations = [
   </div>
 </div>
 
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
+    <div>{{ session('error') }}</div>
+    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="offcanvas" data-bs-target="#updateClientDataOffcanvas">
+        Modificar datos
+    </button>
+</div>
+@endif
+
 <!-- Order Details Table -->
 <div class="row">
   <div class="col-12 col-lg-8">
@@ -466,6 +475,7 @@ $changeTypeTranslations = [
 
 <!-- Modals -->
 @include('content/e-commerce/backoffice/orders/bill-order')
+@include('content/e-commerce/backoffice/orders/update-client-data')
 @if($order->is_billed && isset($invoice))
 @include('content/e-commerce/backoffice/orders/modal-send-email')
 @endif

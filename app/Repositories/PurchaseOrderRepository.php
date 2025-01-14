@@ -4,19 +4,19 @@ namespace App\Repositories;
 
 use App\Models\PurchaseOrder;
 use Carbon\Carbon;
-
+use Log;
 class PurchaseOrderRepository
 {
     public function getAll()
     {
         return $purchaseOrders = PurchaseOrder::select('purchase_orders.*', 'suppliers.name as supplier_name')
-        ->join('suppliers', 'purchase_orders.supplier_id', '=', 'suppliers.id')
-        ->get();
+            ->join('suppliers', 'purchase_orders.supplier_id', '=', 'suppliers.id')
+            ->get();
     }
 
     public function find($id)
     {
-        return PurchaseOrder::findOrFail($id);
+        return PurchaseOrder::with('supplier')->findOrFail($id);
     }
 
     public function create(array $data)
@@ -28,6 +28,10 @@ class PurchaseOrderRepository
     {
         $purchaseOrder = $this->find($id);
         $purchaseOrder->update($data);
+        $purchaseOrder->load('supplier');
+
+        $purchaseOrder->supplier_name = $purchaseOrder->supplier->name;
+
         return $purchaseOrder;
     }
 
@@ -85,6 +89,6 @@ class PurchaseOrderRepository
         } elseif (is_string($date)) {
             return Carbon::parse($date)->format('d-m-Y');
         }
-        return 'N/A'; 
+        return 'N/A';
     }
 }

@@ -55,97 +55,28 @@
 @endforeach
 @endif
 
-<div class="card mb-4">
-  <div class="card-widget-separator-wrapper">
-    <div class="card-body card-widget-separator">
-      <div class="row gy-4 gy-sm-1">
-        <div class="col-sm-6 col-lg-6">
-          <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
-            <div>
-              <h6 class="mb-2">Proveedores</h6>
-              <h4 class="mb-2">{{ isset($suppliers) ? $suppliers->count() : 0 }}</h4>
-              <p class="mb-0"><span class="text-muted me-2">Total</span></p>
-            </div>
-            <div class="avatar me-sm-4">
-              <span class="avatar-initial rounded bg-label-secondary">
-                <i class="bx bx-user bx-sm"></i>
-              </span>
-            </div>
-          </div>
-          <hr class="d-none d-sm-block d-lg-none me-4">
-        </div>
-        <div class="col-sm-6 col-lg-6">
-          <div class="d-flex justify-content-between align-items-start card-widget-2 pb-3 pb-sm-0">
-            <div>
-              <h6 class="mb-2">Pedidos Recientes</h6>
-              <h4 class="mb-2">{{ isset($recentOrders) ? $recentOrders->count() : 0 }}</h4>
-              <p class="mb-0"><span class="text-muted me-2">Últimos 30 días</span></p>
-            </div>
-            <div class="avatar me-lg-4">
-              <span class="avatar-initial rounded bg-label-secondary">
-                <i class="bx bx-cart bx-sm"></i>
-              </span>
-            </div>
-          </div>
-          <hr class="d-none d-sm-block d-lg-none">
-        </div>
-      </div>
+
+<div class="d-flex flex-column flex-md-row align-items-center justify-content-between bg-white p-4 mb-3 rounded shadow-lg sticky-top border-bottom border-light">
+  <div class="d-flex flex-column justify-content-center mb-3 mb-md-0">
+    <h4 class="mb-0 page-title">
+      <i class="bx bx-store me-2"></i> Proveedores
+    </h4>
+  </div>
+
+  <div class="d-flex align-items-center justify-content-center flex-grow-1 gap-3 mb-3 mb-md-0 mx-md-4">
+    <div class="input-group w-100 w-md-75 shadow-sm">
+      <span class="input-group-text bg-white">
+        <i class="bx bx-search"></i>
+      </span>
+      <input type="text" id="searchSupplier" class="form-control" placeholder="Buscar proveedor..." aria-label="Buscar Proveedor">
     </div>
   </div>
-</div>
 
-<div class="card">
-  <div class="card-header">
-    <h5 class="card-title">Proveedores</h5>
-    <div class="d-flex">
-        <p class="text-muted small">
-          <a href="" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches" aria-expanded="false" aria-controls="columnSwitches">Ver / Ocultar columnas de la tabla</a>
-        </p>
-      </div>
-      <div class="collapse" id="columnSwitches">
-    <div class="mt-0 d-flex flex-wrap">
-      @foreach (['Nombre', 'Teléfono', 'Email', 'Ciudad', 'Estado', 'País', 'Tipo de Doc.','Número de Doc.', 'Acciones'] as $index => $label)
-      <div class="mx-3">
-        <label class="switch switch-square">
-          <input type="checkbox" class="toggle-column switch-input" data-column="{{ $index }}" checked>
-          <span class="switch-toggle-slider">
-            <span class="switch-on"><i class="bx bx-check"></i></span>
-            <span class="switch-off"><i class="bx bx-x"></i></span>
-          </span>
-          <span class="switch-label">{{ $label }}</span>
-        </label>
-      </div>
-      @endforeach
+  <div class="text-end d-flex gap-2" place-id="buttonCreate">>
+  </div>
+</div>
+  <div class="card-body">
+    <div class="row supplier-list-container">
     </div>
   </div>
-    @can('create_suppliers')
-    <a href="{{ route('suppliers.create') }}" class="btn btn-primary">
-      <i class="bx bx-plus me-1"></i> Agregar Proveedor
-    </a>
-    @endcan
-  </div>
-  <div class="card-datatable table-responsive mx-4 my-3">
-    <table class="table datatables-suppliers border-top">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Teléfono</th>
-          <th>Email</th>
-          <th>Ciudad</th>
-          <th>Estado</th>
-          <th>Pais</th>
-          <th>Tipo de Doc</th>
-          <th>Número de Doc</th>
-
-          @can('view_all_suppliers')
-            <th>Empresa</th>
-          @endcan
-
-          <th>Acciones</th>
-        </tr>
-      </thead>
-    </table>
-  </div>
-</div>
-</div>
 @endsection
