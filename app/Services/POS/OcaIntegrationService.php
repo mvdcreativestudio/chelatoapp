@@ -9,14 +9,14 @@ use App\Models\PosProvider;
 use App\Models\Transaction;
 
 
-class HandyIntegrationService implements PosIntegrationInterface
+class OcaIntegrationService implements PosIntegrationInterface
 {
     protected $apiUrl;  // Definir la propiedad para la URL de la API
 
 
     public function __construct()
     {
-        $this->apiUrl = $this->getHandyApiUrl();  // Asignar la URL de la API cuando se crea la instancia
+        $this->apiUrl = $this->getOcaApiUrl();  // Asignar la URL de la API cuando se crea la instancia
     }
 
     public function formatTransactionData(array $transactionData): array
@@ -44,25 +44,25 @@ class HandyIntegrationService implements PosIntegrationInterface
 
 
     // Obtener la URL de la API desde la tabla pos_providers
-    protected function getHandyApiUrl()
+    protected function getOcaApiUrl()
     {
-        // Obtener el pos_provider con el id 2 (que corresponde a Handy)
-        $posProvider = PosProvider::find(3); // Handy tiene el ID 3
+        // Obtener el pos_provider con el id 2 (que corresponde a Oca)
+        $posProvider = PosProvider::find(3); // Oca tiene el ID 3
 
         if ($posProvider && $posProvider->api_url) {
-            Log::info('URL de la API de Handy encontrada: ' . $posProvider->api_url);
+            Log::info('URL de la API de Oca encontrada: ' . $posProvider->api_url);
             return $posProvider->api_url;
         } else {
             // Registrar un error si no se encuentra el proveedor o no tiene URL definida
-            Log::error('No se encontró la URL de la API para el proveedor Handy.');
-            throw new \Exception('No se pudo encontrar la URL de la API para Handy');
+            Log::error('No se encontró la URL de la API para el proveedor Oca.');
+            throw new \Exception('No se pudo encontrar la URL de la API para Oca');
         }
     }
 
-    // No se necesita autenticación en Handy
+    // No se necesita autenticación en Oca
     public function getToken()
     {
-        return null; // No se necesita autenticación en Handy
+        return null; // No se necesita autenticación en Oca
     }
 
     public function processTransaction(array $transactionData): array
@@ -73,7 +73,7 @@ class HandyIntegrationService implements PosIntegrationInterface
         // Crear el registro inicial de la transacción
         $initialTransaction = Transaction::create([
             'order_id' => $transactionData['order_id'] ?? null, // Asignar el order_id desde los datos recibidos
-            'TransactionId' => null, // Inicialmente nulo, se actualizará con la respuesta de Handy
+            'TransactionId' => null, // Inicialmente nulo, se actualizará con la respuesta de Oca
             'STransactionId' => null, // Inicialmente nulo
             'status' => 'pending', // Estado inicial de la transacción
             'formatted_data' => $transactionData, // Guardar los datos iniciales de la transacción
@@ -89,19 +89,19 @@ class HandyIntegrationService implements PosIntegrationInterface
 
         Log::info('Registro inicial de transacción creado en la base de datos:', $initialTransaction->toArray());
 
-        // Realiza la solicitud a Handy
+        // Realiza la solicitud a Oca
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post($this->apiUrl . 'processFinancialPurchase', $transactionData);
 
-        Log::info('Estableciendo conexión Handy en ' . $this->apiUrl . 'processFinancialPurchase');
-        Log::info('Datos de la transacción enviados a Handy:', $transactionData);
+        Log::info('Estableciendo conexión Oca en ' . $this->apiUrl . 'processFinancialPurchase');
+        Log::info('Datos de la transacción enviados a Oca:', $transactionData);
 
         if ($response->successful()) {
             $jsonResponse = $response->json();
-            Log::info('Respuesta de Handy al procesar transacción:', $jsonResponse);
+            Log::info('Respuesta de Oca al procesar transacción:', $jsonResponse);
 
-            // Actualizar el registro de la transacción con los datos de la respuesta de Handy
+            // Actualizar el registro de la transacción con los datos de la respuesta de Oca
             $initialTransaction->update([
                 'TransactionId' => $jsonResponse['TransactionId'] ?? null,
                 'STransactionId' => $jsonResponse['STransactionId'] ?? null,
@@ -127,8 +127,8 @@ class HandyIntegrationService implements PosIntegrationInterface
             return $jsonResponse;
         }
 
-        // Manejar errores en la solicitud a Handy
-        Log::error('Error al procesar la transacción con Handy: ' . $response->body());
+        // Manejar errores en la solicitud a Oca
+        Log::error('Error al procesar la transacción con Oca: ' . $response->body());
 
         // En caso de error, puedes actualizar el estado de la transacción para indicar un fallo
         $initialTransaction->update([
@@ -138,7 +138,7 @@ class HandyIntegrationService implements PosIntegrationInterface
 
         return [
             'success' => false,
-            'message' => 'Error al procesar la transacción con Handy',
+            'message' => 'Error al procesar la transacción con Oca',
         ];
     }
 
@@ -151,7 +151,7 @@ class HandyIntegrationService implements PosIntegrationInterface
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl . 'processFinancialPurchaseQuery', $transactionData);
 
-            Log::info('Respuesta de Handy en checkTransactionStatus:', [
+            Log::info('Respuesta de Oca en checkTransactionStatus:', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
@@ -161,12 +161,12 @@ class HandyIntegrationService implements PosIntegrationInterface
 
                 // Verificar si ResponseCode es 0 (transacción exitosa)
                 if (isset($jsonResponse['ResponseCode']) && $jsonResponse['ResponseCode'] === 0) {
-                    Log::info('Transacción exitosa según Handy (ResponseCode 0):', $jsonResponse);
+                    Log::info('Transacción exitosa según Oca (ResponseCode 0):', $jsonResponse);
 
                     // Obtener el Acquirer y asegurarnos de que esté presente
                     $acquirer = $jsonResponse['Acquirer'] ?? null;
                     if ($acquirer) {
-                        Log::info('Acquirer obtenido de la respuesta de Handy:', ['Acquirer' => $acquirer]);
+                        Log::info('Acquirer obtenido de la respuesta de Oca:', ['Acquirer' => $acquirer]);
 
                         // Actualizar el registro de la transacción en la base de datos
                         Transaction::where('TransactionId', $transactionData['TransactionId'])
@@ -177,7 +177,7 @@ class HandyIntegrationService implements PosIntegrationInterface
 
                         Log::info('Transacción actualizada con el Acquirer en la base de datos.');
                     } else {
-                        Log::warning('Acquirer no presente en la respuesta de Handy.');
+                        Log::warning('Acquirer no presente en la respuesta de Oca.');
                     }
 
                     return [
@@ -220,11 +220,11 @@ class HandyIntegrationService implements PosIntegrationInterface
             }
 
             // Manejar errores HTTP
-            Log::error('Error al consultar estado de transacción con Handy: ' . $response->body());
+            Log::error('Error al consultar estado de transacción con Oca: ' . $response->body());
             return $this->getResponses(999);
 
         } catch (\Exception $e) {
-            Log::error('Excepción al consultar estado de transacción en Handy: ' . $e->getMessage());
+            Log::error('Excepción al consultar estado de transacción en Oca: ' . $e->getMessage());
             return $this->getResponses(999);
         }
     }
@@ -240,7 +240,7 @@ class HandyIntegrationService implements PosIntegrationInterface
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl . 'processFinancialReverse', $transactionData);
 
-            Log::info('Respuesta de reverso de Handy:', [
+            Log::info('Respuesta de reverso de Oca:', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
@@ -271,7 +271,7 @@ class HandyIntegrationService implements PosIntegrationInterface
 
             return [
                 'success' => false,
-                'message' => 'Error al conectarse a Handy.',
+                'message' => 'Error al conectarse a Oca.',
                 'details' => $response->body(),
             ];
         } catch (\Exception $e) {
@@ -289,7 +289,7 @@ class HandyIntegrationService implements PosIntegrationInterface
     public function getResponses($responseCode)
     {
         // Cargar respuestas desde la configuración
-        $responses = Config::get('HandyResponses.processFinancialPurchaseResponses');
+        $responses = Config::get('OcaResponses.processFinancialPurchaseResponses');
 
         // Validar que las respuestas existan
         if (!$responses || !is_array($responses)) {
@@ -321,7 +321,7 @@ class HandyIntegrationService implements PosIntegrationInterface
     public function voidTransaction(array $transactionData): array
 {
     try {
-        Log::info('Iniciando voidTransaction en HandyIntegrationService con los datos:', $transactionData);
+        Log::info('Iniciando voidTransaction en OcaIntegrationService con los datos:', $transactionData);
 
         // Buscar la transacción original utilizando order_id y status "completed"
         $originalTransaction = Transaction::where('order_id', $transactionData['order_id'])
@@ -358,7 +358,7 @@ class HandyIntegrationService implements PosIntegrationInterface
             throw new \Exception('Acquirer no encontrado en formatted_data de la transacción original.');
         }
 
-        // Preparar los datos para la solicitud de anulación a Handy
+        // Preparar los datos para la solicitud de anulación a Oca
         $voidRequestData = [
             'PosID' => $transactionData['PosID'] ?? $formattedData['PosID'],
             'SystemId' => $transactionData['SystemId'] ?? $formattedData['SystemId'],
@@ -368,18 +368,20 @@ class HandyIntegrationService implements PosIntegrationInterface
             'TransactionDateTimeyyyyMMddHHmmssSSS' => '20241121201131000',
             'TicketNumber' => $transactionData['TicketNumber'] ?? $formattedData['TicketNumber'],
             'Acquirer' => (string) ($transactionData['Acquirer'] ?? $formattedData['Acquirer']), // Convertir a string
+            'CiNoCheckDigict' => '4795307',
+            'Merchant' => 'Resonet',
           ];
 
-        Log::info('Enviando solicitud de anulación a Handy con los datos:', $voidRequestData);
+        Log::info('Enviando solicitud de anulación a Oca con los datos:', $voidRequestData);
 
-        // Realizar la solicitud de anulación a Handy
+        // Realizar la solicitud de anulación a Oca
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post($this->apiUrl . 'processFinancialPurchaseVoidByTicket', $voidRequestData);
 
         if ($response->successful()) {
             $jsonResponse = $response->json();
-            Log::info('Respuesta de Handy al realizar voidTransaction:', $jsonResponse);
+            Log::info('Respuesta de Oca al realizar voidTransaction:', $jsonResponse);
 
             if ($jsonResponse['ResponseCode'] === 0) {
                 // Crear una nueva transacción de anulación
@@ -411,11 +413,11 @@ class HandyIntegrationService implements PosIntegrationInterface
             ];
         }
 
-        Log::error('Error al realizar la solicitud de anulación a Handy:', $response->body());
+        Log::error('Error al realizar la solicitud de anulación a Oca:', $response->body());
 
         return [
             'success' => false,
-            'message' => 'Error al conectarse a Handy.',
+            'message' => 'Error al conectarse a Oca.',
             'details' => $response->body(),
         ];
     } catch (\Exception $e) {
@@ -445,7 +447,7 @@ class HandyIntegrationService implements PosIntegrationInterface
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl . 'processFinancialPurchaseQuery', $transactionData);
 
-            Log::info('Respuesta de Handy en pollVoidStatus:', [
+            Log::info('Respuesta de Oca en pollVoidStatus:', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
@@ -494,7 +496,7 @@ class HandyIntegrationService implements PosIntegrationInterface
     public function processQuery(array $queryData): array
     {
         try {
-            Log::info('Iniciando processQuery en Handy con datos:', $queryData);
+            Log::info('Iniciando processQuery en Oca con datos:', $queryData);
 
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
@@ -502,7 +504,7 @@ class HandyIntegrationService implements PosIntegrationInterface
 
             if ($response->successful()) {
                 $jsonResponse = $response->json();
-                Log::info('Respuesta de Handy para processQuery:', $jsonResponse);
+                Log::info('Respuesta de Oca para processQuery:', $jsonResponse);
 
                 return [
                     'success' => true,
@@ -510,13 +512,13 @@ class HandyIntegrationService implements PosIntegrationInterface
                 ];
             }
 
-            Log::error('Error en processQuery de Handy: ' . $response->body());
+            Log::error('Error en processQuery de Oca: ' . $response->body());
             return [
                 'success' => false,
                 'message' => 'Error en processQuery: ' . $response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Excepción en processQuery de Handy: ' . $e->getMessage());
+            Log::error('Excepción en processQuery de Oca: ' . $e->getMessage());
             return [
                 'success' => false,
                 'message' => 'Excepción en processQuery: ' . $e->getMessage(),
@@ -527,8 +529,8 @@ class HandyIntegrationService implements PosIntegrationInterface
     public function fetchTransactionHistory(array $queryData): array
     {
         try {
-            // Obtener la URL base desde el método getHandyApiUrl
-            $baseUrl = $this->getHandyApiUrl();
+            // Obtener la URL base desde el método getOcaApiUrl
+            $baseUrl = $this->getOcaApiUrl();
 
             // Endpoint específico para el historial de transacciones
             $endpoint = $baseUrl . 'processQuery?QueryRequest';
@@ -544,12 +546,12 @@ class HandyIntegrationService implements PosIntegrationInterface
 
             // Validar la respuesta
             if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
-                throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+                throw new \Exception('Error en la API de Oca: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
             }
 
             return $response;
         } catch (\Exception $e) {
-            Log::error('Error al obtener el historial de transacciones en HandyIntegrationService: ' . $e->getMessage());
+            Log::error('Error al obtener el historial de transacciones en OcaIntegrationService: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -599,7 +601,7 @@ class HandyIntegrationService implements PosIntegrationInterface
 
             return $responseData;
         } catch (\GuzzleHttp\Exception\ClientException $e) {
-            Log::error('Error 4xx en la solicitud HTTP a Handy:', [
+            Log::error('Error 4xx en la solicitud HTTP a Oca:', [
                 'message' => $e->getMessage(),
                 'response' => $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null,
                 'url' => $url,
@@ -607,7 +609,7 @@ class HandyIntegrationService implements PosIntegrationInterface
             ]);
             throw new \Exception('Error en la solicitud HTTP: ' . $e->getMessage());
         } catch (\GuzzleHttp\Exception\ServerException $e) {
-            Log::error('Error 5xx en la solicitud HTTP a Handy:', [
+            Log::error('Error 5xx en la solicitud HTTP a Oca:', [
                 'message' => $e->getMessage(),
                 'response' => $e->getResponse() ? $e->getResponse()->getBody()->getContents() : null,
                 'url' => $url,
@@ -632,8 +634,8 @@ class HandyIntegrationService implements PosIntegrationInterface
             // Crear una nueva transacción en la base de datos con estado 'pending'
             $refundTransaction = Transaction::create([
                 'order_id' => $refundData['order_id'] ?? null,
-                'TransactionId' => null, // Será actualizado con la respuesta de Handy
-                'STransactionId' => null, // Será actualizado con la respuesta de Handy
+                'TransactionId' => null, // Será actualizado con la respuesta de Oca
+                'STransactionId' => null, // Será actualizado con la respuesta de Oca
                 'status' => 'pending',
                 'type' => 'refund', // Identificar que esta es una transacción de devolución
                 'formatted_data' => $refundData, // Guardar los datos iniciales de la devolución
@@ -644,7 +646,7 @@ class HandyIntegrationService implements PosIntegrationInterface
             // Transformar el monto a centavos
             $amount = $refundData['Amount'] * 100;
 
-            // Formatear los datos para la solicitud a Handy
+            // Formatear los datos para la solicitud a Oca
             $requestPayload = [
                 'PosID' => $refundData['PosID'],
                 'SystemId' => $refundData['SystemId'],
@@ -663,23 +665,23 @@ class HandyIntegrationService implements PosIntegrationInterface
                 'InvoiceAmount' => $refundData['InvoiceAmount'] ?? $refundData['Amount'],
             ];
 
-            Log::info('Datos formateados para la solicitud de devolución a Handy:', $requestPayload);
+            Log::info('Datos formateados para la solicitud de devolución a Oca:', $requestPayload);
 
-            // Realizar la solicitud a Handy
+            // Realizar la solicitud a Oca
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
             ])->post($this->apiUrl . 'processFinancialPurchaseRefund', $requestPayload);
 
-            Log::info('Respuesta de Handy para la solicitud de devolución:', [
+            Log::info('Respuesta de Oca para la solicitud de devolución:', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
 
-            // Manejar la respuesta de Handy
+            // Manejar la respuesta de Oca
             if ($response->successful()) {
                 $jsonResponse = $response->json();
 
-                // Actualizar la transacción con los datos de Handy
+                // Actualizar la transacción con los datos de Oca
                 $refundTransaction->update([
                     'TransactionId' => $jsonResponse['TransactionId'] ?? null,
                     'STransactionId' => $jsonResponse['STransactionId'] ?? null,
@@ -700,7 +702,7 @@ class HandyIntegrationService implements PosIntegrationInterface
             }
 
             // Manejar errores en la solicitud
-            Log::error('Error en la solicitud de devolución a Handy:', $response->body());
+            Log::error('Error en la solicitud de devolución a Oca:', $response->body());
 
             // Actualizar la transacción con el estado de fallo
             $refundTransaction->update([
@@ -735,16 +737,16 @@ class HandyIntegrationService implements PosIntegrationInterface
             $url = $this->apiUrl . 'processQueryLastNClose?QueryLastNCloseRequest';
             $response = $this->sendRequest($url, $queryData, 'POST');
 
-            Log::info('Respuesta completa de Handy para fetchBatchCloses:', $response);
+            Log::info('Respuesta completa de Oca para fetchBatchCloses:', $response);
 
             // Validar que la respuesta contiene los datos esperados
             if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
-                throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+                throw new \Exception('Error en la API de Oca: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
             }
 
             return $response;
         } catch (\Exception $e) {
-            Log::error('Error al obtener el historial de cierres en HandyIntegrationService: ' . $e->getMessage());
+            Log::error('Error al obtener el historial de cierres en OcaIntegrationService: ' . $e->getMessage());
             throw $e;
         }
     }
@@ -757,16 +759,16 @@ class HandyIntegrationService implements PosIntegrationInterface
         $url = $this->apiUrl . 'ProcessCurrentTransactionsBatchQuery';
         $response = $this->sendRequest($url, $queryData, 'POST');
 
-        Log::info('Respuesta completa de Handy para fetchOpenBatches:', $response);
+        Log::info('Respuesta completa de Oca para fetchOpenBatches:', $response);
 
         // Validar que la respuesta contiene los datos esperados
         if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
-            throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+            throw new \Exception('Error en la API de Oca: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
         }
 
         return $response;
     } catch (\Exception $e) {
-        Log::error('Error al obtener los lotes abiertos en HandyIntegrationService: ' . $e->getMessage());
+        Log::error('Error al obtener los lotes abiertos en OcaIntegrationService: ' . $e->getMessage());
         throw $e;
     }
 }

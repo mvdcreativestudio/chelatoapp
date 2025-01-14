@@ -49,10 +49,11 @@ class IntegrationController extends Controller
             }
 
             // Filtrar los dispositivos para cada integración
+            $store->ocaDevices = $store->posDevices->where('pos_provider_id', 4);
             $store->handyDevices = $store->posDevices->where('pos_provider_id', 3);
             $store->fiservDevices = $store->posDevices->where('pos_provider_id', 2);
             $store->scanntechDevices = $store->posDevices->where('pos_provider_id', 1);
-            $store->otherDevices = $store->posDevices->whereNotIn('pos_provider_id', [1, 2, 3]);
+            $store->otherDevices = $store->posDevices->whereNotIn('pos_provider_id', [1, 2, 3, 4]);
 
             // Añadir el atributo MercadoPagoOnline
             return $store->setAttribute(
@@ -417,6 +418,77 @@ class IntegrationController extends Controller
         }
     }
 
+        /**
+     * Maneja la integración con OCA
+     *
+     * @param Request $request
+     * @param int $storeId
+     * @return \Illuminate\Http\JsonResponse
+    */
+    public function handleOcaIntegration(Request $request, $storeId)
+    {
+        try {
+            $store = $this->storeRepository->find($storeId);
+
+            if (!$store) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tienda no encontrada.'
+                ], 404);
+            }
+
+            $acceptsOca = $request->boolean('accepts_oca');
+
+            if ($acceptsOca) {
+                $validatedData = $request->validate([
+                    'system_id' => 'required|string|max:255',
+                    'branch' => 'required|string|max:255',
+                ]);
+
+                \DB::transaction(function () use ($store, $validatedData) {
+                    // Eliminar cualquier entrada previa para esta tienda
+                    $store->posIntegrationInfo()->delete();
+
+                    // Crear una nueva entrada
+                    $store->posIntegrationInfo()->create([
+                        'store_id' => $store->id,
+                        'pos_provider_id' => 4,
+                        'system_id' => $validatedData['system_id'],
+                        'branch' => $validatedData['branch'],
+                        'company' => null
+                    ]);
+
+                    // Actualizar el pos_provider_id en la tabla stores
+                    $store->update(['pos_provider_id' => 4]);
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'OCA activado con éxito.'
+                ]);
+            } else {
+                \DB::transaction(function () use ($store) {
+                    // Eliminar la entrada de pos_integrations_store_info
+                    $store->posIntegrationInfo()->where('pos_provider_id', 4)->delete();
+
+                    // Actualizar pos_provider_id a null en la tabla stores
+                    $store->update(['pos_provider_id' => null]);
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'OCA desactivado con éxito.'
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al manejar la integración con OCA: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al procesar la integración con OCA.'
+            ], 500);
+        }
+    }
+
     /**
      * Maneja la integración con Handy
      *
@@ -583,7 +655,6 @@ class IntegrationController extends Controller
 
             if ($acceptsScanntech) {
                 $validatedData = $request->validate([
-                    'system_id' => 'required|string|max:255',
                     'branch' => 'required|string|max:255',
                     'company' => 'required|string|max:255'
                 ]);
@@ -596,7 +667,7 @@ class IntegrationController extends Controller
                     $store->posIntegrationInfo()->create([
                         'store_id' => $store->id,
                         'pos_provider_id' => 1,
-                        'system_id' => $validatedData['system_id'],
+                        'system_id' => null, // Scanntech no requiere system_id
                         'branch' => $validatedData['branch'],
                         'company' => $validatedData['company'],
                     ]);

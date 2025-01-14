@@ -194,7 +194,14 @@
 
 
       <div class="card shadow-sm p-4 bg-light">
-        <h5 class="mb-3 font-weight-bold">Pago y Envío</h5>
+        <div class="d-flex justify-content-between">
+          <h5 class="mb-3 font-weight-bold">Pago y Envío</h5>
+          @if($posDeviceName !== null)
+            <h6 class="mb-3 text-success">POS Vinculado: <strong>{{$posDeviceName}}</strong></h6>
+          @elseif($posDeviceName === null)
+            <h6 class="mb-3 text-danger">Sin terminal POS Vinculada</h6>
+          @endif
+        </div>
 
         <div class="payment-options d-flex flex-wrap gap-2">
           <div class="payment-option flex-grow-1">

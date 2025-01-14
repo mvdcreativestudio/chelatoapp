@@ -139,6 +139,8 @@ class PosController extends Controller
                 if (!$accessToken) {
                     Log::error("No se pudo obtener el token para el store ID: " . $storeId);
                     return response()->json(['error' => 'No se pudo obtener el token de acceso para el proveedor POS'], 500);
+                } else {
+                  Log::info("Token obtenido para el store ID: " . $storeId);
                 }
 
                 return response()->json(['access_token' => $accessToken]);

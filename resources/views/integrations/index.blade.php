@@ -31,6 +31,7 @@
 @vite(['resources/assets/js/integrations/app-integration-email.js'])
 @vite(['resources/assets/js/integrations/app-integration-ecommerce.js'])
 @vite(['resources/assets/js/integrations/app-integration-handy.js'])
+@vite(['resources/assets/js/integrations/app-integration-oca.js'])
 @vite(['resources/assets/js/integrations/app-integration-fiserv.js'])
 @vite(['resources/assets/js/integrations/app-integration-scanntech.js'])
 
@@ -91,6 +92,7 @@
       role="tabpanel">
       <div class="integration-grid">
         @include('stores.partials.handy', ['store' => $store, 'devices' => $store->posDevices])
+        @include('stores.partials.oca', ['store' => $store, 'devices' => $store->posDevices])
         @include('stores.partials.fiserv', ['store' => $store, 'devices' => $store->posDevices])
         @include('stores.partials.scanntech', ['store' => $store, 'devices' => $store->posDevices])
         @include('stores.partials.integracion-ecommerce')

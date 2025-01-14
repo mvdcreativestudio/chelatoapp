@@ -144,18 +144,25 @@ $(document).ready(function () {
                 },
                 data: JSON.stringify(transactionData),
                 success: function (response) {
-                    const transactionId = response.TransactionId;
-                    const sTransactionId = response.STransactionId;
+                  console.log('Respuesta completa de la API:', response);
 
-                    if (transactionId && sTransactionId) {
-                        consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid);
-                    } else {
-                        showTransactionStatus({
-                            message: 'Error en la transacción POS. Intente nuevamente.',
-                            icon: 'error',
-                            showCloseButton: true
-                        });
-                    }
+                  // Obtener TransactionId y STransactionId con fallback a response.response
+                  const transactionId = response.TransactionId ?? response.response?.TransactionId;
+                  const sTransactionId = response.STransactionId ?? response.response?.STransactionId;
+
+                  console.log('Transaction ID:', transactionId);
+                  console.log('STransactionID:', sTransactionId);
+
+                  // Validar los datos antes de proceder
+                  if (transactionId && sTransactionId) {
+                      consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid);
+                  } else {
+                      showTransactionStatus({
+                          message: 'Error en la transacción POS. Intente nuevamente.',
+                          icon: 'error',
+                          showCloseButton: true
+                      });
+                  }
                 },
                 error: function (xhr) {
                     console.error('Error en la transacción POS:', xhr.responseText);

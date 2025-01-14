@@ -37,6 +37,10 @@ class PosService
                 Log::info('Configurando integración para Handy');
                 $this->posIntegration = new \App\Services\POS\HandyIntegrationService();
                 break;
+            case 4: // Handy
+                Log::info('Configurando integración para OCA');
+                $this->posIntegration = new \App\Services\POS\OcaIntegrationService();
+                break;
 
             default:
                 throw new \Exception('Proveedor POS no soportado: ' . $posProvider->id);
@@ -200,6 +204,10 @@ class PosService
             case 3: // Handy
                 Log::info('Integración seleccionada: Handy');
                 $this->posIntegration = new HandyIntegrationService();
+                break;
+            case 4: // OCA
+                Log::info('Integración seleccionada: OCA');
+                $this->posIntegration = new OcaIntegrationService();
                 break;
 
             default:

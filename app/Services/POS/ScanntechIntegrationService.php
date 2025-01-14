@@ -52,21 +52,41 @@ class ScanntechIntegrationService implements PosIntegrationInterface
             'Quotas' => $transactionData['Quotas'] ?? 1.5,
             'Plan' => $transactionData['Plan'] ?? 1,
             'Currency' => '858',
-            'TaxableAmount' => number_format($transactionData['TaxableAmount'] ?? 0, 0, '', ''),
-            'InvoiceAmount' => number_format($transactionData['InvoiceAmount'] ?? 0, 0, '', ''),
-            'TaxAmount' => number_format($transactionData['TaxAmount'] ?? 0, 0, '', ''),
-            'IVAAmount' => number_format($transactionData['IVAAmount'] ?? 0, 0, '', ''),
+            'TaxableAmount' => number_format($transactionData['Amount'] ?? 0, 0, '', ''),
+            'InvoiceAmount' => number_format($transactionData['Amount'] ?? 0, 0, '', ''),
             'NeedToReadCard' => $transactionData['NeedToReadCard'] ?? 0,
+            'order_id' => $transactionData['order_id'] ?? null,
+            'TransactionTimeOut' => '60', // 30 segundos o timeout
         ];
     }
 
     public function processTransaction(array $transactionData): array
     {
+        // Crear el registro inicial de la transacción
+        $initialTransaction = Transaction::create([
+          'order_id' => $transactionData['order_id'] ?? null, // Asignar el order_id desde los datos recibidos
+          'TransactionId' => null, // Inicialmente nulo, se actualizará con la respuesta de Fiserv
+          'STransactionId' => null, // Inicialmente nulo
+          'status' => 'pending', // Estado inicial de la transacción
+          'formatted_data' => $transactionData, // Guardar los datos iniciales de la transacción
+        ]);
+
+        // Verificar si el order_id se asignó correctamente en la transacción inicial
+        if (!$initialTransaction->order_id) {
+          Log::error('El order_id no se asignó correctamente en la transacción inicial:', [
+              'transactionData' => $transactionData,
+              'transactionRecord' => $initialTransaction->toArray(),
+          ]);
+        }
+
+        Log::info('Registro inicial de transacción creado en la base de datos:', $initialTransaction->toArray());
+
         $token = $this->authService->getAccessToken();
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Content-Type' => 'application/json',
         ])->post($this->apiUrl . 'postPurchase', $transactionData);
+
 
         Log::info('Enviando transacción a Scanntech', $transactionData);
 
@@ -74,14 +94,17 @@ class ScanntechIntegrationService implements PosIntegrationInterface
             $jsonResponse = $response->json();
             Log::info('Respuesta de Scanntech al procesar transacción:', $jsonResponse);
 
-            // Guardar la transacción
-            Transaction::create([
-                'TransactionId' => $jsonResponse['TransactionId'] ?? null,
-                'STransactionId' => $jsonResponse['STransactionId'] ?? null,
-                'store_id' => $transactionData['store_id'] ?? null,
-                'formatted_data' => json_encode($transactionData),
-                'response_data' => json_encode($jsonResponse),
+            // Actualizar el registro de la transacción con los datos de la respuesta de Fiserv
+            $initialTransaction->update([
+              'TransactionId' => $jsonResponse['TransactionId'] ?? null,
+              'STransactionId' => $jsonResponse['STransactionId'] ?? null,
+              'formatted_data' => array_merge($transactionData, [
+                  'TransactionId' => $jsonResponse['TransactionId'] ?? null,
+                  'STransactionId' => $jsonResponse['STransactionId'] ?? null,
+              ]),
             ]);
+
+            Log::info('Datos de la transacción actualizados en la base de datos:', $initialTransaction->toArray());
 
             return [
                 'success' => true,
@@ -107,15 +130,29 @@ class ScanntechIntegrationService implements PosIntegrationInterface
                 throw new \Exception('No se encontró información de la última transacción.');
             }
 
+            // Decodificar el campo formatted_data
+            $formattedData = $lastTransaction->formatted_data;
+
+            // Verificar si formatted_data ya es un arreglo
+            if (is_array($formattedData)) {
+                $formattedDataArray = $formattedData;
+            } else {
+                // Intentar decodificar si es una cadena JSON
+                $formattedDataArray = json_decode($formattedData, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new \Exception('El campo formatted_data no contiene un JSON válido.');
+                }
+            }
+
             // Preparar los datos para la consulta
             $queryData = array_merge(
-              json_decode($lastTransaction->formatted_data, true) ?? [], // Decodificar a un array
-              [
-                  'TransactionId' => $lastTransaction->TransactionId,
-                  'STransactionId' => $lastTransaction->STransactionId,
-              ]
+                $formattedDataArray ?? [], // Usar el arreglo procesado
+                [
+                    'TransactionId' => $lastTransaction->TransactionId,
+                    'STransactionId' => $lastTransaction->STransactionId,
+                ]
             );
-
 
             Log::info('Cuerpo de la solicitud para Scanntech getTransactionState', $queryData);
 
@@ -151,6 +188,7 @@ class ScanntechIntegrationService implements PosIntegrationInterface
         }
     }
 
+
     public function getResponses($responseCode)
     {
         $responses = Config::get('ScanntechResponses.postPurchaseResponses');
@@ -169,4 +207,61 @@ class ScanntechIntegrationService implements PosIntegrationInterface
             ];
         }
     }
+
+    public function reverseTransaction(array $transactionData): array
+    {
+        // Aquí va la lógica del método.
+        // Como ejemplo, podríamos retornar un array con un mensaje de error.
+        return [
+            'success' => false,
+            'message' => 'Reverse transaction not implemented.'
+        ];
+    }
+
+    public function voidTransaction(array $transactionData): array
+    {
+        // Implementación acorde a la interfaz
+        return [
+            'success' => false,
+            'message' => 'Void transaction not implemented.'
+        ];
+    }
+
+    public function pollVoidStatus(array $transactionData): array
+    {
+        // Implementación acorde a la interfaz
+        return [
+            'success' => false,
+            'message' => 'Poll void status not implemented.'
+        ];
+    }
+
+    public function fetchTransactionHistory(array $transactionData): array
+    {
+        // Implementación acorde a la interfaz
+        return [
+            'success' => false,
+            'message' => 'Poll void status not implemented.'
+        ];
+    }
+
+    public function fetchBatchCloses(array $transactionData): array
+    {
+        // Implementación acorde a la interfaz
+        return [
+            'success' => false,
+            'message' => 'Fetch batch closes not implemented.'
+        ];
+    }
+
+    public function fetchOpenBatches(array $transactionData): array
+    {
+        // Implementación acorde a la interfaz
+        return [
+            'success' => false,
+            'message' => 'Fetch open batches not implemented.'
+        ];
+    }
+
+
 }

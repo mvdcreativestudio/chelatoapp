@@ -1,66 +1,66 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Manejo de los switches para Scanntech
-  const scanntechSwitches = document.querySelectorAll('[id^="scanntechSwitch-"]');
-  scanntechSwitches.forEach(switchEl => {
+  // Manejo de los switches para Oca
+  const ocaSwitches = document.querySelectorAll('[id^="ocaSwitch-"]');
+  ocaSwitches.forEach(switchEl => {
     switchEl.addEventListener('change', function () {
       const storeId = this.dataset.storeId;
-      const card = document.getElementById(`scanntech-card-${storeId}`);
+      const card = document.getElementById(`oca-card-${storeId}`);
       if (!card) {
-        console.error(`No se encontró la tarjeta Scanntech con ID: scanntech-card-${storeId}`);
+        console.error(`No se encontró la tarjeta Oca con ID: oca-card-${storeId}`);
         return;
       }
 
       if (this.checked) {
         Swal.fire({
-          title: 'Activar Scanntech',
+          title: 'Activar Oca',
           html: `
-            <label for="company" class="form-label mt-3">Empresa</label>
-            <input type="text" id="company" class="form-control" placeholder="Ingrese el número/nombre de empresa">
+            <label for="systemId" class="form-label">ID de Sistema</label>
+            <input type="text" id="systemId" class="form-control" placeholder="Ingrese el ID de Sistema">
             <label for="branchId" class="form-label mt-3">Sucursal</label>
             <input type="text" id="branchId" class="form-control" placeholder="Ingrese el código de la sucursal">
           `,
           focusConfirm: false,
           preConfirm: () => {
+            const systemId = document.getElementById('systemId').value.trim();
             const branchId = document.getElementById('branchId').value.trim();
-            const company = document.getElementById('company').value.trim();
-            if (!branchId || !company) {
-              Swal.showValidationMessage('Todos los campos son obligatorios');
+            if (!systemId || !branchId) {
+              Swal.showValidationMessage('Ambos campos son obligatorios');
               return null;
             }
-            return {branchId, company };
+            return { systemId, branchId };
           },
           showCancelButton: true,
           confirmButtonText: 'Activar',
           cancelButtonText: 'Cancelar'
         }).then((result) => {
           if (result.isConfirmed) {
-            const { branchId, company } = result.value;
+            const { systemId, branchId } = result.value;
             card.classList.add('active-integration');
-            activateScanntech(storeId, company, branchId, this); // Enviar datos al servidor
+            activateOca(storeId, systemId, branchId, this); // Enviar datos al servidor
           } else {
             this.checked = false;
           }
         });
       } else {
         card.classList.remove('active-integration');
-        deactivateScanntech(storeId, this);
+        deactivateOca(storeId, this);
       }
     });
   });
 
-  // Delegación de eventos para agregar nuevas filas en el modal Scanntech
-  document.querySelectorAll('.modal[data-provider="scanntech"]').forEach((modal, modalIndex) => {
+  // Delegación de eventos para agregar nuevas filas en el modal Oca
+  document.querySelectorAll('.modal[data-provider="oca"]').forEach((modal, modalIndex) => {
     modal.addEventListener('click', function (event) {
       if (event.target.classList.contains('add-terminal-row') || event.target.closest('.add-terminal-row')) {
         const button = event.target.closest('.add-terminal-row');
         const storeId = button.dataset.storeId;
 
         const terminalsTable = modal.querySelector(
-          `.terminals-table[data-provider="scanntech"][data-store-id="${storeId}"]`
+          `.terminals-table[data-provider="oca"][data-store-id="${storeId}"]`
         );
 
         if (!terminalsTable) {
-          console.error(`No se encontró la tabla de terminales para el proveedor: scanntech, tienda: ${storeId}`);
+          console.error(`No se encontró la tabla de terminales para el proveedor: oca, tienda: ${storeId}`);
           return;
         }
 
@@ -132,14 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Botón de guardar cambios para Scanntech
-  document.querySelectorAll('.save-terminals[data-provider="scanntech"]').forEach(button => {
+  // Botón de guardar cambios para Oca
+  document.querySelectorAll('.save-terminals[data-provider="oca"]').forEach(button => {
     button.addEventListener('click', function () {
       const storeId = this.dataset.storeId;
 
       // Seleccionar la tabla específica usando data-provider y data-store-id
       const terminalsTable = document.querySelector(
-        `.terminals-table[data-provider="scanntech"][data-store-id="${storeId}"]`
+        `.terminals-table[data-provider="oca"][data-store-id="${storeId}"]`
       );
 
       if (!terminalsTable) {
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             identifier,
             user,
             cash_register: cashRegister,
-            pos_provider_id: 1 // Identificador del proveedor (Scanntech)
+            pos_provider_id: 4 // Identificador del proveedor (Oca)
           });
         } else {
           console.warn(`Fila ${index + 1} inválida. Falta Nombre o Identificador.`);
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (terminals.length === 0) {
         // Cierra cualquier popup activo antes de mostrar el nuevo
-        bootstrap.Modal.getInstance(document.querySelector(`#scanntechModal-${storeId}`)).hide();
+        bootstrap.Modal.getInstance(document.querySelector(`#ocaModal-${storeId}`)).hide();
 
 
         Swal.fire({
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
       // Mostrar animación de guardado
-      const modalContent = document.querySelector(`#scanntechModal-${storeId} .modal-content`);
+      const modalContent = document.querySelector(`#ocaModal-${storeId} .modal-content`);
       modalContent.classList.add('saving-animation');
       modalContent.innerHTML = `
         <div class="text-center p-5">
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             `;
             setTimeout(() => {
-              bootstrap.Modal.getInstance(document.querySelector(`#scanntechModal-${storeId}`)).hide();
+              bootstrap.Modal.getInstance(document.querySelector(`#ocaModal-${storeId}`)).hide();
               setTimeout(() => location.reload()); // Recargar la página después de cerrar el modal
             }, 1500);
           } else {
@@ -267,15 +267,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Función para activar Scanntech
-  function activateScanntech(storeId, company, branchId, switchEl) {
+  // Función para activar Oca
+  function activateOca(storeId, systemId, branchId, switchEl) {
     $.ajax({
-      url: `${window.baseUrl}admin/integrations/${storeId}/scanntech`,
+      url: `${window.baseUrl}admin/integrations/${storeId}/oca`,
       type: 'POST',
       data: {
-        accepts_scanntech: 1,
+        accepts_oca: 1,
+        system_id: systemId,
         branch: branchId,
-        company: company,
         _token: window.csrfToken
       },
       success: function (response) {
@@ -290,24 +290,24 @@ document.addEventListener('DOMContentLoaded', () => {
             location.reload(); // Recargar la página
           });
         } else {
-          console.error('Error al activar Scanntech:', response.message);
+          console.error('Error al activar Oca:', response.message);
           handleError(response.message, switchEl, false);
         }
       },
       error: function (xhr) {
-        console.error('Error en el servidor al activar Scanntech:', xhr.responseJSON?.message);
-        handleError(xhr.responseJSON?.message || 'Error al activar Scanntech', switchEl, false);
+        console.error('Error en el servidor al activar Oca:', xhr.responseJSON?.message);
+        handleError(xhr.responseJSON?.message || 'Error al activar Oca', switchEl, false);
       }
     });
   }
 
-  // Función para desactivar Scanntech
-  function deactivateScanntech(storeId, switchEl) {
+  // Función para desactivar Oca
+  function deactivateOca(storeId, switchEl) {
     $.ajax({
-      url: `${window.baseUrl}admin/integrations/${storeId}/scanntech`,
+      url: `${window.baseUrl}admin/integrations/${storeId}/oca`,
       type: 'POST',
       data: {
-        accepts_scanntech: 0,
+        accepts_oca: 0,
         _token: window.csrfToken
       },
       success: function (response) {
@@ -322,13 +322,13 @@ document.addEventListener('DOMContentLoaded', () => {
             location.reload(); // Recargar la página
           });
         } else {
-          console.error('Error al desactivar Scanntech:', response.message);
+          console.error('Error al desactivar Oca:', response.message);
           handleError(response.message, switchEl, false);
         }
       },
       error: function (xhr) {
-        console.error('Error en el servidor al desactivar Scanntech:', xhr.responseJSON?.message);
-        handleError(xhr.responseJSON?.message || 'Error al desactivar Scanntech', switchEl, true);
+        console.error('Error en el servidor al desactivar Oca:', xhr.responseJSON?.message);
+        handleError(xhr.responseJSON?.message || 'Error al desactivar Oca', switchEl, true);
       }
     });
   }

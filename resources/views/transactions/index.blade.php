@@ -71,9 +71,11 @@
                               <tr>
                                   <td>{{ $transaction->TransactionId }}</td>
                                   <td>
-                                      <a href="/admin/orders/{{ $transaction->order->uuid }}">
-                                          {{ $transaction->order_id }}
-                                      </a>
+                                      @if($transaction->order)
+                                          <a href="/admin/orders/{{ $transaction->order->uuid }}">
+                                              {{ $transaction->order_id }}
+                                          </a>
+                                      @endif
                                   </td>
                                   <td>
                                       @switch($transaction->type)

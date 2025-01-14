@@ -390,6 +390,7 @@ Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::clas
     Route::post('/integrations/{store}/pymo', [IntegrationController::class, 'handlePymoIntegration'])->name('integration.pymo.update');
     Route::post('/integrations/{store}/pedidosya', [IntegrationController::class, 'handlePedidosYaIntegration'])->name('integration.pedidosya.update');
     Route::get('/integrations/pymo-connection/{storeId}', [IntegrationController::class, 'checkPymoConnection'])->name('integrations.pymo-connection');
+    Route::post('/integrations/{store}/oca', [IntegrationController::class, 'handleOcaIntegration']);
     Route::post('/integrations/{store}/handy', [IntegrationController::class, 'handleHandyIntegration']);
     Route::post('/integrations/{store}/fiserv', [IntegrationController::class, 'handleFiservIntegration']);
     Route::post('/integrations/{store}/scanntech', [IntegrationController::class, 'handleScanntechIntegration']);
