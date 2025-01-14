@@ -20,17 +20,17 @@ class OrdersExport implements FromCollection, WithHeadings
     {
         return collect($this->orders)->map(function ($order) {
             $products = json_decode($order['products'], true);
-            $totalUtility = 0;
-            foreach ($products as $product) {
-                if(!isset($product['id'])) {
-                    continue;
-                }
-                $productBuildPrice = Product::find($product['id'])->build_price;
-                $buildPrice = $productBuildPrice ?? 0;
-                if (isset($product['price'])) {
-                    $totalUtility += ($product['price'] - $buildPrice);
-                }
-            }
+            // $totalUtility = 0;
+            // foreach ($products as $product) {
+            //     if(!isset($product['id'])) {
+            //         continue;
+            //     }
+            //     $productBuildPrice = Product::find($product['id'])->build_price;
+            //     $buildPrice = $productBuildPrice ?? 0;
+            //     if (isset($product['price'])) {
+            //         $totalUtility += ($product['price'] - $buildPrice);
+            //     }
+            // }
 
             $paymenStatus = '';
             if ($order['payment_status'] == 'paid') {
@@ -49,7 +49,7 @@ class OrdersExport implements FromCollection, WithHeadings
                 'total' => $order['total'],
                 'payment_status' => $paymenStatus,
                 'is_billed' => $order['is_billed'] ? 'Facturado' : 'No Facturado',
-                'utility' => '$' . $totalUtility // Cálculo de la utilidad total
+                // 'utility' => '$' . $totalUtility // Cálculo de la utilidad total
             ];
         });
     }
@@ -64,7 +64,7 @@ class OrdersExport implements FromCollection, WithHeadings
             'Total',
             'Estado de Pago',
             'Facturado',
-            'Ganancia',
+            // 'Ganancia',
         ];
     }
 }

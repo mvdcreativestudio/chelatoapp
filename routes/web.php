@@ -63,6 +63,7 @@ use App\Http\Controllers\PackagingController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\PackageComponentController;
 use App\Http\Controllers\ProductCatalogueController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadTaskController;
 use App\Http\Controllers\LeadAttachedFileController;
@@ -214,11 +215,11 @@ Route::middleware([
     Route::get('crm', [LeadController::class, 'index']);
     Route::post('leads', [LeadController::class, 'store']);
     Route::put('leads/{leadId}/update-category', [LeadController::class, 'updateCategory']);
-    Route::delete('leads/{id}', [LeadController::class, 'destroy']); 
-    Route::put('leads/{id}', [LeadController::class, 'update']); 
+    Route::delete('leads/{id}', [LeadController::class, 'destroy']);
+    Route::put('leads/{id}', [LeadController::class, 'update']);
     Route::post('lead-tasks', [LeadTaskController::class, 'store']);
     Route::get('lead-tasks', [LeadTaskController::class, 'getAll']);
-    Route::delete('lead-tasks/{id}', [LeadTaskController::class, 'destroy']); 
+    Route::delete('lead-tasks/{id}', [LeadTaskController::class, 'destroy']);
     Route::put('lead-tasks/{leadId}/{status}', [LeadTaskController::class, 'updateStatus']);
     Route::post('lead-attached-files', [LeadAttachedFileController::class, 'store']);
     Route::get('lead-attached-files/{leadId}', [LeadAttachedFileController::class, 'getFilesByLead']);
@@ -310,6 +311,12 @@ Route::middleware([
     Route::post('/point-of-sale/mercado-pago/update-pos/{id}', [CashRegisterController::class, 'updatePosMercadoPago']);
     Route::delete('/point-of-sale/mercado-pago/delete-pos/{id}', [CashRegisterController::class, 'deletePosMercadoPago']);
 
+    // Vinculación de POS a los PDV
+    Route::post('/cash-registers/{cashRegister}/link-pos', [CashRegisterController::class, 'linkPos']);
+    Route::delete('/cash-registers/{cashRegister}/unlink-pos/{posDevice}', [CashRegisterController::class, 'unlinkPos']);
+    Route::get('/get-pos-devices', [CashRegisterController::class, 'getPosDevices']);
+
+
     Route::post('/pdv/open', [CashRegisterLogController::class, 'store']);
     Route::post('/pdv/close/{id}', [CashRegisterLogController::class, 'closeCashRegister']);
     Route::get('/pdv/clients/json', [CashRegisterLogController::class, 'getAllClients']);
@@ -388,7 +395,12 @@ Route::middleware([
     Route::post('/integrations/{store}/pymo', [IntegrationController::class, 'handlePymoIntegration'])->name('integration.pymo.update');
     Route::post('/integrations/{store}/pedidosya', [IntegrationController::class, 'handlePedidosYaIntegration'])->name('integration.pedidosya.update');
     Route::get('/integrations/pymo-connection/{storeId}', [IntegrationController::class, 'checkPymoConnection'])->name('integrations.pymo-connection');
-    
+    Route::post('/integrations/{store}/oca', [IntegrationController::class, 'handleOcaIntegration']);
+    Route::post('/integrations/{store}/handy', [IntegrationController::class, 'handleHandyIntegration']);
+    Route::post('/integrations/{store}/fiserv', [IntegrationController::class, 'handleFiservIntegration']);
+    Route::post('/integrations/{store}/scanntech', [IntegrationController::class, 'handleScanntechIntegration']);
+
+
     // Gestión de Roles
     Route::prefix('roles/{role}')->name('roles.')->group(function () {
         Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('manageUsers');
@@ -443,6 +455,8 @@ Route::middleware([
     Route::post('/orders/{orderId}/update-status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
     Route::get('/orders/{order}/pdf', [OrderPdfController::class, 'generatePdf'])->name('orders.pdf');
     Route::post('/orders/{order}/emit-cfe', [OrderController::class, 'emitCFE'])->name('orders.emitCFE');
+    Route::post('/orders/{orderId}/set-order-as-paid', [OrderController::class, 'setOrderAsPaid'])->name('orders.setOrderAsPaid');
+
 
     // Gestión de Cupones
     Route::post('marketing/coupons/delete-selected', [CouponController::class, 'deleteSelected'])->name('coupons.deleteSelected');
@@ -569,6 +583,9 @@ Route::middleware([
         Route::post('/delete-multiple', [CurrencyController::class, 'deleteMultiple'])->name('currencies.deleteMultiple');
 
     });
+
+    // Transacciones
+    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 });
 
 // Recursos con acceso público

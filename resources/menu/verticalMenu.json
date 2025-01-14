@@ -52,6 +52,13 @@
       "url": "/admin/orders"
     },
     {
+      "id": "tour-transacciones",
+      "name": "Transacciones",
+      "icon": "menu-icon tf-icons bx bx-credit-card-alt",
+      "slug": "transactions",
+      "url": "/admin/transactions"
+    },
+    {
       "id": "tour-clientes",
       "name": "Clientes",
       "icon": "menu-icon tf-icons bx bx-user",
@@ -110,7 +117,7 @@
     },
     {
       "id": "tour-integrations",
-      "name": "Integraciones",
+      "name": "Herramientas",
       "icon": "menu-icon tf-icons bx bx-link",
       "slug": "integrations",
       "url": "/admin/integrations"

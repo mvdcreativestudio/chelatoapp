@@ -100,6 +100,11 @@ $changeTypeTranslations = [
       @elseif($order->shipping_status === 'delivered')
       <span class="badge bg-label-info">Entregado</span>
       @endif
+
+      <!-- Mostrar estado de reverso -->
+      @if($order->transaction && $order->transaction->status === 'reversed')
+      <span class="badge bg-label-warning me-2 ms-2">Reversado</span>
+      @endif
     </h6>
     <h6 class="card-title mb-1 mt-1">Empresa:
       <span class="mb-1 me-2 ms-2">{{ $order->store->name }}</span>
@@ -152,20 +157,153 @@ $changeTypeTranslations = [
     <a href="{{ route('invoices.download', ['id' => $invoice->id]) }}" class="btn btn-sm btn-label-info">
       PDF Factura
     </a>
+
     {{-- send email --}}
     <div class="d-inline-block" @if(!$isStoreConfigEmailEnabled) data-bs-toggle="tooltip" data-bs-offset="0,4"
       data-bs-placement="left" data-bs-html="true" title="Debe asociarse a una tienda y tener configurado el envio de correos" @endif>
-      <button type="button" class="btn btn-sm d-flex align-items-center animate__animated animate__pulse 
+      <button type="button" class="btn btn-sm d-flex align-items-center animate__animated animate__pulse
             @if(!$isStoreConfigEmailEnabled) btn-danger @else btn-label-info @endif" data-bs-toggle="modal"
         data-bs-target="#sendEmailModal" @if(!$isStoreConfigEmailEnabled) disabled @endif>
         <i class="bx bx-envelope fs-5"></i> Enviar Factura por Correo
       </button>
     </div>
-
-
     @endif
     <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download"
-      class="btn btn-sm btn-label-primary">PDF Venta</a>
+      class="btn btn-sm btn-label-primary">PDF Venta
+    </a>
+
+    <!-- Botón para reversar la transacción -->
+    @if($order->payment_method === 'debit' || $order->payment_method === 'credit')
+        <button class="btn btn-sm btn-warning"
+            id="reverseTransactionButton"
+            data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}"
+            data-stransaction-id="{{ $order->transaction->STransactionId ?? '' }}"
+            data-store-id="{{ $order->store_id }}"
+            {{ $order->transaction && $order->transaction->status === 'reversed' ? 'disabled' : '' }}>
+            Reversar Transacción
+        </button>
+    @endif
+
+    <!-- Botón para anular la transacción -->
+    @if($order->payment_method === 'debit' || $order->payment_method === 'credit')
+    <button
+      class="btn btn-sm btn-danger"
+      data-bs-toggle="modal"
+      data-bs-target="#voidTransactionModal"
+      data-store-id="{{ $order->store_id }}"
+      data-order-id="{{ $order->id }}"
+      data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}">
+      Anular Transacción
+    </button>
+    @endif
+
+    <!-- Botón para realizar un refund -->
+    @if($order->transaction && $order->transaction->status === 'completed')
+    <button
+      class="btn btn-sm btn-success"
+      data-bs-toggle="modal"
+      data-bs-target="#refundTransactionModal"
+      data-store-id="{{ $order->store_id }}"
+      data-order-id="{{ $order->id }}"
+      data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}"
+      data-stransaction-id="{{ $order->transaction->STransactionId ?? '' }}">
+      Devolución
+    </button>
+    @endif
+
+    <!-- Modal para refund -->
+    <div class="modal fade" id="refundTransactionModal" tabindex="-1" aria-labelledby="refundTransactionModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="refundTransactionForm">
+            <div class="modal-header">
+              <h5 class="modal-title" id="refundTransactionModalLabel">Realizar Devolución</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="storeIdRefundInput" name="store_id">
+              <input type="hidden" id="orderIdRefundInput" name="order_id">
+              <input type="hidden" id="transactionIdRefundInput" name="transaction_id">
+              <input type="hidden" id="sTransactionIdRefundInput" name="s_transaction_id">
+
+              <!-- Selección de dispositivo POS -->
+              <div class="mb-3">
+                <label for="posDeviceSelectRefund" class="form-label">Seleccione Dispositivo POS</label>
+                <select class="form-select" id="posDeviceSelectRefund" name="pos_device_id" required>
+                  <option value="" selected disabled>Seleccione un dispositivo POS</option>
+                  <!-- Opciones cargadas dinámicamente -->
+                </select>
+              </div>
+
+              <!-- Número de Ticket -->
+              <div class="mb-3">
+                <label for="ticketNumberRefund" class="form-label">Número de Ticket</label>
+                <input type="text" class="form-control" id="ticketNumberRefund" name="ticket_number" required>
+              </div>
+
+              <!-- Monto a devolver -->
+              <div class="mb-3">
+                <label for="refundAmount" class="form-label">Monto a devolver</label>
+                <input type="number" class="form-control" id="refundAmount" name="amount" min="0.01" step="0.01" required>
+              </div>
+
+              <!-- Fecha de la transacción original -->
+              <div class="mb-3">
+                <label for="originalTransactionDate" class="form-label">Fecha de la transacción original</label>
+                <input type="date" class="form-control" id="originalTransactionDate" name="original_transaction_date" required>
+              </div>
+
+              <!-- Motivo de la devolución -->
+              <div class="mb-3">
+                <label for="refundReason" class="form-label">Motivo de la devolución</label>
+                <textarea class="form-control" id="refundReason" name="reason" rows="3" required></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-success">Procesar Refund</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Modal para ingresar el número de ticket -->
+    <div class="modal fade" id="voidTransactionModal" tabindex="-1" aria-labelledby="voidTransactionModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="voidTransactionForm">
+            <div class="modal-header">
+              <h5 class="modal-title" id="voidTransactionModalLabel">Anular Transacción</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="storeIdInput" name="store_id">
+              <input type="hidden" id="orderIdInput" name="order_id">
+              <div class="mb-3">
+                <label for="posDeviceSelect" class="form-label">Dispositivo POS</label>
+                <select class="form-select" id="posDeviceSelect" name="pos_device_id" required>
+                  <option value="" selected disabled>Seleccione un dispositivo POS</option>
+                  <!-- Opciones se llenarán dinámicamente -->
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="ticketNumber" class="form-label">Número de Ticket</label>
+                <input type="text" class="form-control" id="ticketNumber" name="ticketNumber" required>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Anular Transacción</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+
 
     {{-- boton devolver dinero mercado pago --}}
     @if($order->payment_method === 'qr_attended' || $order->payment_method === 'qr_dynamic' && $order->payment_status === 'paid')
@@ -188,6 +326,8 @@ $changeTypeTranslations = [
       <i class="bx bx-trash"></i>
     </button>
     @endif
+
+
 
 
 

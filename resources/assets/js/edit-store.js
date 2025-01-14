@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
       requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice']
     },
     { id: 'scanntechSwitch', fieldsId: 'scanntechFields', requiredFields: ['scanntechCompany', 'scanntechBranch'] },
+
     {
       id: 'emailConfigSwitch',
       fieldsId: 'emailConfigFields',
@@ -42,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
         'mailFromName'
       ]
     }
+
   ];
 
   // Añadir animación de transición
@@ -240,3 +242,23 @@ document.addEventListener('DOMContentLoaded', function () {
     parseAddress();
   }
 });
+
+document.getElementById('scanntechSwitch').addEventListener('change', function () {
+  if (this.checked) {
+      document.getElementById('fiservSwitch').checked = false;
+  }
+});
+
+// document.getElementById('fiservSwitch').addEventListener('change', function () {
+//   if (this.checked) {
+//       document.getElementById('scanntechSwitch').checked = false;
+//       document.getElementById('handySwitch').checked = false;
+//   }
+// });
+
+// document.getElementById('handySwitch').addEventListener('change', function () {
+//   if (this.checked) {
+//       document.getElementById('scanntechSwitch').checked = false;
+//       document.getElementById('fiservSwitch').checked = false;
+//   }
+// });

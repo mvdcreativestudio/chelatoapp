@@ -138,7 +138,7 @@
             <div class="card-header p-3" id="headingDiscount" data-bs-toggle="collapse" data-bs-target="#discountCollapse" aria-expanded="false" aria-controls="discountCollapse" role="button">
                 <h5 class="mb-0 font-weight-bold">Descuentos <i class="bx bx-chevron-down float-end"></i></h5>
             </div>
-    
+
             <!-- Contenido de la tarjeta que será colapsable -->
             <div id="discountCollapse" class="collapse">
                 <div class="card-body p-3">
@@ -168,7 +168,7 @@
             </div>
         </div>
       </div>
-    
+
 
       <div class="price-list-section mt-3 mb-3">
         <div class="card shadow-sm border-0">
@@ -191,11 +191,18 @@
             </div>
         </div>
       </div>
-    
+
 
       <div class="card shadow-sm p-4 bg-light">
-        <h5 class="mb-3 font-weight-bold">Pago y Envío</h5>
-    
+        <div class="d-flex justify-content-between">
+          <h5 class="mb-3 font-weight-bold">Pago y Envío</h5>
+          @if($posDeviceName !== null)
+            <h6 class="mb-3 text-success">POS Vinculado: <strong>{{$posDeviceName}}</strong></h6>
+          @elseif($posDeviceName === null)
+            <h6 class="mb-3 text-danger">Sin terminal POS Vinculada</h6>
+          @endif
+        </div>
+
         <div class="payment-options d-flex flex-wrap gap-2">
           <div class="payment-option flex-grow-1">
             <input class="btn-check" type="radio" name="paymentMethod" id="cash" autocomplete="off">
@@ -203,21 +210,21 @@
               <i class="bx bx-money me-2"></i> Efectivo
             </label>
           </div>
-    
+
           <div class="payment-option flex-grow-1">
             <input class="btn-check" type="radio" name="paymentMethod" id="debit" autocomplete="off">
             <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="debit" style="min-width: 100px;">
               <i class="bx bx-credit-card me-2"></i> Débito
             </label>
           </div>
-    
+
           <div class="payment-option flex-grow-1">
             <input class="btn-check" type="radio" name="paymentMethod" id="credit" autocomplete="off">
             <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="credit" style="min-width: 100px;">
               <i class="bx bx-credit-card-front me-2"></i> Crédito
             </label>
           </div>
-    
+
           <div class="payment-option flex-grow-1">
             <input class="btn-check" type="radio" name="paymentMethod" id="internalCredit" autocomplete="off">
             <label class="btn btn-outline-primary d-flex align-items-center justify-content-center w-100" for="internalCredit" style="min-width: 100px;">
@@ -241,13 +248,13 @@
           </div>
           @endif
         </div>
-    
+
         <div class="mt-3 cash-details" id="cashDetails">
           <input type="number" id="valorRecibido" min="0" step=".01" class="form-control form-control-lg mb-2" placeholder="Valor recibido">
           <p class="text-muted mb-0">Vuelto: <span id="vuelto" class="fw-bold">0</span></p>
           <small id="mensajeError" class="text-danger d-none">El valor recibido es insuficiente.</small>
         </div>
-    
+
         <div class="mt-4">
           <h5 class="card-title mb-3 text-primary">Estado de entrega</h5>
           <select id="shippingStatus" class="form-select form-select-sm">
@@ -257,7 +264,7 @@
           </select>
         </div>
     </div>
-    
+
       <div class="demo-inline-spacing d-flex justify-content-between">
         <a href="{{ route('pdv.front') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
         <button class="btn btn-success w-100"><i class="bx bx-check"></i> Finalizar venta</button>

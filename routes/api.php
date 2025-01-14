@@ -46,12 +46,32 @@ Route::post('/pedidos-ya/confirm-order', [PedidosYaController::class, 'confirmOr
 Route::get('/get-pedidosya-key/{store_id}', [PedidosYaController::class, 'getApiKey']);
 
 
-// Pos
+// Rutas Api Pos
 Route::get('/pos/token', [PosController::class, 'getPosToken']);
 Route::get('/pos/responses', [PosController::class, 'getPosResponses']);
+Route::get('/pos/get-provider/{store_id}', [PosController::class, 'getProviderByStoreId']);
 Route::post('/pos/process-transaction', [PosController::class, 'processTransaction']);
 Route::post('/pos/check-transaction-status', [PosController::class, 'checkTransactionStatus']);
+Route::post('pos/reverse', [PosController::class, 'reverseTransaction']);
+Route::post('/pos/void', [PosController::class, 'voidTransaction']);
+Route::post('/pos/poll-void-status', [PosController::class, 'pollVoidStatus']);
 Route::get('/pos/get-device-info/{cashRegisterId}', [PosController::class, 'getDeviceInfo']);
+Route::post('/pos/devices/sync', [PosController::class, 'sync'])->name('posDevices.sync');
+Route::delete('/pos/devices/{id}', [PosController::class, 'delete'])->name('posDevices.delete');
+Route::get('/pos-devices', [PosController::class, 'getPosDevices'])->name('pos.devices');
+Route::post('/pos/fetchTransactionHistory', [PosController::class, 'fetchTransactionHistory'])->name('pos.fetchTransactionHistory');
+Route::get('/pos/devices/{store_id}', [PosController::class, 'getDevicesByStore']);
+Route::post('/pos/refund', [PosController::class, 'processRefund'])->name('pos.refund');
+
+// Rutas para consulta de lotes
+Route::post('/pos/fetchBatchCloses', [PosController::class, 'fetchBatchCloses'])->name('pos.fetchBatchCloses');
+Route::get('/pos/batchTransactions', [PosController::class, 'getBatchTransactions'])->name('pos.batchTransactions');
+Route::post('/pos/fetchOpenBatches', [PosController::class, 'fetchOpenBatches'])->name('pos.fetchOpenBatches');
+
+
+
+
+
 
 
 
