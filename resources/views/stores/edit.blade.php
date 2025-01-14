@@ -431,10 +431,14 @@
                                             @endif
                                         </div>
                                     </div>
-                                    <!-- Botones -->
-                                    <div class="d-flex justify-content-end">
-                                        <button type="submit" class="btn btn-primary">Actualizar Tienda</button>
-                                    </div>
+                                </div>
+
+                                <!-- Integración Configuración de Correo -->
+                                @include('stores.partials.configuracion-correo')
+
+                                <!-- Botones -->
+                                <div class="d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary">Actualizar Tienda</button>
                                 </div>
                             </div>
         </form>

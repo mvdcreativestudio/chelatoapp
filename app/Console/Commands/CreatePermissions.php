@@ -293,7 +293,11 @@ class CreatePermissions extends Command
                         'delete_income-categories',
                     ],
                 ],
-
+                [
+                    'slug' => 'event-configurations',
+                    'module' => 'management',
+                    'view_all' => true,
+                ],
             ],
         ];
 

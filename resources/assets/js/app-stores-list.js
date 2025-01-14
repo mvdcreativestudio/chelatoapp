@@ -67,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function () {
                   <a class="dropdown-item" href="${storeManageHours.replace(':id', row.id)}">
                     <i class="bx bx-time"></i> Modificar Horarios
                   </a>
+                  <a class="dropdown-item" href="${events.replace(':id', row.id)}">
+                      <i class="bx bx-bell"></i> Ver Notificaciones
+                  </a>
                   <form class="delete-form-${row.id}" action="${storeChangeStatus.replace(':id', row.id)}" method="POST">
                     <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
                     ${actionButton}
