@@ -9,6 +9,8 @@
 'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
 'resources/assets/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.scss',
 'resources/assets/vendor/libs/@form-validation/form-validation.scss',
+'resources/assets/vendor/libs/select2/select2.scss',
+'resources/assets/vendor/libs/toastr/toastr.scss',
 'resources/assets/vendor/libs/select2/select2.scss'
 ])
 @endsection
@@ -22,6 +24,7 @@
 'resources/assets/vendor/libs/@form-validation/bootstrap5.js',
 'resources/assets/vendor/libs/@form-validation/auto-focus.js',
 'resources/assets/vendor/libs/cleavejs/cleave.js',
+'resources/assets/vendor/libs/toastr/toastr.js',
 'resources/assets/vendor/libs/cleavejs/cleave-phone.js'
 ])
 @endsection
@@ -58,7 +61,6 @@
     </button>
   </div>
 </div>
-
 
 @if(session('success'))
 <div class="alert alert-success d-flex" role="alert">
@@ -108,10 +110,10 @@
 
         <!-- Campo Razón Social y RUT para Empresa -->
         <div class="mb-3" id="razonSocialField" style="display: none;">
-            <label class="form-label" for="company_name">Razón Social <span class="text-danger">*</span></label>
+            <label class="form-label" for="company_name">Razón Social</label>
             <input type="text" class="form-control" id="company_name" placeholder="Ingrese la razón social" name="company_name" />
         </div>
-    
+
         <div class="mb-3" id="rutField" style="display: none;">
             <label class="form-label" for="rut">RUT <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="rut" placeholder="Ingrese el RUT" name="rut" />
@@ -144,14 +146,14 @@
             <label class="form-label" for="ecommerce-customer-add-email">Email</label>
             <input type="email" id="ecommerce-customer-add-email" class="form-control" placeholder="mail@empresa.com" name="email"/>
         </div>
-    
+
         <!-- Campo Teléfono (opcional) -->
         <div>
             <label class="form-label" for="ecommerce-customer-add-contact">Teléfono</label>
             <input type="text" id="ecommerce-customer-add-contact" class="form-control" placeholder="Ingrese el teléfono" name="phone" />
         </div>
       </div>
-      
+
       <!-- Campos adicionales compartidos -->
       <div class="ecommerce-customer-add-shiping mb-3 pt-2">
           <div class="mb-3">
@@ -177,7 +179,7 @@
               <input type="text" id="website" class="form-control" placeholder="Ingrese el sitio web" name="website" />
           </div>
       </div>
-      
+
       <!-- Selección de lista de precios -->
       <div class="mb-3 mt-3">
         <label class="form-label" for="price_list_id">Lista de Precios</label>
@@ -189,8 +191,6 @@
         </select>
         <small class="text-primary mt-2" id="createNewPriceListLink" style="cursor: pointer;">Crear nueva lista de precios</small>
       </div>
-
-      
 
       <div class="pt-3">
         <button type="button" class="btn btn-primary me-sm-3 me-1 data-submit" id="guardarCliente">Crear cliente</button>

@@ -121,6 +121,35 @@ class AccountingRepository
                 $invoice->hide_emit = true;
             }
 
+          return [
+              'id' => $invoice->id,
+              'store_name' => $invoice->order->store->name ?? 'N/A',
+              'client_name' => $invoice->order->client->name ?? 'Consumidor Final',
+              'client_email' => $invoice->order->client->email ?? '',
+              'client_lastname' => $invoice->order->client->lastname ?? '',
+              'date' => $invoice->emitionDate,
+              'order_id' => $invoice->order->id,
+              'type' => $typeCFEs[$invoice->type] ?? '',
+              'currency' => 'USD',
+              'total' => $invoice->total,
+              'qrUrl' => $invoice->qrUrl,
+              'order_uuid' => $invoice->order->uuid,
+              'serie' => $invoice->serie,
+              'cfeId' => $invoice->cfeId,
+              'nro' => $invoice->nro,
+              'balance' => $invoice->balance,
+              'caeNumber' => $invoice->caeNumber,
+              'caeRange' => $invoice->caeRange,
+              'caeExpirationDate' => $invoice->caeExpirationDate,
+              'sentXmlHash' => $invoice->sentXmlHash,
+              'securityCode' => $invoice->securityCode,
+              'reason' => $invoice->reason,
+              'associated_id' => $invoice->main_cfe_id,
+              'is_receipt' => $invoice->is_receipt,
+              'hide_emit' => $invoice->hide_emit,
+              'status' => $invoice->status ?? '',
+          ];
+      });
             return [
                 'id' => $invoice->id,
                 'store_name' => $invoice->order->store->name ?? 'N/A',
@@ -550,23 +579,24 @@ class AccountingRepository
         $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
         $proportion = ($amountToBill < $order->total) ? $amountToBill / $order->total : 1;
 
-        // Activar para facturación en dolares
-        // $usdRate = CurrencyRate::where('name', 'Dólar')
-        //     ->first()
-        //     ->histories()
-        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-        //     ->first();
 
-        // if ($usdRate) {
-        //     $exchangeRate = (float) $usdRate->sell;
-        // } else {
-        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        // }
+        // Activar para facturación en dolares  
+        $usdRate = CurrencyRate::where('name', 'Dólar')
+            ->first()
+            ->histories()
+            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+            ->first();
+    
+        if ($usdRate) {
+            $exchangeRate = (float) $usdRate->sell;
+        } else {
+            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        }
 
         $ivaTasaBasica = 22;
         $subtotalConIVA = 0;
         $totalDescuento = 0;
-
+    
         $items = array_map(function ($product, $index) use ($proportion, $order, &$subtotalConIVA, &$totalDescuento, $ivaTasaBasica) {
             $adjustedAmount = round($product['quantity'] * $proportion, 2);
 
@@ -574,10 +604,10 @@ class AccountingRepository
             $productPriceConIVA = round($product['price'], 2);
             $discountPercentage = (($order->subtotal - $order->total) / $order->subtotal) * 100;
             $discountAmount = round($productPriceConIVA * ($discountPercentage / 100), 2);
-
+            
             $totalDescuento += $discountAmount * $adjustedAmount;
             $subtotalConIVA += ($productPriceConIVA - $discountAmount) * $adjustedAmount;
-
+    
             $cleanedProductName = $this->cleanProductName($product['name']);
 
             Log::info('Descuentos:', ['PrecioConIVA' => $productPriceConIVA, 'Descuento %' => $discountPercentage, 'Descuento $' => $discountAmount]);
@@ -608,12 +638,12 @@ class AccountingRepository
             ],
             'Receptor' => (object) [],
             'Totales' => [
-                'TpoMoneda' => 'UYU',
-                // 'TpoCambio' => $exchangeRate,
+                'TpoMoneda' => 'USD',
+                'TpoCambio' => $exchangeRate,
             ],
             'Items' => $items,
         ];
-
+    
         if ($client) {
             $cfeData['Receptor'] = [
                 'TipoDocRecep' => $client->type === 'company' ? 2 : 3,
@@ -623,7 +653,7 @@ class AccountingRepository
                 'CiudadRecep' => $client->city,
                 'DeptoRecep' => $client->state,
             ];
-
+    
             if ($client->type === 'company' && $client->rut) {
                 $cfeData['Receptor']['DocRecep'] = $client->rut;
             } elseif ($client->type === 'individual' && $client->ci) {
@@ -632,13 +662,14 @@ class AccountingRepository
                 Log::error('Error: Cliente sin documento adecuado para DocRecep en la orden ' . $order->id);
             }
         }
-
+    
         if ($cfeType === '101') {
             $cfeData['IdDoc']['FchEmis'] = now()->toIso8601String();
         }
-
+    
         return $cfeData;
     }
+    
 
 
     /**
@@ -816,22 +847,58 @@ class AccountingRepository
     {
         $order = $invoice->order;
 
-        // $usdRate = CurrencyRate::where('name', 'Dólar')
-        //     ->first()
-        //     ->histories()
-        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-        //     ->first();
+        $usdRate = CurrencyRate::where('name', 'Dólar')
+            ->first()
+            ->histories()
+            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+            ->first();
 
-        // if ($usdRate) {
-        //     $exchangeRate = (float) $usdRate->sell;
-        // } else {
-        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        // }
+        if ($usdRate) {
+            $exchangeRate = (float) $usdRate->sell;
+        } else {
+            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        }
 
         Log::info('Tipo de nota: ' . $noteType);
 
         // El clientEmissionid debe ser unico sabiendo q puedo generar mas de un tipo de nota para una misma factura
         $notaData = [
+          'clientEmissionId' => $order->uuid . '-' . $noteType . '-' . now()->timestamp,
+          'adenda' => $reason,
+          'IdDoc' => [
+              'FchEmis' => now()->toIso8601String(),
+              'FmaPago' => '1',
+          ],
+          'Receptor' => (object) [], // Inicializar como objeto vacío
+          'Totales' => [
+              'TpoMoneda' => 'USD',
+              'TpoCambio' => $exchangeRate,
+          ],
+          'Referencia' => [
+              [
+                  'NroLinRef' => '1',
+                  'IndGlobal' => '1',
+                  'TpoDocRef' => $invoice->type,
+                  'Serie' => $invoice->serie,
+                  'NroCFERef' => $invoice->nro,
+                  'RazonRef' => $reason,
+                  'FechaCFEref' => $invoice->emitionDate->toIso8601String()
+              ]
+          ],
+          'Items' => [
+              [
+                  'NroLinDet' => '1',
+                  'IndFact' => 6,
+                  'NomItem' => 'Nota de ' . ($noteType == 'credit' ? 'Crédito' : 'Débito') . ' - Ajuste',
+                  'Cantidad' => '1',
+                  'UniMed' => 'N/A',
+                  'PrecioUnitario' => $noteAmount,
+                  'MontoItem' => $noteAmount,
+              ]
+          ],
+          'Emisor' => [
+              'GiroEmis' => 'Chelato'
+          ]
             'clientEmissionId' => $order->uuid . '-' . $noteType . '-' . now()->timestamp,
             'adenda' => $reason,
             'IdDoc' => [
@@ -1072,17 +1139,17 @@ class AccountingRepository
         $order = $invoice->order;
 
         // Obtener la tasa de cambio del historial de CurrencyRate
-        // $usdRate = CurrencyRate::where('name', 'Dólar')
-        //     ->first()
-        //     ->histories()
-        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-        //     ->first();
+        $usdRate = CurrencyRate::where('name', 'Dólar')
+            ->first()
+            ->histories()
+            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+            ->first();
 
-        // if ($usdRate) {
-        //     $exchangeRate = (float) $usdRate->sell;
-        // } else {
-        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        // }
+        if ($usdRate) {
+            $exchangeRate = (float) $usdRate->sell;
+        } else {
+            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        }
 
         $data = [
             'clientEmissionId' => $invoice->order->uuid . '-R',
@@ -1093,8 +1160,8 @@ class AccountingRepository
             ],
             'Receptor' => (object) [], // Inicializar como objeto vacío
             'Totales' => [
-                'TpoMoneda' => 'UYU',
-                // 'TpoCambio' => $exchangeRate, // Tasa de cambio en USD
+                'TpoMoneda' => 'USD',
+                'TpoCambio' => $exchangeRate, // Tasa de cambio en USD
             ],
             'Referencia' => [
                 [
@@ -1609,4 +1676,139 @@ class AccountingRepository
             ];
         });
     }
+
+    public function getActiveCaes(Store $store): ?array
+    {
+        $caeTypes = [
+            '101' => 'eTicket',
+            '102' => 'eTicket - Nota de Crédito',
+            '103' => 'eTicket - Nota de Débito',
+            '111' => 'eFactura',
+            '112' => 'eFactura - Nota de Crédito',
+            '113' => 'eFactura - Nota de Débito',
+        ];
+
+        $cookies = $this->login($store);
+
+        if (!$cookies) {
+            Log::error('No se pudo iniciar sesión para obtener los CAEs activos.');
+            return null;
+        }
+
+        $rut = $store->rut;
+
+        if (!$rut) {
+            Log::error('No se encontró el RUT de la empresa.');
+            return null;
+        }
+
+        $results = [];
+
+        foreach ($caeTypes as $type => $typeName) {
+            $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/cfesActiveNumbers/' . $type;
+
+            Log::info("Consultando URL: {$url}"); // Log para depuración
+
+            try {
+                $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))->get($url);
+
+                if ($response->successful()) {
+                    $jsonResponse = $response->json();
+                    Log::info("Respuesta exitosa para {$type}: ", $jsonResponse);
+
+                    $companyCfeActiveNumbers = $jsonResponse['payload']['companyCfeActiveNumbers'] ?? [];
+
+                    if (!is_array($companyCfeActiveNumbers)) {
+                        $companyCfeActiveNumbers = [$companyCfeActiveNumbers];
+                    }
+
+                    foreach ($companyCfeActiveNumbers as $range) {
+                        $results[] = [
+                            'type' => $typeName,
+                            'nextNum' => $range['nextNum'] ?? 'N/A',
+                            'range' => [
+                                'first' => $range['range']['first'] ?? 'N/A',
+                                'last' => $range['range']['last'] ?? 'N/A',
+                            ],
+                        ];
+                    }
+                } else {
+                    Log::error("Error en la API para {$type}: " . $response->status() . ' - ' . $response->body());
+                }
+            } catch (\Exception $e) {
+                Log::error("Excepción al consultar {$type}: " . $e->getMessage());
+            }
+        }
+
+        return $results;
+    }
+
+
+    public function uploadCaeToPymo(Store $store, string $type, $file): array
+    {
+        $cookies = $this->login($store);
+
+        if (!$cookies) {
+            Log::error('No se pudo iniciar sesión para cargar el CAE.');
+            return [
+                'success' => false,
+                'message' => 'No se pudo iniciar sesión en PyMo.',
+                'statusCode' => 401,
+            ];
+        }
+
+        $rut = $store->rut;
+
+        if (!$rut) {
+            Log::error('No se encontró el RUT de la empresa.');
+            return [
+                'success' => false,
+                'message' => 'El RUT de la tienda no está configurado.',
+                'statusCode' => 400,
+            ];
+        }
+
+        $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . "/companies/{$rut}/cfesActiveNumbers/{$type}/upload-xml";
+        Log::info("Subiendo archivo a URL: {$url}");
+
+        try {
+            $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
+                ->attach(
+                    'CfesNewNumbers',
+                    file_get_contents($file->getRealPath()),
+                    $file->getClientOriginalName()
+                )
+                ->post($url);
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                Log::info('Archivo subido exitosamente:', $responseData);
+                return [
+                    'success' => true,
+                    'message' => $responseData['message']['value'] ?? 'Archivo subido correctamente.',
+                ];
+            }
+
+            Log::error('Error en la API de PyMo:', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error en la API de PyMo: ' . ($response->json()['message']['value'] ?? 'Error desconocido.'),
+                'statusCode' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error("Excepción al cargar CAE: {$e->getMessage()}");
+            return [
+                'success' => false,
+                'message' => 'Ocurrió un error inesperado.',
+                'statusCode' => 500,
+            ];
+        }
+    }
+
+
 }
+

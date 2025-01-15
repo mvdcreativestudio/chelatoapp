@@ -15,6 +15,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\DataTables;
 
 class AccountingController extends Controller
@@ -98,18 +100,15 @@ class AccountingController extends Controller
      */
     public function settings(): View
     {
-        $pymoSetting = $this->accountingRepository->getRutSetting();
-        $companyInfo = null;
-        $logoUrl = null;
-
-        if ($pymoSetting) {
-            $rut = $pymoSetting->settingValue;
-            $companyInfo = $this->accountingRepository->getCompanyInfo($rut);
-            $logoUrl = $this->accountingRepository->getCompanyLogo($rut);
+        if (Auth::user()->can('view_all_stores')) {
+            $stores = Store::all(); // Todas las tiendas si tiene permiso
+        } else {
+            $stores = Store::where('id', Auth::user()->store_id)->get(); // Solo la tienda asignada
         }
 
-        return view('content.accounting.settings', compact('pymoSetting', 'companyInfo', 'logoUrl'));
+        return view('content.accounting.settings', compact('stores'));
     }
+
 
     /**
      * Guarda el RUT de la empresa.
@@ -340,4 +339,90 @@ class AccountingController extends Controller
             return response()->json(['error' => 'Ocurrió un error al enviar el correo.'], 500);
         }
     }
+
+    public function fetchActiveCaesByType(int $storeId, string $type): JsonResponse
+    {
+        Log::info('Solicitud recibida para un tipo específico', ['storeId' => $storeId, 'type' => $type]);
+
+        $store = Store::find($storeId);
+
+        if (!$store) {
+            return response()->json(['success' => false, 'message' => 'No se encontró la tienda especificada.'], 404);
+        }
+
+        $cookies = $this->accountingRepository->login($store);
+
+        if (!$cookies) {
+            return response()->json(['success' => false, 'message' => 'No se pudo iniciar sesión.'], 500);
+        }
+
+        $rut = $store->rut;
+
+        if (!$rut) {
+            return response()->json(['success' => false, 'message' => 'El RUT de la tienda no está configurado.'], 400);
+        }
+
+        $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/cfesActiveNumbers/' . $type;
+
+        try {
+            Log::info("Consultando URL: {$url}");
+            $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))->get($url);
+
+            if ($response->successful()) {
+                Log::info("Respuesta exitosa para el tipo {$type}", $response->json());
+                return response()->json(['success' => true, 'data' => $response->json()]);
+            } else {
+                Log::error("Error en la API para el tipo {$type}: " . $response->status() . ' - ' . $response->body());
+                return response()->json(['success' => false, 'message' => 'Error al consultar la API.'], $response->status());
+            }
+        } catch (\Exception $e) {
+            Log::error("Excepción al consultar el tipo {$type}: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Ocurrió un error inesperado.'], 500);
+        }
+    }
+
+
+    /**
+     * Sube un archivo XML con los CAEs nuevos.
+     *
+     * @param Request $request
+     * @param string $rut
+     * @param string $type
+     * @return JsonResponse
+    */
+    public function uploadCae(Request $request, $rut, $type)
+    {
+        $validated = $request->validate([
+            'CfesNewNumbers' => 'required|file|mimes:xml|max:2048', // Validación del archivo XML
+        ]);
+
+        Log::info('Solicitud para cargar CAE', ['rut' => $rut, 'type' => $type]);
+
+        // Buscar la tienda asociada al RUT
+        $store = Store::where('rut', $rut)->first();
+
+        if (!$store) {
+            Log::error('No se encontró la tienda para el RUT proporcionado.');
+            return response()->json(['status' => 'ERROR', 'message' => 'Tienda no encontrada para el RUT proporcionado.'], 404);
+        }
+
+        try {
+            // Usar el repositorio para manejar la lógica de carga del CAE
+            $response = $this->accountingRepository->uploadCaeToPymo($store, $type, $validated['CfesNewNumbers']);
+
+            if ($response['success']) {
+                return response()->json(['status' => 'SUCCESS', 'message' => $response['message']], 200);
+            }
+
+            return response()->json(['status' => 'ERROR', 'message' => $response['message']], $response['statusCode'] ?? 500);
+        } catch (\Exception $e) {
+            Log::error("Error al cargar CAE: {$e->getMessage()}");
+            return response()->json(['status' => 'ERROR', 'message' => 'Error inesperado al cargar el CAE.'], 500);
+        }
+    }
+
+
+
+
+
 }

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
   initSelect2Components();
   initFlatpickr();
   initStateSwitch();
+  initCatalogueSwitch();
   setupDiscardButton();
   initRepeater();
 });
@@ -90,7 +91,7 @@ function initDropzone() {
       maxFiles: 1,
       previewsContainer: '#existingImage', // Muestra la vista previa en el contenedor existente
       clickable: '#btnBrowse, #dropzone',
-      maxFilesize: 2, // Limite de 2MB
+      maxFilesize: 10, // Limite de 2MB
       acceptedFiles: '.jpg,.jpeg,.png,.gif',
       init: function () {
         const dz = this;
@@ -230,6 +231,20 @@ function initStateSwitch() {
   }
 }
 
+function initCatalogueSwitch() {
+  const catalogueSwitch = document.getElementById('catalogueSwitch');
+  if (catalogueSwitch) {
+    // Inicializa el estado del switch basado en su atributo checked
+    catalogueSwitch.checked = catalogueSwitch.getAttribute('checked') !== null;
+
+    // Actualiza el valor del campo oculto al cambiar el estado del switch
+    catalogueSwitch.addEventListener('change', function () {
+      this.value = this.checked ? '1' : '0'; // Asegura que el valor siempre sea '1' o '0'
+    });
+  }
+}
+
+
 function setupDiscardButton() {
   const discardButton = document.getElementById('discardButton');
   if (discardButton) {
@@ -248,6 +263,7 @@ function initRepeater() {
   const flavors = JSON.parse(document.querySelector('.app-ecommerce').getAttribute('data-flavors'));
   const repeaterList = document.querySelector('[data-repeater-list="recipes"]');
 
+  // Función para actualizar las opciones de materias primas seleccionadas
   function updateRawMaterialOptions() {
     const selectedRawMaterials = Array.from(repeaterList.querySelectorAll('.raw-material-select'))
       .map(select => select.value)
@@ -272,6 +288,7 @@ function initRepeater() {
     });
   }
 
+  // Función para agregar una fila de materia prima
   function addRawMaterialRow(recipe = {}) {
     const index = repeaterList.children.length;
     const row = document.createElement('div');
@@ -303,6 +320,15 @@ function initRepeater() {
     `;
     repeaterList.appendChild(row);
     updateRawMaterialOptions();
+  }
+
+  // Inicialización: No se crea ninguna fila al cargar
+  if (recipes.length > 0) {
+    recipes.forEach(recipe => {
+      if (recipe.raw_material_id) {
+        addRawMaterialRow(recipe);
+      }
+    });
   }
 
   function addUsedFlavorRow(recipe = {}) {
@@ -352,22 +378,20 @@ function initRepeater() {
     addRawMaterialRow();
   }
 
+  // Manejar clic en el botón "Agregar Materia Prima"
   document.getElementById('addRawMaterial').addEventListener('click', () => {
     addRawMaterialRow();
   });
-
+  
   document.getElementById('addUsedFlavor').addEventListener('click', () => {
     addUsedFlavorRow();
   });
 
+  // Eliminar filas
   repeaterList.addEventListener('click', event => {
     if (event.target.matches('[data-repeater-delete]')) {
       event.target.closest('.row.mb-3').remove();
       updateRawMaterialOptions();
-      updateFlavorOptions();
-      if (repeaterList.querySelectorAll('.row.mb-3').length === 0) {
-        addRawMaterialRow();
-      }
     }
   });
 

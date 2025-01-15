@@ -19,6 +19,7 @@ class StoreProductRequest extends FormRequest
             'discount' => 'nullable|numeric',
             'store_id' => 'required|exists:stores,id',
             'status' => 'required|boolean',
+            'show_in_catalogue' => 'required|boolean',
             'stock' => 'nullable|integer',
             'safety_margin' => 'nullable|numeric',
             'bar_code' => 'nullable|string|max:255',
@@ -32,6 +33,19 @@ class StoreProductRequest extends FormRequest
             'recipes.*.used_flavor_id' => 'required_without:recipes.*.raw_material_id|exists:flavors,id',
             'recipes.*.quantity' => 'required_with:recipes|numeric|min:0.01',
             'build_price' => 'nullable|numeric',
+
+            'features' => 'array',
+            'features.*.name' => 'nullable|string|max:255',
+    
+            'sizes' => 'array',
+            'sizes.*.size' => 'nullable|string|max:255',
+            'sizes.*.width' => 'nullable|numeric|min:0',
+            'sizes.*.height' => 'nullable|numeric|min:0',
+            'sizes.*.length' => 'nullable|numeric|min:0',
+    
+            'colors' => 'array',
+            'colors.*.color_name' => 'nullable|string|max:255',
+            'colors.*.hex_code' => 'nullable|string|max:255',
         ];
     }
 
