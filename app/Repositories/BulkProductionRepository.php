@@ -148,7 +148,10 @@ class BulkProductionRepository
             $batch = $this->getOldestBatch($material['raw_material_id']);
 
             if (!$batch) {
-                throw new \Exception("No available batch for raw material ID: {$material['raw_material_id']}");
+                $rawMaterialName = DB::table('raw_materials')
+                    ->where('id', $material['raw_material_id'])
+                    ->value('name');
+                throw new \Exception("No hay lotes disponibles para la materia prima '". $rawMaterialName . "'");
             }
 
 
@@ -191,6 +194,7 @@ class BulkProductionRepository
         }
 
         if ($remainingQuantity > 0) {
+            Log::info($material);
             throw new \Exception("No se encontro materia prima disponible para la materia prima: {$material['raw_material_id']}");
         }
 

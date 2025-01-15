@@ -58,35 +58,35 @@ $currencySymbol = $settings->currency_symbol;
   <!-- Botones alineados a la derecha, ahora responsive -->
   <div class="text-end d-flex gap-2 align-items-center animate__animated animate__fadeIn">
 
-      <!-- Toggle tipo de visualización -->
-      <button id="toggle-view-btn" class="btn btn-sm btn-outline-secondary d-flex align-items-center animate__animated animate__pulse" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="left" data-bs-html="true" title="Lista / Cuadrícula">
-        <i class="bx bx-list-ul fs-5"></i>
+    <!-- Toggle tipo de visualización -->
+    <button id="toggle-view-btn" class="btn btn-sm btn-outline-secondary d-flex align-items-center animate__animated animate__pulse" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="left" data-bs-html="true" title="Lista / Cuadrícula">
+      <i class="bx bx-list-ul fs-5"></i>
+    </button>
+
+    <!-- Grupo de botones para Seleccionar Cliente y Lista de Precios -->
+    <div class="btn-group">
+      @if(!session('client'))
+      <button id="seleccionar-cliente-btn" class="btn btn-outline-primary btn-sm d-flex align-items-center animate__animated animate__fadeIn" data-bs-toggle="offcanvas" data-bs-target="#offcanvasEnd">
+        <i class="bx bx-user-plus me-1"></i>
+        <span>Seleccionar Cliente</span>
       </button>
+      @endif
 
-      <!-- Grupo de botones para Seleccionar Cliente y Lista de Precios -->
-      <div class="btn-group">
-        @if(!session('client'))
-          <button id="seleccionar-cliente-btn" class="btn btn-outline-primary btn-sm d-flex align-items-center animate__animated animate__fadeIn" data-bs-toggle="offcanvas" data-bs-target="#offcanvasEnd">
-            <i class="bx bx-user-plus me-1"></i>
-            <span>Seleccionar Cliente</span>
-          </button>
-        @endif
-
-        <!-- Botón de lista de precios con menú desplegable -->
-        <button id="price-list-dropdown" class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="bx bx-list-ul me-1"></i>Lista de Precios
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="price-list-dropdown">
-          <li><a class="dropdown-item" href="#" onclick="selectPriceList(0, 'Precios originales')" style="color: white; background-color: #ff7e7e;" title="Se utilizan los precios por defecto en la aplicación, ignorando la lista del cliente">Precios Originales</a></li>
-          @foreach($priceLists as $priceList)
-            <li><a class="dropdown-item" href="#" onclick="selectPriceList({{ $priceList->id }}, '{{ $priceList->name }}')">{{ $priceList->name }}</a></li>
-          @endforeach
-        </ul>
-      </div>
-
-      <button type="button" id="submit-cerrar-caja" class="btn btn-outline-danger btn-sm d-flex align-items-center">
-        <i class="bx bx-lock-alt me-2"></i> Cerrar Caja
+      <!-- Botón de lista de precios con menú desplegable -->
+      <button id="price-list-dropdown" class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bx bx-list-ul me-1"></i>Lista de Precios
       </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="price-list-dropdown">
+        <li><a class="dropdown-item" href="#" onclick="selectPriceList(0, 'Precios originales')" style="color: white; background-color: #ff7e7e;" title="Se utilizan los precios por defecto en la aplicación, ignorando la lista del cliente">Precios Originales</a></li>
+        @foreach($priceLists as $priceList)
+        <li><a class="dropdown-item" href="#" onclick="selectPriceList({{ $priceList->id }}, '{{ $priceList->name }}')">{{ $priceList->name }}</a></li>
+        @endforeach
+      </ul>
+    </div>
+
+    <button type="button" id="submit-cerrar-caja" class="btn btn-outline-danger btn-sm d-flex align-items-center">
+      <i class="bx bx-lock-alt me-2"></i> Cerrar Caja
+    </button>
   </div>
 </div>
 
@@ -103,31 +103,37 @@ $currencySymbol = $settings->currency_symbol;
 
 <!-- Selección de Cliente -->
 <div class="col-12 mb-3">
-  <div id="client-info" class="card shadow-sm p-4 mb-3 rounded-lg border-0 client-info-card animate__animated animate__fadeIn" style="display: block;">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="m-0">Información del Cliente</h5>
-      <button id="deselect-client" class="btn btn-outline-danger btn-sm animate__animated animate__fadeIn">
+  <div id="client-info" class="card shadow-sm client-info-card animate__animated animate__fadeIn p-3" style="display: block;">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="m-0 text-primary fw-bold">Cliente</h6>
+      <button id="deselect-client" class="btn btn-outline-danger btn-sm position-absolute" style="right: 1rem; top: 40%;">
         <span class="d-none d-md-inline">Deseleccionar</span>
         <i class="bx bx-x d-inline d-md-none"></i>
       </button>
     </div>
+    
     <div class="client-details">
-      <div class="row">
-        <div class="col-md-6 mb-3 animate__animated animate__fadeIn">
-          <p class="mb-1"><strong class="text-muted">ID:</strong> <span id="client-id" class="text-body fw-bold">-</span></p>
+      <div class="row g-3">
+        
+        <div class="col-auto px-4 border-end">
+          <small class="text-muted d-block mb-1">Nombre:</small>
+          <span id="client-name" class="text-body fw-semibold">-</span>
         </div>
-        <div class="col-md-6 mb-3 animate__animated animate__fadeIn">
-          <p class="mb-1"><strong class="text-muted">Nombre:</strong> <span id="client-name" class="text-body fw-bold">-</span></p>
+        
+        <div class="col-auto px-4 border-end">
+          <small class="text-muted d-block mb-1">Tipo:</small>
+          <span id="client-type" class="text-body fw-semibold">-</span>
         </div>
-        <div class="col-md-6 mb-3 animate__animated animate__fadeIn">
-          <p class="mb-1"><strong class="text-muted">Tipo de Cliente:</strong> <span id="client-type" class="text-body fw-bold">-</span></p>
+        
+        <div class="col-auto px-4 border-end">
+          <p class="mb-0 d-none" id="client-company"></p>
+          <small class="text-muted d-block mb-1">CI:</small>
+          <span id="client-doc" class="text-body fw-semibold">-</span>
         </div>
-        <div class="col-md-6 mb-3 animate__animated animate__fadeIn">
-          <p class="mb-1" id="client-company" style="display:none;"></p>
-          <p class="mb-1"><strong id="client-doc-label" class="text-muted">CI:</strong> <span id="client-doc" class="text-body fw-bold">-</span></p>
-        </div>
-        <div class="col-md-6 mb-3 animate__animated animate__fadeIn">
-          <p class="mb-1"><strong class="text-muted">Lista de Precios Predefinida:</strong> <span id="client-price-list" class="text-body fw-bold">-</span></p>
+        
+        <div class="col px-4">
+          <small class="text-muted d-block mb-1">Lista:</small>
+          <span id="client-price-list" class="text-body fw-semibold">-</span>
         </div>
       </div>
     </div>
@@ -188,20 +194,20 @@ $currencySymbol = $settings->currency_symbol;
 <!-- Offcanvas Seleccionar Cliente -->
 <div class="offcanvas offcanvas-end animate__animated animate__fadeIn" tabindex="-1" id="offcanvasEnd" aria-labelledby="offcanvasEndLabel">
   <div class="offcanvas-header">
-      <h5 id="offcanvasEndLabel" class="offcanvas-title">Seleccionar Cliente</h5>
-      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    <h5 id="offcanvasEndLabel" class="offcanvas-title">Seleccionar Cliente</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body d-flex flex-column animate__animated animate__fadeIn">
-      <div class="d-flex flex-column align-items-start mb-3">
-          <p class="text-center w-100">Selecciona un cliente o crea uno nuevo.</p>
-          <button type="button" class="btn btn-primary mb-2 d-grid w-100" data-bs-toggle="offcanvas" data-bs-target="#crearClienteOffcanvas">Crear Cliente</button>
-          <div id="search-client-container" class="w-100" style="display: none;">
-              <input type="search" class="form-control" id="search-client" placeholder="Nombre, Razón Social, CI, RUT...">
-          </div>
+    <div class="d-flex flex-column align-items-start mb-3">
+      <p class="text-center w-100">Selecciona un cliente o crea uno nuevo.</p>
+      <button type="button" class="btn btn-primary mb-2 d-grid w-100" data-bs-toggle="offcanvas" data-bs-target="#crearClienteOffcanvas">Crear Cliente</button>
+      <div id="search-client-container" class="w-100" style="display: none;">
+        <input type="search" class="form-control" id="search-client" placeholder="Nombre, Razón Social, CI, RUT...">
       </div>
-      <ul id="client-list" class="list-group flex-grow-1 animate__animated animate__fadeIn">
-          <!-- Aquí se cargarán los clientes -->
-      </ul>
+    </div>
+    <ul id="client-list" class="list-group flex-grow-1 animate__animated animate__fadeIn">
+      <!-- Aquí se cargarán los clientes -->
+    </ul>
   </div>
 </div>
 
@@ -213,7 +219,7 @@ $currencySymbol = $settings->currency_symbol;
   </div>
   <div class="offcanvas-body animate__animated animate__fadeIn">
     <form id="formCrearCliente">
-    @csrf
+      @csrf
       <div class="mb-3 animate__animated animate__fadeInLeft">
         <label for="tipoCliente" class="form-label">Tipo de Cliente</label>
         <select class="form-select" id="tipoCliente" required>
@@ -221,14 +227,32 @@ $currencySymbol = $settings->currency_symbol;
           <option value="company">Empresa</option>
         </select>
       </div>
-      <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="nombreCliente" class="form-label">Nombre <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre" required>
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
+        <label for="razonSocialCliente" class="form-label">
+          Razón Social *<span class="text-danger">*</span>
+        </label>
+        <input type="text" class="form-control" id="razonSocialCliente" placeholder="Ingrese la razón social">
       </div>
-      <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="apellidoCliente" class="form-label">Apellido</label>
-        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido">
+
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="rutField" style="display: none;">
+        <label for="rutCliente" class="form-label">
+          RUT *<span class="text-danger">*</span>
+        </label>
+        <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
       </div>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft">
+        <label for="nombreCliente" class="form-label">
+          Nombre<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
+          <span class="text-danger" id="nombreAsterisk">*</span>
+        </label>
+        <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre">
+      </div>
+
+      <label for="apellidoCliente" class="form-label">
+        Apellido<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
+        <span class="text-danger" id="apellidoAsterisk">*</span>
+      </label>
 
       <div id="documentTypeField" class="mb-3">
         <label class="form-label" for="documentType">Tipo de Documento</label>
@@ -252,34 +276,29 @@ $currencySymbol = $settings->currency_symbol;
       <div id="otherField" class="mb-3" style="display: none;">
         <label class="form-label" for="other_id_type">Otro Documento</label>
         <input type="text" class="form-control" id="other_id_type" name="other_id_type" placeholder="Ingrese el documento alternativo" />
-      </div>
-
-      <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
-        <label for="razonSocialCliente" class="form-label">Razón Social</label>
-        <input type="text" class="form-control" id="razonSocialCliente" placeholder="Ingrese la razón social">
-      </div>
-      <div class="mb-3 animate__animated animate__fadeInLeft" id="rutField" style="display: none;">
-        <label for="rutCliente" class="form-label">RUT <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
-      </div>
-      <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="direccionCliente" class="form-label">Dirección</label>
-        <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
-      </div>
-      <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="emailCliente" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
-        <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
-      </div>
-      <div class="mb-3 mt-3 animate__animated animate__fadeInLeft">
-        <label class="form-label" for="price_list_id">Lista de Precios</label>
-        <select id="price_list_id" class="form-select form-select" name="price_list_id">
+        <div class="mb-3 animate__animated animate__fadeInLeft" id="ciField">
+          <label for="ciCliente" class="form-label">CI </label>
+          <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
+        </div>
+        <div class="mb-3 animate__animated animate__fadeInLeft">
+          <label for="direccionCliente" class="form-label">Dirección</label>
+          <label for="direccionCliente" class="form-label">Dirección </label>
+          <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
+        </div>
+        <div class="mb-3 animate__animated animate__fadeInLeft">
+          <label for="emailCliente" class="form-label">Correo Electrónico </label>
+          <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
+        </div>
+        <div class="mb-3 mt-3 animate__animated animate__fadeInLeft">
+          <label class="form-label" for="price_list_id">Lista de Precios</label>
+          <select id="price_list_id" class="form-select form-select" name="price_list_id">
             <option value="" selected>Seleccionar Lista de Precios</option>
             @foreach($priceLists as $priceList)
-                <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
+            <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
             @endforeach
-        </select>
-      </div>
-      <button type="button" class="btn btn-primary animate__animated animate__bounceIn" id="guardarCliente">Guardar</button>
+          </select>
+        </div>
+        <button type="button" class="btn btn-primary animate__animated animate__bounceIn" id="guardarCliente">Guardar</button>
     </form>
   </div>
 </div>

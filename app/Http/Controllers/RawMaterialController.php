@@ -10,7 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
-
+use App\Repositories\ProductRepository;
 
 class RawMaterialController extends Controller
 {
@@ -77,6 +77,16 @@ class RawMaterialController extends Controller
     }
 
     /**
+     * Muestra el formulario para crear una nueva materia prima (planes freemium).
+     *
+     * @return View
+     */
+    public function createFreemium(): View
+    {
+        return view('raw-materials.createFreemium');
+    }
+
+    /**
      * Almacena una nueva materia prima en la base de datos.
      *
      * Aquí es donde se utiliza StoreRawMaterialRequest para validar la solicitud antes de proceder.
@@ -84,11 +94,20 @@ class RawMaterialController extends Controller
      * @param  StoreRawMaterialRequest  $request
      * @return RedirectResponse
      */
-    public function store(StoreRawMaterialRequest $request): RedirectResponse
+    public function store(StoreRawMaterialRequest $request): mixed
     {
         try {
-            $this->rawMaterialRepository->create($request->validated());
-            return redirect()->route('raw-materials.index')->with('success', 'Materia prima creada correctamente.');
+            $rawMaterial = $this->rawMaterialRepository->create($request->validated());
+            
+            if ($request->header('X-Freemium-Request') === 'true') {
+                return response()->json([
+                    'message' => 'Materia prima creada correctamente.'
+                ]);
+            }
+            
+            return redirect()->route('raw-materials.index')
+                ->with('success', 'Materia prima creada correctamente.');
+                
         } catch (ModelNotFoundException $e) {
             return back()->with('error', $e->getMessage())->withInput();
         }

@@ -185,8 +185,20 @@ document.addEventListener('DOMContentLoaded', function () {
               Swal.fire('Error', response.message, 'error');
             }
           },
-          error: function (xhr) {
-            Swal.fire('Error', 'Ocurrió un error al iniciar la producción', 'error');
+          error: function (xhr, status, error) {
+            let errorMessage = 'Ocurrió un error al iniciar la producción.';
+            if (xhr.responseJSON) {
+              if (xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+              } else if (xhr.responseJSON.error) {
+                errorMessage = xhr.responseJSON.error;
+              }
+            }
+            Swal.fire(
+              'Error',
+              errorMessage,
+              'error'
+            );
           }
         });
       }

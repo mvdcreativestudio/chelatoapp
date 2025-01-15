@@ -22,13 +22,20 @@ $(function () {
           `);
         } else {
           clients.forEach(function (client) {
-            const fullName = client.lastname ? `${client.name} ${client.lastname}` : client.name;
-            const truncatedName = fullName.length > 20 ? fullName.substring(0, 20) + '...' : fullName;
+            let displayName;
+            if (!client.name && !client.lastname) {
+              displayName = client.company_name;
+            } else {
+              displayName = client.lastname ? `${client.name} ${client.lastname}` : client.name;
+            }
+
+            const truncatedName = displayName?.length > 20 ? displayName.substring(0, 20) + '...' : displayName;
+
 
             // Capitalizar nombres y otros campos
-            const capitalizedFullName = capitalizeFirstLetter(fullName);
+            const capitalizedFullName = capitalizeFirstLetter(displayName || '');
             const capitalizedCompanyName = client.company_name ? capitalizeFirstLetter(client.company_name) : '';
-            const capitalizedTruncatedName = capitalizeFirstLetter(truncatedName);
+            const capitalizedTruncatedName = capitalizeFirstLetter(truncatedName || '');
 
             // Generar enlaces de contacto
             let phoneNumber = client.phone ? client.phone.replace(/\D/g, '') : '';
@@ -37,20 +44,20 @@ $(function () {
             }
             const whatsappUrl = phoneNumber ? `https://wa.me/598${phoneNumber}` : '#';
             const telUrl = phoneNumber ? `tel:+598${phoneNumber}` : '#';
-            console.log(client)
+
             // Renderizar el documento de identidad
             const documentInfo = client.ci
-            ? `<i class="bx bx-id-card me-2"></i>${client.ci} (Cedula de Identidad)`
-            : client.passport
-            ? `<i class="bx bx-id-card me-2"></i>${client.passport} (Pasaporte)`
-            : client.other_id_type
-            ? `<i class="bx bx-id-card me-2"></i>${client.other_id_type} (Otro)`
-            : client.rut
-            ? `<i class="bx bx-id-card me-2"></i>${client.rut} (RUT)`
-            : `<i class="bx bx-id-card me-2"></i>Documento no especificado`;
+              ? `<i class="bx bx-id-card me-2"></i>${client.ci} (Cedula de Identidad)`
+              : client.passport
+                ? `<i class="bx bx-id-card me-2"></i>${client.passport} (Pasaporte)`
+                : client.other_id_type
+                  ? `<i class="bx bx-id-card me-2"></i>${client.other_id_type} (Otro)`
+                  : client.rut
+                    ? `<i class="bx bx-id-card me-2"></i>${client.rut} (RUT)`
+                    : `<i class="bx bx-id-card me-2"></i>Documento no especificado`;
 
 
-              const card = `
+            const card = `
               <div class="col-md-6 col-lg-4 col-12 client-card-wrapper">
                 <div class="clients-card-container">
                   <div class="clients-card position-relative">
@@ -76,7 +83,7 @@ $(function () {
                             </p>
                           ` : ''}
                           ${client.type === 'company' ? `<p class="clients-company mb-2"><strong>Razón Social:</strong> ${capitalizedCompanyName}</p>` : ''}
-                          <p class="clients-email mb-2"><i class="bx bx-envelope me-2"></i> ${client.email}</p>
+                          ${client.email ? `<p class="clients-email mb-2"><i class="bx bx-envelope me-2"></i> ${client.email}</p>` : ''}
                           <p class="clients-document">${documentInfo}</p>
                           ${client.address && client.address !== '-' ? `<p class="clients-address mb-2"><i class="bx bx-map me-2"></i> ${capitalizeFirstLetter(client.address)}</p>` : ''}
                           ${client.phone && client.phone !== '-' ? `<p class="clients-phone mb-2"><i class="bx bx-phone me-2"></i> ${client.phone}</p>` : ''}
@@ -189,45 +196,42 @@ $(function () {
 $(document).ready(function () {
   $('input[type=radio][name=type]').change(function () {
     clearErrors();
+    if (this.value == 'individual') {
+      $('#ciField').show();
+      $('#ci').attr('required', false);
 
-    // Detectar el tipo de cliente
-    const selectedType = $(this).val();
+      $('#nameAsterisk, #lastnameAsterisk').show();
+      $('#name, #lastname').attr('required', true);
 
-    if (selectedType === 'individual') {
-        // Mostrar campos para persona física
-        $('#ciField, #documentTypeField').show();
-        $('#razonSocialField, #rutField').hide();
+      $('.responsible-text').hide();
 
-        // Hacer que el campo de documento sea obligatorio
-        $('#documentType').attr('required', true);
+      $('#rutField, #razonSocialField').hide();
+      $('#company_name, #rut').val('').removeAttr('required');
 
-        // Ocultar campos no necesarios para persona física
-        $('#company_name, #rut').removeAttr('required');
-        $('#ci, #passport, #other_id_type').val('').removeAttr('required');
+      $('#ciudadAsterisk').hide();
+      $('#departamentoAsterisk').hide();
+    } else if (this.value == 'company') {
+      $('#ciField').hide();
+      $('#ci').val('').removeAttr('required');
 
-        // Configurar los campos según el tipo de documento seleccionado
-        const selectedDocumentType = $('#documentType').val();
-        toggleDocumentFields(selectedDocumentType);
-    } else if (selectedType === 'company') {
-        // Mostrar campos para persona jurídica
-        $('#razonSocialField, #rutField').show();
-        $('#ciField, #documentTypeField').hide();
+      $('#nameAsterisk, #lastnameAsterisk').hide();
+      $('#name, #lastname').removeAttr('required');
 
-        // Hacer que los campos para persona jurídica sean obligatorios
-        $('#company_name, #rut').attr('required', true);
+      $('.responsible-text').show();
 
-        // Ocultar campos no necesarios para persona jurídica
-        $('#documentType').removeAttr('required');
-        $('#ci, #passport, #other_id_type').val('').removeAttr('required');
+      $('#rutField, #razonSocialField').show();
+      $('#company_name, #rut').attr('required', true);
+
+      $('#ciudadAsterisk').show();
+      $('#departamentoAsterisk').show();
     }
-});
+  });
 });
 
 document.getElementById('guardarCliente').addEventListener('click', function (e) {
   e.preventDefault();
   const nombre = document.getElementById('ecommerce-customer-add-name');
   const apellido = document.getElementById('ecommerce-customer-add-lastname');
-  const tipo = document.querySelector('input[name="type"]:checked');
   const email = document.getElementById('ecommerce-customer-add-email');
   const ci = document.getElementById('ci');
   const pasaporte = document.getElementById('passport');
@@ -239,28 +243,28 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
   const departamento = document.getElementById('ecommerce-customer-add-state');
   clearErrors();
   let hasError = false;
-  if (nombre.value.trim() === '') {
-    showError(nombre, 'Este campo es obligatorio');
-    hasError = true;
-  }
-  if (email.value.trim() === '') {
-    showError(email, 'Este campo es obligatorio');
-    hasError = true;
-  }
+  const tipo = document.querySelector('input[name="type"]:checked');
 
   if (tipo.value === 'individual') {
-    if (ci.value.trim() === '' && pasaporte.value.trim() === '' && otroId.value.trim() === '') {
-      showError(ci, 'Debe ingresar al menos un documento de identidad');
+    // Validate individual fields
+    if ($('#ecommerce-customer-add-name').val().trim() === '') {
+      showError($('#ecommerce-customer-add-name')[0], 'El nombre es obligatorio');
+      hasError = true;
+    }
+    if ($('#ecommerce-customer-add-lastname').val().trim() === '') {
+      showError($('#ecommerce-customer-add-lastname')[0], 'El apellido es obligatorio');
       hasError = true;
     }
   } else if (tipo.value === 'company') {
-    if (razonSocial.value.trim() === '') {
-      showError(razonSocial, 'La razón social es obligatoria para clientes empresariales');
+    // Validate company fields
+    if ($('#company_name').val().trim() === '') {
+      showError($('#company_name')[0], 'La razón social es obligatoria');
       hasError = true;
     }
-    document.getElementById('rutField').style.display = 'block';
-    document.getElementById('razonSocialField').style.display = 'block';
-    document.getElementById('ciField').style.display = 'none';
+    if ($('#rut').val().trim() === '') {
+      showError($('#rut')[0], 'El RUT es obligatorio');
+      hasError = true;
+    }
   }
   if (hasError) return;
   let data = {
@@ -293,14 +297,14 @@ function toggleDocumentFields(selectedType) {
   $('#ci, #passport, #other_id_type').val('').removeAttr('required');
 
   if (selectedType === 'ci') {
-      $('#ciField').show();
-      $('#ci').attr('required', true);
+    $('#ciField').show();
+    $('#ci').attr('required', true);
   } else if (selectedType === 'passport') {
-      $('#passportField').show();
-      $('#passport').attr('required', true);
+    $('#passportField').show();
+    $('#passport').attr('required', true);
   } else if (selectedType === 'other_id_type') {
-      $('#other_field').show();
-      $('#other_id_type').attr('required', true);
+    $('#other_field').show();
+    $('#other_id_type').attr('required', true);
   }
 }
 
@@ -341,92 +345,90 @@ $(document).ready(function () {
   });
 
 
-  document.getElementById('guardarCliente').addEventListener('click', function (e) {
-    e.preventDefault();
+  const form = document.getElementById('eCommerceCustomerAddForm');
 
-    const form = document.getElementById('eCommerceCustomerAddForm');
-    const formData = new FormData(form);
-    const clientType = document.querySelector('input[name="type"]:checked').value;
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const submitButton = form.querySelector('[type="submit"]');
+      submitButton.disabled = true;
+      const form = document.getElementById('eCommerceCustomerAddForm');
+      const formData = new FormData(form);
+      const clientType = document.querySelector('input[name="type"]:checked').value;
 
-    let requiredFields = {
-      name: 'Nombre',
-      lastname: 'Apellido',
-      email: 'Correo electrónico',
-      address: 'Dirección'
-    };
+      let requiredFields = {};
 
-    if (clientType === 'individual') {
-      requiredFields.ci = 'Cédula de Identidad';
-    } else if (clientType === 'company') {
-      requiredFields.company_name = 'Razón Social';
-      requiredFields.rut = 'RUT';
-      requiredFields.city = 'Ciudad';
-      requiredFields.state = 'Departamento';
-    }
-
-    let missingFields = [];
-    for (let field in requiredFields) {
-      const value = formData.get(field);
-      if (!value || value.trim() === '') {
-        missingFields.push(requiredFields[field]);
+      if (clientType === 'individual') {
+        requiredFields.name = 'Nombre';
+        requiredFields.lastname = 'Apellido';
+      } else if (clientType === 'company') {
+        requiredFields.company_name = 'Razón Social';
+        requiredFields.rut = 'RUT';
       }
-    }
 
-    const offcanvasInstance = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
-    offcanvasInstance.hide();
-
-    if (missingFields.length > 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Campos requeridos',
-        html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
-        confirmButtonText: 'Entendido'
-      });
-      return;
-    }
-
-    $.ajax({
-      url: `${window.baseUrl}admin/clients`,
-      type: 'POST',
-      data: formData,
-      processData: false,
-      contentType: false,
-      headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-      },
-      success: function (response) {
-        if (response.success) {
-          const modal = bootstrap.Modal.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
-          modal.hide();
-
-          Swal.fire({
-            icon: 'success',
-            title: 'Éxito',
-            text: 'Cliente creado correctamente',
-            showConfirmButton: false,
-            timer: 1500
-          });
-
-          form.reset();
-          fetchClients();
+      let missingFields = [];
+      for (let field in requiredFields) {
+        const value = formData.get(field);
+        if (!value || value.trim() === '') {
+          missingFields.push(requiredFields[field]);
         }
-      },
-      error: function (xhr) {
-        const errors = xhr.responseJSON?.errors || {};
-        let errorMessage = 'Ocurrieron los siguientes errores:<br><br>';
+      }
 
-        Object.keys(errors).forEach(key => {
-          errorMessage += `${errors[key][0]}<br>`;
-        });
+      const offcanvasInstance = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
+      offcanvasInstance.hide();
 
+      if (missingFields.length > 0) {
         Swal.fire({
           icon: 'error',
-          title: 'Error',
-          html: errorMessage,
+          title: 'Campos requeridos',
+          html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
           confirmButtonText: 'Entendido'
         });
+        return;
       }
-    });
-  });
 
+      $.ajax({
+        url: `${window.baseUrl}admin/clients`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+          if (response.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
+            modal.hide();
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Éxito',
+              text: 'Cliente creado correctamente',
+              showConfirmButton: false,
+              timer: 1500
+            });
+
+            form.reset();
+            fetchClients();
+          }
+        },
+        error: function (xhr) {
+          const errors = xhr.responseJSON?.errors || {};
+          let errorMessage = 'Ocurrieron los siguientes errores:<br><br>';
+
+          Object.keys(errors).forEach(key => {
+            errorMessage += `${errors[key][0]}<br>`;
+          });
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            html: errorMessage,
+            confirmButtonText: 'Entendido'
+          });
+        }
+      });
+    });
+  }
 });

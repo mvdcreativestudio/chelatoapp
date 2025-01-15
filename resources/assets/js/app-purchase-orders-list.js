@@ -1,15 +1,40 @@
+import 'select2/dist/js/i18n/es';
+
 document.addEventListener('DOMContentLoaded', function () {
     $.ajax({
         url: 'suppliers-all',
         method: 'GET',
         success: function (response) {
             let supplierSelect = $('#supplier_id');
+            let editSupplierSelect = $('#edit_supplier_id');
             supplierSelect.empty();
+            editSupplierSelect.empty();
+
+            supplierSelect.append('<option value="">Seleccione un proveedor</option>');
+            editSupplierSelect.append('<option value="">Seleccione un proveedor</option>');
 
             response.forEach(function (supplier) {
-                supplierSelect.append(
-                    `<option value="${supplier.id}">ID: ${supplier.id} - ${supplier.name}</option>`
-                );
+                const option = `<option value="${supplier.id}">ID: ${supplier.id} - ${supplier.name}</option>`;
+                supplierSelect.append(option);
+                editSupplierSelect.append(option);
+            });
+
+            supplierSelect.select2({
+                placeholder: "Seleccione un proveedor",
+                allowClear: true,
+                width: '100%',
+                minimumResultsForSearch: 0,
+                language: "es",
+                dropdownParent: $('#addOrderOffCanvas')
+            });
+
+            editSupplierSelect.select2({
+                placeholder: "Seleccione un proveedor",
+                allowClear: true,
+                width: '100%',
+                minimumResultsForSearch: 0,
+                language: "es",
+                dropdownParent: $('#editPurchaseOrderCanvas') 
             });
         },
         error: function (xhr, status, error) {
@@ -26,12 +51,14 @@ document.addEventListener('DOMContentLoaded', function () {
             { data: 'supplier_name' }, // Asegúrate de ajustar este nombre de columna al campo correcto
             {
                 data: 'created_at', render: function (data, type, row) {
-                    return new Date(data).toLocaleDateString(); // Formatea la fecha
-                }
+                    const date = new Date(data);
+                    return date.toLocaleDateString('es-ES', { timeZone: 'UTC' }); 
+                },
             },
             {
                 data: 'due_date', render: function (data, type, row) {
-                    return new Date(data).toLocaleDateString(); // Formatea la fecha
+                    const date = new Date(data);
+                    return date.toLocaleDateString('es-ES', { timeZone: 'UTC' }); 
                 }
             },
             {
@@ -269,4 +296,67 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Manejar clic en el botón de editar
+    $(document).on('click', '.btn-edit', function () {
+        var purchaseOrderId = $(this).data('id');
+
+        // Obtener los datos de la orden de compra
+        $.ajax({
+            url: `purchase-orders/${purchaseOrderId}`,
+            method: 'GET',
+            success: function (purchaseOrder) {
+                // Llenar el formulario del off-canvas
+                $('#edit_order_id').val(purchaseOrder.id);
+                $('#edit_supplier_id').val(purchaseOrder.supplier_id);
+                $('#edit_due_date').val(purchaseOrder.due_date);
+
+                // Abrir el off-canvas
+                var editCanvas = new bootstrap.Offcanvas(document.getElementById('editPurchaseOrderCanvas'));
+                editCanvas.show();
+            },
+            error: function (xhr, status, error) {
+                console.error('Error al obtener la orden de compra:', error);
+                console.error('Detalles:', xhr.responseText);
+            }
+        });
+    });
+
+    // Manejar el envío del formulario de edición
+    $('#editOrderForm').on('submit', function (event) {
+        event.preventDefault();
+
+        var orderId = $('#edit_order_id').val();
+        var formData = {
+            supplier_id: $('#edit_supplier_id').val(),
+            due_date: $('#edit_due_date').val(),
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        $.ajax({
+            url: `purchase-orders/${orderId}`,
+            method: 'PUT', 
+            data: formData,
+            success: function (response) {
+                var row = table.row(function (idx, data, node) {
+                    return data.id === response.id;
+                });
+
+                response.supplier_name = response.supplier.name;
+
+                row.data(response).draw();
+
+                // Cerrar el off-canvas
+                var editCanvasEl = document.getElementById('editPurchaseOrderCanvas');
+                var editCanvas = bootstrap.Offcanvas.getInstance(editCanvasEl);
+                editCanvas.hide();
+
+                Swal.fire('Éxito', 'Orden de compra actualizada correctamente.', 'success');
+            },
+            error: function (xhr, status, error) {
+                console.error('Error al actualizar la orden de compra:', error);
+                console.error('Detalles:', xhr.responseText);
+                Swal.fire('Error', 'No se pudo actualizar la orden de compra.', 'error');
+            }
+        });
+    });
 });

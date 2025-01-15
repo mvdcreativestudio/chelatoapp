@@ -63,31 +63,38 @@
         @endif --}}
 
         <div class="col-12 mb-3">
-          <div id="client-info" class="card shadow-sm p-4 mb-3 rounded-lg border-0 client-info-card" style="display: block;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="m-0">Información del Cliente</h5>
-              <button id="deselect-client" class="btn btn-outline-danger btn-sm">
-                <span class="d-none d-md-inline">Deseleccionar</span>
-                <i class="bx bx-x d-inline d-md-none"></i>
-              </button>
-            </div>
-            <div class="client-details">
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">ID:</strong> <span id="client-id" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">Nombre:</strong> <span id="client-name" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">Tipo de Cliente:</strong> <span id="client-type" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1" id="client-company" style="display:none;"></p>
-                  <p class="mb-1"><strong id="client-doc-label" class="text-muted">CI:</strong> <span id="client-doc" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">Lista de Precios Predefinida:</strong> <span id="client-price-list" class="text-body fw-bold">-</span></p>
+        <div class="col-md-12">
+          <div id="client-info" class="card shadow-sm client-info-card animate__animated animate__fadeIn p-3 mb-4" style="display: block;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="m-0 text-primary fw-bold">Cliente</h6>
+                <button id="deselect-client" class="btn btn-outline-danger btn-sm position-absolute" style="right: 1rem; top: 10%;">
+                  <span class="d-none d-md-inline">Deseleccionar</span>
+                  <i class="bx bx-x d-inline d-md-none"></i>
+                </button>
+              </div>
+              
+              <div class="client-details">
+                <div class="row g-3">
+                  <div class="col-auto px-4 border-end">
+                    <small class="text-muted d-block mb-1">Nombre:</small>
+                    <span id="client-name" class="text-body fw-semibold">-</span>
+                  </div>
+                  
+                  <div class="col-auto px-4 border-end">
+                    <small class="text-muted d-block mb-1">Tipo:</small>
+                    <span id="client-type" class="text-body fw-semibold">-</span>
+                  </div>
+                  
+                  <div class="col-auto px-4 border-end">
+                    <p class="mb-0 d-none" id="client-company"></p>
+                    <small class="text-muted d-block mb-1">CI:</small>
+                    <span id="client-doc" class="text-body fw-semibold">-</span>
+                  </div>
+                  
+                  <div class="col px-4">
+                    <small class="text-muted d-block mb-1">Lista:</small>
+                    <span id="client-price-list" class="text-body fw-semibold">-</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -327,41 +334,51 @@
           <option value="company">Empresa</option>
         </select>
       </div>
-      <div class="mb-3">
-        <label for="nombreCliente" class="form-label">Nombre <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre" required>
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
+        <label for="razonSocialCliente" class="form-label">
+          Razón Social *<span class="text-danger">*</span>
+        </label>
+        <input type="text" class="form-control" id="razonSocialCliente" placeholder="Ingrese la razón social">
       </div>
-      <div class="mb-3">
-        <label for="apellidoCliente" class="form-label">Apellido <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido" required>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="rutField" style="display: none;">
+        <label for="rutCliente" class="form-label">
+          RUT *<span class="text-danger">*</span>
+        </label>
+        <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
+      </div>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft">
+        <label for="nombreCliente" class="form-label">
+          Nombre<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
+          <span class="text-danger" id="nombreAsterisk">*</span>
+        </label>
+        <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre">
+      </div>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft">
+        <label for="apellidoCliente" class="form-label">
+          Apellido<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
+          <span class="text-danger" id="apellidoAsterisk">*</span>
+        </label>
+        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido">
       </div>
 
       <!-- Campo CI para Persona -->
       <div class="mb-3" id="ciField">
-        <label for="ciCliente" class="form-label">CI <span class="text-danger">*</span></label>
+        <label for="ciCliente" class="form-label">CI </label>
         <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
-      </div>
-
-      <!-- Campo RUT y Razón Social para Empresa -->
-      <div class="mb-3" id="razonSocialField" style="display: none;">
-        <label for="razonSocialCliente" class="form-label">Razón Social <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="razonSocialCliente" placeholder="Ingrese la razón social">
-      </div>
-
-      <div class="mb-3" id="rutField" style="display: none;">
-        <label for="rutCliente" class="form-label">RUT <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
       </div>
 
       <!-- Campo Dirección (requerido para ambos tipos de cliente) -->
       <div class="mb-3">
-        <label for="direccionCliente" class="form-label">Dirección <span class="text-danger">*</span></label>
+        <label for="direccionCliente" class="form-label">Dirección </label>
         <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
       </div>
 
       <!-- Campo Email (requerido para ambos) -->
       <div class="mb-3">
-        <label for="emailCliente" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+        <label for="emailCliente" class="form-label">Correo Electrónico </label>
         <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
       </div>
 

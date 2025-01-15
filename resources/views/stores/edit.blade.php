@@ -145,7 +145,28 @@
         });
         autocomplete.setFields(['address_component']);
     }
+    function initAutocomplete() {
+        autocomplete = new google.maps.places.Autocomplete(document.getElementById('store-address'), {
+            types: ['geocode']
+        });
+        autocomplete.setFields(['address_component']);
+    }
 
+    function geolocate() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const geolocation = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                const circle = new google.maps.Circle({
+                    center: geolocation,
+                    radius: position.coords.accuracy
+                });
+                autocomplete.setBounds(circle.getBounds());
+            });
+        }
+    }
     function geolocate() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function(position) {

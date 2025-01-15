@@ -130,7 +130,7 @@ class AccountingRepository
               'date' => $invoice->emitionDate,
               'order_id' => $invoice->order->id,
               'type' => $typeCFEs[$invoice->type] ?? '',
-              'currency' => 'USD',
+              'currency' => 'UYU',
               'total' => $invoice->total,
               'qrUrl' => $invoice->qrUrl,
               'order_uuid' => $invoice->order->uuid,
@@ -363,7 +363,7 @@ class AccountingRepository
      * @param float|null $amountToBill
      * @param int|null $payType
      * @return void
-    */
+     */
     public function emitCFE(Order $order, ?float $amountToBill = null, ?int $payType = 1): void
     {
         $store = $order->store;
@@ -373,6 +373,13 @@ class AccountingRepository
         if (!$cookies) {
             Log::error('No se pudo iniciar sesión para emitir el CFE.');
             return;
+        }
+
+        if ($order->client_id) {
+            $client = $order->client;
+            if (!$this->validateClientData($client)) {
+                throw new \Exception('El cliente no tiene todos los datos requeridos para emitir el CFE.');
+            }
         }
 
         $rut = $store->rut;
@@ -464,6 +471,71 @@ class AccountingRepository
     }
 
     /**
+     * Obtiene los campos faltantes en el cliente para emitir el CFE.
+     *
+     * @param Client $client
+     * @return array
+     */
+    private function getMissingFields($client): array
+    {
+        $missingFields = [];
+
+        if ($client->type === 'individual') {
+            $requiredFields = [
+                'name' => 'Nombre',
+                'lastname' => 'Apellido',
+                'ci' => 'CI',
+                'address' => 'Dirección',
+                'city' => 'Ciudad',
+                'state' => 'Departamento',
+                'country' => 'País'
+            ];
+        } else {
+            $requiredFields = [
+                'company_name' => 'Razón Social',
+                'rut' => 'RUT',
+                'address' => 'Dirección',
+                'city' => 'Ciudad',
+                'state' => 'Departamento',
+                'country' => 'País'
+            ];
+        }
+
+        foreach ($requiredFields as $field => $label) {
+            if (empty($client->$field)) {
+                $missingFields[] = $label;
+            }
+        }
+
+        return $missingFields;
+    }
+
+    /**
+     * Valida los datos del cliente antes de emitir el CFE.
+     *
+     * @param Client $client
+     * @return bool
+     */
+    private function validateClientData($client): bool
+    {
+        if (!$client) {
+            throw new \Exception('Cliente no encontrado');
+        }
+
+        $missingFields = $this->getMissingFields($client);
+
+        if (!empty($missingFields)) {
+            $clientType = $client->type === 'individual' ? 'individuo' : 'empresa';
+            throw new \Exception(
+                "El cliente no tiene los siguientes campos requeridos para facturar: " .
+                    implode(', ', $missingFields)
+            );
+        }
+
+        return true;
+    }
+
+     /**
      * Prepara los datos necesarios para emitir el CFE.
      *
      * @param Order $order
@@ -479,18 +551,18 @@ class AccountingRepository
         $proportion = ($amountToBill < $order->total) ? $amountToBill / $order->total : 1;
 
 
-        // Activar para facturación en dolares  
-        $usdRate = CurrencyRate::where('name', 'Dólar')
-            ->first()
-            ->histories()
-            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-            ->first();
+        // // Activar para facturación en dolares  
+        // $usdRate = CurrencyRate::where('name', 'Dólar')
+        //     ->first()
+        //     ->histories()
+        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+        //     ->first();
     
-        if ($usdRate) {
-            $exchangeRate = (float) $usdRate->sell;
-        } else {
-            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        }
+        // if ($usdRate) {
+        //     $exchangeRate = (float) $usdRate->sell;
+        // } else {
+        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        // }
 
         $ivaTasaBasica = 22;
         $subtotalConIVA = 0;
@@ -537,8 +609,8 @@ class AccountingRepository
             ],
             'Receptor' => (object) [],
             'Totales' => [
-                'TpoMoneda' => 'USD',
-                'TpoCambio' => $exchangeRate,
+                'TpoMoneda' => 'UYU',
+                // 'TpoCambio' => $exchangeRate,
             ],
             'Items' => $items,
         ];
@@ -746,17 +818,17 @@ class AccountingRepository
     {
         $order = $invoice->order;
 
-        $usdRate = CurrencyRate::where('name', 'Dólar')
-            ->first()
-            ->histories()
-            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-            ->first();
+        // $usdRate = CurrencyRate::where('name', 'Dólar')
+        //     ->first()
+        //     ->histories()
+        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+        //     ->first();
 
-        if ($usdRate) {
-            $exchangeRate = (float) $usdRate->sell;
-        } else {
-            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        }
+        // if ($usdRate) {
+        //     $exchangeRate = (float) $usdRate->sell;
+        // } else {
+        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        // }
 
         Log::info('Tipo de nota: ' . $noteType);
 
@@ -770,8 +842,8 @@ class AccountingRepository
           ],
           'Receptor' => (object) [], // Inicializar como objeto vacío
           'Totales' => [
-              'TpoMoneda' => 'USD',
-              'TpoCambio' => $exchangeRate,
+              'TpoMoneda' => 'UYU',
+            //   'TpoCambio' => $exchangeRate,
           ],
           'Referencia' => [
               [
@@ -1002,17 +1074,17 @@ class AccountingRepository
         $order = $invoice->order;
 
         // Obtener la tasa de cambio del historial de CurrencyRate
-        $usdRate = CurrencyRate::where('name', 'Dólar')
-            ->first()
-            ->histories()
-            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-            ->first();
+        // $usdRate = CurrencyRate::where('name', 'Dólar')
+        //     ->first()
+        //     ->histories()
+        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+        //     ->first();
 
-        if ($usdRate) {
-            $exchangeRate = (float) $usdRate->sell;
-        } else {
-            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        }
+        // if ($usdRate) {
+        //     $exchangeRate = (float) $usdRate->sell;
+        // } else {
+        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        // }
 
         $data = [
             'clientEmissionId' => $invoice->order->uuid . '-R',
@@ -1023,8 +1095,8 @@ class AccountingRepository
             ],
             'Receptor' => (object) [], // Inicializar como objeto vacío
             'Totales' => [
-                'TpoMoneda' => 'USD',
-                'TpoCambio' => $exchangeRate, // Tasa de cambio en USD
+                'TpoMoneda' => 'UYU',
+                // 'TpoCambio' => $exchangeRate, // Tasa de cambio en USD
             ],
             'Referencia' => [
                 [
@@ -1671,7 +1743,4 @@ class AccountingRepository
             ];
         }
     }
-
-
 }
-

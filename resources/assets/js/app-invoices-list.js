@@ -233,9 +233,9 @@ $(function () {
 
               // Ahora si el invoice tiene hide_emit se oculta el botón de emitir nota
               var hideEmit = full['hide_emit'] ? 'd-none' : '';
-              var emailButtonHtml = '<a href="#" class="dropdown-item btn-send-email" data-id="' + full['id'] + '" data-email="' + full['client_email'] + '">Enviar factura por correo</a>';
+              var emailButtonHtml = '<a href="#" class="dropdown-item btn-send-email" data-id="' + full['id'] + '" data-email="' + full['client_email'] + '"> Enviar factura por correo</a>';
               if (isStoreConfigEmailEnabled) {
-                  emailButtonHtml = '<a href="#" class="dropdown-item btn-send-email" data-id="' + full['id'] + '" data-email="' + full['client_email'] + '">Enviar factura por correo</a>';
+                  emailButtonHtml = '<a href="#" class="dropdown-item btn-send-email" data-id="' + full['id'] + '" data-email="' + full['client_email'] + '"> Enviar factura por correo</a>';
               } else {
                   emailButtonHtml = '<a href="#" class="dropdown-item btn-send-email disabled" data-id="' + full['id'] + '" data-email="' + full['client_email'] + '" title="Debe asociarse a una tienda para enviar correos" data-bs-toggle="tooltip" data-bs-placement="top">Enviar factura por correo</a>';
               }

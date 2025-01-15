@@ -4,24 +4,24 @@
 
 @section('vendor-style')
 @vite([
-  'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
-  'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
-  'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
-  'resources/assets/vendor/libs/select2/select2.scss'
+'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
+'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
+'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
+'resources/assets/vendor/libs/select2/select2.scss'
 ])
 @endsection
 
 @section('vendor-script')
 @vite([
-  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
-  'resources/assets/vendor/libs/select2/select2.js'
+'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
+'resources/assets/vendor/libs/select2/select2.js'
 ])
 @endsection
 
 @section('page-script')
 <script type="text/javascript">
-    window.csrfToken = "{{ csrf_token() }}";
-    var purchaseOrders = @json($purchaseOrders);
+  window.csrfToken = "{{ csrf_token() }}";
+  var purchaseOrders = @json($purchaseOrders);
 </script>
 @vite(['resources/assets/js/app-purchase-orders-list.js'])
 @endsection
@@ -44,82 +44,82 @@
 @endif
 
 @if ($errors->any())
-  @foreach ($errors->all() as $error)
-    <div class="alert alert-danger">
-      {{ $error }}
-    </div>
-  @endforeach
+@foreach ($errors->all() as $error)
+<div class="alert alert-danger">
+  {{ $error }}
+</div>
+@endforeach
 @endif
 
-    <div class="card mb-4">
-      <div class="card-widget-separator-wrapper">
-        <div class="card-body card-widget-separator">
-          <div class="row gy-4 gy-sm-1">
-            <div class="col-sm-6 col-lg-3">
-              <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
-                <div>
-                  <h6 class="mb-2">Total de Órdenes</h6>
-                  <h4 class="mb-2">{{ $purchaseOrders->count() }}</h4>
-                  <p class="mb-0"><span class="text-muted me-2">Total</span></p>
-                </div>
-                <div class="avatar me-sm-4">
-                  <span class="avatar-initial rounded bg-label-secondary">
-                    <i class="bx bx-purchase-tag bx-sm"></i>
-                  </span>
-                </div>
-              </div>
-              <hr class="d-none d-sm-block d-lg-none me-4">
+<div class="card mb-4">
+  <div class="card-widget-separator-wrapper">
+    <div class="card-body card-widget-separator">
+      <div class="row gy-4 gy-sm-1">
+        <div class="col-sm-6 col-lg-3">
+          <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
+            <div>
+              <h6 class="mb-2">Total de Órdenes</h6>
+              <h4 class="mb-2">{{ $purchaseOrders->count() }}</h4>
+              <p class="mb-0"><span class="text-muted me-2">Total</span></p>
             </div>
-            <div class="col-sm-6 col-lg-3">
-        <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
-          <div>
-            <h6 class="mb-2">Órdenes Pendientes</h6>
-            <h4 class="mb-2">{{ $purchaseOrders->where('status', 1)->count() }}</h4>
-            <p class="mb-0"><span class="text-muted me-2">Total</span></p>
+            <div class="avatar me-sm-4">
+              <span class="avatar-initial rounded bg-label-secondary">
+                <i class="bx bx-purchase-tag bx-sm"></i>
+              </span>
+            </div>
           </div>
-          <div class="avatar me-sm-4">
-            <span class="avatar-initial rounded bg-label-secondary">
-              <i class="bx bx-timer bx-sm"></i>
-            </span>
-          </div>
+          <hr class="d-none d-sm-block d-lg-none me-4">
         </div>
-        <hr class="d-none d-sm-block d-lg-none me-4">
-      </div>
+        <div class="col-sm-6 col-lg-3">
+          <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
+            <div>
+              <h6 class="mb-2">Órdenes Pendientes</h6>
+              <h4 class="mb-2">{{ $purchaseOrders->where('status', 1)->count() }}</h4>
+              <p class="mb-0"><span class="text-muted me-2">Total</span></p>
+            </div>
+            <div class="avatar me-sm-4">
+              <span class="avatar-initial rounded bg-label-secondary">
+                <i class="bx bx-timer bx-sm"></i>
+              </span>
+            </div>
+          </div>
+          <hr class="d-none d-sm-block d-lg-none me-4">
+        </div>
 
-      <div class="col-sm-6 col-lg-3">
-        <div class="d-flex justify-content-between align-items-start card-widget-3 border-end pb-3 pb-sm-0">
-          <div>
-            <h6 class="mb-2">Órdenes Canceladas</h4>
-            <h4 class="mb-2">{{ $purchaseOrders->where('status', 0)->count() }}</h4>
-            <p class="mb-0"><span class="text-muted me-2">Total</span></p>
+        <div class="col-sm-6 col-lg-3">
+          <div class="d-flex justify-content-between align-items-start card-widget-3 border-end pb-3 pb-sm-0">
+            <div>
+              <h6 class="mb-2">Órdenes Canceladas</h4>
+                <h4 class="mb-2">{{ $purchaseOrders->where('status', 0)->count() }}</h4>
+                <p class="mb-0"><span class="text-muted me-2">Total</span></p>
+            </div>
+            <div class="avatar me-sm-4">
+              <span class="avatar-initial rounded bg-label-danger">
+                <i class="bx bx-x bx-sm"></i>
+              </span>
+            </div>
           </div>
-          <div class="avatar me-sm-4">
-            <span class="avatar-initial rounded bg-label-danger">
-              <i class="bx bx-x bx-sm"></i>
-            </span>
-          </div>
+          <hr class="d-none d-sm-block d-lg-none me-4">
         </div>
-        <hr class="d-none d-sm-block d-lg-none me-4">
-      </div>
 
-      <div class="col-sm-6 col-lg-3">
-        <div class="d-flex justify-content-between align-items-start card-widget-4 pb-3 pb-sm-0">
-          <div>
-            <h6 class="mb-2">Órdenes Completadas</h6>
-            <h4 class="mb-2">{{ $purchaseOrders->where('status', 2)->count() }}</h4>
-            <p class="mb-0"><span class="text-muted me-2">Total</span></p>
+        <div class="col-sm-6 col-lg-3">
+          <div class="d-flex justify-content-between align-items-start card-widget-4 pb-3 pb-sm-0">
+            <div>
+              <h6 class="mb-2">Órdenes Completadas</h6>
+              <h4 class="mb-2">{{ $purchaseOrders->where('status', 2)->count() }}</h4>
+              <p class="mb-0"><span class="text-muted me-2">Total</span></p>
+            </div>
+            <div class="avatar me-sm-4">
+              <span class="avatar-initial rounded bg-label-success">
+                <i class="bx bx-check bx-sm"></i>
+              </span>
+            </div>
           </div>
-          <div class="avatar me-sm-4">
-            <span class="avatar-initial rounded bg-label-success">
-              <i class="bx bx-check bx-sm"></i>
-            </span>
-          </div>
+          <hr class="d-none d-sm-block d-lg-none me-4">
         </div>
-        <hr class="d-none d-sm-block d-lg-none me-4">
       </div>
     </div>
-    </div>
-    </div>
+  </div>
 </div>
 
 <div class="card">
@@ -138,35 +138,35 @@
     <div class="mt-0 d-flex flex-wrap">
       <!-- Aquí se muestran los switches para las columnas -->
       @foreach (['ID', 'Proveedor', 'Fecha de Orden', 'Fecha de Vencimiento', 'Estado', 'Materias primas', 'Acciones'] as $index => $label)
-        <div class="mx-3">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="{{ $index }}" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">{{ $label }}</span>
-          </label>
-        </div>
+      <div class="mx-3">
+        <label class="switch switch-square">
+          <input type="checkbox" class="toggle-column switch-input" data-column="{{ $index }}" checked>
+          <span class="switch-toggle-slider">
+            <span class="switch-on"><i class="bx bx-check"></i></span>
+            <span class="switch-off"><i class="bx bx-x"></i></span>
+          </span>
+          <span class="switch-label">{{ $label }}</span>
+        </label>
+      </div>
       @endforeach
     </div>
   </div> <!-- Cierre del collapse -->
   <div class="card-datatable table-responsive">
     <div class="dataTables_wrapper" style="padding-left: 1rem; padding-right: 1rem;">
       <table class="table datatables-purchase-orders border-top">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Proveedor</th>
-              <th>Fecha de Orden</th>
-              <th>Fecha de Vencimiento</th>
-              <th>Estado</th>
-              <th>Materias primas</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <!-- Aquí se debería cargar el contenido de la tabla mediante DataTables -->
-        </table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Proveedor</th>
+            <th>Fecha de Orden</th>
+            <th>Fecha de Vencimiento</th>
+            <th>Estado</th>
+            <th>Materias primas</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <!-- Aquí se debería cargar el contenido de la tabla mediante DataTables -->
+      </table>
     </div>
   </div>
 </div> <!-- Cierre del card -->
@@ -180,8 +180,7 @@
     <form id="addOrderForm">
       <div class="mb-3">
         <label for="supplier_id" class="form-label">Proveedor</label>
-        <select class="form-select" id="supplier_id" name="supplier_id" required>
-          <!-- Opciones se llenarán con JavaScript -->
+        <select id="supplier_id" name="supplier_id" class="form-select" required>
         </select>
       </div>
       <div class="mb-3">
@@ -201,4 +200,42 @@
   </div>
 </div>
 
+<!-- Off-Canvas Editar Orden de Compra -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="editPurchaseOrderCanvas" aria-labelledby="editPurchaseOrderLabel">
+  <div class="offcanvas-header">
+    <h5 id="editPurchaseOrderLabel">Editar Orden de Compra</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form id="editOrderForm">
+      <input type="hidden" id="edit_order_id" name="id">
+      <div class="mb-3">
+        <label for="edit_supplier_id" class="form-label">Proveedor</label>
+        <select id="edit_supplier_id" name="edit_supplier_id" class="form-select" required>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="edit_due_date" class="form-label">Fecha de Vencimiento</label>
+        <input type="date" class="form-control" id="edit_due_date" name="due_date" required>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+    </form>
+  </div>
+</div>
+
+<style>
+  .select2-container {
+    width: 100% !important;
+}
+
+.select2-container--open {
+    z-index: 9999;
+}
+
+.select2-selection__placeholder {
+    white-space: nowrap;
+}
+
+</style>
 @endsection
