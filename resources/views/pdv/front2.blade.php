@@ -63,31 +63,38 @@
         @endif --}}
 
         <div class="col-12 mb-3">
-          <div id="client-info" class="card shadow-sm p-4 mb-3 rounded-lg border-0 client-info-card" style="display: block;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="m-0">Información del Cliente</h5>
-              <button id="deselect-client" class="btn btn-outline-danger btn-sm">
-                <span class="d-none d-md-inline">Deseleccionar</span>
-                <i class="bx bx-x d-inline d-md-none"></i>
-              </button>
-            </div>
-            <div class="client-details">
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">ID:</strong> <span id="client-id" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">Nombre:</strong> <span id="client-name" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">Tipo de Cliente:</strong> <span id="client-type" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1" id="client-company" style="display:none;"></p>
-                  <p class="mb-1"><strong id="client-doc-label" class="text-muted">CI:</strong> <span id="client-doc" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">Lista de Precios Predefinida:</strong> <span id="client-price-list" class="text-body fw-bold">-</span></p>
+        <div class="col-md-12">
+          <div id="client-info" class="card shadow-sm client-info-card animate__animated animate__fadeIn p-3 mb-4" style="display: block;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h6 class="m-0 text-primary fw-bold">Cliente</h6>
+                <button id="deselect-client" class="btn btn-outline-danger btn-sm position-absolute" style="right: 1rem; top: 10%;">
+                  <span class="d-none d-md-inline">Deseleccionar</span>
+                  <i class="bx bx-x d-inline d-md-none"></i>
+                </button>
+              </div>
+              
+              <div class="client-details">
+                <div class="row g-3">
+                  <div class="col-auto px-4 border-end">
+                    <small class="text-muted d-block mb-1">Nombre:</small>
+                    <span id="client-name" class="text-body fw-semibold">-</span>
+                  </div>
+                  
+                  <div class="col-auto px-4 border-end">
+                    <small class="text-muted d-block mb-1">Tipo:</small>
+                    <span id="client-type" class="text-body fw-semibold">-</span>
+                  </div>
+                  
+                  <div class="col-auto px-4 border-end">
+                    <p class="mb-0 d-none" id="client-company"></p>
+                    <small class="text-muted d-block mb-1">CI:</small>
+                    <span id="client-doc" class="text-body fw-semibold">-</span>
+                  </div>
+                  
+                  <div class="col px-4">
+                    <small class="text-muted d-block mb-1">Lista:</small>
+                    <span id="client-price-list" class="text-body fw-semibold">-</span>
+                  </div>
                 </div>
               </div>
             </div>

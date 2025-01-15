@@ -62,7 +62,7 @@
           {{-- checbox ¿Esta Pago? --}}
           <div class="mb-3 form-check">
             <input type="checkbox" class="form-check-input" id="is_paid" name="is_paid">
-            <label class="form-check-label" for="is_paid">¿Está Pagado?</label>
+            <label class="form-check-label" for="is_paid">¿Está Pago?</label>
           </div>
           <div id="paymentFields" class="d-none">
             <div class="mb-3">

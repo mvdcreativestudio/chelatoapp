@@ -110,7 +110,7 @@
 
         <!-- Campo Razón Social y RUT para Empresa -->
         <div class="mb-3" id="razonSocialField" style="display: none;">
-            <label class="form-label" for="company_name">Razón Social</label>
+            <label class="form-label" for="company_name">Razón Social <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="company_name" placeholder="Ingrese la razón social" name="company_name" />
         </div>
 

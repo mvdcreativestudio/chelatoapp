@@ -44,20 +44,20 @@ $(function () {
             }
             const whatsappUrl = phoneNumber ? `https://wa.me/598${phoneNumber}` : '#';
             const telUrl = phoneNumber ? `tel:+598${phoneNumber}` : '#';
-            console.log(client)
+
             // Renderizar el documento de identidad
             const documentInfo = client.ci
-            ? `<i class="bx bx-id-card me-2"></i>${client.ci} (Cedula de Identidad)`
-            : client.passport
-            ? `<i class="bx bx-id-card me-2"></i>${client.passport} (Pasaporte)`
-            : client.other_id_type
-            ? `<i class="bx bx-id-card me-2"></i>${client.other_id_type} (Otro)`
-            : client.rut
-            ? `<i class="bx bx-id-card me-2"></i>${client.rut} (RUT)`
-            : `<i class="bx bx-id-card me-2"></i>Documento no especificado`;
+              ? `<i class="bx bx-id-card me-2"></i>${client.ci} (Cedula de Identidad)`
+              : client.passport
+                ? `<i class="bx bx-id-card me-2"></i>${client.passport} (Pasaporte)`
+                : client.other_id_type
+                  ? `<i class="bx bx-id-card me-2"></i>${client.other_id_type} (Otro)`
+                  : client.rut
+                    ? `<i class="bx bx-id-card me-2"></i>${client.rut} (RUT)`
+                    : `<i class="bx bx-id-card me-2"></i>Documento no especificado`;
 
 
-              const card = `
+            const card = `
               <div class="col-md-6 col-lg-4 col-12 client-card-wrapper">
                 <div class="clients-card-container">
                   <div class="clients-card position-relative">
@@ -265,14 +265,13 @@ $(document).ready(function () {
       $('#ciudadAsterisk').show();
       $('#departamentoAsterisk').show();
     }
-});
+  });
 });
 
 document.getElementById('guardarCliente').addEventListener('click', function (e) {
   e.preventDefault();
   const nombre = document.getElementById('ecommerce-customer-add-name');
   const apellido = document.getElementById('ecommerce-customer-add-lastname');
-  var tipo = document.querySelector('input[name="type"]:checked');
   const email = document.getElementById('ecommerce-customer-add-email');
   const ci = document.getElementById('ci');
   const pasaporte = document.getElementById('passport');
@@ -338,14 +337,14 @@ function toggleDocumentFields(selectedType) {
   $('#ci, #passport, #other_id_type').val('').removeAttr('required');
 
   if (selectedType === 'ci') {
-      $('#ciField').show();
-      $('#ci').attr('required', true);
+    $('#ciField').show();
+    $('#ci').attr('required', true);
   } else if (selectedType === 'passport') {
-      $('#passportField').show();
-      $('#passport').attr('required', true);
+    $('#passportField').show();
+    $('#passport').attr('required', true);
   } else if (selectedType === 'other_id_type') {
-      $('#other_field').show();
-      $('#other_id_type').attr('required', true);
+    $('#other_field').show();
+    $('#other_id_type').attr('required', true);
   }
 }
 
@@ -386,86 +385,90 @@ $(document).ready(function () {
   });
 
 
-  document.getElementById('guardarCliente').addEventListener('click', function (e) {
-    e.preventDefault();
+  const form = document.getElementById('eCommerceCustomerAddForm');
 
-    const form = document.getElementById('eCommerceCustomerAddForm');
-    const formData = new FormData(form);
-    const clientType = document.querySelector('input[name="type"]:checked').value;
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const submitButton = form.querySelector('[type="submit"]');
+      submitButton.disabled = true;
+      const form = document.getElementById('eCommerceCustomerAddForm');
+      const formData = new FormData(form);
+      const clientType = document.querySelector('input[name="type"]:checked').value;
 
-    let requiredFields = {};
+      let requiredFields = {};
 
-    if (clientType === 'individual') {
-      requiredFields.name = 'Nombre';
-      requiredFields.lastname = 'Apellido';
-    } else if (clientType === 'company') {
-      requiredFields.company_name = 'Razón Social';
-      requiredFields.rut = 'RUT';
-    }
-
-    let missingFields = [];
-    for (let field in requiredFields) {
-      const value = formData.get(field);
-      if (!value || value.trim() === '') {
-        missingFields.push(requiredFields[field]);
+      if (clientType === 'individual') {
+        requiredFields.name = 'Nombre';
+        requiredFields.lastname = 'Apellido';
+      } else if (clientType === 'company') {
+        requiredFields.company_name = 'Razón Social';
+        requiredFields.rut = 'RUT';
       }
-    }
 
-    const offcanvasInstance = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
-    offcanvasInstance.hide();
-
-    if (missingFields.length > 0) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Campos requeridos',
-        html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
-        confirmButtonText: 'Entendido'
-      });
-      return;
-    }
-
-    $.ajax({
-      url: `${window.baseUrl}admin/clients`,
-      type: 'POST',
-      data: formData,
-      processData: false,
-      contentType: false,
-      headers: {
-        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-      },
-      success: function (response) {
-        if (response.success) {
-          const modal = bootstrap.Modal.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
-          modal.hide();
-
-          Swal.fire({
-            icon: 'success',
-            title: 'Éxito',
-            text: 'Cliente creado correctamente',
-            showConfirmButton: false,
-            timer: 1500
-          });
-
-          form.reset();
-          fetchClients();
+      let missingFields = [];
+      for (let field in requiredFields) {
+        const value = formData.get(field);
+        if (!value || value.trim() === '') {
+          missingFields.push(requiredFields[field]);
         }
-      },
-      error: function (xhr) {
-        const errors = xhr.responseJSON?.errors || {};
-        let errorMessage = 'Ocurrieron los siguientes errores:<br><br>';
+      }
 
-        Object.keys(errors).forEach(key => {
-          errorMessage += `${errors[key][0]}<br>`;
-        });
+      const offcanvasInstance = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
+      offcanvasInstance.hide();
 
+      if (missingFields.length > 0) {
         Swal.fire({
           icon: 'error',
-          title: 'Error',
-          html: errorMessage,
+          title: 'Campos requeridos',
+          html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
           confirmButtonText: 'Entendido'
         });
+        return;
       }
-    });
-  });
 
+      $.ajax({
+        url: `${window.baseUrl}admin/clients`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+          if (response.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
+            modal.hide();
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Éxito',
+              text: 'Cliente creado correctamente',
+              showConfirmButton: false,
+              timer: 1500
+            });
+
+            form.reset();
+            fetchClients();
+          }
+        },
+        error: function (xhr) {
+          const errors = xhr.responseJSON?.errors || {};
+          let errorMessage = 'Ocurrieron los siguientes errores:<br><br>';
+
+          Object.keys(errors).forEach(key => {
+            errorMessage += `${errors[key][0]}<br>`;
+          });
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            html: errorMessage,
+            confirmButtonText: 'Entendido'
+          });
+        }
+      });
+    });
+  }
 });

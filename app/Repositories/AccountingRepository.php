@@ -23,7 +23,7 @@ class AccountingRepository
      *
      * @param Store $store
      * @return array|null
-     */
+    */
     public function login(Store $store): ?array
     {
         if (!$store || !$store->pymo_user || !$store->pymo_password) {
@@ -63,7 +63,7 @@ class AccountingRepository
      * Obtiene todos los recibos con las relaciones necesarias.
      *
      * @return Collection
-     */
+    */
     public function getInvoicesWithRelations(): Collection
     {
         $validTypes = [101, 102, 103, 111, 112, 113]; // Tipos válidos de CFE, eTickets, eFacturas, Notas de Crédito y Notas de Débito respectivamente
@@ -90,7 +90,7 @@ class AccountingRepository
      * Prepara los datos de los recibos para ser usados en DataTables.
      *
      * @return Collection
-     */
+    */
     public function getInvoicesDataForDatatables(): Collection
     {
       $invoices = $this->getInvoicesWithRelations();
@@ -130,7 +130,7 @@ class AccountingRepository
               'date' => $invoice->emitionDate,
               'order_id' => $invoice->order->id,
               'type' => $typeCFEs[$invoice->type] ?? '',
-              'currency' => 'USD',
+              'currency' => 'UYU',
               'total' => $invoice->total,
               'qrUrl' => $invoice->qrUrl,
               'order_uuid' => $invoice->order->uuid,
@@ -156,66 +156,66 @@ class AccountingRepository
      * Datatable de los CFEs recibidos.
      *
      * @return Collection
-     */
+    */
     public function getReceivedInvoicesDataForDatatables(): Collection
     {
-        $invoices = $this->getReceivedInvoicesWithRelations();
+      $invoices = $this->getReceivedInvoicesWithRelations();
 
-        return $invoices->map(function ($invoice) {
-            $typeCFEs = [
-                101 => 'eTicket',
-                102 => 'eTicket - Nota de Crédito',
-                103 => 'eTicket - Nota de Débito',
-                111 => 'eFactura',
-                112 => 'eFactura - Nota de Crédito',
-                113 => 'eFactura - Nota de Débito',
-            ];
+      return $invoices->map(function ($invoice) {
+          $typeCFEs = [
+            101 => 'eTicket',
+            102 => 'eTicket - Nota de Crédito',
+            103 => 'eTicket - Nota de Débito',
+            111 => 'eFactura',
+            112 => 'eFactura - Nota de Crédito',
+            113 => 'eFactura - Nota de Débito',
+          ];
 
-            if ($invoice->is_receipt) {
-                $typeCFEs[101] = 'eTicket - Recibo';
-                $typeCFEs[111] = 'eFactura - Recibo';
-            }
+          if ($invoice->is_receipt) {
+              $typeCFEs[101] = 'eTicket - Recibo';
+              $typeCFEs[111] = 'eFactura - Recibo';
+          }
 
-            if (
-                !$invoice->is_receipt &&
-                in_array($invoice->type, [101, 111]) &&
-                $invoice->relatedCfes->count() > 0 &&
-                $invoice->relatedCfes->contains(function ($relatedCfe) use ($invoice) {
-                    return $relatedCfe->type == $invoice->type;
-                })
-            ) {
-                $invoice->hide_emit = true;
-            }
+          if (
+              !$invoice->is_receipt &&
+              in_array($invoice->type, [101, 111]) &&
+              $invoice->relatedCfes->count() > 0 &&
+              $invoice->relatedCfes->contains(function ($relatedCfe) use ($invoice) {
+                  return $relatedCfe->type == $invoice->type;
+              })
+          ) {
+              $invoice->hide_emit = true;
+          }
 
-            return [
-                'id' => $invoice->id,
-                'store_name' => $invoice->order->store->name ?? 'N/A',
-                'client_name' => $invoice->order->client->name ?? 'Consumidor Final',
-                'client_email' => $invoice->order->client->email ?? '',
-                'client_lastname' => $invoice->order->client->lastname ?? '',
-                'date' => $invoice->emitionDate,
-                'order_id' => $invoice->order->id,
-                'type' => $typeCFEs[$invoice->type] ?? '',
-                'currency' => 'UYU',
-                'total' => $invoice->total,
-                'qrUrl' => $invoice->qrUrl,
-                'order_uuid' => $invoice->order->uuid,
-                'serie' => $invoice->serie,
-                'cfeId' => $invoice->cfeId,
-                'nro' => $invoice->nro,
-                'balance' => $invoice->balance,
-                'caeNumber' => $invoice->caeNumber,
-                'caeRange' => $invoice->caeRange,
-                'caeExpirationDate' => $invoice->caeExpirationDate,
-                'sentXmlHash' => $invoice->sentXmlHash,
-                'securityCode' => $invoice->securityCode,
-                'reason' => $invoice->reason,
-                'associated_id' => $invoice->main_cfe_id,
-                'is_receipt' => $invoice->is_receipt,
-                'hide_emit' => $invoice->hide_emit,
-                'status' => $invoice->status ?? ''
-            ];
-        });
+          return [
+              'id' => $invoice->id,
+              'store_name' => $invoice->order->store->name ?? 'N/A',
+              'client_name' => $invoice->order->client->name ?? 'Consumidor Final',
+              'client_email' => $invoice->order->client->email ?? '',
+              'client_lastname' => $invoice->order->client->lastname ?? '',
+              'date' => $invoice->emitionDate,
+              'order_id' => $invoice->order->id,
+              'type' => $typeCFEs[$invoice->type] ?? '',
+              'currency' => 'UYU',
+              'total' => $invoice->total,
+              'qrUrl' => $invoice->qrUrl,
+              'order_uuid' => $invoice->order->uuid,
+              'serie' => $invoice->serie,
+              'cfeId' => $invoice->cfeId,
+              'nro' => $invoice->nro,
+              'balance' => $invoice->balance,
+              'caeNumber' => $invoice->caeNumber,
+              'caeRange' => $invoice->caeRange,
+              'caeExpirationDate' => $invoice->caeExpirationDate,
+              'sentXmlHash' => $invoice->sentXmlHash,
+              'securityCode' => $invoice->securityCode,
+              'reason' => $invoice->reason,
+              'associated_id' => $invoice->main_cfe_id,
+              'is_receipt' => $invoice->is_receipt,
+              'hide_emit' => $invoice->hide_emit,
+              'status' => $invoice->status ?? ''
+          ];
+      });
     }
 
     /**
@@ -224,17 +224,17 @@ class AccountingRepository
      * @param string $rut
      * @param array $cookies
      * @return array|null
-     */
+    */
     public function getCompanySentCfes(string $rut, array $cookies): ?array
     {
-        $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
-            ->get(env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/sentCfes');
+      $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
+          ->get(env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/sentCfes');
 
-        if ($response->failed() || !isset($response->json()['payload']['companySentCfes'])) {
-            return null;
-        }
+      if ($response->failed() || !isset($response->json()['payload']['companySentCfes'])) {
+          return null;
+      }
 
-        return $response->json()['payload']['companySentCfes'];
+      return $response->json()['payload']['companySentCfes'];
     }
 
     /**
@@ -243,24 +243,24 @@ class AccountingRepository
      * @param int $storeId
      * @param UploadedFile $logo
      * @return bool
-     */
+    */
     public function uploadCompanyLogo(string $storeId, UploadedFile $logo): bool
     {
-        $store = Store::find($storeId);
+      $store = Store::find($storeId);
 
-        $cookies = $this->login($store);
+      $cookies = $this->login($store);
 
-        if (!$cookies) {
-            return false;
-        }
+      if (!$cookies) {
+          return false;
+      }
 
-        $rut = $store->rut;
+      $rut = $store->rut;
 
-        $logoResponse = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
-            ->attach('logo', $logo->get(), 'logo.jpg')
-            ->post(env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/logo');
+      $logoResponse = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
+          ->attach('logo', $logo->get(), 'logo.jpg')
+          ->post(env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/logo');
 
-        return $logoResponse->successful();
+      return $logoResponse->successful();
     }
 
     /**
@@ -268,7 +268,7 @@ class AccountingRepository
      *
      * @param Store $store
      * @return string|null
-     */
+    */
     public function getCompanyLogo(Store $store): ?string
     {
         $cookies = $this->login($store);
@@ -308,13 +308,13 @@ class AccountingRepository
      *
      * @param string $imageContent
      * @return string
-     */
+    */
     private function saveLogoLocally(string $imageContent): string
     {
-        $logoPath = 'public/assets/img/logos/company_logo.jpg';
-        Storage::put($logoPath, $imageContent);
+      $logoPath = 'public/assets/img/logos/company_logo.jpg';
+      Storage::put($logoPath, $imageContent);
 
-        return Storage::url($logoPath);
+      return Storage::url($logoPath);
     }
 
     /**
@@ -322,7 +322,7 @@ class AccountingRepository
      *
      * @param Store $store
      * @return array|null
-     */
+    */
     public function getCompanyInfo(Store $store): ?array
     {
         $cookies = $this->login($store);
@@ -535,7 +535,7 @@ class AccountingRepository
         return true;
     }
 
-    /**
+     /**
      * Prepara los datos necesarios para emitir el CFE.
      *
      * @param Order $order
@@ -543,7 +543,7 @@ class AccountingRepository
      * @param float $amountToBill
      * @param int $payType
      * @return array
-     */
+    */
     private function prepareCFEData(Order $order, string $cfeType, float $amountToBill, int $payType): array
     {
         $client = Client::find($order->client_id);
@@ -551,18 +551,18 @@ class AccountingRepository
         $proportion = ($amountToBill < $order->total) ? $amountToBill / $order->total : 1;
 
 
-        // Activar para facturación en dolares  
-        $usdRate = CurrencyRate::where('name', 'Dólar')
-            ->first()
-            ->histories()
-            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-            ->first();
+        // // Activar para facturación en dolares  
+        // $usdRate = CurrencyRate::where('name', 'Dólar')
+        //     ->first()
+        //     ->histories()
+        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+        //     ->first();
     
-        if ($usdRate) {
-            $exchangeRate = (float) $usdRate->sell;
-        } else {
-            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        }
+        // if ($usdRate) {
+        //     $exchangeRate = (float) $usdRate->sell;
+        // } else {
+        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        // }
 
         $ivaTasaBasica = 22;
         $subtotalConIVA = 0;
@@ -609,8 +609,8 @@ class AccountingRepository
             ],
             'Receptor' => (object) [],
             'Totales' => [
-                'TpoMoneda' => 'USD',
-                'TpoCambio' => $exchangeRate,
+                'TpoMoneda' => 'UYU',
+                // 'TpoCambio' => $exchangeRate,
             ],
             'Items' => $items,
         ];
@@ -663,19 +663,19 @@ class AccountingRepository
      * Obtiene estadísticas para el dashboard contable.
      *
      * @return array
-     */
+    */
     public function getDashboardStatistics(): array
     {
-        $invoices = $this->getInvoicesWithRelations();
-        $totalReceipts = $invoices->count();
-        $totalIncome = $invoices->sum('balance');
-        $storeWithMostReceipts = $invoices->groupBy('store_id')
-            ->sortByDesc(function ($group) {
-                return $group->count();
-            })->first();
-        $storeNameWithMostReceipts = $storeWithMostReceipts ? $storeWithMostReceipts->first()->order->store->name : 'N/A';
+      $invoices = $this->getInvoicesWithRelations();
+      $totalReceipts = $invoices->count();
+      $totalIncome = $invoices->sum('balance');
+      $storeWithMostReceipts = $invoices->groupBy('store_id')
+          ->sortByDesc(function ($group) {
+              return $group->count();
+          })->first();
+      $storeNameWithMostReceipts = $storeWithMostReceipts ? $storeWithMostReceipts->first()->order->store->name : 'N/A';
 
-        return compact('invoices', 'totalReceipts', 'totalIncome', 'storeNameWithMostReceipts');
+      return compact('invoices', 'totalReceipts', 'totalIncome', 'storeNameWithMostReceipts');
     }
 
 
@@ -686,7 +686,7 @@ class AccountingRepository
      * @param EmitNoteRequest $request
      * @return void
      * @throws Exception
-     */
+    */
     public function emitNote(int $invoiceId, EmitNoteRequest $request): void
     {
         $invoice = CFE::findOrFail($invoiceId);
@@ -813,22 +813,22 @@ class AccountingRepository
      * @param string $reason
      * @param string $noteType
      * @return array
-     */
+    */
     private function prepareNoteData(CFE $invoice, float $noteAmount, string $reason, string $noteType): array
     {
         $order = $invoice->order;
 
-        $usdRate = CurrencyRate::where('name', 'Dólar')
-            ->first()
-            ->histories()
-            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-            ->first();
+        // $usdRate = CurrencyRate::where('name', 'Dólar')
+        //     ->first()
+        //     ->histories()
+        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+        //     ->first();
 
-        if ($usdRate) {
-            $exchangeRate = (float) $usdRate->sell;
-        } else {
-            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        }
+        // if ($usdRate) {
+        //     $exchangeRate = (float) $usdRate->sell;
+        // } else {
+        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        // }
 
         Log::info('Tipo de nota: ' . $noteType);
 
@@ -842,8 +842,8 @@ class AccountingRepository
           ],
           'Receptor' => (object) [], // Inicializar como objeto vacío
           'Totales' => [
-              'TpoMoneda' => 'USD',
-              'TpoCambio' => $exchangeRate,
+              'TpoMoneda' => 'UYU',
+            //   'TpoCambio' => $exchangeRate,
           ],
           'Referencia' => [
               [
@@ -904,7 +904,7 @@ class AccountingRepository
      * @param int $cfeId
      * @return Response
      * @throws Exception
-     */
+    */
     public function getCfePdf(int $cfeId): Response
     {
         $cfe = CFE::findOrFail($cfeId);
@@ -962,7 +962,7 @@ class AccountingRepository
      * @param string $rut
      * @param array $cookies
      * @return array|null
-     */
+    */
     public function fetchReceivedCfes(string $rut, array $cookies): ?array
     {
         $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/inSobres/cfes?l=10000';
@@ -989,7 +989,7 @@ class AccountingRepository
      * @param int $invoiceId
      * @return void
      * @throws \Exception
-     */
+    */
     public function emitReceipt(int $invoiceId): void
     {
         $invoice = CFE::findOrFail($invoiceId);
@@ -1068,23 +1068,23 @@ class AccountingRepository
      *
      * @param CFE $invoice
      * @return array
-     */
+    */
     private function prepareReceiptData(CFE $invoice): array
     {
         $order = $invoice->order;
 
         // Obtener la tasa de cambio del historial de CurrencyRate
-        $usdRate = CurrencyRate::where('name', 'Dólar')
-            ->first()
-            ->histories()
-            ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-            ->first();
+        // $usdRate = CurrencyRate::where('name', 'Dólar')
+        //     ->first()
+        //     ->histories()
+        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
+        //     ->first();
 
-        if ($usdRate) {
-            $exchangeRate = (float) $usdRate->sell;
-        } else {
-            throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        }
+        // if ($usdRate) {
+        //     $exchangeRate = (float) $usdRate->sell;
+        // } else {
+        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
+        // }
 
         $data = [
             'clientEmissionId' => $invoice->order->uuid . '-R',
@@ -1095,8 +1095,8 @@ class AccountingRepository
             ],
             'Receptor' => (object) [], // Inicializar como objeto vacío
             'Totales' => [
-                'TpoMoneda' => 'USD',
-                'TpoCambio' => $exchangeRate, // Tasa de cambio en USD
+                'TpoMoneda' => 'UYU',
+                // 'TpoCambio' => $exchangeRate, // Tasa de cambio en USD
             ],
             'Referencia' => [
                 [
@@ -1142,7 +1142,7 @@ class AccountingRepository
         return $data;
     }
 
-    /**
+     /**
      * Actualiza la información de la empresa con la información de PyMo.
      *
      * @param Store $store
@@ -1150,7 +1150,7 @@ class AccountingRepository
      * @param string|null $newCallbackUrl
      * @param string|null $pymoUser
      * @param string|null $newPymoPassword
-     */
+    */
     public function updateStoreWithPymo(Store $store, ?string $selectedBranchOfficeNumber, ?string $newCallbackUrl, ?string $pymoUser, ?string $newPymoPassword): void
     {
         // Actualizar 'pymo_user' y 'pymo_password' antes de cualquier otra operación
@@ -1194,7 +1194,7 @@ class AccountingRepository
      * @param string|null $pymoUser
      * @param string|null $newPymoPassword
      * @return void
-     */
+    */
     private function updatePymoCredentials(Store $store, ?string $pymoUser, ?string $newPymoPassword): void
     {
         // Verificar si se ha proporcionado una nueva contraseña para PyMo
@@ -1217,7 +1217,7 @@ class AccountingRepository
      * @param string $branchOfficeNumber
      * @param string $newCallbackUrl
      * @return bool
-     */
+    */
     private function updateBranchOfficeCallbackUrl(array $companyInfo, string $store, string $branchOfficeNumber, string $newCallbackUrl): bool
     {
         if (!$companyInfo) {
@@ -1285,7 +1285,7 @@ class AccountingRepository
      * @param string $branchOffice
      * @param string $urlToCheck
      * @return void
-     */
+    */
     public function checkCfeStatus(string $rut, string $branchOffice, string $urlToCheck): void
     {
         // Busco la Store con el RUT y branch office
@@ -1341,7 +1341,7 @@ class AccountingRepository
      *
      * @param array $cfeData
      * @return void
-     */
+    */
     private function updateCfeStatus(array $cfeData): void
     {
         // Buscar el CFE en la base de datos usando el ID de emisión del cliente
@@ -1363,7 +1363,7 @@ class AccountingRepository
      *
      * @param Store $store
      * @return void
-     */
+    */
     public function updateAllCfesForStore(Store $store): void
     {
         // Construir la URL para obtener todos los estados actualizados
@@ -1404,7 +1404,7 @@ class AccountingRepository
      * Actualiza el estado de todos los CFEs para todas las empresas.
      *
      * @return void
-     */
+    */
     public function updateAllCfesStatusForAllStores(): void
     {
         // Obtener todas las empresas que tengan invoices_enabled y datos en pymo_user y pymo_password, pymo_branch_office
@@ -1425,7 +1425,7 @@ class AccountingRepository
      *
      * @param Store $store
      * @return array|null
-     */
+    */
     public function processReceivedCfes(Store $store): ?array
     {
         $rut = $store->rut;
@@ -1535,7 +1535,7 @@ class AccountingRepository
      *
      * @param Store|null $store
      * @return Collection
-     */
+    */
     public function getReceivedCfesDataForDatatables(?Store $store = null): Collection
     {
         $validTypes = [101, 102, 103, 111, 112, 113]; // Tipos válidos de CFE
@@ -1561,55 +1561,55 @@ class AccountingRepository
 
         // Formatear la colección de datos para el DataTable
         return $cfes->map(function ($cfe, $index) use ($totalItems) {
-            $typeCFEs = [
-                101 => 'eTicket',
-                102 => 'eTicket - Nota de Crédito',
-                103 => 'eTicket - Nota de Débito',
-                111 => 'eFactura',
-                112 => 'eFactura - Nota de Crédito',
-                113 => 'eFactura - Nota de Débito',
-            ];
+          $typeCFEs = [
+            101 => 'eTicket',
+            102 => 'eTicket - Nota de Crédito',
+            103 => 'eTicket - Nota de Débito',
+            111 => 'eFactura',
+            112 => 'eFactura - Nota de Crédito',
+            113 => 'eFactura - Nota de Débito',
+          ];
 
-            if ($cfe->is_receipt) {
-                $typeCFEs[101] = 'eTicket - Recibo';
-                $typeCFEs[111] = 'eFactura - Recibo';
-            }
+          if ($cfe->is_receipt) {
+              $typeCFEs[101] = 'eTicket - Recibo';
+              $typeCFEs[111] = 'eFactura - Recibo';
+          }
 
-            if (
-                !$cfe->is_receipt &&
-                in_array($cfe->type, [101, 111]) &&
-                $cfe->relatedCfes->count() > 0 &&
-                $cfe->relatedCfes->contains(function ($relatedCfe) use ($cfe) {
-                    return $relatedCfe->type == $cfe->type;
-                })
-            ) {
-                $cfe->hide_emit = true;
-            }
+          if (
+              !$cfe->is_receipt &&
+              in_array($cfe->type, [101, 111]) &&
+              $cfe->relatedCfes->count() > 0 &&
+              $cfe->relatedCfes->contains(function ($relatedCfe) use ($cfe) {
+                  return $relatedCfe->type == $cfe->type;
+              })
+          ) {
+              $cfe->hide_emit = true;
+          }
 
-            return [
-                'id' => $totalItems - $index,
-                'date' => $cfe->emitionDate,
-                'issuer_name' => $cfe->issuer_name ?? 'N/A',
-                'type' => $typeCFEs[$cfe->type] ?? 'N/A',
-                'currency' => $cfe->currency,
-                'total' => $cfe->total,
-                'qrUrl' => $cfe->qrUrl,
-                'serie' => $cfe->serie,
-                'cfeId' => $cfe->cfeId,
-                'nro' => $cfe->nro,
-                'balance' => $cfe->balance,
-                'caeNumber' => $cfe->caeNumber,
-                'caeRange' => $cfe->caeRange,
-                'caeExpirationDate' => $cfe->caeExpirationDate,
-                'sentXmlHash' => $cfe->sentXmlHash,
-                'securityCode' => $cfe->securityCode,
-                'reason' => $cfe->reason,
-                'associated_id' => $cfe->main_cfe_id,
-                'is_receipt' => $cfe->is_receipt,
-                'hide_emit' => $cfe->hide_emit,
-                'status' => $cfe->status ?? 'N/A'
-            ];
-        });
+          return [
+              'id' => $totalItems - $index,
+              'date' => $cfe->emitionDate,
+              'issuer_name' => $cfe->issuer_name ?? 'N/A',
+              'type' => $typeCFEs[$cfe->type] ?? 'N/A',
+              'currency' => $cfe->currency,
+              'total' => $cfe->total,
+              'qrUrl' => $cfe->qrUrl,
+              'serie' => $cfe->serie,
+              'cfeId' => $cfe->cfeId,
+              'nro' => $cfe->nro,
+              'balance' => $cfe->balance,
+              'caeNumber' => $cfe->caeNumber,
+              'caeRange' => $cfe->caeRange,
+              'caeExpirationDate' => $cfe->caeExpirationDate,
+              'sentXmlHash' => $cfe->sentXmlHash,
+              'securityCode' => $cfe->securityCode,
+              'reason' => $cfe->reason,
+              'associated_id' => $cfe->main_cfe_id,
+              'is_receipt' => $cfe->is_receipt,
+              'hide_emit' => $cfe->hide_emit,
+              'status' => $cfe->status ?? 'N/A'
+          ];
+      });
     }
 
     public function getActiveCaes(Store $store): ?array
@@ -1743,7 +1743,4 @@ class AccountingRepository
             ];
         }
     }
-
-
 }
-
