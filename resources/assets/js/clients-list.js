@@ -37,13 +37,20 @@ $(function () {
             }
             const whatsappUrl = phoneNumber ? `https://wa.me/598${phoneNumber}` : '#';
             const telUrl = phoneNumber ? `tel:+598${phoneNumber}` : '#';
+            console.log(client)
+            // Renderizar el documento de identidad
+            const documentInfo = client.ci
+            ? `<i class="bx bx-id-card me-2"></i>${client.ci} (Cedula de Identidad)`
+            : client.passport
+            ? `<i class="bx bx-id-card me-2"></i>${client.passport} (Pasaporte)`
+            : client.other_id_type
+            ? `<i class="bx bx-id-card me-2"></i>${client.other_id_type} (Otro)`
+            : client.rut
+            ? `<i class="bx bx-id-card me-2"></i>${client.rut} (RUT)`
+            : `<i class="bx bx-id-card me-2"></i>Documento no especificado`;
 
-            // Renderizar CI solo si tiene permiso
-            const ciHtml = hasSensitiveDataAccess && client.ci
-              ? `<p class="clients-document mb-2"><strong>CI:</strong> ${client.ci}</p>`
-              : '';
 
-            const card = `
+              const card = `
               <div class="col-md-6 col-lg-4 col-12 client-card-wrapper">
                 <div class="clients-card-container">
                   <div class="clients-card position-relative">
@@ -68,22 +75,19 @@ $(function () {
                               <strong>Representante:</strong> ${capitalizeFirstLetter(client.name)} ${capitalizeFirstLetter(client.lastname)}
                             </p>
                           ` : ''}
-                          <p class="clients-document mb-2">${ciHtml}</p>
                           ${client.type === 'company' ? `<p class="clients-company mb-2"><strong>Razón Social:</strong> ${capitalizedCompanyName}</p>` : ''}
                           <p class="clients-email mb-2"><i class="bx bx-envelope me-2"></i> ${client.email}</p>
+                          <p class="clients-document">${documentInfo}</p>
                           ${client.address && client.address !== '-' ? `<p class="clients-address mb-2"><i class="bx bx-map me-2"></i> ${capitalizeFirstLetter(client.address)}</p>` : ''}
-                          ${(client.city && client.city !== '-') || (client.state && client.state !== '-') || (client.department && client.department !== '-') ? `
-                            <p class="clients-location mb-2">
-                              <i class="bx bx-buildings me-2"></i>
-                              ${client.city && client.city !== '-' ? capitalizeFirstLetter(client.city) : ''}${client.city && client.city !== '-' && ((client.state && client.state !== '-') || (client.department && client.department !== '-')) ? ', ' : ''}${client.state && client.state !== '-' ? capitalizeFirstLetter(client.state) : ''}${client.state && client.state !== '-' && (client.department && client.department !== '-') ? ', ' : ''}${client.department && client.department !== '-' ? capitalizeFirstLetter(client.department) : ''}
-                            </p>` : ''}
                           ${client.phone && client.phone !== '-' ? `<p class="clients-phone mb-2"><i class="bx bx-phone me-2"></i> ${client.phone}</p>` : ''}
-                          ${client.website && client.website !== '-' ? `<p class="clients-website mb-2"><i class="bx bx-globe me-2"></i> <a href="${client.website}" target="_blank">${client.website}</a></p>` : ''}
                         </div>
                         <div class="d-inline-flex justify-content-end mt-auto mb-2 gap-1">
                           <a href="clients/${client.id}" class="btn view-clients p-1"><i class="far fa-eye"></i></a>
-                          <a href="${whatsappUrl}" class="btn view-clients p-1" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
-                          <a href="${telUrl}" class="btn view-clients p-1"><i class="bx bx-phone"></i></a>
+                          ${client.phone && client.phone !== '-' ? `<a href="${whatsappUrl}" class="btn view-clients p-1" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
+                          ${client.phone && client.phone !== '-' ? `<a href="${telUrl}" class="btn view-clients p-1"><i class="bx bx-phone"></i></a>` : ''}
+                          <button class="btn delete-clients p-1" data-id="${client.id}">
+                            <i class="bx bx-trash"></i>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -100,31 +104,64 @@ $(function () {
           }
 
           $('.clients-card').on('click', function (e) {
-            if (!$(e.target).closest('.view-clients').length) {
-              e.preventDefault();
-              e.stopPropagation();
-              const $this = $(this);
-              const $icon = $this.find('.clients-card-toggle i');
-              const $body = $this.find('.clients-card-body');
-              const $wrapper = $this.closest('.clients-card-wrapper');
-              const $name = $this.find('.clients-name');
-              $icon.toggleClass('bx-chevron-down bx-chevron-up');
-              $body.slideToggle();
-              if ($body.is(':visible')) {
-                $name.text(capitalizeFirstLetter($name.data('full-name').toLowerCase()));
-              } else {
-                $name.text(capitalizeFirstLetter($name.data('truncated-name').toLowerCase()));
-              }
-              $('.clients-card-body').not($body).hide();
-              $('.clients-card-toggle i').not($icon).removeClass('bx-chevron-up').addClass('bx-chevron-down');
-              $('.clients-card-wrapper').not($wrapper).find('.clients-name').each(function () {
-                $(this).text(capitalizeFirstLetter($(this).data('truncated-name').toLowerCase()));
-              });
+            // Ignorar clics en los botones específicos
+            if ($(e.target).closest('.view-clients, .delete-clients').length) {
+              return; // No ejecutar el evento de la tarjeta
             }
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const $this = $(this);
+            const $icon = $this.find('.clients-card-toggle i');
+            const $body = $this.find('.clients-card-body');
+            const $wrapper = $this.closest('.clients-card-wrapper');
+            const $name = $this.find('.clients-name');
+
+            $icon.toggleClass('bx-chevron-down bx-chevron-up');
+            $body.slideToggle();
+
+            if ($body.is(':visible')) {
+              $name.text(capitalizeFirstLetter($name.data('full-name').toLowerCase()));
+            } else {
+              $name.text(capitalizeFirstLetter($name.data('truncated-name').toLowerCase()));
+            }
+
+            $('.clients-card-body').not($body).hide();
+            $('.clients-card-toggle i').not($icon).removeClass('bx-chevron-up').addClass('bx-chevron-down');
+            $('.clients-card-wrapper').not($wrapper).find('.clients-name').each(function () {
+              $(this).text(capitalizeFirstLetter($(this).data('truncated-name').toLowerCase()));
+            });
           });
 
           $('.view-clients').on('click', function (e) {
             e.stopPropagation();
+          });
+
+          $(document).on('click', '.delete-clients', function (e) {
+            e.stopPropagation(); // Detiene la propagación hacia los eventos de la tarjeta
+            e.preventDefault(); // Evita comportamientos predeterminados
+
+            const clientId = $(this).data('id');
+            if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
+              $.ajax({
+                url: `clients/${clientId}`,
+                type: 'DELETE',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                },
+                success: function () {
+                  fetchClients(); // Actualiza la lista después de eliminar
+                  toastr.success('Cliente eliminado exitosamente.');
+                },
+                error: function (xhr) {
+                  console.error('Error al eliminar el cliente:', xhr.responseText);
+                  toastr.error('Error al eliminar el cliente.');
+                },
+              });
+            }
           });
         }
       },
@@ -192,25 +229,38 @@ $(function () {
 $(document).ready(function () {
   $('input[type=radio][name=type]').change(function () {
     clearErrors();
-    if (this.value == 'individual') {
-      $('#ciField').show();
-      $('#ci').attr('required', true);
-      $('#rutField').hide();
-      $('#company_name').removeAttr('required');
-      $('#rut').removeAttr('required');
-      $('#ciudadAsterisk').hide();
-      $('#departamentoAsterisk').hide();
-    } else if (this.value == 'company') {
-      $('#ciField').hide();
-      $('#ci').removeAttr('required');
-      $('#rutField').show();
-      $('#razonSocialField').show();
-      $('#company_name').attr('required', true);
-      $('#rut').attr('required', true);
-      $('#ciudadAsterisk').show();
-      $('#departamentoAsterisk').show();
+
+    // Detectar el tipo de cliente
+    const selectedType = $(this).val();
+
+    if (selectedType === 'individual') {
+        // Mostrar campos para persona física
+        $('#ciField, #documentTypeField').show();
+        $('#razonSocialField, #rutField').hide();
+
+        // Hacer que el campo de documento sea obligatorio
+        $('#documentType').attr('required', true);
+
+        // Ocultar campos no necesarios para persona física
+        $('#company_name, #rut').removeAttr('required');
+        $('#ci, #passport, #other_id_type').val('').removeAttr('required');
+
+        // Configurar los campos según el tipo de documento seleccionado
+        const selectedDocumentType = $('#documentType').val();
+        toggleDocumentFields(selectedDocumentType);
+    } else if (selectedType === 'company') {
+        // Mostrar campos para persona jurídica
+        $('#razonSocialField, #rutField').show();
+        $('#ciField, #documentTypeField').hide();
+
+        // Hacer que los campos para persona jurídica sean obligatorios
+        $('#company_name, #rut').attr('required', true);
+
+        // Ocultar campos no necesarios para persona jurídica
+        $('#documentType').removeAttr('required');
+        $('#ci, #passport, #other_id_type').val('').removeAttr('required');
     }
-  });
+});
 });
 
 document.getElementById('guardarCliente').addEventListener('click', function (e) {
@@ -220,6 +270,8 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
   const tipo = document.querySelector('input[name="type"]:checked');
   const email = document.getElementById('ecommerce-customer-add-email');
   const ci = document.getElementById('ci');
+  const pasaporte = document.getElementById('passport');
+  const otroId = document.getElementById('other_id_type');
   const rut = document.getElementById('rut');
   const razonSocial = document.getElementById('company_name');
   const direccion = document.getElementById('ecommerce-customer-add-address');
@@ -231,42 +283,19 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
     showError(nombre, 'Este campo es obligatorio');
     hasError = true;
   }
-  if (apellido.value.trim() === '') {
-    showError(apellido, 'Este campo es obligatorio');
-    hasError = true;
-  }
   if (email.value.trim() === '') {
     showError(email, 'Este campo es obligatorio');
     hasError = true;
   }
-  if (direccion.value.trim() === '') {
-    showError(direccion, 'Este campo es obligatorio');
-    hasError = true;
-  }
+
   if (tipo.value === 'individual') {
-    if (ci.value.trim() === '') {
-      showError(ci, 'Este campo es obligatorio');
+    if (ci.value.trim() === '' && pasaporte.value.trim() === '' && otroId.value.trim() === '') {
+      showError(ci, 'Debe ingresar al menos un documento de identidad');
       hasError = true;
     }
-    document.getElementById('rutField').style.display = 'none';
-    document.getElementById('ciField').style.display = 'block';
   } else if (tipo.value === 'company') {
     if (razonSocial.value.trim() === '') {
-      showError(razonSocial, 'Este campo es obligatorio');
-      hasError = true;
-    }
-    if (rut.value.trim() === '') {
-      if (!rut.parentElement.querySelector('.error-message')) {
-        showError(rut, 'Este campo es obligatorio');
-      }
-      hasError = true;
-    }
-    if (ciudad.value.trim() === '') {
-      showError(ciudad, 'Este campo es obligatorio');
-      hasError = true;
-    }
-    if (departamento.value.trim() === '') {
-      showError(departamento, 'Este campo es obligatorio');
+      showError(razonSocial, 'La razón social es obligatoria para clientes empresariales');
       hasError = true;
     }
     document.getElementById('rutField').style.display = 'block';
@@ -297,6 +326,22 @@ function showError(input, message) {
   errorElement.className = 'text-danger error-message';
   errorElement.innerText = message;
   input.parentElement.appendChild(errorElement);
+}
+
+function toggleDocumentFields(selectedType) {
+  $('#ciField, #passportField, #other_field').hide();
+  $('#ci, #passport, #other_id_type').val('').removeAttr('required');
+
+  if (selectedType === 'ci') {
+      $('#ciField').show();
+      $('#ci').attr('required', true);
+  } else if (selectedType === 'passport') {
+      $('#passportField').show();
+      $('#passport').attr('required', true);
+  } else if (selectedType === 'other_id_type') {
+      $('#other_field').show();
+      $('#other_id_type').attr('required', true);
+  }
 }
 
 function clearErrors() {

@@ -9,6 +9,8 @@
 'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
 'resources/assets/vendor/libs/datatables-checkboxes-jquery/datatables.checkboxes.scss',
 'resources/assets/vendor/libs/@form-validation/form-validation.scss',
+'resources/assets/vendor/libs/select2/select2.scss',
+'resources/assets/vendor/libs/toastr/toastr.scss',
 'resources/assets/vendor/libs/select2/select2.scss'
 ])
 @endsection
@@ -22,6 +24,7 @@
 'resources/assets/vendor/libs/@form-validation/bootstrap5.js',
 'resources/assets/vendor/libs/@form-validation/auto-focus.js',
 'resources/assets/vendor/libs/cleavejs/cleave.js',
+'resources/assets/vendor/libs/toastr/toastr.js',
 'resources/assets/vendor/libs/cleavejs/cleave-phone.js'
 ])
 @endsection
@@ -58,7 +61,6 @@
     </button>
   </div>
 </div>
-
 
 @if(session('success'))
 <div class="alert alert-success d-flex" role="alert">
@@ -105,59 +107,73 @@
                 <label class="form-check-label" for="companyType">Empresa</label>
             </div>
         </div>
-    
+
         <!-- Campos requeridos para Persona y Empresa -->
         <div class="mb-3">
             <label class="form-label" for="ecommerce-customer-add-name">Nombre <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="ecommerce-customer-add-name" placeholder="Ingrese el nombre" name="name" required />
         </div>
         <div class="mb-3">
-            <label class="form-label" for="ecommerce-customer-add-lastname">Apellido <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="ecommerce-customer-add-lastname" placeholder="Ingrese el apellido" name="lastname" required />
+            <label class="form-label" for="ecommerce-customer-add-lastname">Apellido</label>
+            <input type="text" class="form-control" id="ecommerce-customer-add-lastname" placeholder="Ingrese el apellido" name="lastname" />
         </div>
-    
-        <!-- Campo CI para Persona -->
+
+        <div class="mb-3" id="documentTypeField">
+          <label class="form-label" for="documentType">Tipo de Documento</label>
+          <select class="form-select" id="documentType" name="documentType" required>
+              <option value="ci">Cédula de Identidad</option>
+              <option value="passport">Pasaporte</option>
+              <option value="other_id_type">Otro</option>
+          </select>
+        </div>
         <div class="mb-3" id="ciField">
-            <label class="form-label" for="ci">CI <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="ci" placeholder="Ingrese el documento sin puntos ni guiones" name="ci" required />
+            <label class="form-label" for="ci">Cédula de Identidad</label>
+            <input type="text" class="form-control" id="ci" name="ci" placeholder="Ingrese el documento sin puntos ni guiones" />
         </div>
-    
+        <div class="mb-3" id="passportField" style="display: none;">
+            <label class="form-label" for="passport">Pasaporte</label>
+            <input type="text" class="form-control" id="passport" name="passport" placeholder="Ingrese el número de pasaporte" />
+        </div>
+        <div class="mb-3" id="other_field" style="display: none;">
+            <label class="form-label" for="other_id_type">Otro Documento</label>
+            <input type="text" class="form-control" id="other_id_type" name="other_id_type" placeholder="Ingrese el documento alternativo" />
+        </div>
         <!-- Campo Razón Social y RUT para Empresa -->
         <div class="mb-3" id="razonSocialField" style="display: none;">
-            <label class="form-label" for="company_name">Razón Social <span class="text-danger">*</span></label>
+            <label class="form-label" for="company_name">Razón Social</label>
             <input type="text" class="form-control" id="company_name" placeholder="Ingrese la razón social" name="company_name" />
         </div>
-    
+
         <div class="mb-3" id="rutField" style="display: none;">
             <label class="form-label" for="rut">RUT <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="rut" placeholder="Ingrese el RUT" name="rut" />
         </div>
-    
+
         <!-- Campo Email (requerido para ambos) -->
         <div class="mb-3">
             <label class="form-label" for="ecommerce-customer-add-email">Email <span class="text-danger">*</span></label>
             <input type="email" id="ecommerce-customer-add-email" class="form-control" placeholder="mail@empresa.com" name="email" required />
         </div>
-    
+
         <!-- Campo Teléfono (opcional) -->
         <div>
             <label class="form-label" for="ecommerce-customer-add-contact">Teléfono</label>
             <input type="text" id="ecommerce-customer-add-contact" class="form-control" placeholder="Ingrese el teléfono" name="phone" />
         </div>
       </div>
-      
+
       <!-- Campos adicionales compartidos -->
       <div class="ecommerce-customer-add-shiping mb-3 pt-2">
           <div class="mb-3">
-              <label class="form-label" for="address">Dirección <span id="direccionAsterisk" class="text-danger">*</span></label>
-              <input type="text" id="ecommerce-customer-add-address" class="form-control" placeholder="Ingrese la dirección" name="address" required/>
+              <label class="form-label" for="address">Dirección</label>
+              <input type="text" id="ecommerce-customer-add-address" class="form-control" placeholder="Ingrese la dirección" name="address"/>
           </div>
           <div class="mb-3">
-              <label class="form-label" for="city">Ciudad <span id="ciudadAsterisk" class="text-danger" style="display: none;">*</span></label>
+              <label class="form-label" for="city">Ciudad</label>
               <input type="text" id="ecommerce-customer-add-town" class="form-control" placeholder="Ingrese la ciudad" name="city" />
           </div>
           <div class="mb-3">
-              <label class="form-label" for="state">Departamento <span id="departamentoAsterisk" class="text-danger" style="display: none;">*</span></label>
+              <label class="form-label" for="state">Departamento</label>
               <input type="text" id="ecommerce-customer-add-state" class="form-control" placeholder="Ingrese el departamento" name="state" />
           </div>
           <div>
@@ -171,7 +187,7 @@
               <input type="text" id="website" class="form-control" placeholder="Ingrese el sitio web" name="website" />
           </div>
       </div>
-      
+
       <!-- Selección de lista de precios -->
       <div class="mb-3 mt-3">
         <label class="form-label" for="price_list_id">Lista de Precios</label>
@@ -183,8 +199,6 @@
         </select>
         <small class="text-primary mt-2" id="createNewPriceListLink" style="cursor: pointer;">Crear nueva lista de precios</small>
       </div>
-
-      
 
       <div class="pt-3">
         <button type="button" class="btn btn-primary me-sm-3 me-1 data-submit" id="guardarCliente">Crear cliente</button>
