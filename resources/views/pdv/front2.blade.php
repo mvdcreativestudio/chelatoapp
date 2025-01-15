@@ -320,41 +320,51 @@
           <option value="company">Empresa</option>
         </select>
       </div>
-      <div class="mb-3">
-        <label for="nombreCliente" class="form-label">Nombre <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre" required>
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
+        <label for="razonSocialCliente" class="form-label">
+          Razón Social *<span class="text-danger">*</span>
+        </label>
+        <input type="text" class="form-control" id="razonSocialCliente" placeholder="Ingrese la razón social">
       </div>
-      <div class="mb-3">
-        <label for="apellidoCliente" class="form-label">Apellido <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido" required>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="rutField" style="display: none;">
+        <label for="rutCliente" class="form-label">
+          RUT *<span class="text-danger">*</span>
+        </label>
+        <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
+      </div>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft">
+        <label for="nombreCliente" class="form-label">
+          Nombre<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
+          <span class="text-danger" id="nombreAsterisk">*</span>
+        </label>
+        <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre">
+      </div>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft">
+        <label for="apellidoCliente" class="form-label">
+          Apellido<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
+          <span class="text-danger" id="apellidoAsterisk">*</span>
+        </label>
+        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido">
       </div>
 
       <!-- Campo CI para Persona -->
       <div class="mb-3" id="ciField">
-        <label for="ciCliente" class="form-label">CI <span class="text-danger">*</span></label>
+        <label for="ciCliente" class="form-label">CI </label>
         <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
-      </div>
-
-      <!-- Campo RUT y Razón Social para Empresa -->
-      <div class="mb-3" id="razonSocialField" style="display: none;">
-        <label for="razonSocialCliente" class="form-label">Razón Social <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="razonSocialCliente" placeholder="Ingrese la razón social">
-      </div>
-
-      <div class="mb-3" id="rutField" style="display: none;">
-        <label for="rutCliente" class="form-label">RUT <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
       </div>
 
       <!-- Campo Dirección (requerido para ambos tipos de cliente) -->
       <div class="mb-3">
-        <label for="direccionCliente" class="form-label">Dirección <span class="text-danger">*</span></label>
+        <label for="direccionCliente" class="form-label">Dirección </label>
         <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
       </div>
 
       <!-- Campo Email (requerido para ambos) -->
       <div class="mb-3">
-        <label for="emailCliente" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
+        <label for="emailCliente" class="form-label">Correo Electrónico </label>
         <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
       </div>
 

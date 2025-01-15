@@ -119,11 +119,17 @@
     
         <!-- Campos requeridos para Persona y Empresa -->
         <div class="mb-3">
-            <label class="form-label" for="ecommerce-customer-add-name">Nombre <span class="text-danger" id="nameAsterisk">*</span></label>
+            <label class="form-label" for="ecommerce-customer-add-name">
+                Nombre <span class="responsible-text" style="display: none;">del responsable</span> 
+                <span class="text-danger" id="nameAsterisk">*</span>
+            </label>
             <input type="text" class="form-control" id="ecommerce-customer-add-name" placeholder="Ingrese el nombre" name="name" required />
         </div>
         <div class="mb-3">
-            <label class="form-label" for="ecommerce-customer-add-lastname">Apellido <span class="text-danger" id="lastnameAsterisk">*</span></label>
+            <label class="form-label" for="ecommerce-customer-add-lastname">
+                Apellido <span class="responsible-text" style="display: none;">del responsable</span>
+                <span class="text-danger" id="lastnameAsterisk">*</span>
+            </label>
             <input type="text" class="form-control" id="ecommerce-customer-add-lastname" placeholder="Ingrese el apellido" name="lastname" required />
         </div>
     

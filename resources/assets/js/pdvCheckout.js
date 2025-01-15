@@ -872,27 +872,40 @@ function confirmarVenta(response, paymentMethod) {
   });
 
   // Mostrar/Ocultar campos según el tipo de cliente seleccionado
-  document.getElementById('tipoCliente').addEventListener('change', function () {
-    let tipo = this.value;
-    if (tipo === 'individual') {
-      document.getElementById('ciField').style.display = 'block';
-      document.getElementById('rutField').style.display = 'none';
-      document.getElementById('razonSocialField').style.display = 'none';
+  $('#tipoCliente').change(function() {
+    clearErrors();
+    const tipo = $(this).val();
+    
+    if (tipo == 'individual') {
+        $('#ciField').show();
+        $('#ciCliente').attr('required', false);
 
-      // Mostrar los asteriscos en nombre y apellido
-      document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'inline';
-      document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'inline';
+        $('#nombreCliente, #apellidoCliente').attr('required', true);
+        $('#nombreAsterisk, #apellidoAsterisk').show();
+        $('label[for="nombreCliente"] .text-danger, label[for="apellidoCliente"] .text-danger').show();
 
-    } else if (tipo === 'company') {
-      document.getElementById('ciField').style.display = 'none';
-      document.getElementById('rutField').style.display = 'block';
-      document.getElementById('razonSocialField').style.display = 'block';
+        $('.responsible-text').hide();
 
-      // Ocultar los asteriscos en nombre y apellido
-      document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'none';
-      document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'none';
+        $('#rutField, #razonSocialField').hide();
+        $('#razonSocialCliente, #rutCliente').val('').removeAttr('required');
+        $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').hide();
+
+    } else if (tipo == 'company') {
+        $('#ciField').hide();
+        $('#ciCliente').val('').removeAttr('required');
+        
+        $('label[for="nombreCliente"] .text-danger, label[for="apellidoCliente"] .text-danger').hide();
+        $('#nombreCliente, #apellidoCliente').removeAttr('required');
+        $('#nombreAsterisk, #apellidoAsterisk').hide();
+
+        $('.responsible-text').show();
+
+        $('#rutField, #razonSocialField').show();
+        $('#razonSocialCliente, #rutCliente').attr('required', true);
+        $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').show();
     }
-  });
+});
+
 
   // Guardar cliente con validaciones
   document.getElementById('guardarCliente').addEventListener('click', function () {
@@ -914,52 +927,43 @@ function confirmarVenta(response, paymentMethod) {
       showError(tipo, 'Este campo es obligatorio');
       hasError = true;
     }
+    let missingFields = [];
 
     // Si el tipo de cliente es "individual", validar nombre y apellido
     if (tipo.value === 'individual') {
       if (nombre.value.trim() === '') {
           showError(nombre, 'El nombre es obligatorio para clientes individuales');
-          hasError = true;
+          missingFields.push('Nombre');
       }
 
       if (apellido.value.trim() === '') {
           showError(apellido, 'El apellido es obligatorio para clientes individuales');
-          hasError = true;
+          missingFields.push('Apellido');
       }
-
-      if (ci.value.trim() === '') {
-          showError(ci, 'El documento de identidad es obligatorio para clientes individuales');
-          hasError = true;
-      }
-    }
-
-    // Validar que el campo "email" no esté vacío
-    if (email.value.trim() === '') {
-      showError(email, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    // Validar que "dirección" no esté vacía (si es aplicable a ambos tipos de cliente)
-    if (direccion.value.trim() === '') {
-      showError(direccion, 'Este campo es obligatorio');
-      hasError = true;
     }
 
     if (tipo.value === 'company') {
         if (rut.value.trim() === '') {
-            showError(rut, 'Este campo es obligatorio');
-            hasError = true;
+            showError(rut, 'Este campo es obligatorio para empresas');
+            missingFields.push('RUT');
         }
 
         if (razonSocial.value.trim() === '') {
-            showError(razonSocial, 'Este campo es obligatorio');
-            hasError = true;
+            showError(razonSocial, 'Este campo es obligatorio empresas');
+            missingFields.push('Razón Social');
         }
     }
 
-    // Si hubo errores, detener la ejecución.
-    if (hasError) {
-        return;
+    if (missingFields.length > 0) {
+      const offcanvasCliente = bootstrap.Offcanvas.getInstance(document.getElementById('crearClienteOffcanvas'));
+      offcanvasCliente.hide();
+      Swal.fire({
+        icon: 'error',
+        title: 'Campos requeridos',
+        html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
+        confirmButtonText: 'Entendido'
+      });
+      return;
     }
 
     // Crear el objeto con los datos a enviar

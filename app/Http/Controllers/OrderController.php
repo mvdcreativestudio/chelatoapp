@@ -139,7 +139,6 @@ class OrderController extends Controller
         $isStoreConfigEmailEnabled = $this->storesEmailConfigRepository->getConfigByStoreId(auth()->user()->store_id);
         // Verificar si existe un client_id antes de llamar a getClientOrdersCount
         $clientOrdersCount = $order->client_id
-        $clientOrdersCount = $order->client_id
             ? $this->orderRepository->getClientOrdersCount($order->client_id)
             : 0; // O cualquier valor predeterminado si no hay cliente
 
@@ -244,25 +243,21 @@ class OrderController extends Controller
     }
 
 
-    /**
+        /**
      * Maneja la emisión de la factura (CFE).
      *
      * @param Request $request
      * @param int $orderId
      * @return RedirectResponse
      */
-    public function emitCFE(Request $request, $id)
+    public function emitCFE(Request $request, int $orderId): RedirectResponse
     {
         try {
-            $order = Order::findOrFail($id);
-            $this->accountingRepository->emitCFE(
-                $order,
-                $request->amountToBill,
-                $request->payType
-            );
-            return redirect()->back()->with('success', 'CFE emitido correctamente');
+            $this->orderRepository->emitCFE($orderId, $request);
+            return redirect()->back()->with('success', 'Factura emitida correctamente.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            Log::error("Error al emitir CFE para la orden {$orderId}: {$e->getMessage()}");
+            return redirect()->back()->with('error', "Error al emitir la factura. {$e->getMessage()}");
         }
     }
 

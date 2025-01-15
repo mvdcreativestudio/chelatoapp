@@ -922,25 +922,37 @@ $(document).ready(function () {
     });
 
     // Mostrar/Ocultar campos según el tipo de cliente seleccionado
-    document.getElementById('tipoCliente').addEventListener('change', function () {
-        let tipo = this.value;
-        if (tipo === 'individual') {
-            document.getElementById('ciField').style.display = 'block';
-            document.getElementById('rutField').style.display = 'none';
-            document.getElementById('razonSocialField').style.display = 'none';
+    $('#tipoCliente').change(function() {
+        clearErrors();
+        const tipo = $(this).val();
+        
+        if (tipo == 'individual') {
+            $('#ciField').show();
+            $('#ciCliente').attr('required', false);
+    
+            $('#nombreCliente, #apellidoCliente').attr('required', true);
+            $('#nombreAsterisk, #apellidoAsterisk').show();
+            $('label[for="nombreCliente"] .text-danger, label[for="apellidoCliente"] .text-danger').show();
 
-            // Mostrar los asteriscos en nombre y apellido
-            document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'inline';
-            document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'inline';
-
-        } else if (tipo === 'company') {
-            document.getElementById('ciField').style.display = 'none';
-            document.getElementById('rutField').style.display = 'block';
-            document.getElementById('razonSocialField').style.display = 'block';
-
-            // Ocultar los asteriscos en nombre y apellido
-            document.querySelector('label[for="nombreCliente"] .text-danger').style.display = 'none';
-            document.querySelector('label[for="apellidoCliente"] .text-danger').style.display = 'none';
+            $('.responsible-text').hide();
+    
+            $('#rutField, #razonSocialField').hide();
+            $('#razonSocialCliente, #rutCliente').val('').removeAttr('required');
+            $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').hide();
+    
+        } else if (tipo == 'company') {
+            $('#ciField').hide();
+            $('#ciCliente').val('').removeAttr('required');
+            
+            $('label[for="nombreCliente"] .text-danger, label[for="apellidoCliente"] .text-danger').hide();
+            $('#nombreCliente, #apellidoCliente').removeAttr('required');
+            $('#nombreAsterisk, #apellidoAsterisk').hide();
+    
+            $('.responsible-text').show();
+    
+            $('#rutField, #razonSocialField').show();
+            $('#razonSocialCliente, #rutCliente').attr('required', true);
+            $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').show();
         }
     });
 
@@ -951,29 +963,24 @@ $(document).ready(function () {
         const form = document.getElementById('formCrearCliente');
         const formData = new FormData(form);
         const clientType = document.getElementById('tipoCliente').value;
-
-        let requiredFields = {
-            nombreCliente: 'Nombre',
-            apellidoCliente: 'Apellido',
-            emailCliente: 'Correo electrónico',
-            direccionCliente: 'Dirección'
-        };
+        let requiredFields = {};
 
         if (clientType === 'individual') {
-            requiredFields.ciCliente = 'Cédula de Identidad';
+            requiredFields.nombreCliente = 'Nombre';           
+            requiredFields.apellidoCliente = 'Apellido';      
         } else if (clientType === 'company') {
             requiredFields.razonSocialCliente = 'Razón Social';
-            requiredFields.rutCliente = 'RUT';
+            requiredFields.rutCliente = 'RUT';                 
         }
-
-        // Check required fields
+    
         let missingFields = [];
-        Object.keys(requiredFields).forEach(field => {
-            const element = document.getElementById(field);
-            if (!element.value || element.value.trim() === '') {
+        for (let field in requiredFields) {
+            const value = document.getElementById(field)?.value;
+            if (!value || value.trim() === '') {
                 missingFields.push(requiredFields[field]);
             }
-        });
+        }
+    
 
         if (missingFields.length > 0) {
             const offcanvas = document.getElementById('crearClienteOffcanvas');

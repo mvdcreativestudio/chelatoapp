@@ -841,7 +841,7 @@ class AccountingRepository
             'Receptor' => (object) [], // Inicializar como objeto vacío
             'Totales' => [
                 'TpoMoneda' => 'UYU',
-                'TpoCambio' => $exchangeRate,
+                // 'TpoCambio' => $exchangeRate,
             ],
             'Referencia' => [
                 [

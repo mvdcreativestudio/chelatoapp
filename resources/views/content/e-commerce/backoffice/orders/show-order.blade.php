@@ -164,7 +164,7 @@ $changeTypeTranslations = [
       <button type="button" class="btn btn-sm d-flex align-items-center animate__animated animate__pulse
             @if(!$isStoreConfigEmailEnabled) btn-danger @else btn-label-info @endif" data-bs-toggle="modal"
         data-bs-target="#sendEmailModal" @if(!$isStoreConfigEmailEnabled) disabled @endif>
-        <i class="bx bx-envelope fs-5"></i> Enviar Factura por Correo
+        <i class="bx bx-envelope fs-5"></i>Enviar Factura por Correo
       </button>
     </div>
     @endif
@@ -348,9 +348,11 @@ $changeTypeTranslations = [
 @if(session('error'))
 <div class="alert alert-danger alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
     <div>{{ session('error') }}</div>
-    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="offcanvas" data-bs-target="#updateClientDataOffcanvas">
-        Modificar datos
-    </button>
+    @if($order->client)
+        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="offcanvas" data-bs-target="#updateClientDataOffcanvas">
+            Modificar datos
+        </button>
+    @endif
 </div>
 @endif
 
@@ -615,7 +617,9 @@ $changeTypeTranslations = [
 
 <!-- Modals -->
 @include('content/e-commerce/backoffice/orders/bill-order')
-@include('content/e-commerce/backoffice/orders/update-client-data')
+@if($order->client)
+    @include('content/e-commerce/backoffice/orders/update-client-data')
+@endif
 @if($order->is_billed && isset($invoice))
 @include('content/e-commerce/backoffice/orders/modal-send-email')
 @endif

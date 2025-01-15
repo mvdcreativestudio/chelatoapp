@@ -243,20 +243,20 @@ document.addEventListener('DOMContentLoaded', function () {
               store_id: storeId // Enviar el store_id en el cuerpo de la solicitud
             })
           })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              Swal.fire('Reversado', data.message, 'success').then(() => {
-                location.reload(); // Recargar la página después de un éxito
-              });
-            } else {
-              Swal.fire('Error', data.message, 'error');
-            }
-          })
-          .catch(error => {
-            Swal.fire('Error', 'Ocurrió un error al procesar el reverso.', 'error');
-            console.error(error);
-          });
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                Swal.fire('Reversado', data.message, 'success').then(() => {
+                  location.reload(); // Recargar la página después de un éxito
+                });
+              } else {
+                Swal.fire('Error', data.message, 'error');
+              }
+            })
+            .catch(error => {
+              Swal.fire('Error', 'Ocurrió un error al procesar el reverso.', 'error');
+              console.error(error);
+            });
         }
       });
     });
@@ -320,29 +320,29 @@ document.addEventListener('DOMContentLoaded', function () {
         Swal.fire('Error', 'Hubo un problema al cargar los dispositivos POS.', 'error');
       });
 
-      // Obtener el SystemId asociado a la tienda
-      fetch(`/api/pos/get-provider/${storeId}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Error al obtener el proveedor POS: ' + response.statusText);
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('Respuesta del proveedor POS:', data);
-          if (data.provider && data.provider && data.provider.system_id) {
-            systemId = data.provider.system_id; // Guardar dinámicamente el SystemId
-            branch = data.provider.branch; // Guardar dinámicamente la sucursal
-            console.log('SystemId obtenido correctamente:', systemId);
-          } else {
-            console.error('No se encontró el SystemId en la respuesta:', data);
-            Swal.fire('Error', 'No se pudo obtener el SystemId para la tienda seleccionada.', 'error');
-          }
-        })
-        .catch(error => {
-          console.error('Error al obtener el SystemId:', error);
-          Swal.fire('Error', 'Hubo un problema al obtener el SystemId.', 'error');
-        });
+    // Obtener el SystemId asociado a la tienda
+    fetch(`/api/pos/get-provider/${storeId}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Error al obtener el proveedor POS: ' + response.statusText);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Respuesta del proveedor POS:', data);
+        if (data.provider && data.provider && data.provider.system_id) {
+          systemId = data.provider.system_id; // Guardar dinámicamente el SystemId
+          branch = data.provider.branch; // Guardar dinámicamente la sucursal
+          console.log('SystemId obtenido correctamente:', systemId);
+        } else {
+          console.error('No se encontró el SystemId en la respuesta:', data);
+          Swal.fire('Error', 'No se pudo obtener el SystemId para la tienda seleccionada.', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error al obtener el SystemId:', error);
+        Swal.fire('Error', 'Hubo un problema al obtener el SystemId.', 'error');
+      });
 
   });
 
@@ -557,28 +557,28 @@ document.addEventListener('DOMContentLoaded', function () {
         Swal.fire('Error', 'Hubo un problema al cargar los dispositivos POS.', 'error');
       });
 
-      // Obtener el SystemId asociado a la tienda
-      fetch(`/api/pos/get-provider/${storeId}`)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Error al obtener el proveedor POS: ' + response.statusText);
-          }
-          return response.json();
-        })
-        .then(data => {
-          console.log('Respuesta del proveedor POS:', data);
-          if (data.provider && data.provider && data.provider.system_id) {
-            systemId = data.provider.system_id; // Guardar dinámicamente el SystemId
-            console.log('SystemId obtenido correctamente:', systemId);
-          } else {
-            console.error('No se encontró el SystemId en la respuesta:', data);
-            Swal.fire('Error', 'No se pudo obtener el SystemId para la tienda seleccionada.', 'error');
-          }
-        })
-        .catch(error => {
-          console.error('Error al obtener el SystemId:', error);
-          Swal.fire('Error', 'Hubo un problema al obtener el SystemId.', 'error');
-        });
+    // Obtener el SystemId asociado a la tienda
+    fetch(`/api/pos/get-provider/${storeId}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Error al obtener el proveedor POS: ' + response.statusText);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Respuesta del proveedor POS:', data);
+        if (data.provider && data.provider && data.provider.system_id) {
+          systemId = data.provider.system_id; // Guardar dinámicamente el SystemId
+          console.log('SystemId obtenido correctamente:', systemId);
+        } else {
+          console.error('No se encontró el SystemId en la respuesta:', data);
+          Swal.fire('Error', 'No se pudo obtener el SystemId para la tienda seleccionada.', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error al obtener el SystemId:', error);
+        Swal.fire('Error', 'Hubo un problema al obtener el SystemId.', 'error');
+      });
 
   });
 
@@ -660,5 +660,44 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         console.error('Error al procesar el refund:', error);
       });
+  });
+
+  $('#updateClientDataForm').on('submit', function (e) {
+    e.preventDefault();
+    const form = $(this);
+
+    $.ajax({
+      url: form.attr('action'),
+      method: 'POST',
+      data: form.serialize(),
+      success: function (response) {
+        const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('updateClientDataOffcanvas'));
+        offcanvas.hide();
+
+        form.find('.is-invalid').removeClass('is-invalid');
+        form.find('.invalid-feedback').remove();
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Datos actualizados',
+          text: 'Los datos del cliente han sido actualizados correctamente',
+          showConfirmButton: false,
+          timer: 1500,
+          didClose: () => {
+              const billingModal = new bootstrap.Modal(document.getElementById('emitirFacturaModal'));
+              billingModal.show();
+          }
+      });
+      
+      },
+      error: function (xhr) {
+        const errors = xhr.responseJSON.errors;
+        Object.keys(errors).forEach(field => {
+          const input = form.find(`[name="${field}"]`);
+          input.addClass('is-invalid');
+          input.after(`<div class="invalid-feedback">${errors[field][0]}</div>`);
+        });
+      }
+    });
   });
 });

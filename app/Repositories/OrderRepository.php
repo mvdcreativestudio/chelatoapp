@@ -665,7 +665,7 @@ class OrderRepository
         $payType = $request->payType ?? 1;
 
         $this->accountingRepository->emitCFE($order, $amountToBill, $payType);
-
+        
         $order->update(['is_billed' => true]);
     }
 

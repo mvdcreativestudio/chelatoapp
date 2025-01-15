@@ -44,7 +44,7 @@ $(function () {
             }
             const whatsappUrl = phoneNumber ? `https://wa.me/598${phoneNumber}` : '#';
             const telUrl = phoneNumber ? `tel:+598${phoneNumber}` : '#';
-
+            
             // Renderizar CI solo si tiene permiso
             const ciHtml = hasSensitiveDataAccess && client.ci
               ? `<p class="clients-document mb-2"><strong>CI:</strong> ${client.ci}</p>`
@@ -77,7 +77,7 @@ $(function () {
                           ` : ''}
                           <p class="clients-document mb-2">${ciHtml}</p>
                           ${client.type === 'company' ? `<p class="clients-company mb-2"><strong>Razón Social:</strong> ${capitalizedCompanyName}</p>` : ''}
-                          <p class="clients-email mb-2"><i class="bx bx-envelope me-2"></i> ${client.email}</p>
+                          ${client.email ? `<p class="clients-email mb-2"><i class="bx bx-envelope me-2"></i> ${client.email}</p>` : ''}
                           ${client.address && client.address !== '-' ? `<p class="clients-address mb-2"><i class="bx bx-map me-2"></i> ${capitalizeFirstLetter(client.address)}</p>` : ''}
                           ${(client.city && client.city !== '-') || (client.state && client.state !== '-') || (client.department && client.department !== '-') ? `
                             <p class="clients-location mb-2">
@@ -206,6 +206,8 @@ $(document).ready(function () {
       $('#nameAsterisk, #lastnameAsterisk').show();
       $('#name, #lastname').attr('required', true);
 
+      $('.responsible-text').hide();
+
       $('#rutField, #razonSocialField').hide();
       $('#company_name, #rut').val('').removeAttr('required');
 
@@ -217,6 +219,8 @@ $(document).ready(function () {
 
       $('#nameAsterisk, #lastnameAsterisk').hide();
       $('#name, #lastname').removeAttr('required');
+
+      $('.responsible-text').show();
 
       $('#rutField, #razonSocialField').show();
       $('#company_name, #rut').attr('required', true);
@@ -327,7 +331,6 @@ $(document).ready(function () {
     let requiredFields = {};
 
     if (clientType === 'individual') {
-      3
       requiredFields.name = 'Nombre';
       requiredFields.lastname = 'Apellido';
     } else if (clientType === 'company') {
