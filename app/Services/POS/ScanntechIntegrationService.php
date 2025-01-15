@@ -49,7 +49,7 @@ class ScanntechIntegrationService implements PosIntegrationInterface
             'UserId' => $transactionData['UserId'] ?? 'Usuario1',
             'TransactionDateTimeyyyyMMddHHmmssSSS' => now()->format('YmdHis'),
             'Amount' => number_format($transactionData['Amount'] ?? 0, 0, '', ''),
-            'Quotas' => $transactionData['Quotas'] ?? 1.5,
+            'Quotas' => isset($transactionData['Quotas']) && is_numeric($transactionData['Quotas']) ? (int) $transactionData['Quotas'] : 1, // Validar y asignar valor predeterminado
             'Plan' => $transactionData['Plan'] ?? 1,
             'Currency' => '858',
             'TaxableAmount' => number_format($transactionData['Amount'] ?? 0, 0, '', ''),
