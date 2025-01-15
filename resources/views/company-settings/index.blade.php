@@ -55,7 +55,7 @@
             <input type="text" id="state" name="state" class="form-control" placeholder="Ingrese el departamento" value="{{ $companySettings->state }}" />
           </div>
         </div>
-        
+
         <div class="row mt-2">
           <div class="mb-3 col-md-6">
             <label class="form-label" for="country">País</label>
@@ -124,18 +124,44 @@
                 <p>No hay un logo cargado actualmente.</p>
               @endif
             </div>
-            
+
             <h6 class="text-muted mb-3" id="newLogoText" style="display: none;">Nuevo Logo (sin guardar)</h6>
             <div id="newLogoPreview" class="mb-4"></div>
-            
-            <div class="dropzone dz-clickable" id="logoDropzone">
-              <div class="dz-message needsclick">
+
+            <div class="dropzone dz-clickable pointer" id="logoDropzone">
+              <div class="dz-message needsclick d-flex flex-column align-items-center justify-content-center" style="border: 2px dashed #007bff; border-radius: 5px; padding: 20px;">
+                <i class="bx bx-upload fs-1 text-primary"></i>
                 <p class="fs-6 text-primary">Arrastra el logo aquí o haz clic para buscar</p>
               </div>
             </div>
             <input type="file" name="logo_black" id="logoBlackInput" class="d-none">
           </div>
-          
+        </div>
+
+        <!-- Header del Catálogo -->
+        <h5 class="mt-5">Header del Catálogo</h5>
+        <div class="card mb-4">
+          <div class="card-body text-center">
+            <h6 class="text-muted mb-3">Imagen Actual del Header</h6>
+            <div id="currentHeroImage" class="mb-4">
+              @if($companySettings->hero_image)
+                <img src="{{ asset($companySettings->hero_image) }}" alt="Header actual del catálogo" class="img-fluid" style="max-height: 50px;">
+              @else
+                <p>No hay un header cargado actualmente.</p>
+              @endif
+            </div>
+
+            <h6 class="text-muted mb-3" id="newHeroImageText" style="display: none;">Nuevo Header (sin guardar)</h6>
+            <div id="newHeroImagePreview" class="mb-4"></div>
+
+            <div class="dropzone dz-clickable pointer" id="heroImageDropzone">
+              <div class="dz-message needsclick d-flex flex-column align-items-center justify-content-center" style="border: 2px dashed #007bff; border-radius: 5px; padding: 20px;">
+                <i class="bx bx-upload fs-1 text-primary"></i>
+                <p class="fs-6 text-primary">Arrastra el header aquí o haz clic para buscar</p>
+              </div>
+            </div>
+            <input type="file" name="hero_image" id="heroImageInput" class="d-none">
+          </div>
         </div>
 
         <div class="text-end mt-5">
@@ -152,66 +178,66 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const logoDropzoneElement = document.querySelector('#logoDropzone');
-    const hiddenLogoInput = document.getElementById('logoBlackInput');
-    const newLogoPreview = document.getElementById('newLogoPreview'); // Contenedor para el nuevo logo
-    const newLogoText = document.getElementById('newLogoText'); // Texto para el nuevo logo
+    const initializeDropzone = (dropzoneElementId, hiddenInputId, previewContainerId, previewTextId) => {
+      const dropzoneElement = document.querySelector(`#${dropzoneElementId}`);
+      const hiddenInput = document.getElementById(hiddenInputId);
+      const previewContainer = document.getElementById(previewContainerId);
+      const previewText = document.getElementById(previewTextId);
 
-    if (logoDropzoneElement) {
-      const logoDropzone = new Dropzone(logoDropzoneElement, {
-        url: '#', 
-        autoProcessQueue: false,
-        maxFiles: 1,
-        clickable: true,
-        maxFilesize: 2,
-        acceptedFiles: '.jpg,.jpeg,.png,.gif',
-        previewTemplate: '<span></span>', // Disable Dropzone's default preview by providing an empty template
+      if (dropzoneElement) {
+        const dropzone = new Dropzone(dropzoneElement, {
+          url: '#',
+          autoProcessQueue: false,
+          maxFiles: 1,
+          clickable: true,
+          maxFilesize: 2,
+          acceptedFiles: '.jpg,.jpeg,.png,.gif',
+          previewTemplate: '<span></span>',
 
-        init: function () {
-          const dz = this;
+          init: function () {
+            const dz = this;
 
-          dz.on('addedfile', function (file) {
-            // Limpiar la previsualización del nuevo logo y mostrar el texto
-            newLogoPreview.innerHTML = '';
-            newLogoText.style.display = 'block';
+            dz.on('addedfile', function (file) {
+              previewContainer.innerHTML = '';
+              previewText.style.display = 'block';
 
-            // Crear una previsualización de la nueva imagen seleccionada
-            const reader = new FileReader();
-            reader.onload = function (e) {
-              const previewImage = document.createElement('img');
-              previewImage.src = e.target.result;
-              previewImage.className = 'img-fluid';
-              previewImage.style.maxHeight = '50px';
-              newLogoPreview.appendChild(previewImage);
-            };
-            reader.readAsDataURL(file);
+              const reader = new FileReader();
+              reader.onload = function (e) {
+                const previewImage = document.createElement('img');
+                previewImage.src = e.target.result;
+                previewImage.className = 'img-fluid';
+                previewImage.style.maxHeight = '50px';
+                previewContainer.appendChild(previewImage);
+              };
+              reader.readAsDataURL(file);
 
-            // Crear un DataTransfer para asignar el archivo al input oculto
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            hiddenLogoInput.files = dataTransfer.files;
-          });
+              const dataTransfer = new DataTransfer();
+              dataTransfer.items.add(file);
+              hiddenInput.files = dataTransfer.files;
+            });
 
-          dz.on('removedfile', function () {
-            newLogoPreview.innerHTML = ''; // Clear the preview if the file is removed
-            newLogoText.style.display = 'none'; // Hide the new logo text if no file is selected
-          });
+            dz.on('removedfile', function () {
+              previewContainer.innerHTML = '';
+              previewText.style.display = 'none';
+            });
 
-          const form = document.getElementById('myForm');
-          form.addEventListener('submit', function (event) {
-            if (dz.getAcceptedFiles().length) {
-              event.preventDefault();
-              dz.processQueue();
-              dz.on('success', function () {
-                form.submit();
-              });
-            } else {
-              form.submit();
-            }
-          });
-        }
-      });
-    }
+            const form = document.getElementById('myForm');
+            form.addEventListener('submit', function (event) {
+              if (dz.getAcceptedFiles().length) {
+                event.preventDefault();
+                dz.processQueue();
+                dz.on('success', function () {
+                  form.submit();
+                });
+              }
+            });
+          }
+        });
+      }
+    };
+
+    initializeDropzone('logoDropzone', 'logoBlackInput', 'newLogoPreview', 'newLogoText');
+    initializeDropzone('heroImageDropzone', 'heroImageInput', 'newHeroImagePreview', 'newHeroImageText');
   });
 </script>
 @endsection

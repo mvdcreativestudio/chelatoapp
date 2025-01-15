@@ -30,37 +30,46 @@ class CompanySettingsRepository
       try {
           $companySettings = CompanySettings::firstOrFail();
 
-          // Log the existing logo path and new file
-          Log::debug('Current logo path in DB', ['logo_black' => $companySettings->logo_black]);
+          // Log the existing settings and new data
+          Log::debug('Current settings in DB', ['logo_black' => $companySettings->logo_black, 'hero_image' => $companySettings->hero_image]);
           Log::debug('Data received', $data);
 
-          // Verifica si se subió un nuevo archivo para `logo_black`
+          // Procesar logo_black
           if (isset($data['logo_black']) && $data['logo_black'] instanceof \Illuminate\Http\UploadedFile) {
-              Log::debug('New file uploaded', ['original_name' => $data['logo_black']->getClientOriginalName()]);
+              Log::debug('New logo_black uploaded', ['original_name' => $data['logo_black']->getClientOriginalName()]);
 
-              // Generar un nombre único para el archivo con su extensión
               $fileName = Str::uuid() . '.' . $data['logo_black']->getClientOriginalExtension();
-              Log::debug('Generated unique filename', ['fileName' => $fileName]);
-
-              // Define la ruta de destino en `public/assets/img/branding`
               $destinationPath = public_path('assets/img/branding');
-              Log::debug('Destination path', ['path' => $destinationPath]);
 
-              // Verificar si el directorio existe y es escribible
               if (!is_dir($destinationPath) || !is_writable($destinationPath)) {
-                  Log::error('Destination path is not writable or does not exist', ['path' => $destinationPath]);
-                  return ['success' => false, 'message' => 'No se pudo escribir en la ruta destino.'];
+                  Log::error('Destination path for logo_black is not writable or does not exist', ['path' => $destinationPath]);
+                  return ['success' => false, 'message' => 'No se pudo escribir en la ruta destino para logo_black.'];
               }
 
-              // Mover el archivo a la ubicación especificada
               $data['logo_black']->move($destinationPath, $fileName);
-              Log::debug('File moved successfully', ['path' => $destinationPath . '/' . $fileName]);
-
-              // Guardar la ruta relativa en la base de datos
               $data['logo_black'] = 'assets/img/branding/' . $fileName;
-              Log::debug('Relative path saved in data', ['logo_black' => $data['logo_black']]);
+              Log::debug('New logo_black saved', ['logo_black' => $data['logo_black']]);
           } else {
-              Log::debug('No new file uploaded or not a valid file');
+              Log::debug('No new logo_black uploaded or not a valid file');
+          }
+
+          // Procesar hero_image
+          if (isset($data['hero_image']) && $data['hero_image'] instanceof \Illuminate\Http\UploadedFile) {
+              Log::debug('New hero_image uploaded', ['original_name' => $data['hero_image']->getClientOriginalName()]);
+
+              $fileName = Str::uuid() . '.' . $data['hero_image']->getClientOriginalExtension();
+              $destinationPath = public_path('assets/img/branding');
+
+              if (!is_dir($destinationPath) || !is_writable($destinationPath)) {
+                  Log::error('Destination path for hero_image is not writable or does not exist', ['path' => $destinationPath]);
+                  return ['success' => false, 'message' => 'No se pudo escribir en la ruta destino para hero_image.'];
+              }
+
+              $data['hero_image']->move($destinationPath, $fileName);
+              $data['hero_image'] = 'assets/img/branding/' . $fileName;
+              Log::debug('New hero_image saved', ['hero_image' => $data['hero_image']]);
+          } else {
+              Log::debug('No new hero_image uploaded or not a valid file');
           }
 
           // Actualizar la configuración en la base de datos
@@ -73,4 +82,5 @@ class CompanySettingsRepository
           return ['success' => false, 'message' => 'No se pudo actualizar la configuración.'];
       }
   }
+
 }

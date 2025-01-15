@@ -37,6 +37,7 @@ class UpdateCompanySettingsRequest extends FormRequest
         'youtube' => ['nullable', 'string', 'max:255'],
         'logo_white' => ['nullable', 'string', 'max:255'],
         'logo_black' => ['nullable', 'image', 'max:3064'],
+        'hero_image' => ['nullable', 'image', 'max:3064'],
         'rut' => ['nullable', 'string', 'max:255'],
         'allow_registration' => ['required', 'boolean'],
       ];

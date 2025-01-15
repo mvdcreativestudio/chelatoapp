@@ -20,6 +20,20 @@
 
 @section('content')
 
+@if (session('success'))
+<div class="alert alert-success">{{ session('success') }}</div>
+@elseif (session('error'))
+<div class="alert alert-danger">{{ session('error') }}</div>
+@endif
+
+@if ($errors->any())
+@foreach ($errors->all() as $error)
+<div class="alert alert-danger">
+{{ $error }}
+</div>
+@endforeach
+@endif
+
 <div class="d-flex flex-wrap align-items-center justify-content-between bg-light p-4 mb-3 rounded shadow sticky-top">
   <!-- Título del formulario -->
   <div class="d-flex flex-column justify-content-center">

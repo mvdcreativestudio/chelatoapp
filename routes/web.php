@@ -69,32 +69,30 @@ use App\Http\Controllers\LeadTaskController;
 use App\Http\Controllers\LeadAttachedFileController;
 use App\Http\Controllers\LeadConversationController;
 use App\Http\Controllers\IntegrationController;
+use App\Http\Controllers\LandingController;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    if (Auth::check()) {
-        // Si el usuario está autenticado
-        if (Gate::allows('access_open_close_stores')) {
-            // Si el usuario tiene el permiso `access_open_close_stores`
-            return redirect()->route('dashboard');
-        } else {
-            // Si el usuario no tiene el permiso `access_open_close_stores`
-            return redirect()->route('pdv.front');
-        }
-    } else {
-        // Si el usuario no está autenticado, redirigir al login
-        return redirect()->route('login');
-    }
-})->name('home');
+Route::get('/', [LandingController::class, 'index'])->name('home');
+
 
 // Middleware de autenticación y verificación de email
-Route::middleware([
+Route::prefix('admin')->middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
-])->prefix('admin')->group(function () {
+])->group(function () {
+    // Redirección de `/admin` al dashboard
+    Route::get('/', function () {
+        // Si el usuario está autenticado, redirigir al dashboard
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+        // Si no está autenticado, redirigir a /landing
+        return redirect()->route('landing-page');
+    })->name('admin.home');
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -414,7 +412,12 @@ Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::clas
     Route::get('/product-flavors/{id}', [ProductController::class, 'editFlavor'])->name('flavors.edit');
     Route::put('/product-flavors/{id}', [ProductController::class, 'updateFlavor'])->name('flavors.update');
 
-    //  Contabilidad
+    // Gestión de Galería de Imagenes en Productos
+    Route::post('/products/{id}/gallery', [ProductController::class, 'uploadGalleryImages'])->name('products.uploadGalleryImages');
+    Route::delete('/products/gallery/{imageId}', [ProductController::class, 'deleteGalleryImage'])->name('products.gallery.delete');
+
+    // CRM y Contabilidad
+    Route::get('crm', [CrmController::class, 'index'])->name('crm');
     Route::get('receipts', [AccountingController::class, 'receipts'])->name('receipts');
     // Route::get('entries', [AccountingController::class, 'entries'])->name('entries');
     Route::get('entrie', [AccountingController::class, 'entrie'])->name('entrie');
@@ -592,10 +595,22 @@ Route::resources([
     'checkout' => CheckoutController::class,
 ]);
 
+
 // Catálogo de Productos
 Route::get('catalogue', [ProductCatalogueController::class, 'index'])->name('catalogue.index');
 Route::get('catalogue/search', [ProductCatalogueController::class, 'search'])->name('catalogue.search');
 Route::get('catalogue/{id}', [ProductCatalogueController::class, 'show'])->name('catalogue.show');
+
+
+// Landing Page
+Route::get('/landing', [LandingController::class, 'index'])->name('landing-page');
+Route::get('/landing/products', [LandingController::class, 'products'])->name('landing-page.products');
+Route::get('/landing/producto/{id}', [LandingController::class, 'showProduct'])->name('landing-page.producto');
+Route::get('/landing/filter-products/{categoryId?}', [LandingController::class, 'filterProducts'])
+    ->name('landing.filter-products');
+Route::get('/landing/about-us', [LandingController::class, 'aboutUs'])->name('landing-page.about-us');
+Route::get('/landing/contact', [LandingController::class, 'contact'])->name('landing-page.contact');
+Route::post('/landing/contact', [LandingController::class, 'sendContact'])->name('landing-page.contact.send');
 
 
 // E-Commerce

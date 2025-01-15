@@ -57,7 +57,7 @@ $currencySymbol = $settings->currency_symbol;
 
   <!-- Botones alineados a la derecha, ahora responsive -->
   <div class="text-end d-flex gap-2 align-items-center animate__animated animate__fadeIn">
-      
+
       <!-- Toggle tipo de visualización -->
       <button id="toggle-view-btn" class="btn btn-sm btn-outline-secondary d-flex align-items-center animate__animated animate__pulse" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="left" data-bs-html="true" title="Lista / Cuadrícula">
         <i class="bx bx-list-ul fs-5"></i>
@@ -226,15 +226,36 @@ $currencySymbol = $settings->currency_symbol;
         <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre" required>
       </div>
       <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="apellidoCliente" class="form-label">Apellido <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido" required>
+        <label for="apellidoCliente" class="form-label">Apellido</label>
+        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido">
       </div>
-      <div class="mb-3 animate__animated animate__fadeInLeft" id="ciField">
-        <label for="ciCliente" class="form-label">CI <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
+
+      <div id="documentTypeField" class="mb-3">
+        <label class="form-label" for="documentType">Tipo de Documento</label>
+        <select class="form-select" id="documentType" name="documentType" required>
+          <option value="ci">Cédula de Identidad</option>
+          <option value="passport">Pasaporte</option>
+          <option value="other_id_type">Otro</option>
+        </select>
       </div>
+
+      <div id="ciField" class="mb-3">
+        <label class="form-label" for="ci">Cédula de Identidad</label>
+        <input type="text" class="form-control" id="ci" name="ci" placeholder="Ingrese el documento sin puntos ni guiones" />
+      </div>
+
+      <div id="passportField" class="mb-3" style="display: none;">
+        <label class="form-label" for="passport">Pasaporte</label>
+        <input type="text" class="form-control" id="passport" name="passport" placeholder="Ingrese el número de pasaporte" />
+      </div>
+
+      <div id="otherField" class="mb-3" style="display: none;">
+        <label class="form-label" for="other_id_type">Otro Documento</label>
+        <input type="text" class="form-control" id="other_id_type" name="other_id_type" placeholder="Ingrese el documento alternativo" />
+      </div>
+
       <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
-        <label for="razonSocialCliente" class="form-label">Razón Social <span class="text-danger">*</span></label>
+        <label for="razonSocialCliente" class="form-label">Razón Social</label>
         <input type="text" class="form-control" id="razonSocialCliente" placeholder="Ingrese la razón social">
       </div>
       <div class="mb-3 animate__animated animate__fadeInLeft" id="rutField" style="display: none;">
@@ -242,7 +263,7 @@ $currencySymbol = $settings->currency_symbol;
         <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
       </div>
       <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="direccionCliente" class="form-label">Dirección <span class="text-danger">*</span></label>
+        <label for="direccionCliente" class="form-label">Dirección</label>
         <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
       </div>
       <div class="mb-3 animate__animated animate__fadeInLeft">
