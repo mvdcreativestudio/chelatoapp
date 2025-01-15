@@ -213,6 +213,13 @@
               "icon": "menu-icon tf-icons bx bx-file",
               "slug": "received-documents",
               "url": "/admin/received-cfes"
+            },
+            {
+              "id": "tour-facturas-configuracion",
+              "name": "Configuración",
+              "icon": "menu-icon tf-icons bx bx-cog",
+              "slug": "invoice-settings",
+              "url": "/admin/accounting/settings"
             }
           ]
         },

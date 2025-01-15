@@ -151,7 +151,7 @@ class PosService
             'branch' => $integrationInfo->branch ?? 'Sucursal1',
             'company' => $integrationInfo->company ?? null,
             'system_id' => $integrationInfo->system_id ?? null,
-            'client_app_id' => $integrationInfo->client_app_id ?? 'Caja1',
+            'client_app_id' => $device->cash_register ?? 'No hay client_app_id',
         ];
 
         Log::info('Resultado de getDeviceInfo:', $result);
