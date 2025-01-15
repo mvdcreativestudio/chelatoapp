@@ -82,8 +82,8 @@ $(function () {
                         </div>
                         <div class="d-inline-flex justify-content-end mt-auto mb-2 gap-1">
                           <a href="clients/${client.id}" class="btn view-clients p-1"><i class="far fa-eye"></i></a>
-                          <a href="${whatsappUrl}" class="btn view-clients p-1" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>
-                          <a href="${telUrl}" class="btn view-clients p-1"><i class="bx bx-phone"></i></a>
+                          ${phoneNumber ? `<a href="${whatsappUrl}" class="btn view-clients p-1" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
+                          ${phoneNumber ? `<a href="${telUrl}" class="btn view-clients p-1"><i class="bx bx-phone"></i></a>` : ''}
                         </div>
                       </div>
                     </div>
@@ -151,43 +151,6 @@ $(function () {
   });
 });
 
-// Máscara de teléfono y validación del formulario
-(function () {
-  const phoneMaskList = document.querySelectorAll('.phone-mask'),
-    eCommerceCustomerAddForm = document.getElementById('eCommerceCustomerAddForm');
-  if (phoneMaskList) {
-    phoneMaskList.forEach(function (phoneMask) {
-      new Cleave(phoneMask, { phone: true, phoneRegionCode: 'US' });
-    });
-  }
-  const fv = FormValidation.formValidation(eCommerceCustomerAddForm, {
-    fields: {
-      customerName: {
-        validators: {
-          notEmpty: { message: 'Please enter fullname' }
-        }
-      },
-      customerEmail: {
-        validators: {
-          notEmpty: { message: 'Please enter your email' },
-          emailAddress: { message: 'The value is not a valid email address' }
-        }
-      }
-    },
-    plugins: {
-      trigger: new FormValidation.plugins.Trigger(),
-      bootstrap5: new FormValidation.plugins.Bootstrap5({
-        eleValidClass: '',
-        rowSelector: function (field, ele) {
-          return '.mb-3';
-        }
-      }),
-      submitButton: new FormValidation.plugins.SubmitButton(),
-      defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
-      autoFocus: new FormValidation.plugins.AutoFocus()
-    }
-  });
-})();
 
 $(document).ready(function () {
   $('input[type=radio][name=type]').change(function () {
@@ -366,7 +329,7 @@ $(document).ready(function () {
         missingFields.push(requiredFields[field]);
       }
     }
-    
+
     const offcanvasInstance = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
     offcanvasInstance.hide();
 

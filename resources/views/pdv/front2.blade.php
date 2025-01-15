@@ -249,10 +249,17 @@
           @endif
         </div>
 
-        <div class="mt-3 cash-details" id="cashDetails">
+        <!-- Valor recibido si el pago es efectivo -->
+        <div class="mt-3" id="cashDetails">
           <input type="number" id="valorRecibido" min="0" step=".01" class="form-control form-control-lg mb-2" placeholder="Valor recibido">
           <p class="text-muted mb-0">Vuelto: <span id="vuelto" class="fw-bold">0</span></p>
           <small id="mensajeError" class="text-danger d-none">El valor recibido es insuficiente.</small>
+        </div>
+
+        <!-- Consultar cantidad de cuotas si el pago es crédito -->
+        <div class="mt-3" id="quotasDetails" style="display: none;">
+          <small class="text-primary">Cantidad de cuotas</small>
+          <input type="number" id="quotas" min="1" max="12" step="1" class="form-control form-control-lg mb-2" placeholder="Cantidad de cuotas" value="1">
         </div>
 
         <div class="mt-4">

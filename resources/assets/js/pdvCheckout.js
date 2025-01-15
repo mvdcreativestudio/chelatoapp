@@ -117,6 +117,11 @@ $(document).ready(function () {
                 String(now.getSeconds()).padStart(2, '0');
 
             const amount = parseFloat($('.total').text().replace('$', ''));
+
+            // Obtener correctamente el valor de Quotas desde el input
+            const quotasInput = $('#quotas').val();
+            const quotas = quotasInput && !isNaN(quotasInput) ? parseInt(quotasInput) : 1; // Asignar 1 si es inválido
+
             const transactionData = {
                 cash_register_id: cashRegisterId,
                 store_id: sessionStoreId,
@@ -128,9 +133,11 @@ $(document).ready(function () {
                 Caja: caja,
                 UserId: userId,
                 TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
-                Amount: amount.toString() + "00"
+                Amount: amount.toString() + "00",
+                Quotas: quotas,
             };
             console.log('Order ID enviado a la transacción:', transactionData.order_id);
+            console.log('Transaction Data', transactionData);
 
 
             showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
@@ -1113,6 +1120,12 @@ function confirmarVenta(response, paymentMethod) {
         return;
     }
 
+    // Capturar las cuotas si el método de pago es crédito
+    let quotas = null;
+    if (paymentMethod === 'credit') {
+        quotas = parseInt($('#quotas').val()) || 1; // Valor predeterminado de 1 si está vacío o no válido
+    }
+
     const orderData = {
         date: new Date().toISOString().split('T')[0],
         hour: new Date().toLocaleTimeString('it-IT'),
@@ -1131,7 +1144,8 @@ function confirmarVenta(response, paymentMethod) {
         total: total - discount,
         notes: $('textarea').val() || '',
         store_id: sessionStoreId,
-        shipping_status: shippingStatus
+        shipping_status: shippingStatus,
+        quotas: quotas
     };
 
     if (client && client.id) {
@@ -1179,7 +1193,7 @@ function confirmarVenta(response, paymentMethod) {
                   if (paymentMethod === 'debit' || paymentMethod === 'credit') {
                       // Si el método de pago es debit o credit, inicia el flujo de transacción POS
                       obtenerTokenPos().then(token => {
-                          enviarTransaccionPos(token, posOrderId, orderId, orderUuid); // Enviar la orden al POS
+                          enviarTransaccionPos(token, posOrderId, orderId, orderUuid, quotas); // Enviar la orden al POS
                       }).catch(error => {
                           console.error('Error al obtener token POS:', error);
                           mostrarError('Error al procesar el pago con POS.');
@@ -1229,21 +1243,23 @@ function confirmarVenta(response, paymentMethod) {
     });
   }
 
-  // Función para mostrar u ocultar los detalles de pago en efectivo
-  function toggleCashDetails() {
+  // Función para manejar el cambio de método de pago y mostrar/ocultar detalles
+  function togglePaymentDetails() {
     const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
-    if (paymentMethod === 'cash') {
-      $('#cashDetails').show();
-    } else {
-      $('#cashDetails').hide();
-    }
+
+    // Mostrar/ocultar detalles de pago en efectivo
+    $('#cashDetails').toggle(paymentMethod === 'cash');
+
+    // Mostrar/ocultar detalles de cuotas
+    $('#quotasDetails').toggle(paymentMethod === 'credit');
   }
 
   // Evento para cambios en el método de pago
-  $('input[name="paymentMethod"]').on('change', toggleCashDetails);
+  $('input[name="paymentMethod"]').on('change', togglePaymentDetails);
 
-  // Llamar a la función al cargar la página para asegurarse de que el estado inicial es correcto
-  toggleCashDetails();
+  // Inicializar la visibilidad al cargar la página
+  togglePaymentDetails();
+
 
   $('.btn-success').on('click', function () {
     ocultarError();
