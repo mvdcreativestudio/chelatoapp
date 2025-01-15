@@ -378,7 +378,7 @@ class IntegrationController extends Controller
             if (!$store->pymo_user || !$store->pymo_password || !$store->invoices_enabled) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La tienda no tiene configurada la integración con PyMO'
+                    'message' => 'La tienda no tiene configurada la integración'
                 ]);
             }
 
@@ -388,7 +388,7 @@ class IntegrationController extends Controller
             if (!$companyInfo) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se pudo establecer conexión con PyMO'
+                    'message' => 'No se pudo establecer conexión'
                 ]);
             }
 

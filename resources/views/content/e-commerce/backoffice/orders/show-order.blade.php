@@ -186,16 +186,18 @@ $changeTypeTranslations = [
 
     <!-- Botón para anular la transacción -->
     @if($order->payment_method === 'debit' || $order->payment_method === 'credit')
-    <button
-      class="btn btn-sm btn-danger"
-      data-bs-toggle="modal"
-      data-bs-target="#voidTransactionModal"
-      data-store-id="{{ $order->store_id }}"
-      data-order-id="{{ $order->id }}"
-      data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}">
-      Anular Transacción
-    </button>
+        <button
+          class="btn btn-sm btn-danger"
+          data-bs-toggle="modal"
+          data-bs-target="#voidTransactionModal"
+          data-store-id="{{ $order->store_id }}"
+          data-order-id="{{ $order->id }}"
+          data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}"
+          {{ $order->transaction && $order->transaction->type === 'void' ? 'disabled' : '' }}>
+          Anular Transacción
+        </button>
     @endif
+
 
     <!-- Botón para realizar un refund -->
     @if($order->transaction && $order->transaction->status === 'completed')

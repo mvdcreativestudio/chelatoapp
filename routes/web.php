@@ -432,6 +432,10 @@ Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::clas
     Route::get('/accounting/settings', [AccountingController::class, 'settings'])->name('accounting.settings');
     Route::post('/accounting/save-rut', [AccountingController::class, 'saveRut'])->name('accounting.saveRut');
     Route::post('/accounting/upload-logo', [AccountingController::class, 'uploadLogo'])->name('accounting.uploadLogo');
+    Route::get('/accounting/pymo-connection/{store}/caes/{type}', [AccountingController::class, 'fetchActiveCaesByType'])->name('pymo.fetchActiveCaesByType');
+    Route::post('/accounting/pymo-connection/{rut}/caes/{type}/upload', [AccountingController::class, 'uploadCae']);
+
+
 
     // Ajustes de Comercio Electrónico
     Route::get('/ecommerce/marketing', [EcommerceController::class, 'marketing'])->name('marketing');

@@ -1537,5 +1537,139 @@ class AccountingRepository
           ];
       });
     }
+
+    public function getActiveCaes(Store $store): ?array
+    {
+        $caeTypes = [
+            '101' => 'eTicket',
+            '102' => 'eTicket - Nota de Crédito',
+            '103' => 'eTicket - Nota de Débito',
+            '111' => 'eFactura',
+            '112' => 'eFactura - Nota de Crédito',
+            '113' => 'eFactura - Nota de Débito',
+        ];
+
+        $cookies = $this->login($store);
+
+        if (!$cookies) {
+            Log::error('No se pudo iniciar sesión para obtener los CAEs activos.');
+            return null;
+        }
+
+        $rut = $store->rut;
+
+        if (!$rut) {
+            Log::error('No se encontró el RUT de la empresa.');
+            return null;
+        }
+
+        $results = [];
+
+        foreach ($caeTypes as $type => $typeName) {
+            $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/cfesActiveNumbers/' . $type;
+
+            Log::info("Consultando URL: {$url}"); // Log para depuración
+
+            try {
+                $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))->get($url);
+
+                if ($response->successful()) {
+                    $jsonResponse = $response->json();
+                    Log::info("Respuesta exitosa para {$type}: ", $jsonResponse);
+
+                    $companyCfeActiveNumbers = $jsonResponse['payload']['companyCfeActiveNumbers'] ?? [];
+
+                    if (!is_array($companyCfeActiveNumbers)) {
+                        $companyCfeActiveNumbers = [$companyCfeActiveNumbers];
+                    }
+
+                    foreach ($companyCfeActiveNumbers as $range) {
+                        $results[] = [
+                            'type' => $typeName,
+                            'nextNum' => $range['nextNum'] ?? 'N/A',
+                            'range' => [
+                                'first' => $range['range']['first'] ?? 'N/A',
+                                'last' => $range['range']['last'] ?? 'N/A',
+                            ],
+                        ];
+                    }
+                } else {
+                    Log::error("Error en la API para {$type}: " . $response->status() . ' - ' . $response->body());
+                }
+            } catch (\Exception $e) {
+                Log::error("Excepción al consultar {$type}: " . $e->getMessage());
+            }
+        }
+
+        return $results;
+    }
+
+
+    public function uploadCaeToPymo(Store $store, string $type, $file): array
+    {
+        $cookies = $this->login($store);
+
+        if (!$cookies) {
+            Log::error('No se pudo iniciar sesión para cargar el CAE.');
+            return [
+                'success' => false,
+                'message' => 'No se pudo iniciar sesión en PyMo.',
+                'statusCode' => 401,
+            ];
+        }
+
+        $rut = $store->rut;
+
+        if (!$rut) {
+            Log::error('No se encontró el RUT de la empresa.');
+            return [
+                'success' => false,
+                'message' => 'El RUT de la tienda no está configurado.',
+                'statusCode' => 400,
+            ];
+        }
+
+        $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . "/companies/{$rut}/cfesActiveNumbers/{$type}/upload-xml";
+        Log::info("Subiendo archivo a URL: {$url}");
+
+        try {
+            $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
+                ->attach(
+                    'CfesNewNumbers',
+                    file_get_contents($file->getRealPath()),
+                    $file->getClientOriginalName()
+                )
+                ->post($url);
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+                Log::info('Archivo subido exitosamente:', $responseData);
+                return [
+                    'success' => true,
+                    'message' => $responseData['message']['value'] ?? 'Archivo subido correctamente.',
+                ];
+            }
+
+            Log::error('Error en la API de PyMo:', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error en la API de PyMo: ' . ($response->json()['message']['value'] ?? 'Error desconocido.'),
+                'statusCode' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error("Excepción al cargar CAE: {$e->getMessage()}");
+            return [
+                'success' => false,
+                'message' => 'Ocurrió un error inesperado.',
+                'statusCode' => 500,
+            ];
+        }
+    }
+
+
 }
 

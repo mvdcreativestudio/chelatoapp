@@ -147,6 +147,9 @@
                             </tbody>
                         </table>
                     </div>
+                    <div class="text-center">
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-dismiss="modal">Consultar CAE'S</button>
+                    </div>
                     <div id="pymoConnectionError-{{ $store->id }}" class="alert alert-danger" style="display: none;">
                     </div>
                 </div>
