@@ -58,10 +58,10 @@ $currencySymbol = $settings->currency_symbol;
   <!-- Botones alineados a la derecha, ahora responsive -->
   <div class="text-end d-flex gap-2 align-items-center animate__animated animate__fadeIn">
 
-      <!-- Toggle tipo de visualización -->
-      <button id="toggle-view-btn" class="btn btn-sm btn-outline-secondary d-flex align-items-center animate__animated animate__pulse" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="left" data-bs-html="true" title="Lista / Cuadrícula">
-        <i class="bx bx-list-ul fs-5"></i>
-      </button>
+    <!-- Toggle tipo de visualización -->
+    <button id="toggle-view-btn" class="btn btn-sm btn-outline-secondary d-flex align-items-center animate__animated animate__pulse" data-bs-toggle="tooltip" data-bs-offset="0,4" data-bs-placement="left" data-bs-html="true" title="Lista / Cuadrícula">
+      <i class="bx bx-list-ul fs-5"></i>
+    </button>
 
     <!-- Grupo de botones para Seleccionar Cliente y Lista de Precios -->
     <div class="btn-group">
@@ -243,10 +243,10 @@ $currencySymbol = $settings->currency_symbol;
         <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre">
       </div>
 
-      <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="apellidoCliente" class="form-label">Apellido</label>
-        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido">
-      </div>
+      <label for="apellidoCliente" class="form-label">
+        Apellido<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
+        <span class="text-danger" id="apellidoAsterisk">*</span>
+      </label>
 
       <div id="documentTypeField" class="mb-3">
         <label class="form-label" for="documentType">Tipo de Documento</label>
@@ -270,29 +270,29 @@ $currencySymbol = $settings->currency_symbol;
       <div id="otherField" class="mb-3" style="display: none;">
         <label class="form-label" for="other_id_type">Otro Documento</label>
         <input type="text" class="form-control" id="other_id_type" name="other_id_type" placeholder="Ingrese el documento alternativo" />
-      <div class="mb-3 animate__animated animate__fadeInLeft" id="ciField">
-        <label for="ciCliente" class="form-label">CI </label>
-        <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
-      </div>
-      <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="direccionCliente" class="form-label">Dirección</label>
-        <label for="direccionCliente" class="form-label">Dirección </label>
-        <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
-      </div>
-      <div class="mb-3 animate__animated animate__fadeInLeft">
-        <label for="emailCliente" class="form-label">Correo Electrónico </label>
-        <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
-      </div>
-      <div class="mb-3 mt-3 animate__animated animate__fadeInLeft">
-        <label class="form-label" for="price_list_id">Lista de Precios</label>
-        <select id="price_list_id" class="form-select form-select" name="price_list_id">
-          <option value="" selected>Seleccionar Lista de Precios</option>
-          @foreach($priceLists as $priceList)
-          <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
-          @endforeach
-        </select>
-      </div>
-      <button type="button" class="btn btn-primary animate__animated animate__bounceIn" id="guardarCliente">Guardar</button>
+        <div class="mb-3 animate__animated animate__fadeInLeft" id="ciField">
+          <label for="ciCliente" class="form-label">CI </label>
+          <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
+        </div>
+        <div class="mb-3 animate__animated animate__fadeInLeft">
+          <label for="direccionCliente" class="form-label">Dirección</label>
+          <label for="direccionCliente" class="form-label">Dirección </label>
+          <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
+        </div>
+        <div class="mb-3 animate__animated animate__fadeInLeft">
+          <label for="emailCliente" class="form-label">Correo Electrónico </label>
+          <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
+        </div>
+        <div class="mb-3 mt-3 animate__animated animate__fadeInLeft">
+          <label class="form-label" for="price_list_id">Lista de Precios</label>
+          <select id="price_list_id" class="form-select form-select" name="price_list_id">
+            <option value="" selected>Seleccionar Lista de Precios</option>
+            @foreach($priceLists as $priceList)
+            <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
+            @endforeach
+          </select>
+        </div>
+        <button type="button" class="btn btn-primary animate__animated animate__bounceIn" id="guardarCliente">Guardar</button>
     </form>
   </div>
 </div>

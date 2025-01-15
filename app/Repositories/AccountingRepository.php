@@ -93,33 +93,33 @@ class AccountingRepository
      */
     public function getInvoicesDataForDatatables(): Collection
     {
-        $invoices = $this->getInvoicesWithRelations();
+      $invoices = $this->getInvoicesWithRelations();
 
-        return $invoices->map(function ($invoice) {
-            $typeCFEs = [
-                101 => 'eTicket',
-                102 => 'eTicket - Nota de Crédito',
-                103 => 'eTicket - Nota de Débito',
-                111 => 'eFactura',
-                112 => 'eFactura - Nota de Crédito',
-                113 => 'eFactura - Nota de Débito',
-            ];
+      return $invoices->map(function ($invoice) {
+          $typeCFEs = [
+            101 => 'eTicket',
+            102 => 'eTicket - Nota de Crédito',
+            103 => 'eTicket - Nota de Débito',
+            111 => 'eFactura',
+            112 => 'eFactura - Nota de Crédito',
+            113 => 'eFactura - Nota de Débito',
+          ];
 
-            if ($invoice->is_receipt) {
-                $typeCFEs[101] = 'eTicket - Recibo';
-                $typeCFEs[111] = 'eFactura - Recibo';
-            }
+          if ($invoice->is_receipt) {
+              $typeCFEs[101] = 'eTicket - Recibo';
+              $typeCFEs[111] = 'eFactura - Recibo';
+          }
 
-            if (
-                !$invoice->is_receipt &&
-                in_array($invoice->type, [101, 111]) &&
-                $invoice->relatedCfes->count() > 0 &&
-                $invoice->relatedCfes->contains(function ($relatedCfe) use ($invoice) {
-                    return $relatedCfe->type == $invoice->type;
-                })
-            ) {
-                $invoice->hide_emit = true;
-            }
+          if (
+              !$invoice->is_receipt &&
+              in_array($invoice->type, [101, 111]) &&
+              $invoice->relatedCfes->count() > 0 &&
+              $invoice->relatedCfes->contains(function ($relatedCfe) use ($invoice) {
+                  return $relatedCfe->type == $invoice->type;
+              })
+          ) {
+              $invoice->hide_emit = true;
+          }
 
           return [
               'id' => $invoice->id,
@@ -150,35 +150,6 @@ class AccountingRepository
               'status' => $invoice->status ?? '',
           ];
       });
-            return [
-                'id' => $invoice->id,
-                'store_name' => $invoice->order->store->name ?? 'N/A',
-                'client_name' => $invoice->order->client->name ?? 'Consumidor Final',
-                'client_email' => $invoice->order->client->email ?? '',
-                'client_lastname' => $invoice->order->client->lastname ?? '',
-                'date' => $invoice->emitionDate,
-                'order_id' => $invoice->order->id,
-                'type' => $typeCFEs[$invoice->type] ?? '',
-                'currency' => 'UYU',
-                'total' => $invoice->total,
-                'qrUrl' => $invoice->qrUrl,
-                'order_uuid' => $invoice->order->uuid,
-                'serie' => $invoice->serie,
-                'cfeId' => $invoice->cfeId,
-                'nro' => $invoice->nro,
-                'balance' => $invoice->balance,
-                'caeNumber' => $invoice->caeNumber,
-                'caeRange' => $invoice->caeRange,
-                'caeExpirationDate' => $invoice->caeExpirationDate,
-                'sentXmlHash' => $invoice->sentXmlHash,
-                'securityCode' => $invoice->securityCode,
-                'reason' => $invoice->reason,
-                'associated_id' => $invoice->main_cfe_id,
-                'is_receipt' => $invoice->is_receipt,
-                'hide_emit' => $invoice->hide_emit,
-                'status' => $invoice->status ?? '',
-            ];
-        });
     }
 
     /**
@@ -899,57 +870,21 @@ class AccountingRepository
           'Emisor' => [
               'GiroEmis' => 'Chelato'
           ]
-            'clientEmissionId' => $order->uuid . '-' . $noteType . '-' . now()->timestamp,
-            'adenda' => $reason,
-            'IdDoc' => [
-                'FchEmis' => now()->toIso8601String(),
-                'FmaPago' => '1',
-            ],
-            'Receptor' => (object) [], // Inicializar como objeto vacío
-            'Totales' => [
-                'TpoMoneda' => 'UYU',
-                // 'TpoCambio' => $exchangeRate,
-            ],
-            'Referencia' => [
-                [
-                    'NroLinRef' => '1',
-                    'IndGlobal' => '1',
-                    'TpoDocRef' => $invoice->type,
-                    'Serie' => $invoice->serie,
-                    'NroCFERef' => $invoice->nro,
-                    'RazonRef' => $reason,
-                    'FechaCFEref' => $invoice->emitionDate->toIso8601String()
-                ]
-            ],
-            'Items' => [
-                [
-                    'NroLinDet' => '1',
-                    'IndFact' => 6,
-                    'NomItem' => 'Nota de ' . ($noteType == 'credit' ? 'Crédito' : 'Débito') . ' - Ajuste',
-                    'Cantidad' => '1',
-                    'UniMed' => 'N/A',
-                    'PrecioUnitario' => $noteAmount,
-                    'MontoItem' => $noteAmount,
-                ]
-            ],
-            'Emisor' => [
-                'GiroEmis' => 'Chelato'
-            ]
         ];
 
         // Comprobar si existe un cliente y no es de tipo 'no-client'
         if ($order->client && $order->client->type !== 'no-client') {
-            $notaData['Receptor'] = [
-                'TipoDocRecep' => $invoice->type == 111 ? 2 : 3, // 2 para RUC si es una eFactura, 3 para CI si es un eTicket
-                'CodPaisRecep' => 'UY',
-                'PaisRecep' => 'Uruguay',
-                'DocRecep' => $order->client->type === 'company' ? $order->client->rut : $order->client->ci,
-                'RznSocRecep' => $order->client->type === 'company' ? $order->client->company_name : $order->client->name . ' ' . $order->client->lastname,
-                'DirRecep' => $order->client->address,
-                'CiudadRecep' => $order->client->city,
-                'DeptoRecep' => $order->client->state,
-                'CompraID' => $order->id,
-            ];
+          $notaData['Receptor'] = [
+              'TipoDocRecep' => $invoice->type == 111 ? 2 : 3, // 2 para RUC si es una eFactura, 3 para CI si es un eTicket
+              'CodPaisRecep' => 'UY',
+              'PaisRecep' => 'Uruguay',
+              'DocRecep' => $order->client->type === 'company' ? $order->client->rut : $order->client->ci,
+              'RznSocRecep' => $order->client->type === 'company' ? $order->client->company_name : $order->client->name . ' ' . $order->client->lastname,
+              'DirRecep' => $order->client->address,
+              'CiudadRecep' => $order->client->city,
+              'DeptoRecep' => $order->client->state,
+              'CompraID' => $order->id,
+          ];
         }
 
         if ($invoice->type == 111) {

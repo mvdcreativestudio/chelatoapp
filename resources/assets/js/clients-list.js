@@ -272,7 +272,7 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
   e.preventDefault();
   const nombre = document.getElementById('ecommerce-customer-add-name');
   const apellido = document.getElementById('ecommerce-customer-add-lastname');
-  const tipo = document.querySelector('input[name="type"]:checked');
+  var tipo = document.querySelector('input[name="type"]:checked');
   const email = document.getElementById('ecommerce-customer-add-email');
   const ci = document.getElementById('ci');
   const pasaporte = document.getElementById('passport');
