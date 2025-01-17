@@ -82,7 +82,7 @@
   </div>
 
   <div class="col-12 col-md-5">
-    <div class="card h-100 
+    <div class="card h-100
        @if($dailyBalance['balance'] > 0)
             bg-success bg-opacity-50 text-dark
         @elseif($dailyBalance['balance'] < 0)
@@ -242,7 +242,7 @@
     </div>
   </div>
 
-  <!-- Tarjetas cuarta línea -->
+  {{-- <!-- Tarjetas cuarta línea -->
   <div class="row mt-3 g-3">
     @foreach([['primary', 'bx-check'], ['warning', 'bx-time'], ['danger', 'bx-error-circle'], ['info', 'bx-line-chart']] as $card)
     <div class="col-12 col-sm-6 col-lg-3">
@@ -259,8 +259,8 @@
       </div>
     </div>
     @endforeach
-  </div>
-  @endsection
+  </div> --}}
+
 
   <div class="modal fade" id="topProductsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -296,3 +296,6 @@
       </div>
     </div>
   </div>
+</div>
+
+@endsection
