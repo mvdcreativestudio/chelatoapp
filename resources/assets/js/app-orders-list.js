@@ -43,6 +43,12 @@ $(function () {
     resetFilters();
   });
 
+  // Inicializar los tooltips después de renderizar las órdenes
+  $(document).ready(function () {
+    $('[data-bs-toggle="tooltip"]').tooltip(); // Activar todos los tooltips
+  });
+
+
 
   // Función para obtener las órdenes
   function fetchOrders() {
@@ -125,9 +131,19 @@ $(function () {
                   ? 'bg-warning'
                   : 'bg-danger';
 
+            // Determinar la clase para el ícono de factura y el texto del tooltip
+            const isBilledClass = orderData.is_billed === 1 ? 'bg-label-success' : 'bg-label-danger';
+            const billedTooltip = orderData.is_billed === 1 ? 'Facturada' : 'No Facturada';
+            const isBilledIcon = `
+              <div class="order-billed-icon ${isBilledClass}" data-bs-toggle="tooltip" data-bs-placement="top" title="${billedTooltip}">
+                <i class="bx bx-receipt"></i>
+              </div>
+            `;
+
             const card = `
                   <div class="col-md-6 col-lg-4 col-12 mb-4">
                     <div class="order-card position-relative">
+                      ${isBilledIcon} <!-- Agregar el ícono de factura -->
                       <div class="order-card-body">
                         <h5 class="order-title">#${orderData.id}-${orderData.client_name}</h5>
                         <p class="order-date text-muted small">${moment(orderData.date).format('DD/MM/YYYY')}</p>

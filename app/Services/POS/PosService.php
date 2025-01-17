@@ -501,6 +501,68 @@ public function fetchOpenBatches(array $validated): array
     }
 }
 
+    public function cancelTransaction(array $transactionData): array
+    {
+        try {
+            Log::info('Iniciando cancelTransaction con los datos:', $transactionData);
+
+            // Validar que `TransactionId` y `STransactionId` existan
+            if (!isset($transactionData['TransactionId'], $transactionData['STransactionId'])) {
+                throw new \Exception('TransactionId y STransactionId son obligatorios.');
+            }
+
+            // Buscar la transacción en la base de datos
+            $transaction = \App\Models\Transaction::where('TransactionId', $transactionData['TransactionId'])
+                ->where('STransactionId', $transactionData['STransactionId'])
+                ->first();
+
+            if (!$transaction) {
+                throw new \Exception('No se encontró la transacción con los IDs proporcionados.');
+            }
+
+            // Obtener los datos formateados de la transacción original
+            $formattedData = $transaction->formatted_data;
+
+            if (is_string($formattedData)) {
+                $formattedData = json_decode($formattedData, true);
+            }
+
+            if (!is_array($formattedData)) {
+                throw new \Exception('El campo formatted_data de la transacción no es válido.');
+            }
+
+            // Preparar los datos de cancelación
+            $cancelData = [
+                'TransactionId' => $transactionData['TransactionId'],
+                'STransactionId' => $transactionData['STransactionId'],
+                'PosID' => $formattedData['PosID'],
+                'SystemId' => $formattedData['SystemId'],
+                'Branch' => $formattedData['Branch'],
+                'ClientAppId' => $formattedData['ClientAppId'] ?? 'Caja1',
+                'UserId' => $formattedData['UserId'] ?? 'admin',
+                'TransactionDateTimeyyyyMMddHHmmssSSS' => now()->format('YmdHis') . '000',
+            ];
+
+            Log::info('Datos preparados para cancelTransaction:', $cancelData);
+
+            // Configurar la integración POS
+            $this->setPosIntegration($transaction->store_id ?? $transactionData['store_id']);
+
+            // Delegar la cancelación al IntegrationService correspondiente
+            return $this->posIntegration->cancelTransaction($cancelData);
+        } catch (\Exception $e) {
+            Log::error('Error en cancelTransaction:', [
+                'message' => $e->getMessage(),
+                'transactionData' => $transactionData,
+            ]);
+            return [
+                'success' => false,
+                'message' => 'Error interno al procesar la cancelación.',
+                'details' => $e->getMessage(),
+            ];
+        }
+    }
+
 
 
 

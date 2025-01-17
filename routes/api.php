@@ -62,6 +62,7 @@ Route::get('/pos-devices', [PosController::class, 'getPosDevices'])->name('pos.d
 Route::post('/pos/fetchTransactionHistory', [PosController::class, 'fetchTransactionHistory'])->name('pos.fetchTransactionHistory');
 Route::get('/pos/devices/{store_id}', [PosController::class, 'getDevicesByStore']);
 Route::post('/pos/refund', [PosController::class, 'processRefund'])->name('pos.refund');
+Route::post('/pos/cancel-transaction', [PosController::class, 'cancelTransaction']);
 
 // Rutas para consulta de lotes
 Route::post('/pos/fetchBatchCloses', [PosController::class, 'fetchBatchCloses'])->name('pos.fetchBatchCloses');

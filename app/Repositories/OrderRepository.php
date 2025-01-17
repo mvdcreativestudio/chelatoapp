@@ -38,7 +38,7 @@ class OrderRepository
 
     /**
      * Inyecta el servicio de Mercado Pago
-     * 
+     *
      * @param MercadoPagoService $mercadoPagoService
      */
 
@@ -665,7 +665,7 @@ class OrderRepository
         $payType = $request->payType ?? 1;
 
         $this->accountingRepository->emitCFE($order, $amountToBill, $payType);
-        
+
         $order->update(['is_billed' => true]);
     }
 
@@ -868,7 +868,7 @@ class OrderRepository
                     $query->where('cash_register_id', $cashRegisterId);
                 }])
             ->first();
-        
+
         $userIdMercadPago = $mercadoPagoAccountStore->user_id_mp;
         $storeIdMercadoPago = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->external_id;
         $posId = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->mercadopagoAccountPOS[0]->external_id;

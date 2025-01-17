@@ -99,60 +99,53 @@ $(document).ready(function () {
     console.log('Order ID recibido en enviarTransaccionPos:', orderId);
 
     $.ajax({
-        url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
-        type: 'GET',
-        success: function (device) {
-            const posID = device.data.identifier;
-            const empresa = device.data.company;
-            const local = device.data.branch;
-            const caja = device.data.cash_register;
-            const userId = device.data.user;
+      url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
+      type: 'GET',
+      success: function (device) {
+        const posID = device.data.identifier;
+        const transactionDateTime = new Date().toISOString().replace(/[-:.TZ]/g, '').substring(0, 17);
+        const amount = parseFloat($('.total').text().replace('$', ''));
+        const quotasInput = $('#quotas').val();
+        const quotas = quotasInput && !isNaN(quotasInput) ? parseInt(quotasInput) : 1;
 
-            const now = new Date();
-            const transactionDateTime = now.getFullYear().toString() +
-                String(now.getMonth() + 1).padStart(2, '0') +
-                String(now.getDate()).padStart(2, '0') +
-                String(now.getHours()).padStart(2, '0') +
-                String(now.getMinutes()).padStart(2, '0') +
-                String(now.getSeconds()).padStart(2, '0');
+        const transactionData = {
+          cash_register_id: cashRegisterId,
+          store_id: sessionStoreId,
+          pos_order_id: posOrderId,
+          order_id: orderId,
+          PosID: posID,
+          TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
+          Amount: Math.round(amount * 100).toString(),
+          Quotas: quotas,
+        };
 
-            const amount = parseFloat($('.total').text().replace('$', ''));
+        showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
 
-            // Obtener correctamente el valor de Quotas desde el input
-            const quotasInput = $('#quotas').val();
-            const quotas = quotasInput && !isNaN(quotasInput) ? parseInt(quotasInput) : 1; // Asignar 1 si es inválido
-
-            const transactionData = {
-                cash_register_id: cashRegisterId,
-                store_id: sessionStoreId,
-                pos_order_id: posOrderId, // Asociar la transacción al ID de la orden en pos-orders
-                order_id: orderId, // Asociar la transacción al ID de la orden en orders
-                PosID: posID,
-                Empresa: empresa,
-                Local: local,
-                Caja: caja,
-                UserId: userId,
-                TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
-                Amount: amount.toString() + "00",
-                Quotas: quotas,
-            };
-            console.log('Order ID enviado a la transacción:', transactionData.order_id);
-            console.log('Transaction Data', transactionData);
-
-
-            showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
-
-            // Obtener TransactionId y STransactionId con fallback a response.response
+        $.ajax({
+          url: `${baseUrl}api/pos/process-transaction`,
+          type: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          data: JSON.stringify(transactionData),
+          success: function (response) {
             const transactionId = response.TransactionId ?? response.response?.TransactionId;
             const sTransactionId = response.STransactionId ?? response.response?.STransactionId;
 
-            console.log('Transaction ID:', transactionId);
-            console.log('STransactionID:', sTransactionId);
-
-            // Validar los datos antes de proceder
             if (transactionId && sTransactionId) {
+              showTransactionStatus({
+                message: 'Procesando transacción...',
+                icon: 'info',
+                showCloseButton: false,
+                transactionId,
+                sTransactionId,
+                token
+              });
+
               consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid);
             } else {
+              console.error('Faltan TransactionId o STransactionId.');
               showTransactionStatus({
                 message: 'Error en la transacción POS. Intente nuevamente.',
                 icon: 'error',
@@ -171,10 +164,12 @@ $(document).ready(function () {
         });
       },
       error: function (xhr) {
-        console.error('Error al obtener la información del dispositivo POS:', xhr.responseText);
+        console.error('Error al obtener información del dispositivo POS:', xhr.responseText);
       }
     });
   }
+
+
 
 
 
@@ -275,42 +270,150 @@ $(document).ready(function () {
     });
   }
 
-
-
   let swalInstance;
 
-  // Función para mostrar el mensaje de estado de la transacción
-  function showTransactionStatus({ message, icon, showCloseButton }) {
-    if (!swalInstance) {
-      // Crear un nuevo SweetAlert si no existe
-      swalInstance = Swal.fire({
-        icon: icon || 'info',
-        title: 'Estado de Transacción',
-        html: message || 'Procesando...',
-        showConfirmButton: showCloseButton,
-        confirmButtonText: 'Cerrar',
-        allowOutsideClick: showCloseButton,
-        didOpen: () => {
-          if (!showCloseButton) {
-            Swal.showLoading();
-          }
+// Función para mostrar el mensaje de estado de la transacción
+function showTransactionStatus({ message, icon, showCloseButton, transactionId, sTransactionId}) {
+  if (!swalInstance) {
+    swalInstance = Swal.fire({
+      icon: icon || 'info',
+      title: 'Estado de Transacción',
+      html: `
+        ${message || 'Procesando...'}
+        <div class="mt-3">
+          <button
+            id="cancelTransactionButton"
+            class="btn btn-danger btn-sm"
+            style="display: ${transactionId && sTransactionId ? 'inline-block' : 'none'}"
+          >
+            Cancelar
+          </button>
+        </div>
+      `,
+      showConfirmButton: showCloseButton,
+      confirmButtonText: 'Cerrar',
+      allowOutsideClick: showCloseButton,
+      didOpen: () => {
+        const cancelButton = document.getElementById('cancelTransactionButton');
+        if (cancelButton) {
+          cancelButton.addEventListener('click', function () {
+            if (!transactionId || !sTransactionId) {
+              console.error('TransactionId, STransactionId o token están vacíos.');
+              Swal.fire({
+                title: 'Error',
+                text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+                icon: 'error',
+                confirmButtonText: 'Cerrar'
+              });
+              return;
+            }
+            cancelarTransaccion(transactionId, sTransactionId);
+          });
         }
-      });
-    } else {
-      // Actualizar el SweetAlert existente
-      swalInstance.update({
-        icon: icon || 'info',
-        html: message || 'Procesando...',
-        showConfirmButton: showCloseButton,
-        confirmButtonText: 'Cerrar',
-        allowOutsideClick: showCloseButton
-      });
-
-      if (showCloseButton) {
-        Swal.hideLoading();
+        if (!showCloseButton) {
+          Swal.showLoading();
+        }
       }
+    });
+  } else {
+    swalInstance.update({
+      icon: icon || 'info',
+      html: `
+        ${message || 'Procesando...'}
+        <div class="mt-3">
+          <button
+            id="cancelTransactionButton"
+            class="btn btn-danger btn-sm"
+            style="display: ${transactionId && sTransactionId ? 'inline-block' : 'none'}"
+          >
+            Cancelar
+          </button>
+        </div>
+      `,
+      showConfirmButton: showCloseButton,
+      confirmButtonText: 'Cerrar',
+      allowOutsideClick: showCloseButton
+    });
+
+    const cancelButton = document.getElementById('cancelTransactionButton');
+    if (cancelButton) {
+      cancelButton.addEventListener('click', function () {
+        if (!transactionId || !sTransactionId) {
+          console.error('TransactionId o STransactionId  están vacíos.');
+          Swal.fire({
+            title: 'Error',
+            text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+            icon: 'error',
+            confirmButtonText: 'Cerrar'
+          });
+          return;
+        }
+        cancelarTransaccion(transactionId, sTransactionId);
+      });
+    }
+
+    if (showCloseButton) {
+      Swal.hideLoading();
     }
   }
+}
+
+
+
+
+
+// Función para cancelar la transacción
+function cancelarTransaccion(transactionId, sTransactionId, token) {
+  if (!transactionId || !sTransactionId) {
+    console.error('TransactionId o STransactionId son inválidos.');
+    Swal.fire({
+      title: 'Error',
+      text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+      icon: 'error',
+      confirmButtonText: 'Cerrar'
+    });
+    return;
+  }
+
+  // Solo enviar los datos mínimos necesarios
+  const requestData = {
+    TransactionId: transactionId,
+    STransactionId: sTransactionId,
+    store_id: sessionStoreId // Si el store_id es necesario
+  };
+
+  $.ajax({
+    url: `${baseUrl}api/pos/cancel-transaction`,
+    type: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    data: JSON.stringify(requestData),
+    success: function (response) {
+      console.log('Transacción cancelada exitosamente:', response);
+      Swal.fire({
+        title: 'Cancelación Exitosa',
+        text: 'La transacción ha sido cancelada con éxito.',
+        icon: 'success',
+        confirmButtonText: 'Cerrar'
+      });
+    },
+    error: function (xhr) {
+      console.error('Error al cancelar la transacción:', xhr.responseText);
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cancelar la transacción. Haga click en el botón rojo del POS.',
+        icon: 'error',
+        confirmButtonText: 'Cerrar'
+      });
+    }
+  });
+}
+
+
+
+
 
 
   // Función para mostrar el mensaje de respuesta POS en SweetAlert
@@ -1093,19 +1196,19 @@ $(document).ready(function () {
     const subtotal = parseFloat($('.subtotal').text().replace(/[^\d.-]/g, '')) || 0;
 
     if (total > 25000 && (!client || !client.id)) {
-      mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
-      return;
+        mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
+        return;
     }
 
     if (paymentMethod === 'cash') {
-      cashSales = total;
+        cashSales = total;
     } else {
-      posSales = total;
+        posSales = total;
     }
 
     if (paymentMethod === 'internalCredit' && (!client || !client.id)) {
-      mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido.');
-      return;
+        mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido.');
+        return;
     }
 
     // Capturar las cuotas si el método de pago es crédito
@@ -1137,58 +1240,35 @@ $(document).ready(function () {
     };
 
     if (client && client.id) {
-      orderData.client_id = client.id;
+        orderData.client_id = client.id;
     }
 
     // Crear la orden en pos-orders primero
     $.ajax({
-      url: `${baseUrl}admin/pos-orders`,
-      type: 'POST',
-      data: {
-        _token: $('meta[name="csrf-token"]').attr('content'),
-        ...orderData
-      },
-      success: function (posOrderResponse) {
-        const posOrderId = posOrderResponse.order_uuid; // ID de la orden en pos-orders
-
-        // Crear la orden en orders
-        const ordersData = {
-          ...orderData,
-          origin: 'physical',
-          payment_status: paymentStatus,
-          payment_method: paymentMethod,
-          shipping_method: 'standard',
-          coupon_id: coupon ? coupon.coupon.id : null,
-          coupon_amount: coupon ? coupon.coupon.amount : 0,
-          estimate_id: null,
-          shipping_id: null,
-          preference_id: null,
-          shipping_tracking: null,
-          is_billed: 0
-        };
-
-        $.ajax({
-          url: `${baseUrl}admin/orders`,
-          type: 'POST',
-          data: {
+        url: `${baseUrl}admin/pos-orders`,
+        type: 'POST',
+        data: {
             _token: $('meta[name="csrf-token"]').attr('content'),
-            ...ordersData
-          },
-          success: function (orderResponse) {
-            const orderId = orderResponse.order_id; // ID de la orden en orders
-            const orderUuid = orderResponse.order_uuid; // UUID de la orden en orders
+            ...orderData
+        },
+        success: function (posOrderResponse) {
+            const posOrderId = posOrderResponse.order_uuid; // ID de la orden en pos-orders
 
-            if (paymentMethod === 'debit' || paymentMethod === 'credit') {
-              // Si el método de pago es debit o credit, inicia el flujo de transacción POS
-              obtenerTokenPos().then(token => {
-                enviarTransaccionPos(token, posOrderId, orderId, orderUuid); // Enviar la orden al POS
-              }).catch(error => {
-                console.error('Error al obtener token POS:', error);
-                mostrarError('Error al procesar el pago con POS.');
-              });
-            } else if (paymentMethod === 'qr_attended') {
-              handleMercadoPagoAtendido(response);
-              return;
+            // Crear la orden en orders
+            const ordersData = {
+                ...orderData,
+                origin: 'physical',
+                payment_status: paymentStatus,
+                payment_method: paymentMethod,
+                shipping_method: 'standard',
+                coupon_id: coupon ? coupon.coupon.id : null,
+                coupon_amount: coupon ? coupon.coupon.amount : 0,
+                estimate_id: null,
+                shipping_id: null,
+                preference_id: null,
+                shipping_tracking: null,
+                is_billed: 0
+            };
 
             $.ajax({
                 url: `${baseUrl}admin/orders`,
@@ -1198,29 +1278,27 @@ $(document).ready(function () {
                     ...ordersData
                 },
                 success: function (orderResponse) {
-                  const orderId = orderResponse.order_id; // ID de la orden en orders
-                  const orderUuid = orderResponse.order_uuid; // UUID de la orden en orders
+                    const orderId = orderResponse.order_id; // ID de la orden en orders
+                    const orderUuid = orderResponse.order_uuid; // UUID de la orden en orders
 
-                  if (paymentMethod === 'debit' || paymentMethod === 'credit') {
-                      // Si el método de pago es debit o credit, inicia el flujo de transacción POS
-                      obtenerTokenPos().then(token => {
-                          enviarTransaccionPos(token, posOrderId, orderId, orderUuid, quotas); // Enviar la orden al POS
-                      }).catch(error => {
-                          console.error('Error al obtener token POS:', error);
-                          mostrarError('Error al procesar el pago con POS.');
-                      });
-                  } else if (paymentMethod === 'qr_attended') {
-                    handleMercadoPagoAtendido(response);
-                    return;
-
-                  } else if (paymentMethod === 'qr_dynamic') {
-                    handleMercadoPagoDinamico(response);
-                    return;
-
-                  } else {
-                      // Para otros métodos de pago, confirmar venta directamente
-                      confirmarVenta(orderResponse, paymentMethod);
-                  }
+                    if (paymentMethod === 'debit' || paymentMethod === 'credit') {
+                        // Si el método de pago es debit o credit, inicia el flujo de transacción POS
+                        obtenerTokenPos().then(token => {
+                            enviarTransaccionPos(token, posOrderId, orderId, orderUuid, quotas); // Enviar la orden al POS
+                        }).catch(error => {
+                            console.error('Error al obtener token POS:', error);
+                            mostrarError('Error al procesar el pago con POS.');
+                        });
+                    } else if (paymentMethod === 'qr_attended') {
+                        handleMercadoPagoAtendido(orderResponse);
+                        return;
+                    } else if (paymentMethod === 'qr_dynamic') {
+                        handleMercadoPagoDinamico(orderResponse);
+                        return;
+                    } else {
+                        // Para otros métodos de pago, confirmar venta directamente
+                        confirmarVenta(orderResponse, paymentMethod);
+                    }
                 },
                 error: function (xhr) {
                     console.error('Error al guardar en /admin/orders:', xhr);
@@ -1231,15 +1309,10 @@ $(document).ready(function () {
         error: function (xhr) {
             console.error('Error al guardar en /admin/pos-orders:', xhr);
             mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
-          }
-        });
-      },
-      error: function (xhr) {
-        console.error('Error al guardar en /admin/pos-orders:', xhr);
-        mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
-      }
+        }
     });
-  }
+}
+
 
 
   function clearCartAndClient() {
