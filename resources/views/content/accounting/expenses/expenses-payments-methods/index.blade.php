@@ -41,6 +41,19 @@
 <div class="card mb-4">
   <div class="card-body card-widget-separator">
     <div class="row gy-4 gy-sm-1">
+    <div class="col-sm-6 col-lg-3">
+      <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
+        <div>
+          <h6 class="mb-2">Volver Atrás</h6>
+          <a href="{{ route('expenses.index') }}" class="btn btn-primary">Volver</a>
+        </div>
+        <div class="avatar me-sm-4">
+          <span class="avatar-initial rounded bg-label-secondary">
+            <i class="bx bx-arrow-back bx-sm"></i>
+          </span>
+        </div>
+      </div>
+    </div>
       <div class="col-sm-6 col-lg-3">
         <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
           <div>
@@ -76,20 +89,6 @@
           <div class="avatar">
             <span class="avatar-initial rounded bg-label-secondary">
               <i class="bx bx-time bx-sm"></i>
-            </span>
-          </div>
-        </div>
-      </div>
-      {{-- volver atras --}}
-      <div class="col-sm-6 col-lg-3">
-        <div class="d-flex justify-content-between align-items-start">
-          <div>
-            <h6 class="mb-2">Volver Atrás</h6>
-            <a href="{{ route('expenses.index') }}" class="btn btn-primary">Volver</a>
-          </div>
-          <div class="avatar">
-            <span class="avatar-initial rounded bg-label-secondary">
-              <i class="bx bx-arrow-back bx-sm"></i>
             </span>
           </div>
         </div>

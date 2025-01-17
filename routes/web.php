@@ -96,7 +96,8 @@ Route::prefix('admin')->middleware([
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
+    Route::get('/dashboard/monthly-income/{month}', [DashboardController::class, 'monthlyIncomeDashboard'])->name('api.dashboard.monthly-income');
+    
     // Data Tables
     Route::get('/clients/datatable', [ClientController::class, 'datatable'])->name('clients.datatable');
     Route::get('/products/datatable', [ProductController::class, 'datatable'])->name('products.datatable');
