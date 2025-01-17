@@ -4,24 +4,52 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Repositories\StoreRepository;
-use App\Models\Order;
+use App\Repositories\DashboardRepository;
 
 
 class DashboardController extends Controller
 {
     protected $storeRepository;
+    protected $dashboardRepository;
 
-    public function __construct(StoreRepository $storeRepository)
+    public function __construct(StoreRepository $storeRepository, DashboardRepository $dashboardRepository)
     {
         $this->storeRepository = $storeRepository;
+        $this->dashboardRepository = $dashboardRepository;
     }
 
+    /*
+    * Muestra el dashboard
+    * @return \Illuminate\View\View
+    */
     public function index()
     {
         $stores = $this->storeRepository->getStoresWithStatus();
+
         $user = auth()->user();
 
-        return view('content.dashboard.index', compact('stores', 'user'));
+        $products = $this->dashboardRepository->getTopSellingProducts();
+
+        $amountOfOrders = $this->dashboardRepository->getAmountOfOrders();
+
+        $expenses = $this->dashboardRepository->getExpensesDueToday();
+
+        $monthlyExpenses = $this->dashboardRepository->getMonthlyExpensesPaid();
+
+        $dailyBalance = $this->dashboardRepository->getDailyBalance();
+
+        return view('content.dashboard.index', compact('stores', 'user', 'products','amountOfOrders','expenses','monthlyExpenses','dailyBalance'));
     }
 
+    /*
+    * Retorna los productos más vendidos
+    * @param int $limit
+    * @return array
+    */
+    public function monthlyIncomeDashboard(Request $request, $month = null)
+    {
+        $incomeData = $this->dashboardRepository->getMonthlyIncomeData($month);
+
+        return response()->json($incomeData);
+    }
 }
