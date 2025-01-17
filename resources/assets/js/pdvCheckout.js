@@ -99,52 +99,48 @@ $(document).ready(function () {
     console.log('Order ID recibido en enviarTransaccionPos:', orderId);
 
     $.ajax({
-      url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
-      type: 'GET',
-      success: function (device) {
-        const posID = device.data.identifier;
-        const empresa = device.data.company;
-        const local = device.data.branch;
-        const caja = device.data.cash_register;
-        const userId = device.data.user;
+        url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
+        type: 'GET',
+        success: function (device) {
+            const posID = device.data.identifier;
+            const empresa = device.data.company;
+            const local = device.data.branch;
+            const caja = device.data.cash_register;
+            const userId = device.data.user;
 
-        const now = new Date();
-        const transactionDateTime = now.getFullYear().toString() +
-          String(now.getMonth() + 1).padStart(2, '0') +
-          String(now.getDate()).padStart(2, '0') +
-          String(now.getHours()).padStart(2, '0') +
-          String(now.getMinutes()).padStart(2, '0') +
-          String(now.getSeconds()).padStart(2, '0');
+            const now = new Date();
+            const transactionDateTime = now.getFullYear().toString() +
+                String(now.getMonth() + 1).padStart(2, '0') +
+                String(now.getDate()).padStart(2, '0') +
+                String(now.getHours()).padStart(2, '0') +
+                String(now.getMinutes()).padStart(2, '0') +
+                String(now.getSeconds()).padStart(2, '0');
 
-        const amount = parseFloat($('.total').text().replace('$', ''));
-        const transactionData = {
-          cash_register_id: cashRegisterId,
-          store_id: sessionStoreId,
-          pos_order_id: posOrderId, // Asociar la transacción al ID de la orden en pos-orders
-          order_id: orderId, // Asociar la transacción al ID de la orden en orders
-          PosID: posID,
-          Empresa: empresa,
-          Local: local,
-          Caja: caja,
-          UserId: userId,
-          TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
-          Amount: amount.toString() + "00"
-        };
-        console.log('Order ID enviado a la transacción:', transactionData.order_id);
+            const amount = parseFloat($('.total').text().replace('$', ''));
+
+            // Obtener correctamente el valor de Quotas desde el input
+            const quotasInput = $('#quotas').val();
+            const quotas = quotasInput && !isNaN(quotasInput) ? parseInt(quotasInput) : 1; // Asignar 1 si es inválido
+
+            const transactionData = {
+                cash_register_id: cashRegisterId,
+                store_id: sessionStoreId,
+                pos_order_id: posOrderId, // Asociar la transacción al ID de la orden en pos-orders
+                order_id: orderId, // Asociar la transacción al ID de la orden en orders
+                PosID: posID,
+                Empresa: empresa,
+                Local: local,
+                Caja: caja,
+                UserId: userId,
+                TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
+                Amount: amount.toString() + "00",
+                Quotas: quotas,
+            };
+            console.log('Order ID enviado a la transacción:', transactionData.order_id);
+            console.log('Transaction Data', transactionData);
 
 
-        showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
-
-        $.ajax({
-          url: `${baseUrl}api/pos/process-transaction`,
-          type: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          data: JSON.stringify(transactionData),
-          success: function (response) {
-            console.log('Respuesta completa de la API:', response);
+            showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
 
             // Obtener TransactionId y STransactionId con fallback a response.response
             const transactionId = response.TransactionId ?? response.response?.TransactionId;
@@ -1112,25 +1108,32 @@ $(document).ready(function () {
       return;
     }
 
+    // Capturar las cuotas si el método de pago es crédito
+    let quotas = null;
+    if (paymentMethod === 'credit') {
+        quotas = parseInt($('#quotas').val()) || 1; // Valor predeterminado de 1 si está vacío o no válido
+    }
+
     const orderData = {
-      date: new Date().toISOString().split('T')[0],
-      hour: new Date().toLocaleTimeString('it-IT'),
-      cash_register_log_id: cashRegisterLogId,
-      cash_sales: cashSales,
-      pos_sales: posSales,
-      discount: discount,
-      products: JSON.stringify(cart.map(item => ({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        is_composite: item.isComposite || false
-      }))),
-      subtotal: subtotal,
-      total: total - discount,
-      notes: $('textarea').val() || '',
-      store_id: sessionStoreId,
-      shipping_status: shippingStatus
+        date: new Date().toISOString().split('T')[0],
+        hour: new Date().toLocaleTimeString('it-IT'),
+        cash_register_log_id: cashRegisterLogId,
+        cash_sales: cashSales,
+        pos_sales: posSales,
+        discount: discount,
+        products: JSON.stringify(cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            is_composite: item.isComposite || false
+        }))),
+        subtotal: subtotal,
+        total: total - discount,
+        notes: $('textarea').val() || '',
+        store_id: sessionStoreId,
+        shipping_status: shippingStatus,
+        quotas: quotas
     };
 
     if (client && client.id) {
@@ -1187,17 +1190,46 @@ $(document).ready(function () {
               handleMercadoPagoAtendido(response);
               return;
 
-            } else if (paymentMethod === 'qr_dynamic') {
-              handleMercadoPagoDinamico(response);
-              return;
+            $.ajax({
+                url: `${baseUrl}admin/orders`,
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    ...ordersData
+                },
+                success: function (orderResponse) {
+                  const orderId = orderResponse.order_id; // ID de la orden en orders
+                  const orderUuid = orderResponse.order_uuid; // UUID de la orden en orders
 
-            } else {
-              // Para otros métodos de pago, confirmar venta directamente
-              confirmarVenta(orderResponse, paymentMethod);
-            }
-          },
-          error: function (xhr) {
-            console.error('Error al guardar en /admin/orders:', xhr);
+                  if (paymentMethod === 'debit' || paymentMethod === 'credit') {
+                      // Si el método de pago es debit o credit, inicia el flujo de transacción POS
+                      obtenerTokenPos().then(token => {
+                          enviarTransaccionPos(token, posOrderId, orderId, orderUuid, quotas); // Enviar la orden al POS
+                      }).catch(error => {
+                          console.error('Error al obtener token POS:', error);
+                          mostrarError('Error al procesar el pago con POS.');
+                      });
+                  } else if (paymentMethod === 'qr_attended') {
+                    handleMercadoPagoAtendido(response);
+                    return;
+
+                  } else if (paymentMethod === 'qr_dynamic') {
+                    handleMercadoPagoDinamico(response);
+                    return;
+
+                  } else {
+                      // Para otros métodos de pago, confirmar venta directamente
+                      confirmarVenta(orderResponse, paymentMethod);
+                  }
+                },
+                error: function (xhr) {
+                    console.error('Error al guardar en /admin/orders:', xhr);
+                    mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
+                }
+            });
+        },
+        error: function (xhr) {
+            console.error('Error al guardar en /admin/pos-orders:', xhr);
             mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
           }
         });
@@ -1228,21 +1260,23 @@ $(document).ready(function () {
     });
   }
 
-  // Función para mostrar u ocultar los detalles de pago en efectivo
-  function toggleCashDetails() {
+  // Función para manejar el cambio de método de pago y mostrar/ocultar detalles
+  function togglePaymentDetails() {
     const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
-    if (paymentMethod === 'cash') {
-      $('#cashDetails').show();
-    } else {
-      $('#cashDetails').hide();
-    }
+
+    // Mostrar/ocultar detalles de pago en efectivo
+    $('#cashDetails').toggle(paymentMethod === 'cash');
+
+    // Mostrar/ocultar detalles de cuotas
+    $('#quotasDetails').toggle(paymentMethod === 'credit');
   }
 
   // Evento para cambios en el método de pago
-  $('input[name="paymentMethod"]').on('change', toggleCashDetails);
+  $('input[name="paymentMethod"]').on('change', togglePaymentDetails);
 
-  // Llamar a la función al cargar la página para asegurarse de que el estado inicial es correcto
-  toggleCashDetails();
+  // Inicializar la visibilidad al cargar la página
+  togglePaymentDetails();
+
 
   $('.btn-success').on('click', function () {
     ocultarError();
