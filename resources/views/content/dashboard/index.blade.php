@@ -5,9 +5,13 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 @section('page-script')
-@vite(['resources/assets/js/cards-statistics.js', 'resources/assets/js/ui-cards-analytics.js', 'resources/assets/js/extended-ui-tour.js', 'resources/assets/js/toggle-store-status.js'])
+@vite([
+'resources/assets/js/extended-ui-tour.js',
+'resources/assets/js/toggle-store-status.js',
+'resources/assets/js/dashboard/integrations.js',
+'resources/assets/js/dashboard/total-incomes.js'])
 <script>
-    window.baseUrl = "{{ url('/') }}";
+  window.baseUrl = "{{ url('/') }}";
 </script>
 @endsection
 
@@ -36,53 +40,76 @@
 <div class="row g-3">
   <div class="col-12 col-md-7">
     <div class="card p-3">
-        <h5>Vencen hoy:</h5>
-        <div class="row g-3 align-items-stretch">
-            <!-- Tarjeta Factura Impaga -->
-            <div class="col-12 col-md-6">
-                <div class="card card-border-shadow-danger low-opacity-bg d-flex flex-row align-items-center p-3 h-100">
-                    <div class="expenses-card-icon me-3">
-                        <img src="{{ asset('assets/img/ux-new/Ellipse-14.png') }}" alt="Movistar Logo" class="img-fluid" style="width: 40px; height: auto;">
-                    </div>
-                    <div class="expenses-card-content flex-grow-1">
-                        <p class="m-0 text-danger bold">Factura Impaga</p>
-                        <p class="m-0">Contrato corporativo<br>Movistar</p>
-                    </div>
-                    <h5 class="m-0">$790.68</h5>
-                </div>
+      <h5>Vencen hoy:</h5>
+      <div class="row g-3 align-items-stretch">
+        <!-- Tarjeta Factura Impaga -->
+        <div class="col-12 col-md-6">
+          <div class="card {{ $expenses['amount'] > 0 ? 'card-border-shadow-danger low-opacity-bg' : 'card-border-shadow-success' }} d-flex flex-row align-items-center p-3 h-100">
+            <div class="expenses-card-content flex-grow-1">
+              @if($expenses['amount'] > 0)
+              <p class="m-0 text-danger bold">Factura Impaga</p>
+              <p class="m-0">Vencen hoy {{ $expenses['amount'] }} facturas<br>formando un total de</p>
+              <h5 class="m-0">${{ number_format($expenses['total'], 2) }}</h5>
+              @else
+              <p class="m-0 text-success bold">¡Felicidades!</p>
+              <p class="m-0">No tienes facturas impagas que vencen hoy</p>
+              @endif
             </div>
-            
-            <!-- Tarjeta Cobro -->
-            <div class="col-12 col-md-6">
-                <div class="card card-border-shadow-success d-flex flex-row align-items-center p-3 h-100">
-                    <div class="expenses-card-icon me-3">
-                        <img src="{{ asset('assets/img/ux-new/Ellipse-15.png') }}" alt="Juan Rodriguez" class="img-fluid" style="width: 40px; height: auto;">
-                    </div>
-                    <div class="expenses-card-content flex-grow-1">
-                        <p class="m-0 text-success bold">Último cobro realizado</p>
-                        <p class="m-0">Sandwiche Carne<br>Juan Rodriguez</p>
-                    </div>
-                    <h5 class="m-0">$790.68</h5>
-                </div>
-            </div>
+          </div>
         </div>
+
+        <!-- Tarjeta Cobro -->
+        <div class="col-12 col-md-6">
+          <div class="card card-border-shadow-success d-flex flex-row align-items-center p-3 h-100">
+            <div class="expenses-card-content flex-grow-1">
+              <p class="m-0 text-success bold">Último cobro realizado</p>
+              @if(!empty($amountOfOrders['last_order']))
+              <p class="m-0">
+                {{ $amountOfOrders['last_order']['product_name'] }}
+                @if($amountOfOrders['last_order']['other_products'] > 0)
+                <br>+ {{ $amountOfOrders['last_order']['other_products'] }} producto(s) más
+                @endif
+              </p>
+              <h5 class="m-0">${{ number_format($amountOfOrders['last_order']['total'], 2) }}</h5>
+              @else
+              <p class="m-0">No hay órdenes registradas</p>
+              @endif
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-
   <div class="col-12 col-md-5">
-    <div class="card h-100 bg-success-custom text-white">
-        <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-center">
-            <div class="mb-3 mb-md-0">
-                <p class="mb-1">Tu balance diario</p>
-                <h3 class="m-0 text-white">+ $18.765</h3>
-            </div>
-            <div class="text-end">
-                <p class="m-0">Ingresos: <span class="fw-bold">$38.765</span></p>
-                <p class="m-0">Egresos: <span class="fw-bold">$20.765</span></p>
-                <p class="m-0">Total: <span class="fw-bold">+ $18.765</span></p>
-            </div>
+    <div class="card h-100
+       @if($dailyBalance['balance'] > 0)
+            bg-success bg-opacity-50 text-dark
+        @elseif($dailyBalance['balance'] < 0)
+            bg-danger bg-opacity-50 text-dark
+        @else
+            bg-white text-black
+        @endif
+    ">
+      <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-center">
+        <div class="mb-3 mb-md-0">
+          <p class="mb-1">Tu balance diario</p>
+          <h3 class="m-0 ">
+            <span class="text-dark">
+              {{ $dailyBalance['balance'] > 0 ? '+' : ($dailyBalance['balance'] < 0 ? '-' : '') }}
+              ${{ number_format(abs($dailyBalance['balance']), 2) }}
+            </span>
+          </h3>
         </div>
+        <div class="text-end">
+          <p class="m-0">Ingresos: <span class="fw-bold">${{ number_format($dailyBalance['income'], 2) }}</span></p>
+          <p class="m-0">Egresos: <span class="fw-bold">${{ number_format($dailyBalance['expenses'], 2) }}</span></p>
+          <p class="m-0">Total: <span class="fw-bold">
+              {{ $dailyBalance['balance'] > 0 ? '+' : ($dailyBalance['balance'] < 0 ? '-' : '') }}
+              ${{ number_format(abs($dailyBalance['balance']), 2) }}
+            </span></p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -91,31 +118,14 @@
 <!-- Tarjetas segunda línea -->
 <div class="row mt-3 g-3 align-items-stretch">
   <div class="col-12 col-lg-8">
-      <div class="card h-100 p-3 justify-content-center text-center">
-          <h5 class="mb-4">Conectá tus cuentas</h5>
-          <div class="d-flex flex-wrap justify-content-center">
-              @foreach(['pedidos-ya', 'rappi', 'mercadopago', 'handy', 'fiserv', 'oca'] as $integration)
-                  <div class="me-3 mb-2">
-                      <img src="{{ asset("assets/img/ux-new/integraciones/$integration.png") }}" alt="Logo {{ ucfirst($integration) }}" class="img-fluid" style="width: 70px; height: auto;">
-                  </div>
-              @endforeach
-          </div>
-      </div>
-  </div>
-
-  <div class="col-12 col-sm-6 col-md-2 col-lg-2">
-    <div class="card h-100">
-      <div class="card-body">
-        <h5 class="d-block fw-medium mb-2">Ventas Realizadas</h5>
-        <h5 class="mb-2 bold">514</h5>
-        <span class="badge bg-label-info mb-3">+34%</span>
-        <small class="text-muted d-block">Objetivo de ventas</small>
-        <div class="d-flex align-items-center">
-          <div class="progress w-75 me-2" style="height: 8px;">
-            <div class="progress-bar bg-info" style="width: 78%" role="progressbar" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-          <span>78%</span>
+    <div class="card h-100 p-3 justify-content-center text-center">
+      <h5 class="mb-4">Conectá tus cuentas</h5>
+      <div class="d-flex flex-wrap justify-content-center">
+        @foreach(['pedidos-ya', 'rappi', 'mercadopago', 'handy', 'fiserv', 'oca'] as $integration)
+        <div class="me-3 mb-2">
+          <img src="{{ asset("assets/img/ux-new/integraciones/$integration.png") }}" alt="Logo {{ ucfirst($integration) }}" class="img-fluid" style="width: 70px; height: auto;">
         </div>
+        @endforeach
       </div>
     </div>
   </div>
@@ -123,13 +133,41 @@
   <div class="col-12 col-sm-6 col-md-2 col-lg-2">
     <div class="card h-100">
       <div class="card-body">
-        <h5 class="d-block fw-medium mb-2">Gastos</h5>
-        <h5 class="mb-2 bold">$18.487</h5>
-        <span class="badge bg-label-danger mb-3">+18%</span>
-        <div class="d-flex align-items-center">
-          <span>34%</span>
-        </div>
-        <small class="text-muted d-block">más que el mes pasado.</small>
+        <h5 class="d-block fw-medium mb-2">Ventas Realizadas</h5>
+        <h5 class="mb-2 bold">{{ $amountOfOrders['orders'] }}</h5>
+        @if($amountOfOrders['percentage'] > 0)
+        <span class="badge bg-label-success mb-3">+{{ $amountOfOrders['percentage'] }}%</span>
+        @elseif($amountOfOrders['percentage'] == 0)
+        <span class="badge bg-label-info mb-3">0%</span>
+        @else
+        <span class="badge bg-label-danger mb-3">{{ $amountOfOrders['percentage'] }}%</span>
+        @endif
+        <small class="text-muted d-block">comparado al mes anterior</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+    <div class="card h-100">
+      <div class="card-body">
+        <h5 class="d-block fw-medium mb-2">Gastos Realizados</h5>
+        <h5 class="mb-2 bold">${{ number_format($monthlyExpenses['total'], 2) }}</h5>
+        @if($monthlyExpenses['percentage'] > 0)
+        <span class="badge bg-label-danger mb-3">+{{ $monthlyExpenses['percentage'] }}%</span>
+        @elseif($monthlyExpenses['percentage'] == 0)
+        <span class="badge bg-label-info mb-3">0%</span>
+        @else
+        <span class="badge bg-label-success mb-3">{{ $monthlyExpenses['percentage'] }}%</span>
+        @endif
+        <small class="text-muted d-block">
+          @if($monthlyExpenses['percentage'] > 0)
+          más que el mes pasado
+          @elseif($monthlyExpenses['percentage'] < 0)
+            menos que el mes pasado
+            @else
+            igual que el mes pasado
+            @endif
+            </small>
       </div>
     </div>
   </div>
@@ -142,32 +180,34 @@
   <!-- Tarjeta de productos más vendidos con col-lg-4 para mejor distribución en pantallas grandes -->
   <div class="col-12 col-md-6 col-lg-4">
     <div class="card">
-      <div class="card-header">
+      <div class="card-header py-3">
         <h5 class="mb-0">Productos más vendidos <i class="fa-solid fa-chevron-down"></i></h5>
       </div>
       <div class="card-body p-0">
         <div class="report-list">
-          @foreach([['Remera Azul L', '42,845', '7.835'], ['Remera Gris L', '39,789', '6.352'], ['Gorra Azul', '29,378', '2.191']] as $index => $product)
-            <div class="report-list-item rounded-2 mb-3 p-2">
-              <div class="d-flex align-items-start">
-                <div class="report-list-icon shadow-sm me-2">
-                  <h4 class="m-0 p-0">{{ $index + 1 }}.</h4>
+          @foreach(array_slice($products, 0, 5) as $index => $product)
+          <div class="report-list-item rounded-2 mb-3 p-2">
+            <div class="d-flex align-items-start">
+              <div class="report-list-icon shadow-sm me-2">
+                <h4 class="m-0 p-0">{{ $index + 1 }}.</h4>
+              </div>
+              <div class="d-flex justify-content-between align-items-end w-100 flex-wrap gap-2">
+                <div class="d-flex flex-column">
+                  <span>{{ $product['name'] }}</span>
+                  <h5 class="mb-0">${{ number_format($product['total_sales'], 2) }}</h5>
                 </div>
-                <div class="d-flex justify-content-between align-items-end w-100 flex-wrap gap-2">
-                  <div class="d-flex flex-column">
-                    <span>{{ $product[0] }}</span>
-                    <h5 class="mb-0">${{ $product[1] }}</h5>
-                  </div>
-                  <div class="text-end">
-                    <small class="text-success bold">{{ $product[2] }}</small>
-                    <small class="text-success">Unidades</small>
-                  </div>
+                <div class="text-end">
+                  <small class="text-success bold">{{ $product['quantity'] }}</small>
+                  <small class="text-success">Unidades</small>
                 </div>
               </div>
             </div>
+          </div>
           @endforeach
           <div class="text-center mb-3">
-            <button class="btn btn-sm btn-primary">Ver Todos</button>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#topProductsModal">
+              Ver Top 10
+            </button>
           </div>
         </div>
       </div>
@@ -182,10 +222,16 @@
           <small class="card-subtitle">Reporte Mensual</small>
         </div>
         <div class="btn-group">
-          <button type="button" class="btn btn-sm btn-outline-primary text-muted dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">Oct.</button>
+          @php
+          $months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+          $currentMonth = date('n') - 1; // 0-based index for array
+          @endphp
+          <button type="button" class="btn btn-sm btn-outline-primary text-muted dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            {{ $months[$currentMonth] }}
+          </button>
           <ul class="dropdown-menu">
-            @foreach(['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'] as $month)
-              <li><a class="dropdown-item{{ $month == 'Octubre' ? ' active' : '' }}" href="javascript:void(0);">{{ $month }}</a></li>
+            @foreach($months as $index => $month)
+            <li><a class="dropdown-item{{ $index == $currentMonth ? ' active' : '' }}" href="javascript:void(0);">{{ $month }}</a></li>
             @endforeach
           </ul>
         </div>
@@ -195,11 +241,10 @@
       </div>
     </div>
   </div>
-</div>
 
-<!-- Tarjetas cuarta línea -->
-<div class="row mt-3 g-3">
-  @foreach([['primary', 'bx-check'], ['warning', 'bx-time'], ['danger', 'bx-error-circle'], ['info', 'bx-line-chart']] as $card)
+  {{-- <!-- Tarjetas cuarta línea -->
+  <div class="row mt-3 g-3">
+    @foreach([['primary', 'bx-check'], ['warning', 'bx-time'], ['danger', 'bx-error-circle'], ['info', 'bx-line-chart']] as $card)
     <div class="col-12 col-sm-6 col-lg-3">
       <div class="card h-100 card-border-shadow-{{ $card[0] }}">
         <div class="card-body">
@@ -213,6 +258,44 @@
         </div>
       </div>
     </div>
-  @endforeach
+    @endforeach
+  </div> --}}
+
+
+  <div class="modal fade" id="topProductsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Top 10 Productos más vendidos</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Producto</th>
+                  <th>Unidades Vendidas</th>
+                  <th>Total Ventas</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach(array_slice($products, 0, 10) as $index => $product)
+                <tr>
+                  <td>{{ $index + 1 }}</td>
+                  <td>{{ $product['name'] }}</td>
+                  <td>{{ $product['quantity'] }}</td>
+                  <td>${{ number_format($product['total_sales'], 2) }}</td>
+                </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
 @endsection

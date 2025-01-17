@@ -96,6 +96,7 @@ Route::prefix('admin')->middleware([
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/monthly-income/{month}', [DashboardController::class, 'monthlyIncomeDashboard'])->name('api.dashboard.monthly-income');
 
     // Data Tables
     Route::get('/clients/datatable', [ClientController::class, 'datatable'])->name('clients.datatable');
@@ -133,7 +134,7 @@ Route::prefix('admin')->middleware([
 
     // Stock de productos
     Route::get('/products/stock', [ProductController::class, 'stock'])->name('products.stock');
-    
+
     // Exportaciones
     Route::get('/products/export', [ProductController::class, 'exportToExcel'])->name('products.export');
     Route::get('/products/download-template', [ProductController::class, 'downloadTemplate'])->name('products.download-template');
@@ -206,7 +207,7 @@ Route::prefix('admin')->middleware([
         'currencies' => CurrencyController::class,
     ]);
 
-    //Freemium 
+    //Freemium
     Route::get('/raw-material-freemium', [RawMaterialController::class, 'createFreemium'])->name('raw-materials.createFreemium');
 
     // CRM
@@ -422,7 +423,6 @@ Route::prefix('admin')->middleware([
     Route::delete('/products/gallery/{imageId}', [ProductController::class, 'deleteGalleryImage'])->name('products.gallery.delete');
 
     // CRM y Contabilidad
-    Route::get('crm', [CrmController::class, 'index'])->name('crm');
     Route::get('receipts', [AccountingController::class, 'receipts'])->name('receipts');
     // Route::get('entries', [AccountingController::class, 'entries'])->name('entries');
     Route::get('entrie', [AccountingController::class, 'entrie'])->name('entrie');
