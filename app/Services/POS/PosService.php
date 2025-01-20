@@ -183,6 +183,18 @@ class PosService
     // Método para determinar el proveedor POS basado en el store_id
     protected function setPosIntegration($storeId)
     {
+        // Asegurarse de que store_id sea un entero
+        if (is_array($storeId)) {
+            $storeId = $storeId['id'] ?? null;
+        } elseif (is_object($storeId)) {
+            $storeId = $storeId->id ?? null;
+        }
+
+        if (!$storeId || !is_numeric($storeId)) {
+            throw new \Exception('El store_id proporcionado no es válido.');
+        }
+
+        // Buscar la integración POS para el store_id
         $integrationInfo = PosIntegrationStoreInfo::where('store_id', $storeId)->first();
 
         if (!$integrationInfo) {
@@ -201,10 +213,12 @@ class PosService
                 Log::info('Integración seleccionada: Fiserv');
                 $this->posIntegration = new FiservIntegrationService();
                 break;
+
             case 3: // Handy
                 Log::info('Integración seleccionada: Handy');
                 $this->posIntegration = new HandyIntegrationService();
                 break;
+
             case 4: // OCA
                 Log::info('Integración seleccionada: OCA');
                 $this->posIntegration = new OcaIntegrationService();
@@ -214,6 +228,7 @@ class PosService
                 throw new \Exception('Proveedor POS no soportado para esta tienda.');
         }
     }
+
 
 
     /**
@@ -292,7 +307,7 @@ class PosService
               'TransactionDateTimeyyyyMMddHHmmssSSS' => $transactionData['TransactionDateTimeyyyyMMddHHmmssSSS'] ?? now()->format('YmdHis') . '000',
               'TicketNumber' => $transactionData['TicketNumber'],
               'order_id' => $transactionData['order_id'] ?? null,
-              'Acquirer' => $transactionData['Acquirer'],
+              'Acquirer' => $transactionData['Acquirer'] ?? null,
           ];
 
           Log::info('Datos formateados para enviar a voidTransaction:', $formattedData);

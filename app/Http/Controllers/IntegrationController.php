@@ -439,13 +439,18 @@ class IntegrationController extends Controller
 
             $acceptsOca = $request->boolean('accepts_oca');
 
-            if ($acceptsOca) {
-                $validatedData = $request->validate([
-                    'system_id' => 'required|string|max:255',
-                    'branch' => 'required|string|max:255',
-                ]);
+            \DB::transaction(function () use ($store, $acceptsOca, $request) {
+                if ($acceptsOca) {
+                    $validatedData = $request->validate([
+                        'system_id' => 'required|string|max:255',
+                        'branch' => 'required|string|max:255',
+                    ]);
 
-                \DB::transaction(function () use ($store, $validatedData) {
+                    // Eliminar todas las vinculaciones que no sean de OCA en las cajas registradoras de esta tienda
+                    $store->cashRegisters()->each(function ($cashRegister) {
+                        $cashRegister->posDevices()->where('pos_provider_id', '!=', 4)->detach();
+                    });
+
                     // Eliminar cualquier entrada previa para esta tienda
                     $store->posIntegrationInfo()->delete();
 
@@ -460,26 +465,24 @@ class IntegrationController extends Controller
 
                     // Actualizar el pos_provider_id en la tabla stores
                     $store->update(['pos_provider_id' => 4]);
-                });
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'OCA activado con éxito.'
-                ]);
-            } else {
-                \DB::transaction(function () use ($store) {
+                } else {
                     // Eliminar la entrada de pos_integrations_store_info
                     $store->posIntegrationInfo()->where('pos_provider_id', 4)->delete();
 
+                    // Limpiar todas las vinculaciones con dispositivos OCA en las cajas registradoras de esta tienda
+                    $store->cashRegisters()->each(function ($cashRegister) {
+                        $cashRegister->posDevices()->where('pos_provider_id', 4)->detach();
+                    });
+
                     // Actualizar pos_provider_id a null en la tabla stores
                     $store->update(['pos_provider_id' => null]);
-                });
+                }
+            });
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'OCA desactivado con éxito.'
-                ]);
-            }
+            return response()->json([
+                'success' => true,
+                'message' => $acceptsOca ? 'OCA activado con éxito.' : 'OCA desactivado con éxito.'
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error al manejar la integración con OCA: ' . $e->getMessage());
             return response()->json([
@@ -488,6 +491,7 @@ class IntegrationController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Maneja la integración con Handy
@@ -510,13 +514,18 @@ class IntegrationController extends Controller
 
             $acceptsHandy = $request->boolean('accepts_handy');
 
-            if ($acceptsHandy) {
-                $validatedData = $request->validate([
-                    'system_id' => 'required|string|max:255',
-                    'branch' => 'required|string|max:255',
-                ]);
+            \DB::transaction(function () use ($store, $acceptsHandy, $request) {
+                if ($acceptsHandy) {
+                    $validatedData = $request->validate([
+                        'system_id' => 'required|string|max:255',
+                        'branch' => 'required|string|max:255',
+                    ]);
 
-                \DB::transaction(function () use ($store, $validatedData) {
+                    // Eliminar todas las vinculaciones que no sean de Handy
+                    $store->cashRegisters()->each(function ($cashRegister) {
+                        $cashRegister->posDevices()->where('pos_provider_id', '!=', 3)->detach();
+                    });
+
                     // Eliminar cualquier entrada previa para esta tienda
                     $store->posIntegrationInfo()->delete();
 
@@ -531,26 +540,24 @@ class IntegrationController extends Controller
 
                     // Actualizar el pos_provider_id en la tabla stores
                     $store->update(['pos_provider_id' => 3]);
-                });
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Handy activado con éxito.'
-                ]);
-            } else {
-                \DB::transaction(function () use ($store) {
+                } else {
                     // Eliminar la entrada de pos_integrations_store_info
                     $store->posIntegrationInfo()->where('pos_provider_id', 3)->delete();
 
-                    // Actualizar pos_provider_id a null en la tabla stores
-                    $store->update(['pos_provider_id' => null]);
-                });
+                    // Limpiar todas las vinculaciones de dispositivos Handy
+                    $store->cashRegisters()->each(function ($cashRegister) {
+                        $cashRegister->posDevices()->where('pos_provider_id', 3)->detach();
+                    });
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Handy desactivado con éxito.'
-                ]);
-            }
+                    // Actualizar pos_provider_id a null
+                    $store->update(['pos_provider_id' => null]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => $acceptsHandy ? 'Handy activado con éxito.' : 'Handy desactivado con éxito.'
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error al manejar la integración con Handy: ' . $e->getMessage());
             return response()->json([
@@ -559,6 +566,7 @@ class IntegrationController extends Controller
             ], 500);
         }
     }
+
 
 
     /**
@@ -582,13 +590,18 @@ class IntegrationController extends Controller
 
             $acceptsFiserv = $request->boolean('accepts_fiserv');
 
-            if ($acceptsFiserv) {
-                $validatedData = $request->validate([
-                    'system_id' => 'required|string|max:255',
-                    'branch' => 'required|string|max:255',
-                ]);
+            \DB::transaction(function () use ($store, $acceptsFiserv, $request) {
+                if ($acceptsFiserv) {
+                    $validatedData = $request->validate([
+                        'system_id' => 'required|string|max:255',
+                        'branch' => 'required|string|max:255',
+                    ]);
 
-                \DB::transaction(function () use ($store, $validatedData) {
+                    // Eliminar todas las vinculaciones que no sean de Fiserv
+                    $store->cashRegisters()->each(function ($cashRegister) {
+                        $cashRegister->posDevices()->where('pos_provider_id', '!=', 2)->detach();
+                    });
+
                     // Eliminar cualquier entrada previa para esta tienda
                     $store->posIntegrationInfo()->delete();
 
@@ -603,26 +616,24 @@ class IntegrationController extends Controller
 
                     // Actualizar el pos_provider_id en la tabla stores
                     $store->update(['pos_provider_id' => 2]);
-                });
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Fiserv activado con éxito.'
-                ]);
-            } else {
-                \DB::transaction(function () use ($store) {
+                } else {
                     // Eliminar la entrada de pos_integrations_store_info
                     $store->posIntegrationInfo()->where('pos_provider_id', 2)->delete();
 
-                    // Actualizar pos_provider_id a null en la tabla stores
-                    $store->update(['pos_provider_id' => null]);
-                });
+                    // Limpiar todas las vinculaciones de dispositivos Fiserv
+                    $store->cashRegisters()->each(function ($cashRegister) {
+                        $cashRegister->posDevices()->where('pos_provider_id', 2)->detach();
+                    });
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Fiserv desactivado con éxito.'
-                ]);
-            }
+                    // Actualizar pos_provider_id a null
+                    $store->update(['pos_provider_id' => null]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => $acceptsFiserv ? 'Fiserv activado con éxito.' : 'Fiserv desactivado con éxito.'
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error al manejar la integración con Fiserv: ' . $e->getMessage());
             return response()->json([
@@ -631,6 +642,7 @@ class IntegrationController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Maneja la integración con Scanntech
@@ -653,13 +665,18 @@ class IntegrationController extends Controller
 
             $acceptsScanntech = $request->boolean('accepts_scanntech');
 
-            if ($acceptsScanntech) {
-                $validatedData = $request->validate([
-                    'branch' => 'required|string|max:255',
-                    'company' => 'required|string|max:255'
-                ]);
+            \DB::transaction(function () use ($store, $acceptsScanntech, $request) {
+                if ($acceptsScanntech) {
+                    $validatedData = $request->validate([
+                        'branch' => 'required|string|max:255',
+                        'company' => 'required|string|max:255'
+                    ]);
 
-                \DB::transaction(function () use ($store, $validatedData) {
+                    // Eliminar todas las vinculaciones que no sean de Scanntech
+                    $store->cashRegisters()->each(function ($cashRegister) {
+                        $cashRegister->posDevices()->where('pos_provider_id', '!=', 1)->detach();
+                    });
+
                     // Eliminar cualquier entrada previa para esta tienda
                     $store->posIntegrationInfo()->delete();
 
@@ -674,26 +691,24 @@ class IntegrationController extends Controller
 
                     // Actualizar el pos_provider_id en la tabla stores
                     $store->update(['pos_provider_id' => 1]);
-                });
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Scanntech activado con éxito.'
-                ]);
-            } else {
-                \DB::transaction(function () use ($store) {
+                } else {
                     // Eliminar la entrada de pos_integrations_store_info
                     $store->posIntegrationInfo()->where('pos_provider_id', 1)->delete();
 
-                    // Actualizar pos_provider_id a null en la tabla stores
-                    $store->update(['pos_provider_id' => null]);
-                });
+                    // Limpiar todas las vinculaciones de dispositivos Scanntech
+                    $store->cashRegisters()->each(function ($cashRegister) {
+                        $cashRegister->posDevices()->where('pos_provider_id', 1)->detach();
+                    });
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Scanntech desactivado con éxito.'
-                ]);
-            }
+                    // Actualizar pos_provider_id a null
+                    $store->update(['pos_provider_id' => null]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => $acceptsScanntech ? 'Scanntech activado con éxito.' : 'Scanntech desactivado con éxito.'
+            ]);
         } catch (\Exception $e) {
             \Log::error('Error al manejar la integración con Scanntech: ' . $e->getMessage());
             return response()->json([
@@ -702,6 +717,7 @@ class IntegrationController extends Controller
             ], 500);
         }
     }
+
 
 
 

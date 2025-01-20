@@ -320,8 +320,8 @@ Route::prefix('admin')->middleware([
     Route::post('/pdv/close/{id}', [CashRegisterLogController::class, 'closeCashRegister']);
     Route::get('/pdv/clients/json', [CashRegisterLogController::class, 'getAllClients']);
     Route::get('/pdv', [CashRegisterLogController::class, 'index'])->name('pdv.index');
-    Route::get('/pdv/front', [CashRegisterLogController::class, 'front'])->name('pdv.front');
-    Route::get('/pdv/front2', [CashRegisterLogController::class, 'front2'])->name('pdv.front2');
+    Route::get('/pdv/new-sale', [CashRegisterLogController::class, 'newSale'])->name('pdv.new-sale');
+    Route::get('/pdv/checkout', [CashRegisterLogController::class, 'checkout'])->name('pdv.checkout');
 
     // Productos para caja registradora
     Route::get('/pdv/products/{id}', [CashRegisterLogController::class, 'getProductsByCashRegister']);

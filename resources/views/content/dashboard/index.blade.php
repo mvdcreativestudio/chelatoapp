@@ -121,7 +121,7 @@
     <div class="card h-100 p-3 justify-content-center text-center">
       <h5 class="mb-4">Conectá tus cuentas</h5>
       <div class="d-flex flex-wrap justify-content-center">
-        @foreach(['pedidos-ya', 'rappi', 'mercadopago', 'handy', 'fiserv', 'oca'] as $integration)
+        @foreach(['pymo', 'pedidos-ya', 'mercadopago', 'handy', 'fiserv', 'oca', 'scanntech'] as $integration)
         <div class="me-3 mb-2">
           <img src="{{ asset("assets/img/ux-new/integraciones/$integration.png") }}" alt="Logo {{ ucfirst($integration) }}" class="img-fluid" style="width: 70px; height: auto;">
         </div>

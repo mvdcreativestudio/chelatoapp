@@ -21,7 +21,7 @@
 <script>
     window.cashRegisterId = "{{ Session::get('open_cash_register_id') }}";
     window.baseUrl = "{{ url('') }}/";
-    window.frontRoute = "{{ route('pdv.front') }}";
+    window.frontRoute = "{{ route('pdv.new-sale') }}";
     // Configuración de las respuestas del POS Scanntech
     const posResponsesConfig = @json(config('posResponses'));
     window.currencySymbol = '{{ $currencySymbol }}';
@@ -38,7 +38,7 @@
     <div class="col-12 d-flex justify-content-between align-items-center mb-4">
       <h5 class="mb-0">
         <button class="btn m-0 p-0">
-          <a href="{{ route('pdv.front') }}"><i class="bx bx-chevron-left fs-2"></i></a>
+          <a href="{{ route('pdv.new-sale') }}"><i class="bx bx-chevron-left fs-2"></i></a>
         </button> Atras
       </h5>
     </div>
@@ -72,25 +72,25 @@
                   <i class="bx bx-x d-inline d-md-none"></i>
                 </button>
               </div>
-              
+
               <div class="client-details">
                 <div class="row g-3">
-                  <div class="col-auto px-4 border-end">
+                  <div class="col-auto border-end">
                     <small class="text-muted d-block mb-1">Nombre:</small>
                     <span id="client-name" class="text-body fw-semibold">-</span>
                   </div>
-                  
+
                   <div class="col-auto px-4 border-end">
                     <small class="text-muted d-block mb-1">Tipo:</small>
                     <span id="client-type" class="text-body fw-semibold">-</span>
                   </div>
-                  
+
                   <div class="col-auto px-4 border-end">
                     <p class="mb-0 d-none" id="client-company"></p>
                     <small class="text-muted d-block mb-1">CI:</small>
                     <span id="client-doc" class="text-body fw-semibold">-</span>
                   </div>
-                  
+
                   <div class="col px-4">
                     <small class="text-muted d-block mb-1">Lista:</small>
                     <span id="client-price-list" class="text-body fw-semibold">-</span>
@@ -205,8 +205,17 @@
           <h5 class="mb-3 font-weight-bold">Pago y Envío</h5>
           @if($posDeviceName !== null)
             <h6 class="mb-3 text-success">POS Vinculado: <strong>{{$posDeviceName}}</strong></h6>
-          @elseif($posDeviceName === null)
-            <h6 class="mb-3 text-danger">Sin terminal POS Vinculada</h6>
+          @elseif($store && $store->pos_provider_id !== null)
+            <h6 class="mb-3 text-danger">Sin terminal POS vinculada</h6>
+          @else
+            <h6 class="mb-3 text-warning">
+              Sin integración POS
+              <i class="fas fa-question-circle text-primary"
+                 data-bs-toggle="tooltip"
+                 data-bs-placement="right"
+                 title="Puedes vincular un proveedor de POS desde 'Herramientas'. Si no lo haces, las ventas marcadas con crédito o débito serán definidas con este medio de pago pero no se ejecutará la venta a través de una terminal.">
+              </i>
+            </h6>
           @endif
         </div>
 
@@ -280,7 +289,7 @@
     </div>
 
       <div class="demo-inline-spacing d-flex justify-content-between">
-        <a href="{{ route('pdv.front') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
+        <a href="{{ route('pdv.new-sale') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
         <button class="btn btn-success w-100"><i class="bx bx-check"></i> Finalizar venta</button>
       </div>
       <!-- Contenedor para el estado de la transacción -->

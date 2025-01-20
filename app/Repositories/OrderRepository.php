@@ -120,6 +120,8 @@ class OrderRepository
         // Extraer datos del cliente solo si client_id está presente
         $clientData = $request->client_id ? $this->extractClientData($request->validated()) : [];
         $orderData = $this->prepareOrderData($request->payment_method, $request);
+        Log::info('Datos preparados para la orden', ['orderData' => $orderData]);
+
 
         DB::beginTransaction();
 
@@ -290,20 +292,26 @@ class OrderRepository
         $products = json_decode($request['products'], true);
         $subtotal = 0;
 
-        // Recorre los productos y usa el precio de la lista de precios si está disponible
         foreach ($products as $item) {
-            // Si hay un precio específico en el carrito (de la lista de precios), úsalo
             $price = $item['price'] ?? $item['old_price'];
             $subtotal += $price * $item['quantity'];
         }
 
         Log::info('Request de prepareOrderData', ['request' => $request->all()]);
+        Log::info('Store_Id de prepareOrderData', ['store_id' => $request->store_id]);
+
+        // Asegurar que store_id sea un entero
+        $storeId = is_array($request->store_id)
+            ? $request->store_id['id']
+            : ($request->store_id instanceof Store ? $request->store_id->id : $request->store_id);
+
+        Log::info('Store ID validado para la orden', ['store_id' => $storeId]);
 
         return [
             'date' => now(),
             'time' => now()->format('H:i:s'),
             'origin' => 'physical',
-            'store_id' => $request->store_id,
+            'store_id' => $storeId, // Usamos la variable corregida
             'subtotal' => $subtotal,
             'tax' => 0,
             'shipping' => session('costoEnvio', 0),
@@ -320,6 +328,8 @@ class OrderRepository
             'cash_register_log_id' => $request->cash_register_log_id,
         ];
     }
+
+
 
     /**
      * Carga las relaciones de un pedido.

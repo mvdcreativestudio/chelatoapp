@@ -438,7 +438,7 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
                                             <span>{{ $store['store'] }}</span>
                                         </div>
                                     </td>
-                                    <td>{{ $settings->currency_symbol }}{{ number_format($store['storeTotal'], 2, ',', '.') }}</td>
+                                    <td>{{ $settings->currency_symbol }}{{ $store['storeTotal'] }}</td>
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="progress w-100 me-3" style="height: 8px;">

@@ -111,13 +111,20 @@ class PosController extends Controller
       }
     }
 
-    // Obtener el token de acceso para el proveedor POS
     public function getPosToken(Request $request)
     {
         $storeId = $request->input('store_id');
 
+        // Asegurarse de que store_id sea un entero
+        if (is_array($storeId)) {
+            $storeId = $storeId['id'] ?? null;
+        } elseif (is_object($storeId)) {
+            $storeId = $storeId->id ?? null;
+        }
+
         if (!$storeId) {
-            return response()->json(['error' => 'Store ID no proporcionado'], 400);
+            Log::error("Store ID no proporcionado o no válido");
+            return response()->json(['error' => 'Store ID no proporcionado o no válido'], 400);
         }
 
         try {
@@ -139,10 +146,9 @@ class PosController extends Controller
                 if (!$accessToken) {
                     Log::error("No se pudo obtener el token para el store ID: " . $storeId);
                     return response()->json(['error' => 'No se pudo obtener el token de acceso para el proveedor POS'], 500);
-                } else {
-                  Log::info("Token obtenido para el store ID: " . $storeId);
                 }
 
+                Log::info("Token obtenido para el store ID: " . $storeId);
                 return response()->json(['access_token' => $accessToken]);
             }
 
@@ -153,6 +159,7 @@ class PosController extends Controller
             return response()->json(['error' => 'Error al obtener el token del POS'], 500);
         }
     }
+
 
 
 
@@ -392,11 +399,9 @@ class PosController extends Controller
                 $formattedData = json_decode($formattedData, true); // Decodificar si es una cadena JSON
             }
 
-            if (!is_array($formattedData) || !isset($formattedData['Acquirer'])) {
-                throw new \Exception('El campo Acquirer no está presente en formatted_data.');
-            }
 
-            $acquirer = $formattedData['Acquirer'];
+
+            $acquirer = $formattedData['Acquirer'] ?? null;
 
             // Agregar el Acquirer al request validado
             $validated['Acquirer'] = $acquirer;

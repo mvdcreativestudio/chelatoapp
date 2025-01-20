@@ -759,6 +759,13 @@ class FiservIntegrationService implements PosIntegrationInterface
     }
 }
 
-
+public function cancelTransaction(array $transactionData): array
+{
+    // Implementación acorde a la interfaz
+    return [
+        'success' => false,
+        'message' => 'Cancel transaction not implemented.'
+    ];
+}
 
 }

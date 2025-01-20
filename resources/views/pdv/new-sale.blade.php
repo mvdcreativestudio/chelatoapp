@@ -111,26 +111,26 @@ $currencySymbol = $settings->currency_symbol;
         <i class="bx bx-x d-inline d-md-none"></i>
       </button>
     </div>
-    
+
     <div class="client-details">
       <div class="row g-3">
-        
-        <div class="col-auto px-4 border-end">
+
+        <div class="col-auto border-end">
           <small class="text-muted d-block mb-1">Nombre:</small>
           <span id="client-name" class="text-body fw-semibold">-</span>
         </div>
-        
+
         <div class="col-auto px-4 border-end">
           <small class="text-muted d-block mb-1">Tipo:</small>
           <span id="client-type" class="text-body fw-semibold">-</span>
         </div>
-        
+
         <div class="col-auto px-4 border-end">
           <p class="mb-0 d-none" id="client-company"></p>
           <small class="text-muted d-block mb-1">CI:</small>
           <span id="client-doc" class="text-body fw-semibold">-</span>
         </div>
-        
+
         <div class="col px-4">
           <small class="text-muted d-block mb-1">Lista:</small>
           <span id="client-price-list" class="text-body fw-semibold">-</span>
@@ -184,7 +184,7 @@ $currencySymbol = $settings->currency_symbol;
         <!-- Botón de acciones -->
         <div class="d-flex justify-content-end mt-3 animate__animated animate__fadeIn">
           <button class="btn btn-outline-danger me-2" type="button" data-bs-dismiss="modal">Cerrar</button>
-          <a href="{{ route('pdv.front2') }}" class="btn btn-primary disabled" id="finalizarVentaBtn" aria-disabled="true" tabindex="-1">Finalizar Venta</a>
+          <a href="{{ route('pdv.checkout') }}" class="btn btn-primary disabled" id="finalizarVentaBtn" aria-disabled="true" tabindex="-1">Finalizar Venta</a>
         </div>
       </div>
     </div>
