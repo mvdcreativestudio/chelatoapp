@@ -106,6 +106,7 @@ $(function () {
             if (orderData.store_name) {
               uniqueStore.add(orderData.store_name);
             }
+
             const paymentStatusText =
               orderData.payment_status === 'paid'
                 ? 'Pagado'
@@ -114,10 +115,10 @@ $(function () {
                   : 'Pago Fallido';
             const paymentStatusClass =
               orderData.payment_status === 'paid'
-                ? 'bg-success'
+                ? 'bg-label-success'
                 : orderData.payment_status === 'pending'
-                  ? 'bg-warning'
-                  : 'bg-danger';
+                  ? 'bg-label-warning'
+                  : 'bg-label-danger';
             const shippingStatusText =
               orderData.shipping_status === 'delivered'
                 ? 'Entregado'
@@ -126,38 +127,49 @@ $(function () {
                   : 'No enviado';
             const shippingStatusClass =
               orderData.shipping_status === 'delivered'
-                ? 'bg-success'
+                ? 'bg-label-success'
                 : orderData.shipping_status === 'shipped'
-                  ? 'bg-warning'
-                  : 'bg-danger';
+                  ? 'bg-label-warning'
+                  : 'bg-label-danger';
 
-            // Determinar la clase para el ícono de factura y el texto del tooltip
-            const isBilledClass = orderData.is_billed === 1 ? 'bg-label-success' : 'bg-label-danger';
-            const billedTooltip = orderData.is_billed === 1 ? 'Facturada' : 'No Facturada';
-            const isBilledIcon = `
-              <div class="order-billed-icon ${isBilledClass}" data-bs-toggle="tooltip" data-bs-placement="top" title="${billedTooltip}">
-                <i class="bx bx-receipt"></i>
+            // Texto y clase para el estado de facturación
+            const billingStatusText = orderData.is_billed === 1 ? 'Facturada' : 'No Facturada';
+            const billingStatusClass = orderData.is_billed === 1 ? 'bg-label-success' : 'bg-label-danger';
+
+            // Tarjeta actualizada
+            const card = `
+              <div class="col-md-6 col-lg-4 col-12 mb-4">
+                <div class="order-card position-relative p-3 d-flex flex-column justify-content-between shadow-sm rounded">
+                  <!-- Información de la Orden -->
+                  <div>
+                    <h5 class="order-title">#${orderData.id} - ${orderData.client_name}</h5>
+                    <p class="order-date text-muted small">${moment(orderData.date).format('DD/MM/YYYY')}</p>
+                    <div class="d-flex gap-2 my-2">
+                      <span class="badge ${paymentStatusClass}">${paymentStatusText}</span>
+                      <span class="badge ${shippingStatusClass}">${shippingStatusText}</span>
+                      <span class="badge ${billingStatusClass}">${billingStatusText}</span>
+                    </div>
+                  </div>
+
+                  <!-- Total y Acciones -->
+                  <div class="d-flex align-items-center justify-content-between mt-3">
+                    <!-- Precio -->
+                    <span class="order-total fw-bold text-primary">${currencySymbol}${parseFloat(orderData.total).toFixed(2)}</span>
+
+                    <!-- Íconos de Acciones -->
+                    <div class="d-flex gap-2">
+                      <a href="${baseUrl}admin/orders/${orderData.uuid}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver">
+                        <i class="bx bx-show"></i>
+                      </a>
+                      <button data-id="${orderData.id}" class="btn btn-sm btn-outline-danger delete-order" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar">
+                        <i class="bx bx-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             `;
 
-            const card = `
-                  <div class="col-md-6 col-lg-4 col-12 mb-4">
-                    <div class="order-card position-relative">
-                      ${isBilledIcon} <!-- Agregar el ícono de factura -->
-                      <div class="order-card-body">
-                        <h5 class="order-title">#${orderData.id}-${orderData.client_name}</h5>
-                        <p class="order-date text-muted small">${moment(orderData.date).format('DD/MM/YYYY')}</p>
-                        <p class="order-payment-status"><span class="badge ${paymentStatusClass}">${paymentStatusText}</span></p>
-                        <p class="order-shipping-status"><span class="badge ${shippingStatusClass}">${shippingStatusText}</span></p>
-                        <h6 class="order-total">${currencySymbol}${parseFloat(orderData.total).toFixed(2)}</h6>
-                        <div class="d-inline-flex justify-content-end mt-auto mb-2 gap-1">
-                          <a href="${baseUrl}admin/orders/${orderData.uuid}" class="btn view-order p-1"><i class="far fa-eye"></i></a>
-                          <button data-id="${orderData.id}" class="btn delete-order p-1 delete-record"><i class="far fa-trash-alt"></i></button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                `;
             cardContainer.append(card);
           });
 
