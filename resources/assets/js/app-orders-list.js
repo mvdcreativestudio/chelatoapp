@@ -161,7 +161,7 @@ $(function () {
                       <a href="${baseUrl}admin/orders/${orderData.uuid}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver">
                         <i class="bx bx-show"></i>
                       </a>
-                      <button data-id="${orderData.id}" class="btn btn-sm btn-outline-danger delete-order" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar">
+                      <button data-id="${orderData.id}" class="btn btn-sm btn-outline-danger delete-order delete-record" data-bs-toggle="tooltip" data-bs-placement="top" title="Eliminar">
                         <i class="bx bx-trash"></i>
                       </button>
                     </div>
