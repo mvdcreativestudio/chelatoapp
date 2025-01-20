@@ -187,7 +187,6 @@ Route::prefix('admin')->middleware([
         'orders' => OrderController::class,
         'marketing/coupons' => CouponController::class,
         'company-settings' => CompanySettingsController::class,
-        'clients' => ClientController::class,
         'productions' => ProductionController::class,
         'points-of-sales' => CashRegisterController::class,
         'pos-orders' => PosOrderController::class,
@@ -334,7 +333,7 @@ Route::prefix('admin')->middleware([
     Route::post('/pdv/cart', [CashRegisterLogController::class, 'saveCart']);
     Route::get('/pdv/cart', [CashRegisterLogController::class, 'getCart']);
     Route::post('/pdv/client-session', [CashRegisterLogController::class, 'saveClient']);
-    Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient']);
+    Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient'])  ;
     Route::get('/pdv/storeid-session', [CashRegisterLogController::class, 'getStoreId']);
 
     // Datacenter

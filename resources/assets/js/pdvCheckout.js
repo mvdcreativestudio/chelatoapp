@@ -1062,7 +1062,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
     // Crear el objeto con los datos a enviar
     let data = {
-      store_id: sessionStoreId,
+      store_id: parseInt(sessionStoreId, 10),
       name: nombre.value.trim(),
       lastname: apellido.value.trim(),
       type: tipo.value,

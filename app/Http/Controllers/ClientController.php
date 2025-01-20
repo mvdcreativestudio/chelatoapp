@@ -237,17 +237,25 @@ class ClientController extends Controller
      * @param int $id
      * @return RedirectResponse | JsonResponse
      */
-    public function destroy(int $id): RedirectResponse | JsonResponse
+    public function destroy(int $id): JsonResponse
     {
-        $this->clientRepository->deleteClient($id);
+        try {
+            // Intentar eliminar el cliente usando el repositorio
+            $this->clientRepository->deleteClient($id);
 
-        // Si la solicitud es de tipo AJAX, devolver una respuesta JSON
-        if (request()->expectsJson()) {
-            return response()->json(['success' => 'Cliente eliminado correctamente.']);
+            return response()->json(['success' => true, 'message' => 'Cliente eliminado correctamente.']);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Manejar violaciones de restricciones de clave foránea
+            if ($e->getCode() === '23000') { // Código para Integrity Constraint Violation
+                return response()->json(['success' => false, 'message' => 'No se puede eliminar el cliente porque está asociado a una cuenta corriente.'], 400);
+            }
+
+            // Manejar otros errores inesperados
+            return response()->json(['success' => false, 'message' => 'Ocurrió un error al intentar eliminar el cliente.'], 500);
         }
-
-        return redirect()->route('clients.index')->with('success', 'Cliente eliminado correctamente.');
     }
+
+
 
     /**
      * Obtiene los datos para mostrar en la tabla de clientes.

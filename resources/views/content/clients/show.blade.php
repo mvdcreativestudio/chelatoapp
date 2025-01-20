@@ -19,6 +19,7 @@
 @section('page-script')
 @vite([
   'resources/assets/js/modal-edit-user.js',
+  'resources/assets/js/delete-client.js',
 ])
 <script>
   window.baseUrl = "{{ url('/') }}";
@@ -42,10 +43,10 @@
             <a href="javascript:;" class="btn btn-sm btn-primary me-2" data-bs-target="#editUser" data-bs-toggle="modal">
               <i class="bx bx-edit"></i> Editar
             </a>
-            <form action="{{ route('clients.destroy', $client->id) }}" class="mb-0" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este cliente?')">
+            <form id="deleteClientForm" data-url="{{ route('clients.destroy', $client->id) }}" class="mb-0">
               @csrf
               @method('DELETE')
-              <button type="submit" class="btn btn-sm btn-danger">
+              <button id="deleteClientButton" type="button" class="btn btn-sm btn-danger">
                 <i class="bx bx-trash"></i> Eliminar
               </button>
             </form>

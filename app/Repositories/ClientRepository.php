@@ -26,7 +26,7 @@ class ClientRepository
     public function getClientsForDatatable(): mixed
     {
         // Iniciar la consulta básica
-        $query = Client::select(['id', 'name', 'lastname', 'company_name', 'type', 'rut', 'ci', 'address', 'city', 'state', 'country', 'phone', 'email', 'website', 'logo', 'passport', 'other_id_type', 'branch'])
+        $query = Client::select(['id', 'name', 'lastname', 'company_name', 'type', 'rut', 'ci', 'address', 'city', 'state', 'country', 'phone', 'email', 'website', 'logo', 'passport', 'other_id_type'])
             ->orderBy('name', 'asc');
 
         // Verificar la configuración de clients_has_store

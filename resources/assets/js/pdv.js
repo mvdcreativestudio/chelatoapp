@@ -925,31 +925,31 @@ $(document).ready(function () {
     $('#tipoCliente').change(function() {
         clearErrors();
         const tipo = $(this).val();
-        
+
         if (tipo == 'individual') {
             $('#ciField').show();
             $('#ciCliente').attr('required', false);
-    
+
             $('#nombreCliente, #apellidoCliente').attr('required', true);
             $('#nombreAsterisk, #apellidoAsterisk').show();
             $('label[for="nombreCliente"] .text-danger, label[for="apellidoCliente"] .text-danger').show();
 
             $('.responsible-text').hide();
-    
+
             $('#rutField, #razonSocialField').hide();
             $('#razonSocialCliente, #rutCliente').val('').removeAttr('required');
             $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').hide();
-    
+
         } else if (tipo == 'company') {
             $('#ciField').hide();
             $('#ciCliente').val('').removeAttr('required');
-            
+
             $('label[for="nombreCliente"] .text-danger, label[for="apellidoCliente"] .text-danger').hide();
             $('#nombreCliente, #apellidoCliente').removeAttr('required');
             $('#nombreAsterisk, #apellidoAsterisk').hide();
-    
+
             $('.responsible-text').show();
-    
+
             $('#rutField, #razonSocialField').show();
             $('#razonSocialCliente, #rutCliente').attr('required', true);
             $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').show();
@@ -966,13 +966,13 @@ $(document).ready(function () {
         let requiredFields = {};
 
         if (clientType === 'individual') {
-            requiredFields.nombreCliente = 'Nombre';           
-            requiredFields.apellidoCliente = 'Apellido';      
+            requiredFields.nombreCliente = 'Nombre';
+            requiredFields.apellidoCliente = 'Apellido';
         } else if (clientType === 'company') {
             requiredFields.razonSocialCliente = 'Razón Social';
-            requiredFields.rutCliente = 'RUT';                 
+            requiredFields.rutCliente = 'RUT';
         }
-    
+
         let missingFields = [];
         for (let field in requiredFields) {
             const value = document.getElementById(field)?.value;
@@ -980,7 +980,7 @@ $(document).ready(function () {
                 missingFields.push(requiredFields[field]);
             }
         }
-    
+
 
         if (missingFields.length > 0) {
             const offcanvas = document.getElementById('crearClienteOffcanvas');
