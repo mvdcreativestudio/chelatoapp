@@ -35,14 +35,26 @@
     <div class="card">
       <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">
-          <a href="{{ route('clients.index') }}" class="btn btn-sm btn-primary">
-            <i class="bx bx-arrow-back me-1"></i>Volver a Clientes
-          </a>
+          <div class="d-flex align-items-center">
+            <a href="{{ route('clients.index') }}" class="btn btn-sm btn-primary me-2">
+              <i class="bx bx-arrow-back me-1"></i>Volver a Clientes
+            </a>
+            <a href="javascript:;" class="btn btn-sm btn-primary me-2" data-bs-target="#editUser" data-bs-toggle="modal">
+              <i class="bx bx-edit"></i> Editar
+            </a>
+            <form action="{{ route('clients.destroy', $client->id) }}" class="mb-0" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este cliente?')">
+              @csrf
+              @method('DELETE')
+              <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bx bx-trash"></i> Eliminar
+              </button>
+            </form>
+          </div>
           <h2 class="card-title mb-0">
             @if($client->type == 'individual')
               <i class="bx bx-user me-2"></i>{{ $client->name }} {{ $client->lastname }}
             @elseif($client->type == 'company')
-              <i class="bx bx-building me-2"></i>{{ $client->company_name }}
+              <i class="bx bx-building me-2"></i>{{ $client->company_name }} ({{ $client->branch }})
             @endif
           </h2>
         </div>
@@ -165,8 +177,24 @@
       <h5 class="pb-2 border-bottom mb-4">Detalles</h5>
       <div class="info-container">
         <ul class="list-unstyled">
+          @if($client->type == 'company')
+            <li class="mb-3">
+              <span class="fw-medium me-2">Razón Social</span>
+              <span>{{ $client->company_name }}</span>
+            </li>
+            <li class="mb-3">
+              <span class="fw-medium me-2">RUT:</span>
+              <span>{{ $client->rut }}</span>
+            </li>
+            @if($client->branch)
+              <li class="mb-3">
+                <span class="fw-medium me-2">Sucursal</span>
+                <span>{{ $client->branch }}</span>
+              </li>
+            @endif
+          @endif
           <li class="mb-3">
-            <span class="fw-medium me-2">Nombre y Apellido:</span>
+            <span class="fw-medium me-2">Representante:</span>
             <span>{{ $client->name }} {{ $client->lastname }}</span>
           </li>
           <li class="mb-3">
@@ -224,11 +252,8 @@
             <span class="fw-medium me-2">Listas de Precios:</span>
             <span>{{ $priceListName }}</span>
           </li>
-          
+
         </ul>
-        <div class="d-flex justify-content-center pt-3">
-          <a href="javascript:;" class="btn btn-primary me-3" data-bs-target="#editUser" data-bs-toggle="modal">Editar</a>
-        </div>
       </div>
     </div>
   </div>
@@ -256,6 +281,20 @@
             <label class="form-label" for="modalEditUserLastName">Apellido</label>
             <input type="text" id="modalEditUserLastName" name="lastname" class="form-control" value="{{ $client->lastname }}" />
           </div>
+          @if($client->type == 'company')
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="modalEditUserCompanyName">Razón Social</label>
+              <input type="text" id="modalEditUserCompanyName" name="company_name" class="form-control" value="{{ $client->company_name }}" />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label" for="modalEditUserBranch">Sucursal</label>
+              <input type="text" id="modalEditUserBranch" name="branch" class="form-control" value="{{ $client->branch }}" />
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="modalEditUserRut">RUT</label>
+              <input type="text" id="modalEditUserRut" name="rut" class="form-control" value="{{ $client->rut }}" />
+            </div>
+          @endif
           <div class="col-12 col-md-6">
             <label class="form-label" for="modalEditUserEmail">Email</label>
             <input type="text" id="modalEditUserEmail" name="email" class="form-control" value="{{ $client->email }}" />
@@ -264,6 +303,12 @@
             <label class="form-label" for="modalEditUserPhone">Teléfono</label>
             <input type="text" id="modalEditUserPhone" name="phone" class="form-control" value="{{ $client->phone }}" />
           </div>
+          @if($client->type === 'individual')
+          <div class="col-12">
+            <label class="form-label" for="modalEditUserCi">Documento</label>
+            <input type="text" id="modalEditUserCi" name="ci" class="form-control" value="{{ $client->ci }}" />
+          </div>
+          @endif
           <div class="col-12">
             <label class="form-label" for="modalEditUserAddress">Dirección</label>
             <input type="text" id="modalEditUserAddress" name="address" class="form-control" value="{{ $client->address }}" />
@@ -281,7 +326,7 @@
             <select id="modalEditUserPriceList" name="price_list_id" class="form-control">
                 @if($client->priceLists->count() == 0)
                     <option value="" disabled selected>No hay listas de precios disponibles</option>
-                @else 
+                @else
                     <option value="" disabled selected>Seleccione una lista de precios</option>
                 @endif
                 @foreach($priceLists as $priceList)

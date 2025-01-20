@@ -26,7 +26,7 @@ class ClientRepository
     public function getClientsForDatatable(): mixed
     {
         // Iniciar la consulta básica
-        $query = Client::select(['id', 'name', 'lastname', 'company_name', 'type', 'rut', 'ci', 'address', 'city', 'state', 'country', 'phone', 'email', 'website', 'logo', 'doc_type', 'document'])
+        $query = Client::select(['id', 'name', 'lastname', 'company_name', 'type', 'rut', 'ci', 'address', 'city', 'state', 'country', 'phone', 'email', 'website', 'logo', 'passport', 'other_id_type', 'branch'])
             ->orderBy('name', 'asc');
 
         // Verificar la configuración de clients_has_store
@@ -86,9 +86,11 @@ class ClientRepository
     public function deleteClient(int $id): bool
     {
         $client = Client::find($id);
+
         if ($client) {
             return $client->delete();
         }
+
         return false;
     }
 }
