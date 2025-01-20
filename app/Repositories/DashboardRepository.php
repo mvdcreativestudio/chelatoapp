@@ -49,8 +49,10 @@ class DashboardRepository
 
         foreach ($orders as $order) {
             $products = json_decode($order->products, true);
-
             foreach ($products as $product) {
+                if (!isset($product['id'])) {
+                    continue;
+                }
                 $productId = $product['id'];
                 $quantity = $product['quantity'];
 
