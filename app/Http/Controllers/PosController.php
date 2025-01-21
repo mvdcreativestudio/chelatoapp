@@ -50,7 +50,7 @@ class PosController extends Controller
             $validated = $request->validate([
                 'TransactionId' => 'required',
                 'STransactionId' => 'required',
-                'store_id' => 'required|integer', // Asegúrate de que esté definido
+                'store_id' => 'required|integer',
             ]);
 
             // Llamar al servicio con los datos validados

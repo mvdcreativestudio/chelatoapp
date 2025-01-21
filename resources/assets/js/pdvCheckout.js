@@ -173,84 +173,84 @@ $(document).ready(function () {
   }
 
 
-
-
-
-
   function consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid) {
     let attempts = 0;
     const maxAttempts = 30;
 
     function poll() {
-      if (attempts >= maxAttempts) {
-        showTransactionStatus({
-          message: 'El tiempo de espera para la transacción ha expirado.',
-          icon: 'error',
-          showCloseButton: true
-        });
-        return;
-      }
-
-      attempts++;
-
-      $.ajax({
-        url: `${baseUrl}api/pos/check-transaction-status`,
-        type: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        data: JSON.stringify({ TransactionId: transactionId, STransactionId: sTransactionId, store_id: sessionStoreId }),
-        success: function (response) {
-          const { transactionSuccess, message, icon, keepPolling, details } = response;
-
-          if (transactionSuccess) {
-            // Actualizar el estado de pago y confirmar la venta
-            $.ajax({
-              url: `${baseUrl}admin/orders/${orderId}/set-order-as-paid`,
-              type: 'POST',
-              data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                payment_status: 'paid'
-              },
-              success: function () {
-                confirmarVenta({ order_uuid: orderUuid }, 'POS');
-              },
-              error: function (xhr) {
-                console.error('Error al actualizar el estado de pago de la orden:', xhr.responseText);
-                showTransactionStatus({
-                  message: 'Error al actualizar el estado del pedido.',
-                  icon: 'error',
-                  showCloseButton: true
-                });
-              }
-            });
-          } else if (keepPolling) {
-            setTimeout(poll, 2000);
-          } else {
+        if (attempts >= maxAttempts) {
             showTransactionStatus({
-              message: message || 'Transacción fallida.',
-              icon: icon || 'error',
-              showCloseButton: true
+                message: 'El tiempo de espera para la transacción ha expirado.',
+                icon: 'error',
+                showCloseButton: true
             });
-
-            // Manejar casos como transacción cancelada (CT)
-            if (details && details.PosResponseCode === 'CT') {
-              console.warn('Transacción cancelada desde el dispositivo POS.');
-            }
-          }
-        },
-        error: function (xhr) {
-          console.error('Error al consultar estado de transacción:', xhr.responseText);
+            return;
         }
-      });
+
+        attempts++;
+
+        // Asegúrate de que `sessionStoreId` sea solo el ID
+        const storeId = typeof sessionStoreId === 'object' ? sessionStoreId.id : sessionStoreId;
+
+        $.ajax({
+            url: `${baseUrl}api/pos/check-transaction-status`,
+            type: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            data: JSON.stringify({
+                TransactionId: transactionId,
+                STransactionId: sTransactionId,
+                store_id: storeId // Solo enviamos el ID
+            }),
+            success: function (response) {
+                const { transactionSuccess, message, icon, keepPolling, details } = response;
+
+                if (transactionSuccess) {
+                    // Actualizar el estado de pago y confirmar la venta
+                    $.ajax({
+                        url: `${baseUrl}admin/orders/${orderId}/set-order-as-paid`,
+                        type: 'POST',
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr('content'),
+                            payment_status: 'paid'
+                        },
+                        success: function () {
+                            confirmarVenta({ order_uuid: orderUuid }, 'POS');
+                        },
+                        error: function (xhr) {
+                            console.error('Error al actualizar el estado de pago de la orden:', xhr.responseText);
+                            showTransactionStatus({
+                                message: 'Error al actualizar el estado del pedido.',
+                                icon: 'error',
+                                showCloseButton: true
+                            });
+                        }
+                    });
+                } else if (keepPolling) {
+                    setTimeout(poll, 2000);
+                } else {
+                    showTransactionStatus({
+                        message: message || 'Transacción fallida.',
+                        icon: icon || 'error',
+                        showCloseButton: true
+                    });
+
+                    // Manejar casos como transacción cancelada (CT)
+                    if (details && details.PosResponseCode === 'CT') {
+                        console.warn('Transacción cancelada desde el dispositivo POS.');
+                    }
+                }
+            },
+            error: function (xhr) {
+                console.error('Error al consultar estado de transacción:', xhr.responseText);
+            }
+        });
     }
 
     poll();
   }
-
-
-
 
 
   function confirmarVenta(response, paymentMethod) {
