@@ -94,8 +94,7 @@ class CashRegister extends Model
     }
 
 
-    /**
-     * Obtiene los POS de Mercado Pago asociados a la caja registradora.
+     /** Obtiene los POS de Mercado Pago asociados a la caja registradora.
      *
      * @return BelongsToMany
      */
