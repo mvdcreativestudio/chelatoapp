@@ -27,6 +27,8 @@
     window.currencySymbol = '{{ $currencySymbol }}';
     window.userPermissions = @json(auth()->user()->getAllPermissions()->pluck('name')->toArray());
     window.csrfToken = "{{ csrf_token() }}";
+    window.storePosProviderId = "{{ $store->pos_provider_id ?? '' }}";
+    window.posDeviceName = "{{ $posDeviceName ?? '' }}";
 </script>
 
 @section('content')

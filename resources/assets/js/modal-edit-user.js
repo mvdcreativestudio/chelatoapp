@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', function (e) {
         name: formData.get('name'),
         lastname: formData.get('lastname'),
         email: formData.get('email'),
+        ci: formData.get('ci'),
+        rut: formData.get('rut'),
         phone: formData.get('phone'),
         address: formData.get('address'),
         city: formData.get('city'),

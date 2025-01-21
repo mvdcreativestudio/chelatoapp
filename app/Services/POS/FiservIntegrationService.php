@@ -38,7 +38,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             'TaxableAmount' => number_format($transactionData['Amount'], 0, '', ''), // Cambiar a 'Amount'
             'InvoiceAmount' => number_format($transactionData['Amount'], 0, '', ''), // Cambiar a 'Amount'
             'order_id' => $transactionData['order_id'] ?? null,
-            'TransactionTimeOut' => '60', // 30 segundos o timeout
+            // 'TransactionTimeOut' => '60', // 30 segundos o timeout
         ];
     }
 
