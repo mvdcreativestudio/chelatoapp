@@ -36,7 +36,7 @@ class DashboardRepository
         return;
     }
 
-
+    /**
     * Retorna los productos más vendidos
     *
     * @param int $limit
