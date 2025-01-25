@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const currentMonth = new Date().getMonth() + 1; // Get current month (1-12)
     let totalIncomeChart = null;
-
+  
     // Chart options
     const chartOptions = {
         series: [{
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: {
                 show: true,
                 formatter: function(value) {
-                    return `Día ${value}`;
+                    return `${value}`;
                 }
             }
         },
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tooltip: {
             x: {
                 formatter: function(value) {
-                    return `Día ${value}`;
+                    return `${value}`;
                 }
             },
             y: {
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     };
-
+  
     // Inicializar el gráfico solo si no ha sido inicializado
     if (!totalIncomeChart) {
         totalIncomeChart = new ApexCharts(
@@ -84,65 +84,71 @@ document.addEventListener('DOMContentLoaded', function() {
         );
         totalIncomeChart.render();
     }
-
+  
     // Función para obtener datos mensuales
     const fetchMonthlyData = async (month) => {
         try {
             const response = await fetch(`${window.baseUrl}admin/dashboard/monthly-income/${month}`);
             const data = await response.json();
-
+  
             const year = new Date().getFullYear();
             const daysInMonth = new Date(year, month, 0).getDate();
-            
+  
             const days = Array.from({length: daysInMonth}, (_, i) => i + 1);
             const incomes = new Array(daysInMonth).fill(0);
-
+  
             data.forEach(item => {
                 const dayIndex = parseInt(item.day) - 1;
                 incomes[dayIndex] = parseFloat(item.total);
             });
-
+  
             totalIncomeChart.updateOptions({
-                xaxis: {
-                    categories: days,
-                    tickAmount: daysInMonth,
-                    decimalsInFloat: 0,
-                    labels: {
-                        formatter: (value) => `Día ${Math.floor(value)}`
-                    }
-                }
+              xaxis: {
+                  categories: days, // Usar días del 1 al último del mes como categorías
+                  tickAmount: daysInMonth, // Marcar todos los días
+                  decimalsInFloat: 0, // Sin decimales
+                  labels: {
+                      show: true,
+                      formatter: function(value) {
+                          // Asegurarse de mostrar solo el número del día
+                          return Math.round(value).toString();
+                      }
+                  }
+              }
             });
-            
+  
+  
             totalIncomeChart.updateSeries([{
                 name: 'Ingresos',
                 data: incomes
             }]);
-
+  
         } catch (error) {
             console.error('Error fetching monthly income data:', error);
         }
     };
-
+  
     // Cargar datos iniciales
     fetchMonthlyData(currentMonth);
-
+  
     // Manejar selección de mes en el dropdown
     const months = [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
-    
+  
     const dropdownItems = document.querySelectorAll('.dropdown-item');
     dropdownItems.forEach((item) => {
         item.addEventListener('click', function() {
             const selectedMonth = this.textContent;
             const monthIndex = months.indexOf(selectedMonth) + 1; // Corregir índice
-
+  
             // Actualizar texto del botón
             this.closest('.btn-group').querySelector('.dropdown-toggle').textContent = selectedMonth;
-            
+  
             // Cargar datos para el mes seleccionado
             fetchMonthlyData(monthIndex);
         });
     });
-});
+  });
+  

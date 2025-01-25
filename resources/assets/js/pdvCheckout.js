@@ -1270,7 +1270,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
                 shipping_id: null,
                 preference_id: null,
                 shipping_tracking: null,
-                is_billed: 0
+                is_billed: 0,
             };
 
             $.ajax({

@@ -92,8 +92,8 @@
     <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body mx-0 flex-grow-0">
-    <form class="ecommerce-customer-add pt-0" id="eCommerceCustomerAddForm" method="POST" action="{{ route('clients.store') }}" onsubmit="return false">
-      @csrf
+  <form id="eCommerceCustomerAddForm" method="POST" onsubmit="return false">
+  @csrf
       <div class="ecommerce-customer-add-basic mb-3">
         <h6 class="mb-3">Información básica</h6>
         <div class="col-md mb-3">
@@ -108,39 +108,9 @@
             </div>
         </div>
 
-        <!-- Campos requeridos para Persona y Empresa -->
-        <div class="mb-3">
-            <label class="form-label" for="ecommerce-customer-add-name">Nombre <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="ecommerce-customer-add-name" placeholder="Ingrese el nombre" name="name" required />
-        </div>
-        <div class="mb-3">
-            <label class="form-label" for="ecommerce-customer-add-lastname">Apellido</label>
-            <input type="text" class="form-control" id="ecommerce-customer-add-lastname" placeholder="Ingrese el apellido" name="lastname" />
-        </div>
-
-        <div class="mb-3" id="documentTypeField">
-          <label class="form-label" for="documentType">Tipo de Documento</label>
-          <select class="form-select" id="documentType" name="documentType" required>
-              <option value="ci">Cédula de Identidad</option>
-              <option value="passport">Pasaporte</option>
-              <option value="other_id_type">Otro</option>
-          </select>
-        </div>
-        <div class="mb-3" id="ciField">
-            <label class="form-label" for="ci">Cédula de Identidad</label>
-            <input type="text" class="form-control" id="ci" name="ci" placeholder="Ingrese el documento sin puntos ni guiones" />
-        </div>
-        <div class="mb-3" id="passportField" style="display: none;">
-            <label class="form-label" for="passport">Pasaporte</label>
-            <input type="text" class="form-control" id="passport" name="passport" placeholder="Ingrese el número de pasaporte" />
-        </div>
-        <div class="mb-3" id="other_field" style="display: none;">
-            <label class="form-label" for="other_id_type">Otro Documento</label>
-            <input type="text" class="form-control" id="other_id_type" name="other_id_type" placeholder="Ingrese el documento alternativo" />
-        </div>
         <!-- Campo Razón Social y RUT para Empresa -->
         <div class="mb-3" id="razonSocialField" style="display: none;">
-            <label class="form-label" for="company_name">Razón Social</label>
+            <label class="form-label" for="company_name">Razón Social <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="company_name" placeholder="Ingrese la razón social" name="company_name" />
         </div>
 
@@ -149,16 +119,54 @@
             <input type="text" class="form-control" id="rut" placeholder="Ingrese el RUT" name="rut" />
         </div>
 
-        <!-- Campo Branch / Sucursal -->
-        <div class="mb-3" id="branchField" style="display: none;">
-            <label class="form-label mb-1" for="branch">Sucursal</label>
-            <input type="text" class="form-control" id="branch" placeholder="Ingrese la sucursal" name="branch" />
+        <!-- Campos requeridos para Persona y Empresa -->
+        <div class="mb-3">
+            <label class="form-label" for="ecommerce-customer-add-name">
+                Nombre <span class="responsible-text" style="display: none;">del responsable</span>
+                <span class="text-danger" id="nameAsterisk">*</span>
+            </label>
+            <input type="text" class="form-control" id="ecommerce-customer-add-name" placeholder="Ingrese el nombre" name="name" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="ecommerce-customer-add-lastname">
+                Apellido <span class="responsible-text" style="display: none;">del responsable</span>
+                <span class="text-danger" id="lastnameAsterisk">*</span>
+            </label>
+            <input type="text" class="form-control" id="ecommerce-customer-add-lastname" placeholder="Ingrese el apellido" name="lastname" required />
+        </div>
+
+        <!-- Selector de Tipo de Documento -->
+        <div class="mb-3" id="documentTypeField">
+          <label for="documentType" class="form-label">Tipo de Documento</label>
+          <select class="form-select" id="documentType" name="documentType" required>
+              <option value="ci" selected>Cédula de Identidad</option>
+              <option value="passport">Pasaporte</option>
+              <option value="other_id_type">Otro</option>
+          </select>
+        </div>
+
+        <!-- Campo para CI -->
+        <div id="ciField" class="mb-3" style="display: none;">
+          <label for="ci" class="form-label">Cédula de Identidad</label>
+          <input type="text" class="form-control" id="ci" name="ci" placeholder="Ingrese el número de documento">
+        </div>
+
+        <!-- Campo para Pasaporte -->
+        <div id="passportField" class="mb-3" style="display: none;">
+          <label for="passport" class="form-label">Pasaporte</label>
+          <input type="text" class="form-control" id="passport" name="passport" placeholder="Ingrese el número de pasaporte">
+        </div>
+
+        <!-- Campo para Otro Documento -->
+        <div id="otherField" class="mb-3" style="display: none;">
+          <label for="other_id_type" class="form-label">Otro Documento</label>
+          <input type="text" class="form-control" id="other_id_type" name="other_id_type" placeholder="Ingrese el documento alternativo">
         </div>
 
         <!-- Campo Email (requerido para ambos) -->
         <div class="mb-3">
-            <label class="form-label" for="ecommerce-customer-add-email">Email <span class="text-danger">*</span></label>
-            <input type="email" id="ecommerce-customer-add-email" class="form-control" placeholder="mail@empresa.com" name="email" required />
+            <label class="form-label" for="ecommerce-customer-add-email">Email</label>
+            <input type="email" id="ecommerce-customer-add-email" class="form-control" placeholder="mail@empresa.com" name="email"/>
         </div>
 
         <!-- Campo Teléfono (opcional) -->
@@ -171,7 +179,7 @@
       <!-- Campos adicionales compartidos -->
       <div class="ecommerce-customer-add-shiping mb-3 pt-2">
           <div class="mb-3">
-              <label class="form-label" for="address">Dirección</label>
+              <label class="form-label" for="address">Dirección </label>
               <input type="text" id="ecommerce-customer-add-address" class="form-control" placeholder="Ingrese la dirección" name="address"/>
           </div>
           <div class="mb-3">
@@ -179,7 +187,7 @@
               <input type="text" id="ecommerce-customer-add-town" class="form-control" placeholder="Ingrese la ciudad" name="city" />
           </div>
           <div class="mb-3">
-              <label class="form-label" for="state">Departamento</label>
+              <label class="form-label" for="state">Departamento </label>
               <input type="text" id="ecommerce-customer-add-state" class="form-control" placeholder="Ingrese el departamento" name="state" />
           </div>
           <div>

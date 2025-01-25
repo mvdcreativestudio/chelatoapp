@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Repositories\StoreRepository;
 use App\Repositories\DashboardRepository;
-
+use App\Models\Order;
 
 class DashboardController extends Controller
 {
@@ -32,13 +32,14 @@ class DashboardController extends Controller
 
         $amountOfOrders = $this->dashboardRepository->getAmountOfOrders();
 
-        $expenses = $this->dashboardRepository->getExpensesDueToday();
+        $unpaidExpenses = $this->dashboardRepository->getUnpaidExpensesSummary();
 
         $monthlyExpenses = $this->dashboardRepository->getMonthlyExpensesPaid();
 
         $dailyBalance = $this->dashboardRepository->getDailyBalance();
 
-        return view('content.dashboard.index', compact('stores', 'user', 'products','amountOfOrders','expenses','monthlyExpenses','dailyBalance'));
+
+        return view('content.dashboard.index', compact('stores', 'user', 'products','amountOfOrders','unpaidExpenses','monthlyExpenses','dailyBalance'));
     }
 
     /*

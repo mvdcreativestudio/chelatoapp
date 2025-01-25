@@ -425,12 +425,12 @@ $(document).ready(function () {
         // Determinar el precio a usar
         const priceToUse = product.price ? product.price : product.old_price;
 
-        // Descomentar para no permitir la venta de productos sin stock
-        // // Verificar si el producto tiene stock suficiente antes de agregar
-        // if (product.stock !== null && product.stock <= 0) {
-        //     mostrarError('No hay suficiente stock de este producto.');
-        //     return;
-        // }
+        // Comentar para permitir la venta de productos sin stock
+        // Verificar si el producto tiene stock suficiente antes de agregar
+        if (product.stock !== null && product.stock <= 0) {
+            mostrarError('No hay suficiente stock de este producto.');
+            return;
+        }
 
         // Obtener la cantidad deseada del input
         const quantityInput = $(`.quantity-input[data-id="${productId}"]`);

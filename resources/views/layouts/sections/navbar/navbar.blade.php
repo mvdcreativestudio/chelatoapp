@@ -243,7 +243,7 @@ $navbarDetached = ($navbarDetached ?? '');
       <ul class="navbar-nav flex-row align-items-center ms-auto">
 
         <!-- Notification -->
-        <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
+        {{-- <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
           <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
               <i class="bx bx-bell bx-sm"></i>
               <span id="notification-icon" class="badge rounded-pill badge-notifications"></span>
@@ -266,7 +266,7 @@ $navbarDetached = ($navbarDetached ?? '');
                   <button class="btn btn-primary text-uppercase w-100">Ver todas las notificaciones</button>
               </li>
           </ul>
-        </li>
+        </li> --}}
         <!--/ Notification -->
 
 

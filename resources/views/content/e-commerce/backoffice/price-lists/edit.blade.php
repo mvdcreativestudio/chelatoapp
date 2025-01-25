@@ -14,13 +14,13 @@
                 </h4>
                 <a href="#" id="backButton" class="btn btn-sm btn-primary">
                     <i class="bx bx-arrow-back me-1"></i> Volver
-                </a>                  
+                </a>
               </div>
             </div>
           </div>
         </div>
     </div>
-    
+
 
     @if(session('success'))
     <div class="alert alert-success d-flex" role="alert">
@@ -39,10 +39,14 @@
         </div>
     </div>
     @endif
+    <form id="editPriceListForm" action="{{ route('price-lists.update', $priceList->id) }}" method="POST">
 
     <div class="card">
         <div class="card-body">
             <div>
+
+                  @csrf
+                  @method('PUT')
                 <div class="mb-3">
                     <label for="name" class="form-label">Nombre</label>
                     <input type="text" class="form-control" id="name" name="name" value="{{ $priceList->name }}" required>
@@ -58,9 +62,6 @@
     <div class="card mt-4">
         <div class="card-body">
 
-            <form id="editPriceListForm" action="{{ route('price-lists.update', $priceList->id) }}" method="POST">
-                @csrf
-                @method('PUT')
 
                 <!-- Sección para cargar los productos mediante AJAX -->
                 <div class="mb-3">
@@ -81,9 +82,10 @@
                 <div class="fixed-bottom d-flex justify-content-end p-3 mb-4">
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </div>
-            </form>
         </div>
     </div>
+    </form>
+
 </div>
 @endsection
 
@@ -120,10 +122,10 @@
 <script>
     document.getElementById('backButton').addEventListener('click', function (event) {
       event.preventDefault();
-      
+
       // Obtener la URL de la página anterior
       var previousPage = document.referrer;
-  
+
       // Verificar si la página anterior es la misma que la actual
       if (previousPage && previousPage !== window.location.href) {
         window.location.href = previousPage; // Redirigir a la página anterior si es diferente
@@ -132,5 +134,5 @@
       }
     });
   </script>
-  
+
 @endsection

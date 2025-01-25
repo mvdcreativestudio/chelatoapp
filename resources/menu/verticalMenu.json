@@ -24,7 +24,7 @@
     {
       "id": "tour-punto-de-venta",
       "name": "Punto de Venta",
-      "icon": "menu-icon tf-icons bx bx-home-circle",
+      "icon": "menu-icon tf-icons bx bx-desktop",
       "slug": "point-of-sale",
       "url": "/admin/points-of-sales",
       "submenu": [
