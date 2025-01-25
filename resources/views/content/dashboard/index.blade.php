@@ -9,7 +9,7 @@
 'resources/assets/js/extended-ui-tour.js',
 'resources/assets/js/toggle-store-status.js',
 'resources/assets/js/dashboard/integrations.js',
-'resources/assets/js/dashboard/total-incomes.js'])
+'resources/assets/js/dashboard/total-incomes.js',])
 <script>
   window.baseUrl = "{{ url('/') }}";
 </script>
@@ -38,28 +38,12 @@
 
 <!-- Tarjetas primera línea -->
 <div class="row g-3">
-  <div class="col-12 col-md-6 mt-0">
+  <div class="col-12 col-md-6 mt-0 text-center">
     <div class="card p-3">
-      <h5>Vencen hoy:</h5>
+      <h5>Cobros y facturas</h5>
       <div class="row g-3 align-items-stretch">
-        <!-- Tarjeta Factura Impaga -->
-        <div class="col-12 col-md-6">
-          <div class="card {{ $expenses['amount'] > 0 ? 'card-border-shadow-danger low-opacity-bg' : 'card-border-shadow-success' }} d-flex flex-row align-items-center p-3 h-100">
-            <div class="expenses-card-content flex-grow-1">
-              @if($expenses['amount'] > 0)
-              <p class="m-0 text-danger bold">Factura Impaga</p>
-              <p class="m-0">Vencen hoy {{ $expenses['amount'] }} facturas<br>formando un total de</p>
-              <h5 class="m-0">${{ number_format($expenses['total'], 2) }}</h5>
-              @else
-              <p class="m-0 text-success bold">¡Felicidades!</p>
-              <p class="m-0">No tienes facturas impagas que vencen hoy</p>
-              @endif
-            </div>
-          </div>
-        </div>
-
         <!-- Tarjeta Cobro -->
-        <div class="col-12 col-md-6 mt-0">
+        <div class="col-12 col-md-6 mt-0 text-center">
           <div class="card card-border-shadow-success d-flex flex-row align-items-center p-3 h-100">
             <div class="expenses-card-content flex-grow-1">
               <p class="m-0 text-success bold">Último cobro realizado</p>
@@ -72,8 +56,29 @@
               </p>
               <h5 class="m-0">${{ number_format($amountOfOrders['last_order']['total'], 2) }}</h5>
               @else
-              <p class="m-0">No hay órdenes registradas</p>
+              <p class="m-0">No hay ventas realizadas</p>
+              <a href="{{ route('pdv.cart') }}" class="btn btn-primary btn-sm mt-2">Creá tu primer venta</a>
               @endif
+            </div>
+          </div>
+        </div>
+        <!-- Tarjeta Factura Impaga -->
+        <div class="col-12 col-md-6">
+          <div class="card {{ $unpaidExpenses['count'] > 0 ? 'card-border-shadow-danger low-opacity-bg' : 'card-border-shadow-success' }} d-flex flex-row align-items-center p-3 h-100">
+            <div class="expenses-card-content flex-grow-1">
+                @if($unpaidExpenses['count'] > 0)
+                <p class="m-0 text-danger bold">Resumen de Facturas Impagas</p>
+                <p class="m-0">
+                    Total de facturas: {{ $unpaidExpenses['count'] }}
+                </p>
+                <p class="m-0">
+                    Monto total adeudado: <strong>${{ number_format($unpaidExpenses['total'], 2) }}</strong>
+                </p>
+                @else
+                <p class="m-0 text-success bold">¡Felicidades!</p>
+                <p class="m-0">No tienes facturas impagas</p>
+                <a href="{{ route('expenses.index') }}" class="btn btn-primary btn-sm mt-2">Creá tu primer factura</a>
+                @endif
             </div>
           </div>
         </div>
@@ -123,7 +128,7 @@
         <div class="d-flex flex-wrap justify-content-center">
             @foreach(['pymo', 'mercadopago'] as $integration)
             <a href="{{ route('integrations.index') }}" class="me-3 mb-2" style="text-decoration: none;">
-                <img src="{{ global_asset("assets/img/ux-new/integraciones/$integration.png") }}" alt="Logo {{ ucfirst($integration) }}" class="img-fluid" style="width: 70px; height: auto;">
+                <img src="{{ asset("assets/img/ux-new/integraciones/$integration.png") }}" alt="Logo {{ ucfirst($integration) }}" class="img-fluid" style="width: 70px; height: auto;">
             </a>
             @endforeach
         </div>
@@ -177,6 +182,7 @@
 
 
 <!-- Tarjetas tercera línea -->
+@if($amountOfOrders['orders'] > 0)
 <div class="row mt-3 g-3">
   <!-- Tarjeta de productos más vendidos con col-lg-4 para mejor distribución en pantallas grandes -->
   <div class="col-12 col-md-6 col-lg-4">
@@ -302,6 +308,24 @@
     </div>
   </div>
 </div>
+@else
+<div class="row mt-3 g-3 text-center">
+  <!-- Tarjeta de productos más vendidos con col-lg-4 para mejor distribución en pantallas grandes -->
+  <div class="col-12">
+    <div class="card h-100">
+      <div class="card-header py-3">
+        <h5 class="mb-0">Información de tus ventas</h5>
+      </div>
+      <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-0 pb-3">
+        <p class="m-0 text-warning bold">No hay ventas realizadas</p>
+        <p class="m-0">Crea tu primer venta para ver información aquí.</p>
+        <a href="{{ route('pdv.cart') }}" class="btn btn-primary btn-sm mt-4" style="max-width: 150px;">Crear nueva venta</a>
+      </div>
+    </div>
+  </div>
+</div>
+@endif
+
 
 
 @endsection

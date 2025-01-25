@@ -85,6 +85,16 @@ class StoreClientRequest extends FormRequest
                     }
                 },
             ],
+            'ci' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if ($this->type === 'company' && empty($value)) {
+                        $fail('La CI es obligatoria en este tipo de cliente');
+                    }
+                },
+            ],
             'company_name' => [
                 'nullable',
                 'string',
@@ -122,6 +132,7 @@ class StoreClientRequest extends FormRequest
             'company_name.required_if' => 'La Razón Social es obligatoria para clientes de tipo Empresa',
             'email.email' => 'El correo electrónico debe ser una dirección válida.',
             'email.unique' => 'El correo electrónico ya está en uso.',
+            'ci.required_if' => 'La CI es obligatoria para clientes de tipo Persona',
         ];
     }
 }

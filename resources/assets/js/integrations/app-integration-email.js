@@ -1,159 +1,146 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Manejo de los botones de guardar configuración de correo
-    const saveEmailConfigBtns = document.querySelectorAll('[id^="saveEmailConfig"]');
+  // Variable para almacenar el estado inicial del switch
+  let switchState = {};
 
-    saveEmailConfigBtns.forEach(btn => {
-        btn.addEventListener('click', function () {
-            const storeId = this.id.split('-')[1];
-            const modalElement = document.getElementById(`emailConfigModal-${storeId}`);
-            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-            const form = document.getElementById(`emailConfigForm-${storeId}`);
+  // Manejo de switches de configuración de correo
+  const emailConfigSwitches = document.querySelectorAll('[id^="emailConfigSwitch-"]');
 
-            const formData = new FormData(form);
+  emailConfigSwitches.forEach(switchEl => {
+      const storeId = switchEl.id.split('-')[1];
 
-            $.ajax({
-                url: `${window.baseUrl}admin/integrations/${storeId}/email-config`,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function (response) {
-                    console.log('Success:', response);
-                    if (response.success) {
-                        modal.hide();
+      // Inicializamos el estado inicial del switch
+      switchState[storeId] = switchEl.checked;
 
-                        const card = document.querySelector(`#store-content-${storeId} .card`);
-                        const checkIcon = card.querySelector('.status-indicator');
-                        if (checkIcon) {
-                            checkIcon.classList.remove('d-none');
-                        } else {
-                            // Si no existe el icono, lo agregamos
-                            const statusIndicator = document.createElement('span');
-                            statusIndicator.classList.add('status-indicator');
-                            statusIndicator.innerHTML = '<i class="bx bx-check text-white"></i>';
-                            card.querySelector('.card-header').appendChild(statusIndicator);
-                        }
+      switchEl.addEventListener('change', function () {
+          const modalElement = document.getElementById(`emailConfigModal-${storeId}`);
+          const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
 
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Éxito',
-                            text: response.message,
-                            showConfirmButton: false,
-                            timer: 1500
-                        }).then(() => {
-                            location.reload();
-                        });
-                    } else {
-                        handleError(response.message, modal);
-                    }
-                },
-                error: function (xhr) {
-                    console.error('Error:', xhr);
-                    handleError(xhr.responseJSON?.message || 'Error al guardar la configuración', modal);
+          if (this.checked) {
+              // Mostrar el modal al activar el switch
+              modal.show();
 
-                    // Revertir el estado del switch si hay error
-                    const switchEl = document.getElementById(`emailConfigSwitch-${storeId}`);
-                    if (switchEl) {
-                        switchEl.checked = false;
-                    }
-                }
-            });
-        });
-    });
+              // Revertir el switch si se cierra el modal sin guardar
+              modalElement.addEventListener('hidden.bs.modal', () => {
+                  if (!switchState[storeId]) {
+                      switchEl.checked = false;
+                  }
+              }, { once: true });
+          } else {
+              // Confirmar desactivación al desmarcar el switch
+              Swal.fire({
+                  title: '¿Estás seguro?',
+                  text: 'Se eliminará la configuración de correo actual',
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#3085d6',
+                  cancelButtonColor: '#d33',
+                  confirmButtonText: 'Sí, desactivar',
+                  cancelButtonText: 'Cancelar'
+              }).then((result) => {
+                  if (result.isConfirmed) {
+                      deactivateEmailConfig(storeId, switchEl);
+                  } else {
+                      switchEl.checked = true; // Revertir el estado si se cancela
+                  }
+              });
+          }
+      });
+  });
 
-    // Manejo de los switches de configuración de correo
-    const emailConfigSwitches = document.querySelectorAll('[id^="emailConfigSwitch-"]');
+  // Manejo de botones de guardar configuración en el modal
+  const saveEmailConfigBtns = document.querySelectorAll('[id^="saveEmailConfig"]');
 
-    emailConfigSwitches.forEach(switchEl => {
-        switchEl.addEventListener('change', function() {
-            const storeId = this.id.split('-')[1];
-            const modalElement = document.getElementById(`emailConfigModal-${storeId}`);
-            const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+  saveEmailConfigBtns.forEach(btn => {
+      btn.addEventListener('click', function () {
+          const storeId = this.id.split('-')[1];
+          const modalElement = document.getElementById(`emailConfigModal-${storeId}`);
+          const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+          const form = document.getElementById(`emailConfigForm-${storeId}`);
 
-            if (!this.checked) {
-                // Confirmar desactivación
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: "Se eliminará la configuración de correo actual",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, desactivar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        deactivateEmailConfig(storeId, modal);
-                    } else {
-                        this.checked = true;
-                    }
-                });
-            } else {
-                // Mostrar modal solo al activar
-                modal.show();
-            }
-        });
-    });
+          const formData = new FormData(form);
 
-    function deactivateEmailConfig(storeId, modal) {
-        const formData = new FormData();
-        formData.append('stores_email_config', '0');
+          $.ajax({
+              url: `${window.baseUrl}admin/integrations/${storeId}/email-config`,
+              type: 'POST',
+              data: formData,
+              processData: false,
+              contentType: false,
+              headers: {
+                  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+              },
+              success: function (response) {
+                  if (response.success) {
+                      // Actualizar el estado del switch
+                      switchState[storeId] = true;
+                      modal.hide();
 
-        $.ajax({
-            url: `${window.baseUrl}admin/integrations/${storeId}/email-config`,
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            success: function(response) {
-                console.log('Deactivate Success:', response);
-                if (response.success) {
-                    modal.hide();
+                      Swal.fire({
+                          icon: 'success',
+                          title: 'Éxito',
+                          text: response.message,
+                          showConfirmButton: false,
+                          timer: 1500
+                      }).then(() => {
+                          location.reload();
+                      });
+                  } else {
+                      handleError(response.message);
+                  }
+              },
+              error: function (xhr) {
+                  handleError(xhr.responseJSON?.message || 'Error al guardar la configuración');
+              }
+          });
+      });
+  });
 
-                    const card = document.querySelector(`#store-content-${storeId} .card`);
-   
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Éxito',
-                        text: response.message,
-                        showConfirmButton: false,
-                        timer: 1500
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    handleError(response.message, modal);
-                }
-            },
-            error: function(xhr) {
-                console.error('Deactivate Error:', xhr);
-                handleError(xhr.responseJSON?.message || 'Error al desactivar la configuración', modal);
+  // Función para desactivar la configuración de correo
+  function deactivateEmailConfig(storeId, switchEl) {
+      const formData = new FormData();
+      formData.append('stores_email_config', '0');
 
-                // Revertir el estado del switch si hay error
-                const switchEl = document.getElementById(`emailConfigSwitch-${storeId}`);
-                if (switchEl) {
-                    switchEl.checked = true;
-                }
-            }
-        });
-    }
+      $.ajax({
+          url: `${window.baseUrl}admin/integrations/${storeId}/email-config`,
+          type: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          headers: {
+              'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+          },
+          success: function (response) {
+              if (response.success) {
+                  // Actualizar el estado del switch
+                  switchState[storeId] = false;
 
-    function handleError(message, modal) {
-        if (modal) {
-            modal.hide();
-        }
+                  Swal.fire({
+                      icon: 'success',
+                      title: 'Éxito',
+                      text: response.message,
+                      showConfirmButton: false,
+                      timer: 1500
+                  }).then(() => {
+                      location.reload();
+                  });
+              } else {
+                  handleError(response.message);
+                  switchEl.checked = true; // Revertir el estado del switch si hay error
+              }
+          },
+          error: function (xhr) {
+              handleError(xhr.responseJSON?.message || 'Error al desactivar la configuración');
+              switchEl.checked = true; // Revertir el estado del switch si hay error
+          }
+      });
+  }
 
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: message,
-            confirmButtonText: 'Aceptar'
-        });
-    }
+  // Función para manejar errores
+  function handleError(message) {
+      Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: message,
+          confirmButtonText: 'Aceptar'
+      });
+  }
 });

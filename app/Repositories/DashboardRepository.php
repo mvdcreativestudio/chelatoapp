@@ -36,7 +36,7 @@ class DashboardRepository
         return;
     }
 
-    /**
+
     * Retorna los productos más vendidos
     *
     * @param int $limit
@@ -94,6 +94,7 @@ class DashboardRepository
 
         return array_slice($productSales, 0, $limit);
     }
+
 
     /*
     * Retorna los datos de ingresos mensuales
@@ -180,22 +181,19 @@ class DashboardRepository
     }
 
     /*
-    * Retorna la cantidad de facturas impagas que se vencen en el dia de hoy, y el total de las mismas.
+    * Retorna la cantidad de facturas impagas y el total de las mismas.
     * @return array
     */
-    public function getExpensesDueToday()
+    public function getUnpaidExpensesSummary()
     {
-        $today = Carbon::now()->toDateString();
+        $unpaidExpenses = Expense::where('status', 'unpaid')->get();
 
-        $expenses = Expense::where('status', 'unpaid')
-            ->where('due_date', $today)
-            ->get();
-
-        $total = $expenses->sum('amount');
+        $total = $unpaidExpenses->sum('amount');
+        $count = $unpaidExpenses->count();
 
         return [
-            'amount' => $expenses->count(),
-            'total' => $total
+            'count' => $count,
+            'total' => $total,
         ];
     }
 

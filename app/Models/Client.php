@@ -62,6 +62,6 @@ class Client extends Model
     public function priceLists()
     {
         return $this->belongsToMany(PriceList::class, 'client_price_lists');
-    }   
+    }
 
 }

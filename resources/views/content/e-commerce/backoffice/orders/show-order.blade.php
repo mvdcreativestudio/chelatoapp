@@ -392,11 +392,7 @@ $changeTypeTranslations = [
             <div class="d-flex justify-content-between mb-2">
               @if($order->discount !== null && $order->discount !== 0)
               <span class="w-px-100">Descuento:</span>
-              @if($order->discount !== null && $order->discount !== 0)
               <span class="text-heading mb-0">{{ $settings->currency_symbol }}{{ $order->discount }}</span>
-              @else
-              <span class="text-heading mb-0">{{ $settings->currency_symbol }}0</span>
-              @endif
               @endif
             </div>
             <div class="d-flex justify-content-between mb-2">
@@ -409,8 +405,17 @@ $changeTypeTranslations = [
             </div>
           </div>
         </div>
+
+        <!-- Notas de la orden -->
+        @if(!empty($order->notes))
+        <div class="order-notes mt-3 p-3 rounded bg-light">
+          <h6 class="mb-2"><i class="bx bx-note"></i> Notas de la orden:</h6>
+          <p class="text-muted mb-0">{{ $order->notes }}</p>
+        </div>
+        @endif
       </div>
     </div>
+
     <!-- Order Status Changes Table -->
     <div class="card mb-4">
       <div class="card-header">
