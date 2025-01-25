@@ -2,7 +2,7 @@
   <div class="card">
       <div class="card-header text-center bg-light">
           <div class="integration-icon mx-auto">
-              <img src="{{ global_asset('assets/img/integrations/email-config-logo.png') }}"
+              <img src="{{ asset('assets/img/integrations/email-config-logo.png') }}"
                   alt="Email Config Logo" class="img-fluid">
           </div>
           @if ($store->emailConfig)

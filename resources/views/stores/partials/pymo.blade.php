@@ -2,7 +2,7 @@
   <div class="card">
       <div class="card-header text-center bg-light">
           <div class="integration-icon mx-auto">
-              <img src="{{ global_asset('assets/img/integrations/pymo-logo.png') }}"
+              <img src="{{ asset('assets/img/integrations/pymo-logo.png') }}"
                   alt="Pymo Logo" class="img-fluid">
           </div>
           @if ($store->invoices_enabled)
