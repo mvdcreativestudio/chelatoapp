@@ -547,7 +547,6 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
   $('#manual_price_list_id').on('change', updateCartPrices);
 
 
-
   function loadStoreIdFromSession() {
     $.ajax({
       url: `storeid-session`,

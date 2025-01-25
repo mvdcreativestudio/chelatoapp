@@ -139,7 +139,6 @@ class StoreRepository
   }
 
 
-
     /**
      * Guarda los horarios de la tienda.
      *
