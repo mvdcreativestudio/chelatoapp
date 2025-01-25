@@ -38,7 +38,7 @@
 
 <!-- Tarjetas primera línea -->
 <div class="row g-3">
-  <div class="col-12 col-md-7">
+  <div class="col-12 col-md-6 mt-0">
     <div class="card p-3">
       <h5>Vencen hoy:</h5>
       <div class="row g-3 align-items-stretch">
@@ -59,7 +59,7 @@
         </div>
 
         <!-- Tarjeta Cobro -->
-        <div class="col-12 col-md-6">
+        <div class="col-12 col-md-6 mt-0">
           <div class="card card-border-shadow-success d-flex flex-row align-items-center p-3 h-100">
             <div class="expenses-card-content flex-grow-1">
               <p class="m-0 text-success bold">Último cobro realizado</p>
@@ -81,7 +81,7 @@
     </div>
   </div>
 
-  <div class="col-12 col-md-5">
+  <div class="col-12 col-md-6 mt-0">
     <div class="card h-100
        @if($dailyBalance['balance'] > 0)
             bg-success bg-opacity-50 text-dark
@@ -117,20 +117,21 @@
 
 <!-- Tarjetas segunda línea -->
 <div class="row mt-3 g-3 align-items-stretch">
-  <div class="col-12 col-lg-8">
+  <div class="col-12 col-lg-6">
     <div class="card h-100 p-3 justify-content-center text-center">
-      <h5 class="mb-4">Conectá tus cuentas</h5>
-      <div class="d-flex flex-wrap justify-content-center">
-        @foreach(['pymo', 'pedidos-ya', 'mercadopago', 'handy', 'fiserv', 'oca', 'scanntech'] as $integration)
-        <div class="me-3 mb-2">
-          <img src="{{ asset("assets/img/ux-new/integraciones/$integration.png") }}" alt="Logo {{ ucfirst($integration) }}" class="img-fluid" style="width: 70px; height: auto;">
+        <h5 class="mb-4">Conectá tus cuentas</h5>
+        <div class="d-flex flex-wrap justify-content-center">
+            @foreach(['pymo', 'mercadopago'] as $integration)
+            <a href="{{ route('integrations.index') }}" class="me-3 mb-2" style="text-decoration: none;">
+                <img src="{{ global_asset("assets/img/ux-new/integraciones/$integration.png") }}" alt="Logo {{ ucfirst($integration) }}" class="img-fluid" style="width: 70px; height: auto;">
+            </a>
+            @endforeach
         </div>
-        @endforeach
-      </div>
     </div>
   </div>
 
-  <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+
+  <div class="col-12 col-md-6 col-lg-3">
     <div class="card h-100">
       <div class="card-body">
         <h5 class="d-block fw-medium mb-2">Ventas Realizadas</h5>
@@ -147,7 +148,7 @@
     </div>
   </div>
 
-  <div class="col-12 col-sm-6 col-md-2 col-lg-2">
+  <div class="col-12 col-md-6 col-lg-3">
     <div class="card h-100">
       <div class="card-body">
         <h5 class="d-block fw-medium mb-2">Gastos Realizados</h5>
@@ -179,12 +180,12 @@
 <div class="row mt-3 g-3">
   <!-- Tarjeta de productos más vendidos con col-lg-4 para mejor distribución en pantallas grandes -->
   <div class="col-12 col-md-6 col-lg-4">
-    <div class="card">
+    <div class="card h-100">
       <div class="card-header py-3">
-        <h5 class="mb-0">Productos más vendidos <i class="fa-solid fa-chevron-down"></i></h5>
+        <h5 class="mb-0">Productos más vendidos</h5>
       </div>
-      <div class="card-body p-0">
-        <div class="report-list">
+      <div class="card-body d-flex flex-column p-0">
+        <div class="report-list flex-grow-1">
           @foreach(array_slice($products, 0, 5) as $index => $product)
           <div class="report-list-item rounded-2 mb-3 p-2">
             <div class="d-flex align-items-start">
@@ -204,15 +205,18 @@
             </div>
           </div>
           @endforeach
-          <div class="text-center mb-3">
-            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#topProductsModal">
-              Ver Top 10
-            </button>
-          </div>
+        </div>
+        <!-- Botón alineado al fondo de la card -->
+        <div class="text-center mt-auto p-3">
+          <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#topProductsModal">
+            Ver Top 10
+          </button>
         </div>
       </div>
     </div>
   </div>
+
+
   <!-- Gráfica de Ingresos Totales -->
   <div class="col-12 col-md-6 col-lg-8">
     <div class="card">
@@ -241,6 +245,7 @@
       </div>
     </div>
   </div>
+
 
   {{-- <!-- Tarjetas cuarta línea -->
   <div class="row mt-3 g-3">
@@ -297,5 +302,6 @@
     </div>
   </div>
 </div>
+
 
 @endsection

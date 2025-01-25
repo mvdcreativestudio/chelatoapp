@@ -36,40 +36,54 @@ class DashboardRepository
         return;
     }
 
-    /*
+    /**
     * Retorna los productos más vendidos
+    *
     * @param int $limit
     * @return array
     */
     public function getTopSellingProducts($limit = 10)
     {
         $orders = Order::where('payment_status', 'paid')->get();
-
         $productSales = [];
 
         foreach ($orders as $order) {
             $products = json_decode($order->products, true);
+
+            // Verificar si el JSON se decodificó correctamente
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::error("Error al decodificar JSON en el pedido {$order->id}: " . json_last_error_msg());
+                continue;
+            }
+
             foreach ($products as $product) {
-                if (!isset($product['id'])) {
+                if (!isset($product['id'], $product['quantity'])) {
+                    Log::warning("Producto inválido en el pedido {$order->id}: " . json_encode($product));
                     continue;
                 }
+
                 $productId = $product['id'];
                 $quantity = $product['quantity'];
 
+                // Intentar obtener el modelo de la base de datos
+                $productModel = Product::find($productId);
+                $price = $product['price'] ?? $productModel->price ?? 0;
+
+                if (!$price) {
+                    Log::warning("Producto con ID {$productId} tiene un precio de 0 en el pedido {$order->id}");
+                }
+
                 if (isset($productSales[$productId])) {
                     $productSales[$productId]['quantity'] += $quantity;
-                    $productSales[$productId]['total_sales'] += $productSales[$productId]['price'] * $quantity;
+                    $productSales[$productId]['total_sales'] += $price * $quantity;
                 } else {
-                    $productModel = Product::find($productId);
-                    if ($productModel) {
-                        $productSales[$productId] = [
-                            'id' => $productId,
-                            'name' => $productModel->name,
-                            'price' => $productModel->price,
-                            'quantity' => $quantity,
-                            'total_sales' => $productModel->price * $quantity,
-                        ];
-                    }
+                    $productSales[$productId] = [
+                        'id' => $productId,
+                        'name' => $productModel->name ?? $product['name'] ?? 'Desconocido',
+                        'price' => $price,
+                        'quantity' => $quantity,
+                        'total_sales' => $price * $quantity,
+                    ];
                 }
             }
         }
@@ -116,32 +130,32 @@ class DashboardRepository
     {
         $currentMonth = Carbon::now()->month;
         $lastMonth = Carbon::now()->subMonth()->month;
-    
+
         $currentMonthOrders = Order::whereMonth('date', $currentMonth)
             ->where('payment_status', 'paid')
             ->count();
-        
+
         $lastMonthOrders = Order::whereMonth('date', $lastMonth)
             ->where('payment_status', 'paid')
             ->count();
-    
+
         $percentage = $lastMonthOrders > 0
             ? round((($currentMonthOrders - $lastMonthOrders) / $lastMonthOrders) * 100)
             : 0;
-    
+
         $lastOrder = Order::where('payment_status', 'paid')
             ->orderBy('date', 'desc')
             ->first();
-        
+
         $lastOrderInfo = [];
         if ($lastOrder) {
             $products = json_decode($lastOrder->products, true);
-            
-            // Busca el producto que más se vendió en la orden. 
+
+            // Busca el producto que más se vendió en la orden.
             $maxQuantity = 0;
             $topProductId = null;
             $otherProductsCount = 0;
-            
+
             foreach ($products as $product) {
                 if ($product['quantity'] > $maxQuantity) {
                     $maxQuantity = $product['quantity'];
@@ -149,9 +163,9 @@ class DashboardRepository
                 }
                 $otherProductsCount++;
             }
-            
+
             $topProduct = Product::find($topProductId);
-            
+
             $lastOrderInfo = [
                 'product_name' => $topProduct ? $topProduct->name : 'N/A',
                 'other_products' => $otherProductsCount > 1 ? $otherProductsCount - 1 : 0,
