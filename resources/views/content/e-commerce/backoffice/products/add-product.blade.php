@@ -159,117 +159,125 @@
             <h5 class="card-title mb-0">Receta</h5>
           </div>
           <div class="card-body">
-          <a href="{{ url('admin/raw-material-freemium') }}" class="btn btn-outline-primary mb-4">
-          <i class="fas fa-plus-circle me-1"></i>
-          Crear Materia Prima
-        </a>
+            <a href="{{ url('admin/raw-material-freemium') }}" class="btn btn-outline-primary mb-4">
+              <i class="fas fa-plus-circle me-1"></i>
+              Crear Materia Prima
+            </a>
             <div data-repeater-list="recipes">
               <!-- Elimina los elementos predeterminados aquí -->
             </div>
             <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
             <!-- <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button> -->
+          </div>
         </div>
-      </div> 
-      <!-- /Recipe -->
+        <!-- /Recipe -->
 
-      <!-- Card con Tabs -->
-      <div class="card mb-4">
-        <div class="card-header">
+        <!-- Card con Tabs -->
+        <div class="card mb-4">
+          <div class="card-header">
             <h5 class="card-title mb-0">Detalles del Producto</h5>
-        </div>
-        <div class="card-body">
+          </div>
+          <div class="card-body">
             <!-- Navegación de Tabs -->
             <ul class="nav nav-tabs" id="productDetailsTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="features-tab" data-bs-toggle="tab" data-bs-target="#featuresTabContent"
-                        type="button" role="tab" aria-controls="featuresTabContent" aria-selected="true">
-                        Características
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="sizes-tab" data-bs-toggle="tab" data-bs-target="#sizesTabContent"
-                        type="button" role="tab" aria-controls="sizesTabContent" aria-selected="false">
-                        Dimensiones
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="colors-tab" data-bs-toggle="tab" data-bs-target="#colorsTabContent"
-                        type="button" role="tab" aria-controls="colorsTabContent" aria-selected="false">
-                        Colores
-                    </button>
-                </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="features-tab" data-bs-toggle="tab" data-bs-target="#featuresTabContent"
+                  type="button" role="tab" aria-controls="featuresTabContent" aria-selected="true">
+                  Características
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="sizes-tab" data-bs-toggle="tab" data-bs-target="#sizesTabContent"
+                  type="button" role="tab" aria-controls="sizesTabContent" aria-selected="false">
+                  Dimensiones
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="colors-tab" data-bs-toggle="tab" data-bs-target="#colorsTabContent"
+                  type="button" role="tab" aria-controls="colorsTabContent" aria-selected="false">
+                  Colores
+                </button>
+              </li>
             </ul>
 
             <!-- Contenido de Tabs -->
             <div class="tab-content" id="productDetailsTabContent">
-                <!-- Características -->
-                <div class="tab-pane fade show active" id="featuresTabContent" role="tabpanel" aria-labelledby="features-tab">
-                    <div id="featuresRepeater">
-                        <!-- No contiene datos iniciales -->
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm" id="addFeature">
-                        <i class="bx bx-plus"></i> Agregar Característica
-                    </button>
+              <!-- Características -->
+              <div class="tab-pane fade show active" id="featuresTabContent" role="tabpanel" aria-labelledby="features-tab">
+                <div id="featuresRepeater">
+                  <!-- No contiene datos iniciales -->
                 </div>
+                <button type="button" class="btn btn-primary btn-sm" id="addFeature">
+                  <i class="bx bx-plus"></i> Agregar Característica
+                </button>
+              </div>
 
-                <!-- Dimensiones -->
-                <div class="tab-pane fade" id="sizesTabContent" role="tabpanel" aria-labelledby="sizes-tab">
-                    <small>Todas las dimensiones deben ser introducidas en CM</small>
-                    <div id="sizesRepeater">
-                        <!-- No contiene datos iniciales -->
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm" id="addSize">
-                        <i class="bx bx-plus"></i> Agregar Dimensiones
-                    </button>
+              <!-- Dimensiones -->
+              <div class="tab-pane fade" id="sizesTabContent" role="tabpanel" aria-labelledby="sizes-tab">
+                <small>Todas las dimensiones deben ser introducidas en CM</small>
+                <div id="sizesRepeater">
+                  <!-- No contiene datos iniciales -->
                 </div>
+                <button type="button" class="btn btn-primary btn-sm" id="addSize">
+                  <i class="bx bx-plus"></i> Agregar Dimensiones
+                </button>
+              </div>
 
-                <!-- Colores -->
-                <div class="tab-pane fade" id="colorsTabContent" role="tabpanel" aria-labelledby="colors-tab">
-                    <div id="colorsRepeater">
-                        <!-- No contiene datos iniciales -->
-                    </div>
-                    <button type="button" class="btn btn-primary btn-sm" id="addColor">
-                        <i class="bx bx-plus"></i> Agregar Color
-                    </button>
+              <!-- Colores -->
+              <div class="tab-pane fade" id="colorsTabContent" role="tabpanel" aria-labelledby="colors-tab">
+                <div id="colorsRepeater">
+                  <!-- No contiene datos iniciales -->
                 </div>
+                <button type="button" class="btn btn-primary btn-sm" id="addColor">
+                  <i class="bx bx-plus"></i> Agregar Color
+                </button>
+              </div>
             </div>
+          </div>
         </div>
+
       </div>
+      <!-- /Second column -->
 
-    </div>
-    <!-- /Second column -->
-
-    <!-- Second column -->
-    <div class="col-12 col-lg-4">
-      <!-- Pricing Card -->
-      <div class="card mb-4">
-        <div class="card-body">
-          <!-- Campo oculto para estado desactivado -->
-          <input type="hidden" name="status" value="2">
-          <!-- Switch estado -->
-          <div class="d-flex justify-content-between align-items-center mb-3 pb-1">
-            <span class="mb-0 h6">Estado</span>
-            <div class="w-25 d-flex justify-content-end">
-              <label class="switch switch-primary switch-sm me-4 pe-2">
-                <input type="checkbox" class="switch-input" value="1" id="statusSwitch" checked name="status">
-                <span class="switch-toggle-slider"></span>
-              </label>
+      <!-- Second column -->
+      <div class="col-12 col-lg-4">
+        <!-- Pricing Card -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <!-- Campo oculto para estado desactivado -->
+            <input type="hidden" name="status" value="2">
+            <!-- Switch estado -->
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-1">
+              <span class="mb-0 h6">Estado</span>
+              <div class="w-25 d-flex justify-content-end">
+                <label class="switch switch-primary switch-sm me-4 pe-2">
+                  <input type="checkbox" class="switch-input" value="1" id="statusSwitch" checked name="status">
+                  <span class="switch-toggle-slider"></span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          <!-- Campo oculto para catálogo desactivado -->
-          <input type="hidden" name="show_in_catalogue" value="0">
-          <!-- Switch catálogo -->
-          <div class="d-flex justify-content-between align-items-center mb-3 pb-1">
-            <span class="mb-0 h6">Mostrar en el catálogo</span>
-            <div class="w-25 d-flex justify-content-end">
-              <label class="switch switch-primary switch-sm me-4 pe-2">
-                <input type="checkbox" class="switch-input" value="1" id="catalogueSwitch" checked name="show_in_catalogue">
-                <span class="switch-toggle-slider"></span>
-              </label>
+            <!-- Campo oculto para catálogo desactivado -->
+            <input type="hidden" name="show_in_catalogue" value="0">
+            <!-- Switch catálogo -->
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-1">
+              <span class="mb-0 h6">Mostrar en el catálogo</span>
+              <div class="w-25 d-flex justify-content-end">
+                <label class="switch switch-primary switch-sm me-4 pe-2">
+                  <input type="checkbox" class="switch-input" value="1" id="catalogueSwitch" checked name="show_in_catalogue">
+                  <span class="switch-toggle-slider"></span>
+                </label>
+              </div>
             </div>
-          </div>
-
+            <!-- Currency -->
+            <div class="mb-3">
+              <label class="form-label" for="ecommerce-product-currency">Moneda</label>
+              <select class="form-select" id="ecommerce-product-currency" name="currency" required>
+                <option value="">Seleccionar moneda</option>
+                <option value="Peso">Peso</option>
+                <option value="Dólar">Dólar</option>
+              </select>
+            </div>
             <!-- Base Price -->
             <div class="mb-3">
               <label class="form-label" for="ecommerce-product-price">Precio normal - <small>IVA INCLUÍDO</small></label></label>
@@ -348,61 +356,61 @@
                 </div>
 
 
-        </div>
-      </div>
-      <!-- Media -->
-      <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="card-title mb-0">Imágenes del Producto</h5>
-        </div>
-        <div class="card-body">
-            <!-- Tabs Navigation -->
-            <ul class="nav nav-tabs" id="imageTabs" role="tablist">
-                <li class="nav-item" role="presentation">
+              </div>
+            </div>
+            <!-- Media -->
+            <div class="card mb-4">
+              <div class="card-header">
+                <h5 class="card-title mb-0">Imágenes del Producto</h5>
+              </div>
+              <div class="card-body">
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-tabs" id="imageTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="main-image-tab" data-bs-toggle="tab" data-bs-target="#mainImageTabContent"
-                        type="button" role="tab" aria-controls="mainImageTabContent" aria-selected="true">
-                        Imagen Principal
+                      type="button" role="tab" aria-controls="mainImageTabContent" aria-selected="true">
+                      Imagen Principal
                     </button>
-                </li>
-                <li class="nav-item" role="presentation">
+                  </li>
+                  <li class="nav-item" role="presentation">
                     <button class="nav-link" id="gallery-tab" data-bs-toggle="tab" data-bs-target="#galleryTabContent"
-                        type="button" role="tab" aria-controls="galleryTabContent" aria-selected="false">
-                        Galería
+                      type="button" role="tab" aria-controls="galleryTabContent" aria-selected="false">
+                      Galería
                     </button>
-                </li>
-            </ul>
-    
-            <!-- Tabs Content -->
-            <div class="tab-content" id="imageTabsContent">
-                <!-- Main Image Tab -->
-                <div class="tab-pane fade show active" id="mainImageTabContent" role="tabpanel" aria-labelledby="main-image-tab">
+                  </li>
+                </ul>
+
+                <!-- Tabs Content -->
+                <div class="tab-content" id="imageTabsContent">
+                  <!-- Main Image Tab -->
+                  <div class="tab-pane fade show active" id="mainImageTabContent" role="tabpanel" aria-labelledby="main-image-tab">
                     <div class="card-body text-center">
-                        <!-- Dropzone -->
-                        <div class="dropzone dz-clickable" id="dropzone">
-                          <div class="dz-message needsclick">
-                            <p class="fs-4 note needsclick my-2">Arrastre la imagen aquí</p>
-                            <small class="text-muted d-block fs-6 my-2">o</small>
-                            <span class="note needsclick btn bg-label-primary d-inline" id="btnBrowse">Buscar imagen</span>
-                          </div>
+                      <!-- Dropzone -->
+                      <div class="dropzone dz-clickable" id="dropzone">
+                        <div class="dz-message needsclick">
+                          <p class="fs-4 note needsclick my-2">Arrastre la imagen aquí</p>
+                          <small class="text-muted d-block fs-6 my-2">o</small>
+                          <span class="note needsclick btn bg-label-primary d-inline" id="btnBrowse">Buscar imagen</span>
                         </div>
-                        <input type="file" name="image" id="productImage" class="d-none">>
+                      </div>
+                      <input type="file" name="image" id="productImage" class="d-none">>
                     </div>
-                </div>
-    
-                <!-- Gallery Tab -->
-                <div class="tab-pane fade" id="galleryTabContent" role="tabpanel" aria-labelledby="gallery-tab">
+                  </div>
+
+                  <!-- Gallery Tab -->
+                  <div class="tab-pane fade" id="galleryTabContent" role="tabpanel" aria-labelledby="gallery-tab">
                     <div class="mb-3">
-                        <label for="galleryImages" class="form-label fw-bold">Subir Imágenes</label>
-                        <input type="file" class="form-control" name="gallery_images[]" id="galleryImages" multiple>
+                      <label for="galleryImages" class="form-label fw-bold">Subir Imágenes</label>
+                      <input type="file" class="form-control" name="gallery_images[]" id="galleryImages" multiple>
                     </div>
                     <div id="galleryPreview" class="row g-2 mt-3">
-                        <!-- Aquí se mostrarán las imágenes cargadas -->
+                      <!-- Aquí se mostrarán las imágenes cargadas -->
                     </div>
+                  </div>
                 </div>
+              </div>
             </div>
-        </div>
-      </div>
-      <!-- /Media -->
+            <!-- /Media -->
 
             <!-- /Organize Card -->
           </div>

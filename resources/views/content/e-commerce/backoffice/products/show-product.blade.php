@@ -120,6 +120,10 @@
       </div>
       <div class="card-body">
         <div class="mb-3">
+          <label class="form-label">Moneda:</label>
+          <p>{{ $product->currency }}</p>
+        </div>
+        <div class="mb-3">
           <label class="form-label">Precio normal:</label>
           <p>{{ $product->old_price }} (IVA incluido)</p>
         </div>

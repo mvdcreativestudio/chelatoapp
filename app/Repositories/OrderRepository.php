@@ -17,6 +17,8 @@ use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\OrderStatusChange;
 use App\Models\Product;
+use App\Models\CurrencyRate;
+use App\Models\CurrencyRateHistory;
 use App\Repositories\AccountingRepository;
 use App\Services\MercadoPagoService;
 use Exception;
@@ -119,6 +121,7 @@ class OrderRepository
 
         // Extraer datos del cliente solo si client_id está presente
         $clientData = $request->client_id ? $this->extractClientData($request->validated()) : [];
+
         $orderData = $this->prepareOrderData($request->payment_method, $request);
 
         DB::beginTransaction();
@@ -289,12 +292,27 @@ class OrderRepository
     {
         $products = json_decode($request['products'], true);
         $subtotal = 0;
+        $dollarRate = $this->getDollarRate();
 
         // Recorre los productos y usa el precio de la lista de precios si está disponible
         foreach ($products as $item) {
             // Si hay un precio específico en el carrito (de la lista de precios), úsalo
-            $price = $item['price'] ?? $item['old_price'];
+            if($request->currency === 'Peso'){
+                if ($item['currency'] === 'Dólar' || $item['currency'] === 'D\u00f3lar') {
+                    $price = $item['price'] * $dollarRate;
+                } else {
+                    $price = $item['price'] ?? $item['old_price'];
+                }
+            }else{
+                if ($item['currency'] === 'Peso') {
+                    $price = $item['price'] / $dollarRate;
+                } else {
+                    $price = $item['price'] ?? $item['old_price'];
+                }            
+            }
+           
             $subtotal += $price * $item['quantity'];
+
         }
 
         Log::info('Request de prepareOrderData', ['request' => $request->all()]);
@@ -311,6 +329,7 @@ class OrderRepository
             'coupon_id' => $request->coupon_id,
             'coupon_amount' => $request->coupon_amount,
             'total' => $subtotal + session('costoEnvio', 0) - $request->discount,
+            'currency' => $request->currency,
             'payment_status' => $request->payment_status ?? 'pending',
             'shipping_status' => $request->shipping_status ?? 'delivered',
             'payment_method' => $paymentMethod,
@@ -427,6 +446,7 @@ class OrderRepository
             'orders.coupon_amount',
             'orders.discount',
             'orders.total',
+            'orders.currency',
             'orders.products',
             'orders.payment_status',
             'orders.shipping_status',
@@ -918,5 +938,18 @@ class OrderRepository
             Log::error("Error al realizar el reembolso de la orden en Mercado Pago: " . $e->getMessage());
             throw $e;
         }
+    }
+
+    /*
+    * Obtiene la ultima cotización del dolar para realizar ventas.
+    * @return float
+    */
+    public function getDollarRate()
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+            $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            return $rate->sell;
     }
 }

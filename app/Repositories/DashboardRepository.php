@@ -4,10 +4,12 @@ namespace App\Repositories;
 
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\Expense;
+use App\Models\CurrencyRate;
+use App\Models\CurrencyRateHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\Expense;
 
 class DashboardRepository
 {
@@ -44,28 +46,37 @@ class DashboardRepository
     public function getTopSellingProducts($limit = 10)
     {
         $orders = Order::where('payment_status', 'paid')->get();
-
         $productSales = [];
 
         foreach ($orders as $order) {
             $products = json_decode($order->products, true);
-
             foreach ($products as $product) {
+                if (!isset($product['id'])) {
+                    continue;
+                }
+
                 $productId = $product['id'];
                 $quantity = $product['quantity'];
+                $price = $product['price'];
+
+                // Pasar producto de dólares a pesos.
+                if (isset($product['currency']) && $product['currency'] === 'Dólar') {
+                    $rate = $this->getHistoricalDollarRate($order);
+                    $price *= $rate['sell'];
+                }
 
                 if (isset($productSales[$productId])) {
                     $productSales[$productId]['quantity'] += $quantity;
-                    $productSales[$productId]['total_sales'] += $productSales[$productId]['price'] * $quantity;
+                    $productSales[$productId]['total_sales'] += $price * $quantity;
                 } else {
                     $productModel = Product::find($productId);
                     if ($productModel) {
                         $productSales[$productId] = [
                             'id' => $productId,
                             'name' => $productModel->name,
-                            'price' => $productModel->price,
+                            'price' => $price,
                             'quantity' => $quantity,
-                            'total_sales' => $productModel->price * $quantity,
+                            'total_sales' => $price * $quantity,
                         ];
                     }
                 }
@@ -91,16 +102,21 @@ class DashboardRepository
         }
 
         $year = Carbon::now()->year;
-        $incomeData = Order::select(
-            DB::raw('DAY(date) as day'),
-            DB::raw('SUM(total) as total')
-        )
-            ->whereYear('date', $year)
+        $orders = Order::whereYear('date', $year)
             ->whereMonth('date', $month)
             ->where('payment_status', 'paid')
-            ->groupBy(DB::raw('DAY(date)'))
-            ->orderBy('day')
             ->get();
+
+        $incomeData = $orders->groupBy(function ($order) {
+            return Carbon::parse($order->date)->day;
+        })->map(function ($dayOrders) {
+            return [
+                'day' => Carbon::parse($dayOrders->first()->date)->day,
+                'total' => $dayOrders->sum(function ($order) {
+                    return $this->convertOrderAmount($order, $order->total);
+                })
+            ];
+        })->values();
 
         return $incomeData;
     }
@@ -114,32 +130,41 @@ class DashboardRepository
     {
         $currentMonth = Carbon::now()->month;
         $lastMonth = Carbon::now()->subMonth()->month;
-    
-        $currentMonthOrders = Order::whereMonth('date', $currentMonth)
+        $year = Carbon::now()->year;
+
+        $currentMonthOrders = Order::whereYear('date', $year)
+            ->whereMonth('date', $currentMonth)
             ->where('payment_status', 'paid')
-            ->count();
-        
-        $lastMonthOrders = Order::whereMonth('date', $lastMonth)
+            ->get();
+
+        $lastMonthOrders = Order::whereYear('date', $year)
+            ->whereMonth('date', $lastMonth)
             ->where('payment_status', 'paid')
-            ->count();
-    
-        $percentage = $lastMonthOrders > 0
-            ? round((($currentMonthOrders - $lastMonthOrders) / $lastMonthOrders) * 100)
+            ->get();
+
+        $currentMonthTotal = $currentMonthOrders->sum(function ($order) {
+            return $this->convertOrderAmount($order, $order->total);
+        });
+
+        $lastMonthTotal = $lastMonthOrders->sum(function ($order) {
+            return $this->convertOrderAmount($order, $order->total);
+        });
+
+        $percentage = $lastMonthTotal > 0
+            ? round((($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100)
             : 0;
-    
+
         $lastOrder = Order::where('payment_status', 'paid')
             ->orderBy('date', 'desc')
             ->first();
-        
+
         $lastOrderInfo = [];
         if ($lastOrder) {
             $products = json_decode($lastOrder->products, true);
-            
-            // Busca el producto que más se vendió en la orden. 
             $maxQuantity = 0;
             $topProductId = null;
             $otherProductsCount = 0;
-            
+
             foreach ($products as $product) {
                 if ($product['quantity'] > $maxQuantity) {
                     $maxQuantity = $product['quantity'];
@@ -147,18 +172,19 @@ class DashboardRepository
                 }
                 $otherProductsCount++;
             }
-            
+
             $topProduct = Product::find($topProductId);
-            
+
             $lastOrderInfo = [
                 'product_name' => $topProduct ? $topProduct->name : 'N/A',
                 'other_products' => $otherProductsCount > 1 ? $otherProductsCount - 1 : 0,
-                'total' => $lastOrder->total
+                'total' => $this->convertOrderAmount($lastOrder, $lastOrder->total)
             ];
         }
+
         return [
             'last_order' => $lastOrderInfo,
-            'orders' => $currentMonthOrders,
+            'orders' => $currentMonthOrders->count(),
             'percentage' => $percentage
         ];
     }
@@ -219,9 +245,14 @@ class DashboardRepository
     {
         $today = Carbon::now()->toDateString();
 
-        $totalIncome = Order::where('payment_status', 'paid')
+        $orders = Order::where('payment_status', 'paid')
             ->whereDate('date', $today)
-            ->sum('total');
+            ->get();
+
+        $totalIncome = 0;
+        foreach ($orders as $order) {
+            $totalIncome += $this->convertOrderAmount($order, $order->total);
+        }
 
         $totalExpenses = Expense::where('status', 'paid')
             ->whereDate('due_date', $today)
@@ -236,4 +267,45 @@ class DashboardRepository
         ];
     }
 
+    /*
+    * Retorna el precio del dólar para una determinada orden.
+    * @param Order $order
+    * @return array
+    */
+    private function getHistoricalDollarRate(Order $order)
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->where('created_at', '<=', $order->created_at)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$rate) {
+            $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+                ->where('created_at', '>', $order->created_at)
+                ->orderBy('created_at', 'asc')
+                ->first();
+        }
+
+        return [
+            'date' => $rate->created_at->format('Y-m-d H:i:s'),
+            'sell' => $rate->sell
+        ];
+    }
+
+    /*
+    * Convierte el monto de la orden a pesos uruguayos..
+    * @param Order $order
+    * @param float $amount
+    * @return float
+    */
+    private function convertOrderAmount(Order $order, float $amount): float
+    {
+        if ($order->currency === 'Dólar') {
+            $rate = $this->getHistoricalDollarRate($order);
+            return $amount * $rate['sell'];
+        }
+        return $amount;
+    }
 }

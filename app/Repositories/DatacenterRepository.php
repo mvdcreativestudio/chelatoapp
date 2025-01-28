@@ -8,6 +8,9 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Order;
 use App\Models\Coupon;
+use App\Models\PosOrder;
+use App\Models\CurrencyRate;
+use App\Models\CurrencyRateHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +18,6 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
-use App\Models\PosOrder;
 use Illuminate\Support\Facades\Log;
 
 
@@ -191,7 +193,11 @@ class DatacenterRepository
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
-        $totalPaidOrders = $query->sum('total');
+        $orders = $query->get();
+        $totalPaidOrders = 0;
+        foreach ($orders as $order) {
+            $totalPaidOrders += $this->convertOrderAmount($order, $order->total);
+        }
 
         return number_format($totalPaidOrders, 0, ',', '.');
     }
@@ -215,10 +221,12 @@ class DatacenterRepository
             $orderQuery->where('store_id', $storeId);
         }
 
-        $totalOrderPaid = $orderQuery->sum('total');
+        $orders = $orderQuery->get();
 
-
-        $totalPaid = $totalOrderPaid;
+        $totalPaid = 0;
+        foreach ($orders as $order) {
+            $totalPaid += $this->convertOrderAmount($order, $order->total);
+        }
 
         return number_format($totalPaid, 0, ',', '.');
     }
@@ -237,14 +245,16 @@ class DatacenterRepository
         $orderQuery = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
-
         if ($storeId) {
             $orderQuery->where('store_id', $storeId);
         }
 
-        $totalOrderPaid = $orderQuery->sum('total');
+        $orders = $orderQuery->get();
 
-        $totalPaid = $totalOrderPaid;
+        $totalPaid = 0;
+        foreach ($orders as $order) {
+            $totalPaid += $this->convertOrderAmount($order, $order->total);
+        }
 
         return number_format($totalPaid, 0, ',', '.');
     }
@@ -262,7 +272,8 @@ class DatacenterRepository
         $orderQuery = Order::select(
             DB::raw('SUM(total) as total'),
             DB::raw('YEAR(date) as year'),
-            DB::raw('MONTH(date) as month')
+            DB::raw('MONTH(date) as month'),
+            'currency'
         )
             ->where('payment_status', 'paid')
             ->groupBy(DB::raw('YEAR(date)'), DB::raw('MONTH(date)'));
@@ -283,10 +294,31 @@ class DatacenterRepository
             return '0';
         }
 
-        $totalSales = $monthlySales->sum('total');
-        $countMonths = $monthlySales->count();
-        $averageMonthlySales = $totalSales / $countMonths;
+        $totalConverted = 0;
+        $countMonths = 0;
 
+        $salesByMonth = $monthlySales->groupBy(function ($item) {
+            return $item->year . '-' . $item->month;
+        });
+
+        foreach ($salesByMonth as $monthSales) {
+            $monthTotal = 0;
+            foreach ($monthSales as $sale) {
+                // Pasar de dólares a pesos si es necesario
+                if ($sale->currency === 'Dólar') {
+                    $mockOrder = new Order();
+                    $mockOrder->created_at = Carbon::createFromDate($sale->year, $sale->month, 1);
+                    $rate = $this->getHistoricalDollarRate($mockOrder);
+                    $monthTotal += $sale->total * $rate['sell'];
+                } else {
+                    $monthTotal += $sale->total;
+                }
+            }
+            $totalConverted += $monthTotal;
+            $countMonths++;
+        }
+
+        $averageMonthlySales = $countMonths > 0 ? $totalConverted / $countMonths : 0;
         return number_format($averageMonthlySales, 0, ',', '.');
     }
 
@@ -302,26 +334,27 @@ class DatacenterRepository
      */
     public function averageTicket(string $startDate, string $endDate, int $storeId = null): string
     {
-        $orderQuery = Order::select(DB::raw('total'))
-            ->whereBetween('date', [$startDate, $endDate])
+        $orderQuery = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
-        // Aplicar filtro por store_id si es proporcionado
         if ($storeId) {
             $orderQuery->where('store_id', $storeId);
         }
 
-        // Calcular el total de los ventas pagadas
-        $totalPaidOrders = $orderQuery->sum('total');
+        $orders = $orderQuery->get();
 
-        // Contar la cantidad de ventas pagadas
-        $totalPaidOrdersCount = $orderQuery->count();
-
-        if ($totalPaidOrdersCount > 0) {
-            return number_format($totalPaidOrders / $totalPaidOrdersCount, 0, ',', '.');
-        } else {
-            return 'N/A';
+        $totalPaid = 0;
+        foreach ($orders as $order) {
+            $totalPaid += $this->convertOrderAmount($order, $order->total);
         }
+
+        $count = $orders->count();
+
+        if ($count > 0) {
+            return number_format($totalPaid / $count, 0, ',', '.');
+        }
+
+        return 'N/A';
     }
 
 
@@ -344,7 +377,7 @@ class DatacenterRepository
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)'), DB::raw('DAY(date)'), DB::raw('HOUR(time)')];
                 $selectFields = ['total', 'year', 'month', 'day', 'hour'];
                 $select = [
-                    DB::raw('SUM(total) as total'),
+                    DB::raw('GROUP_CONCAT(CONCAT(total, "|", currency)) as amounts'),
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month'),
                     DB::raw('DAY(date) as day'),
@@ -356,7 +389,7 @@ class DatacenterRepository
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)'), DB::raw('DAY(date)')];
                 $selectFields = ['total', 'year', 'month', 'day'];
                 $select = [
-                    DB::raw('SUM(total) as total'),
+                    DB::raw('GROUP_CONCAT(CONCAT(total, "|", currency)) as amounts'),
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month'),
                     DB::raw('DAY(date) as day')
@@ -368,35 +401,50 @@ class DatacenterRepository
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)')];
                 $selectFields = ['total', 'year', 'month'];
                 $select = [
-                    DB::raw('SUM(total) as total'),
+                    DB::raw('GROUP_CONCAT(CONCAT(total, "|", currency)) as amounts'),
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month')
                 ];
                 break;
         }
-    
+
         // Consulta de ventas del módulo de e-commerce y ventas físicas
         $orderQuery = Order::select($select)
             ->where('payment_status', 'paid')
             ->whereBetween('date', [$startDate, $endDate])
             ->groupBy($groupBy);
-    
-        // Aplicar filtro por store_id si se proporciona
+
         if ($storeId) {
             $orderQuery->where('store_id', $storeId);
         }
-    
-        // Obtener los resultados de la consulta
-        $results = $orderQuery->get();
-        Log::info('Resultados de getIncomeData:', $results->toArray());
-    
+
+        // Obtener y procesar los resultados
+        $results = $orderQuery->get()->map(function ($row) {
+            $amounts = collect(explode(',', $row->amounts))->map(function ($amount) {
+                list($total, $currency) = explode('|', $amount);
+                return [
+                    'total' => floatval($total),
+                    'currency' => $currency
+                ];
+            });
+
+            // Crear una orden mock para usar con convertOrderAmount
+            $convertedTotal = $amounts->sum(function ($amount) {
+                $mockOrder = new Order();
+                $mockOrder->currency = $amount['currency'];
+                $mockOrder->created_at = now(); // Usar fecha actual como fallback
+                return $this->convertOrderAmount($mockOrder, $amount['total']);
+            });
+
+            $row->total = $convertedTotal;
+            return $row;
+        });
+
         // Agregar cualquier campo faltante al resultado final
         $filledResults = $this->fillMissingData($results, $startDate, $endDate, $selectFields);
-    
-    
+
         return new EloquentCollection($filledResults);
     }
-
 
     /**
      * Rellenar los campos faltantes en los resultados de ingresos.
@@ -465,29 +513,31 @@ class DatacenterRepository
     {
         $stores = Store::all();
 
-        // Consulta de todos los ventas con estado pagado
-        $orderQuery = Order::where('payment_status', 'paid');
-        if ($storeId) {
-            $orderQuery->where('store_id', $storeId);
+        $allOrders = Order::where('payment_status', 'paid')
+            ->when($storeId, function ($query) use ($storeId) {
+                return $query->where('store_id', $storeId);
+            })
+            ->get();
+
+        // Pasar de dolar a peso uruguayo.
+        $totalPaidOrders = 0;
+        foreach ($allOrders as $order) {
+            $totalPaidOrders += $this->convertOrderAmount($order, $order->total);
         }
-        $totalPaidOrders = $orderQuery->sum('total');
 
         $data = [];
 
         foreach ($stores as $store) {
-            // Consulta de ventas por tienda específica con estado pagado
-            $storeOrdersQuery = Order::where('store_id', $store->id)
-                ->where('payment_status', 'paid');
-            if ($storeId) {
-                $storeOrdersQuery->where('store_id', $storeId);
-            }
-            $storeTotalOrders = $storeOrdersQuery->sum('total');
+            $storeOrders = $allOrders->where('store_id', $store->id);
 
-            if ($totalPaidOrders > 0) {
-                $percent = ($storeTotalOrders / $totalPaidOrders) * 100;
-            } else {
-                $percent = 0;
+            // Pasar de dolar a peso uruguayo.
+            $storeTotalOrders = 0;
+            foreach ($storeOrders as $order) {
+                $storeTotalOrders += $this->convertOrderAmount($order, $order->total);
             }
+
+            // Calcular porcentaje.
+            $percent = $totalPaidOrders > 0 ? ($storeTotalOrders / $totalPaidOrders) * 100 : 0;
 
             $data[] = [
                 'store' => $store->name,
@@ -509,10 +559,14 @@ class DatacenterRepository
      */
     public function getSalesPercentByStore(string $startDate, string $endDate): array
     {
-        // Obtener el total de ventas pagados en el rango de fechas
-        $totalPaidOrdersQuery = Order::whereBetween('date', [$startDate, $endDate])
-            ->where('payment_status', 'paid');
-        $totalPaidOrders = $totalPaidOrdersQuery->sum('total');
+        $allOrders = Order::whereBetween('date', [$startDate, $endDate])
+            ->where('payment_status', 'paid')
+            ->get();
+
+        $totalPaidOrders = 0;
+        foreach ($allOrders as $order) {
+            $totalPaidOrders += $this->convertOrderAmount($order, $order->total);
+        }
 
         $stores = Store::with(['orders' => function ($query) use ($startDate, $endDate) {
             $query->whereBetween('date', [$startDate, $endDate])
@@ -521,28 +575,26 @@ class DatacenterRepository
 
         $data = [];
         foreach ($stores as $store) {
-            // Calcular el total de ventas por tienda
-            $storeTotal = $store->orders->sum('total');
+            $storeTotal = 0;
+            foreach ($store->orders as $order) {
+                $storeTotal += $this->convertOrderAmount($order, $order->total);
+            }
 
-            // Calcular el porcentaje de ventas por tienda
             $percent = $totalPaidOrders > 0 ? ($storeTotal / $totalPaidOrders) * 100 : 0;
 
             $data[] = [
                 'store' => $store->name,
                 'percent' => round($percent, 2),
-                'storeTotal' => number_format($storeTotal, 0, ',', '.'),
+                'storeTotal' => $storeTotal, // Raw number, not formatted string
             ];
         }
 
-        // Ordenar los datos por el total de ventas en orden descendente
         usort($data, function ($a, $b) {
             return $b['storeTotal'] <=> $a['storeTotal'];
         });
 
         return $data;
     }
-
-
 
 
     /**
@@ -555,7 +607,6 @@ class DatacenterRepository
      */
     public function getSalesPercentByProduct(string $startDate, string $endDate, int $storeId = null): array
     {
-        // Consulta de ventas con filtro de fecha y local
         $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
@@ -564,37 +615,50 @@ class DatacenterRepository
         }
 
         $orders = $query->get();
-
         $productSales = [];
 
-        // Procesar todos los ventas
         foreach ($orders as $order) {
             $products = json_decode($order->products, true);
 
             if (is_array($products) && count($products) > 0) {
-                $subtotal = $order->subtotal; // Total sin descuentos
-                $total = $order->total; // Total cobrado al cliente (después de descuentos)
+                $subtotal = 0;
+                $convertedProducts = [];
 
                 foreach ($products as $product) {
                     if (is_array($product) && isset($product['name'], $product['price'], $product['quantity'])) {
-                        if (!isset($productSales[$product['name']])) {
-                            $productSales[$product['name']] = [
-                                'total' => 0,
-                                'count' => 0
-                            ];
+                        $productPrice = $product['price'];
+
+                        if (isset($product['currency']) && $product['currency'] === 'Dólar') {
+                            $rate = $this->getHistoricalDollarRate($order);
+                            $productPrice *= $rate['sell'];
                         }
 
-                        // Calcular el porcentaje del subtotal que representa este producto
-                        $productSubtotal = $product['price'] * $product['quantity'];
-                        $productPercentageOfSubtotal = $subtotal > 0 ? $productSubtotal / $subtotal : 0;
+                        $convertedProducts[] = [
+                            'name' => $product['name'],
+                            'price' => $productPrice,
+                            'quantity' => $product['quantity']
+                        ];
 
-                        // Calcular el total ajustado de este producto en base al total cobrado al cliente
-                        $productAdjustedTotal = $productPercentageOfSubtotal * $total;
-
-                        // Acumular las ventas ajustadas y la cantidad
-                        $productSales[$product['name']]['total'] += $productAdjustedTotal;
-                        $productSales[$product['name']]['count'] += $product['quantity'];
+                        $subtotal += ($productPrice * $product['quantity']);
                     }
+                }
+
+                $total = $this->convertOrderAmount($order, $order->total);
+
+                foreach ($convertedProducts as $product) {
+                    if (!isset($productSales[$product['name']])) {
+                        $productSales[$product['name']] = [
+                            'total' => 0,
+                            'count' => 0
+                        ];
+                    }
+
+                    $productSubtotal = $product['price'] * $product['quantity'];
+                    $productPercentageOfSubtotal = $subtotal > 0 ? $productSubtotal / $subtotal : 0;
+                    $productAdjustedTotal = $productPercentageOfSubtotal * $total;
+
+                    $productSales[$product['name']]['total'] += $productAdjustedTotal;
+                    $productSales[$product['name']]['count'] += $product['quantity'];
                 }
             }
         }
@@ -613,7 +677,6 @@ class DatacenterRepository
             ];
         }
 
-        // Ordenar los productos por el total de ventas en orden descendente
         usort($data, function ($a, $b) {
             return $b['productTotal'] <=> $a['productTotal'];
         });
@@ -713,7 +776,6 @@ class DatacenterRepository
      */
     public function getSalesPercentByCategory(string $startDate, string $endDate, int $storeId = null): array
     {
-        // Consulta a la tabla Order
         $orderQuery = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
@@ -722,32 +784,60 @@ class DatacenterRepository
         }
 
         $orders = $orderQuery->get();
-
-
         $categorySales = [];
 
-        // Procesar ventas de Order
         foreach ($orders as $order) {
             $products = json_decode($order->products, true);
 
+            if (!is_array($products) || empty($products)) {
+                continue;
+            }
+
+            $orderTotal = $order->total;
+            if ($order->currency === 'Dólar') {
+                $rate = $this->getHistoricalDollarRate($order);
+                $orderTotal *= $rate['sell'];
+            }
+
+            $subtotal = 0;
+
+            // First pass: calculate subtotal in UYU
             foreach ($products as $product) {
-                if (!isset($product['category_id']) || !$product['category_id']) {
+                if (!isset($product['id'], $product['price'], $product['quantity'])) {
                     continue;
                 }
 
-                if (!isset($categorySales[$product['category_id']])) {
-                    $categorySales[$product['category_id']] = [
-                        'total' => 0,
-                        'count' => 0,
-                        'category_name' => ProductCategory::find($product['category_id'])->name ?? 'Sin categoría'
-                    ];
+                $dbProduct = Product::with('categories')->find($product['id']);
+                if (!$dbProduct || $dbProduct->categories->isEmpty()) {
+                    continue;
                 }
 
-                $categorySales[$product['category_id']]['total'] += $product['price'] * $product['quantity'];
-                $categorySales[$product['category_id']]['count'] += $product['quantity'];
+                $productPrice = $product['price'];
+                if (isset($product['currency']) && $product['currency'] === 'Dólar') {
+                    $rate = $this->getHistoricalDollarRate($order);
+                    $productPrice *= $rate['sell'];
+                }
+
+                $subtotal += ($productPrice * $product['quantity']);
+
+                foreach ($dbProduct->categories as $category) {
+                    if (!isset($categorySales[$category->id])) {
+                        $categorySales[$category->id] = [
+                            'total' => 0,
+                            'count' => 0,
+                            'category_name' => $category->name ?? 'Sin categoría'
+                        ];
+                    }
+
+                    $productTotal = $productPrice * $product['quantity'];
+                    $proportion = $subtotal > 0 ? $productTotal / $subtotal : 0;
+                    $adjustedTotal = $proportion * $orderTotal;
+
+                    $categorySales[$category->id]['total'] += $adjustedTotal;
+                    $categorySales[$category->id]['count'] += $product['quantity'];
+                }
             }
         }
-
 
         $totalSales = array_sum(array_map(function ($category) {
             return $category['total'];
@@ -759,7 +849,7 @@ class DatacenterRepository
             $data[] = [
                 'category' => $category['category_name'],
                 'percent' => round($percent, 2),
-                'categoryTotal' => $category['total'],
+                'categoryTotal' => $category['total']
             ];
         }
 
@@ -789,7 +879,6 @@ class DatacenterRepository
 
         $orders = $orderQuery->get();
 
-
         $paymentMethods = [
             'Crédito' => 0,
             'Débito' => 0,
@@ -798,18 +887,19 @@ class DatacenterRepository
         ];
 
         foreach ($orders as $order) {
+            $convertedAmount = $this->convertOrderAmount($order, $order->total);
+
             $method = $order->payment_method;
             if ($method === 'credit') {
-                $paymentMethods['Crédito'] += $order->total;
+                $paymentMethods['Crédito'] += $convertedAmount;
             } elseif ($method === 'debit') {
-                $paymentMethods['Débito'] += $order->total;
+                $paymentMethods['Débito'] += $convertedAmount;
             } elseif ($method === 'cash') {
-                $paymentMethods['Efectivo'] += $order->total;
+                $paymentMethods['Efectivo'] += $convertedAmount;
             } else {
-                $paymentMethods['Otro'] += $order->total;
+                $paymentMethods['Otro'] += $convertedAmount;
             }
         }
-
 
         $total = array_sum($paymentMethods);
 
@@ -819,6 +909,7 @@ class DatacenterRepository
                 'percent' => $total > 0 ? ($amount / $total) * 100 : 0,
             ];
         }
+
         return $paymentMethods;
     }
 
@@ -832,31 +923,86 @@ class DatacenterRepository
      */
     public function getSalesBySellerData(string $startDate, string $endDate, int $storeId = null): array
     {
-        // Filtrar por el rango de fechas y el estado de pago
         $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
-        // Filtrar por el store_id si se proporciona
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
 
-        // Obtener el total de ventas por vendedor
         $salesBySeller = $query->join('cash_register_logs', 'orders.cash_register_log_id', '=', 'cash_register_logs.id')
             ->join('cash_registers', 'cash_register_logs.cash_register_id', '=', 'cash_registers.id')
             ->join('users', 'cash_registers.user_id', '=', 'users.id')
-            ->select('users.name as seller', DB::raw('SUM(orders.total) as totalSales'))
-            ->groupBy('users.name')
-            ->orderBy('totalSales', 'desc')
-            ->get();
+            ->select(
+                'users.name as seller',
+                'orders.currency',
+                'orders.total',
+                'orders.created_at'
+            )
+            ->get()
+            ->groupBy('seller')
+            ->map(function ($sellerOrders) {
+                $totalSales = 0;
+                foreach ($sellerOrders as $order) {
+                    if ($order->currency === 'Dólar') {
+                        $rate = $this->getHistoricalDollarRate($order);
+                        $totalSales += $order->total * $rate['sell'];
+                    } else {
+                        $totalSales += $order->total;
+                    }
+                }
+                return [
+                    'seller' => $sellerOrders->first()->seller,
+                    'totalSales' => $totalSales
+                ];
+            })
+            ->sortByDesc('totalSales')
+            ->values()
+            ->toArray();
 
+        return $salesBySeller;
+    }
 
-        // Convertir los datos a un array
-        return $salesBySeller->map(function ($item) {
-            return [
-                'seller' => $item->seller,
-                'totalSales' => (float) $item->totalSales,
-            ];
-        })->toArray();
+    /*
+    * Obtiene la tasa de cambio del dólar utilizada para la órden.
+    *
+    * @return 
+    */
+    public function getHistoricalDollarRate(Order $order)
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->where('created_at', '<=', $order->created_at)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$rate) {
+            $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+                ->where('created_at', '>', $order->created_at)
+                ->orderBy('created_at', 'asc')
+                ->first();
+        }
+
+        return [
+            'date' => $rate->created_at->format('Y-m-d H:i:s'),
+            'sell' => $rate->sell
+        ];
+    }
+
+    /**
+     * Convierte el monto de la orden a dolar.
+     *
+     * @param Order $order
+     * @param float $amount
+     * @return float
+     */
+    private function convertOrderAmount(Order $order, float $amount): float
+    {
+        if ($order->currency === 'Dólar') {
+            $rate = $this->getHistoricalDollarRate($order);
+            return $amount * $rate['sell'];
+        }
+        return $amount;
     }
 }

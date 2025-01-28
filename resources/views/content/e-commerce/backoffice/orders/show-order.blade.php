@@ -42,8 +42,8 @@
 ])
 <script>
   window.orderProducts = @json($products);
-      window.baseUrl = "{{ url('') }}/";
-      window.currencySymbol = "{{ $settings->currency_symbol }}"
+  window.baseUrl = "{{ url('') }}/";
+  window.currencySymbol = "{{ $settings->currency_symbol }}"
 </script>
 @endsection
 @endif
@@ -174,28 +174,28 @@ $changeTypeTranslations = [
 
     <!-- Botón para reversar la transacción -->
     @if($order->payment_method === 'debit' || $order->payment_method === 'credit')
-        <button class="btn btn-sm btn-warning"
-            id="reverseTransactionButton"
-            data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}"
-            data-stransaction-id="{{ $order->transaction->STransactionId ?? '' }}"
-            data-store-id="{{ $order->store_id }}"
-            {{ $order->transaction && $order->transaction->status === 'reversed' ? 'disabled' : '' }}>
-            Reversar Transacción
-        </button>
+    <button class="btn btn-sm btn-warning"
+      id="reverseTransactionButton"
+      data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}"
+      data-stransaction-id="{{ $order->transaction->STransactionId ?? '' }}"
+      data-store-id="{{ $order->store_id }}"
+      {{ $order->transaction && $order->transaction->status === 'reversed' ? 'disabled' : '' }}>
+      Reversar Transacción
+    </button>
     @endif
 
     <!-- Botón para anular la transacción -->
     @if($order->payment_method === 'debit' || $order->payment_method === 'credit')
-        <button
-          class="btn btn-sm btn-danger"
-          data-bs-toggle="modal"
-          data-bs-target="#voidTransactionModal"
-          data-store-id="{{ $order->store_id }}"
-          data-order-id="{{ $order->id }}"
-          data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}"
-          {{ $order->transaction && $order->transaction->type === 'void' ? 'disabled' : '' }}>
-          Anular Transacción
-        </button>
+    <button
+      class="btn btn-sm btn-danger"
+      data-bs-toggle="modal"
+      data-bs-target="#voidTransactionModal"
+      data-store-id="{{ $order->store_id }}"
+      data-order-id="{{ $order->id }}"
+      data-transaction-id="{{ $order->transaction->TransactionId ?? '' }}"
+      {{ $order->transaction && $order->transaction->type === 'void' ? 'disabled' : '' }}>
+      Anular Transacción
+    </button>
     @endif
 
 
@@ -328,15 +328,6 @@ $changeTypeTranslations = [
       <i class="bx bx-trash"></i>
     </button>
     @endif
-
-
-
-
-
-
-
-
-
   </div>
 </div>
 
@@ -349,12 +340,12 @@ $changeTypeTranslations = [
 
 @if(session('error'))
 <div class="alert alert-danger alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
-    <div>{{ session('error') }}</div>
-    @if($order->client)
-        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="offcanvas" data-bs-target="#updateClientDataOffcanvas">
-            Modificar datos
-        </button>
-    @endif
+  <div>{{ session('error') }}</div>
+  @if($order->client)
+  <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="offcanvas" data-bs-target="#updateClientDataOffcanvas">
+    Modificar datos
+  </button>
+  @endif
 </div>
 @endif
 
@@ -385,27 +376,34 @@ $changeTypeTranslations = [
           </div>
           @endif
           <div class="order-calculations">
+            @php
+            $currencyDisplay = $order->currency === 'Dólar' ? 'USD' : 'UYU';
+            @endphp
+            <div class="d-flex justify-content-between mb-2">
+               <span class="w-px-100">Moneda:</span>
+                <span class="text-heading"><strong>{{ $order->currency }}</strong></span>
+            </div>
             <div class="d-flex justify-content-between mb-2">
               <span class="w-px-100">Subtotal:</span>
-              <span class="text-heading">{{ $settings->currency_symbol }}{{ $order->subtotal }}</span>
+              <span class="text-heading">{{ $currencyDisplay }} {{ $order->subtotal }}</span>
             </div>
             <div class="d-flex justify-content-between mb-2">
               @if($order->discount !== null && $order->discount !== 0)
               <span class="w-px-100">Descuento:</span>
               @if($order->discount !== null && $order->discount !== 0)
-              <span class="text-heading mb-0">{{ $settings->currency_symbol }}{{ $order->discount }}</span>
+              <span class="text-heading mb-0">{{ $currencyDisplay }} {{ $order->discount }}</span>
               @else
-              <span class="text-heading mb-0">{{ $settings->currency_symbol }}0</span>
+              <span class="text-heading mb-0">{{ $currencyDisplay }} 0</span>
               @endif
               @endif
             </div>
             <div class="d-flex justify-content-between mb-2">
               <span class="w-px-100">Envío:</span>
-              <span class="text-heading">{{ $settings->currency_symbol }}{{ $order->shipping }}</span>
+              <span class="text-heading">{{ $currencyDisplay }} {{ $order->shipping }}</span>
             </div>
             <div class="d-flex justify-content-between">
               <h6 class="w-px-100 mb-0">Total:</h6>
-              <h6 class="mb-0">{{ $settings->currency_symbol }}{{ $order->total }}</h6>
+              <h6 class="mb-0">{{ $currencyDisplay }} {{ $order->total }}</h6>
             </div>
           </div>
         </div>
@@ -620,7 +618,7 @@ $changeTypeTranslations = [
 <!-- Modals -->
 @include('content/e-commerce/backoffice/orders/bill-order')
 @if($order->client)
-    @include('content/e-commerce/backoffice/orders/update-client-data')
+@include('content/e-commerce/backoffice/orders/update-client-data')
 @endif
 @if($order->is_billed && isset($invoice))
 @include('content/e-commerce/backoffice/orders/modal-send-email')

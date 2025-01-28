@@ -25,15 +25,24 @@ class UpdateSupplierRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'city' => 'required|string|max:255',
-            'state' => 'required|string|max:255',
-            'country' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:suppliers,email,' . $this->supplier->id,
-            'doc_type' => 'required|in:CI,PASSPORT,RUT,OTHER',
-            'doc_number' => 'required|numeric',
-            'default_payment_method' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255|unique:suppliers,email,' . $this->supplier->id,
+            'doc_type' => 'nullable|in:CI,PASSPORT,RUT,OTHER',
+            'doc_number' => 'nullable|numeric',
+            'default_payment_method' => 'nullable|string|max:255',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'El nombre del proveedor es obligatorio',
+            'email.email' => 'El email debe ser válido',
+            'email.unique' => 'Este email ya está registrado',
         ];
     }
 }

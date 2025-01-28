@@ -94,6 +94,8 @@ $(function () {
           }
         } else {
           rows.forEach(function (orderData) {
+            const currencySymbol = orderData.currency === 'Dólar' ? 'USD' : 'UYU';
+
             if (orderData.client_name) {
               uniqueClients.add(orderData.client_name);
             }
@@ -133,7 +135,7 @@ $(function () {
                         <p class="order-date text-muted small">${moment(orderData.date).format('DD/MM/YYYY')}</p>
                         <p class="order-payment-status"><span class="badge ${paymentStatusClass}">${paymentStatusText}</span></p>
                         <p class="order-shipping-status"><span class="badge ${shippingStatusClass}">${shippingStatusText}</span></p>
-                        <h6 class="order-total">${currencySymbol}${parseFloat(orderData.total).toFixed(2)}</h6>
+                        <h6 class="order-total">${currencySymbol} ${parseFloat(orderData.total).toFixed(2)}</h6>
                         <div class="d-inline-flex justify-content-end mt-auto mb-2 gap-1">
                           <a href="${baseUrl}admin/orders/${orderData.uuid}" class="btn view-order p-1"><i class="far fa-eye"></i></a>
                           <button data-id="${orderData.id}" class="btn delete-order p-1 delete-record"><i class="far fa-trash-alt"></i></button>

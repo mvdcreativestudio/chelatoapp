@@ -328,8 +328,10 @@ $(document).ready(function () {
         let productsHtml = '';
         productsToDisplay.forEach(product => {
             const priceToDisplay = product.price ? product.price : product.old_price;
+            const currencyLabel = product.currency === 'Dólar' ? 'USD' : 'UYU';
+
             const inactiveLabel = product.status == 2 ? `<span class="badge bg-warning text-dark position-absolute top-0 start-0 m-1">Inactivo</span>` : '';
-            const oldPriceHtml = product.price && product.old_price ? `<span class="text-muted" style="font-size: 0.8em;"><del>${currencySymbol}${product.old_price}</del></span>` : '';
+            const oldPriceHtml = product.price && product.old_price ? `<span class="text-muted" style="font-size: 0.8em;"><del>${currencyLabel} ${product.old_price}</del></span>` : '';
 
             // Añadir indicador de stock
             const stockIndicator = getStockIndicator(product);
@@ -345,7 +347,7 @@ $(document).ready(function () {
                               <h5 class="card-title">${product.name}</h5>
                               <p class="card-text">
                                   ${oldPriceHtml}
-                                  <span class="fw-bold">${currencySymbol}${priceToDisplay}</span>
+                                  <span class="fw-bold">${currencyLabel} ${priceToDisplay}</span>
                               </p>
                               ${stockIndicator}
                           </div>
@@ -378,10 +380,11 @@ $(document).ready(function () {
         }
         let productsHtml = '<ul class="list-group w-100 p-0">';
         productsToDisplay.forEach(product => {
+            const currencyLabel = product.currency === 'Dólar' ? 'USD' : 'UYU';
             const priceToDisplay = product.price ? product.price.toLocaleString('es-ES') : product.old_price.toLocaleString('es-ES');
             const oldPriceFormatted = product.old_price ? product.old_price.toLocaleString('es-ES') : '';
             const inactiveText = product.status == 0 ? '<span class="badge bg-danger text-white ms-2">Inactivo</span>' : '';
-            const oldPriceHtml = product.price && product.old_price ? `<small class="text-muted"><del>${currencySymbol}${oldPriceFormatted}</del></small>` : '';
+            const oldPriceHtml = product.price && product.old_price ? `<small class="text-muted"><del>${currencyLabel} ${oldPriceFormatted}</del></small>` : '';
 
             // Añadir indicador de stock
             const stockIndicator = getStockIndicator(product);
@@ -393,8 +396,8 @@ $(document).ready(function () {
                       <div>
                           <h6 class="mb-0 fw-bold">${product.name}</h6>
                           <div class="d-flex align-items-center mt-1">
-                              ${oldPriceHtml ? `<small class="text-muted me-2"><del>${currencySymbol}${oldPriceFormatted}</del></small>` : ''}
-                              <span class="text-primary fw-semibold">${currencySymbol}${priceToDisplay}</span>
+                              ${oldPriceHtml ? `<small class="text-muted me-2"><del>${currencyLabel} ${oldPriceFormatted}</del></small>` : ''}
+                              <span class="text-primary fw-semibold">${currencyLabel} ${priceToDisplay}</span>
                               ${inactiveText}
                           </div>
                           ${stockIndicator}
@@ -458,6 +461,7 @@ $(document).ready(function () {
                     price: priceToUse,
                     original_price: product.original_price, // Almacena el precio original
                     original_price: priceToUse, // Guardar el precio original
+                    currency: product.currency,
                     flavors: selectedFlavors,
                     quantity: quantity, // Usar la cantidad deseada
                     category_id: category_id,
@@ -486,12 +490,14 @@ $(document).ready(function () {
                 //     mostrarError('No hay suficiente stock de este producto.');
                 //     return;
                 // }
+
                 cart.push({
                     id: product.id,
                     name: product.name,
                     image: product.image,
                     price: priceToUse,
                     original_price: priceToUse, // Guardar el precio original
+                    currency: product.currency,
                     flavors: [],
                     quantity: quantity, // Usar la cantidad deseada
                     category_id: category_id,
@@ -543,63 +549,87 @@ $(document).ready(function () {
 
     // Función para actualizar el carrito en el DOM
     function updateCart() {
-        let cartHtml = '';
-        let subtotal = 0;
-        let totalItems = 0;  // Contador de productos
 
-        cartHtml = `
-        <div class="row gy-3 overflow-auto" style="max-height: 400px;">
-      `;
+        var exchange_price = 0;
 
-        cart.forEach(item => {
-            const itemTotal = item.price * item.quantity;
-            subtotal += itemTotal;
-            totalItems += item.quantity;
 
-            cartHtml += `
-            <div class="col-12">
-              <div class="product-cart-card">
-                <div class="col-4 d-flex align-items-center">
-                  <img src="${baseUrl + item.image}" class="img-fluid product-cart-card-img" alt="${item.name}">
-                </div>
-                <div class="col-8">
-                  <div class="product-cart-card-body">
-                    <div class="d-flex justify-content-between">
-                      <h5 class="product-cart-title">${item.name}</h5>
-                      <div class="product-cart-actions">
-                        <span class="product-cart-remove" data-id="${item.id}"><i class="bx bx-trash"></i></span>
-                      </div>
-                    </div>
-                    <p class="product-cart-price">${currencySymbol}${item.price.toLocaleString('es-ES')}</p>
-                    <p class="product-cart-quantity">Cantidad: ${item.quantity}</p>
-                    <p><strong>Total: ${currencySymbol}${itemTotal.toLocaleString('es-ES')}</strong></p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
+        $.ajax({
+            url: 'exchange-rate',
+            type: 'GET',
+            success: function (response) {
+                 exchange_price = response.exchange_rate.sell;
+                 let cartHtml = '';
+                 let subtotal = 0;
+                 let totalItems = 0;  // Contador de productos
+         
+                 cartHtml = `
+                 <div class="row gy-3 overflow-auto" style="max-height: 400px;">
+               `;
+         
+                 cart.forEach(item => {
+                     var itemTotal = 0;
+         
+                     if (item.currency == 'Dólar') {
+                         console.log(exchange_price);
+         
+                         var itemTotal = item.quantity * item.price * exchange_price;
+                     } else {
+                         var itemTotal = item.price * item.quantity
+                     }
+         
+                     subtotal += itemTotal;
+                     totalItems += item.quantity;
+                     const currencyLabel = item.currency === 'Dólar' ? 'USD' : 'UYU';
+
+                     cartHtml += `
+                     <div class="col-12">
+                       <div class="product-cart-card">
+                         <div class="col-4 d-flex align-items-center">
+                           <img src="${baseUrl + item.image}" class="img-fluid product-cart-card-img" alt="${item.name}">
+                         </div>
+                         <div class="col-8">
+                           <div class="product-cart-card-body">
+                             <div class="d-flex justify-content-between">
+                               <h5 class="product-cart-title">${item.name}</h5>
+                               <div class="product-cart-actions">
+                                 <span class="product-cart-remove" data-id="${item.id}"><i class="bx bx-trash"></i></span>
+                               </div>
+                             </div>
+                             <p class="product-cart-price">${currencyLabel} ${item.price.toLocaleString('es-ES')}</p>
+                             <p class="product-cart-quantity">Cantidad: ${item.quantity}</p>
+                             <p><strong>Total: UYU ${itemTotal.toLocaleString('es-ES')}</strong></p>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                   `;
+                 });
+         
+                 cartHtml += `</div>`; // Cerrar el contenedor de desplazamiento
+         
+         
+                 // Actualiza el contenido del carrito
+                 $('#cart-items').html(cartHtml);
+                 $('.subtotal').text(` UYU ${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })}`);
+                 $('.total').text(` UYU ${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })}`);
+         
+                 // Actualiza el contador de productos en el botón "Ver Carrito"
+                 $('#cart-count').text(totalItems);
+         
+                 // Habilitar o deshabilitar el botón "Finalizar Venta" según si hay productos en el carrito
+                 if (cart.length === 0) {
+                     $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
+                 } else {
+                     $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
+                 }
+         
+                 // Guardar el carrito en el servidor
+                 saveCart();
+                            },
+            error: function (xhr) {
+                console.error('Error al cargar el tipo de cambio:', xhr.responseText);
+            }
         });
-
-        cartHtml += `</div>`; // Cerrar el contenedor de desplazamiento
-
-
-        // Actualiza el contenido del carrito
-        $('#cart-items').html(cartHtml);
-        $('.subtotal').text(`${currencySymbol}${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })}`);
-        $('.total').text(`${currencySymbol}${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })}`);
-
-        // Actualiza el contador de productos en el botón "Ver Carrito"
-        $('#cart-count').text(totalItems);
-
-        // Habilitar o deshabilitar el botón "Finalizar Venta" según si hay productos en el carrito
-        if (cart.length === 0) {
-            $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
-        } else {
-            $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
-        }
-
-        // Guardar el carrito en el servidor
-        saveCart();
     }
 
     // Manejar el clic en el botón "Agregar al carrito"
@@ -922,34 +952,34 @@ $(document).ready(function () {
     });
 
     // Mostrar/Ocultar campos según el tipo de cliente seleccionado
-    $('#tipoCliente').change(function() {
+    $('#tipoCliente').change(function () {
         clearErrors();
         const tipo = $(this).val();
-        
+
         if (tipo == 'individual') {
             $('#ciField').show();
             $('#ciCliente').attr('required', false);
-    
+
             $('#nombreCliente, #apellidoCliente').attr('required', true);
             $('#nombreAsterisk, #apellidoAsterisk').show();
             $('label[for="nombreCliente"] .text-danger, label[for="apellidoCliente"] .text-danger').show();
 
             $('.responsible-text').hide();
-    
+
             $('#rutField, #razonSocialField').hide();
             $('#razonSocialCliente, #rutCliente').val('').removeAttr('required');
             $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').hide();
-    
+
         } else if (tipo == 'company') {
             $('#ciField').hide();
             $('#ciCliente').val('').removeAttr('required');
-            
+
             $('label[for="nombreCliente"] .text-danger, label[for="apellidoCliente"] .text-danger').hide();
             $('#nombreCliente, #apellidoCliente').removeAttr('required');
             $('#nombreAsterisk, #apellidoAsterisk').hide();
-    
+
             $('.responsible-text').show();
-    
+
             $('#rutField, #razonSocialField').show();
             $('#razonSocialCliente, #rutCliente').attr('required', true);
             $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').show();
@@ -966,13 +996,13 @@ $(document).ready(function () {
         let requiredFields = {};
 
         if (clientType === 'individual') {
-            requiredFields.nombreCliente = 'Nombre';           
-            requiredFields.apellidoCliente = 'Apellido';      
+            requiredFields.nombreCliente = 'Nombre';
+            requiredFields.apellidoCliente = 'Apellido';
         } else if (clientType === 'company') {
             requiredFields.razonSocialCliente = 'Razón Social';
-            requiredFields.rutCliente = 'RUT';                 
+            requiredFields.rutCliente = 'RUT';
         }
-    
+
         let missingFields = [];
         for (let field in requiredFields) {
             const value = document.getElementById(field)?.value;
@@ -980,7 +1010,7 @@ $(document).ready(function () {
                 missingFields.push(requiredFields[field]);
             }
         }
-    
+
 
         if (missingFields.length > 0) {
             const offcanvas = document.getElementById('crearClienteOffcanvas');

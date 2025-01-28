@@ -103,7 +103,10 @@ $(function () {
             // Determinar qué precio mostrar
             const priceToShow = rowData.price > 0 ? rowData.price : rowData.old_price; // Cambiado para mostrar old_price si price es 0
             const priceClass = rowData.price !== null ? '' : ''; // Añadido para mostrar un estilo diferente si no hay precio
-
+            
+            // Determinar el símbolo de la moneda según el valor de currency
+            const currencySymbol = rowData.currency === 'Dólar' ? 'USD ' : 'UYU ';
+            
             const card = `
               <div class="col-md-6 col-lg-4 col-12 mb-4">
                 <a href="${baseUrl}admin/products/${rowData.id}" class="text-decoration-none">

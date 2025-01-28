@@ -51,15 +51,15 @@ class SupplierController extends Controller
         $suppliers = $this->supplierRepository->getAllWithOrders();
         return view('suppliers.index', $suppliers);
     }
-    
-    
+
+
     /**
      * Devuelve a todos los proveedores.
      *
      */
     public function getAll()
     {
-        $suppliers =$this->supplierRepository->getAll();
+        $suppliers = $this->supplierRepository->getAll();
         return response()->json($suppliers);
     }
 
@@ -81,8 +81,20 @@ class SupplierController extends Controller
      */
     public function store(StoreSupplierRequest $request): RedirectResponse
     {
-        $this->supplierRepository->create($request->validated());
-        return redirect()->route('suppliers.index')->with('success', 'Proveedor creado correctamente.');
+        try {
+            $data = $request->validated();
+            $data['store_id'] = auth()->user()->store_id;
+
+            $this->supplierRepository->create($data);
+            return redirect()
+                ->route('suppliers.index')
+                ->with('success', 'Proveedor creado correctamente.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Error al crear el proveedor: ' . $e->getMessage());
+        }
     }
 
     /**

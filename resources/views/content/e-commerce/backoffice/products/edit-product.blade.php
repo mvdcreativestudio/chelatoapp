@@ -3,17 +3,17 @@
 @section('title', 'Editar Producto')
 
 @section('vendor-style')
-    @vite(['resources/assets/vendor/libs/quill/typography.scss', 'resources/assets/vendor/libs/quill/katex.scss', 'resources/assets/vendor/libs/quill/editor.scss', 'resources/assets/vendor/libs/select2/select2.scss', 'resources/assets/vendor/libs/dropzone/dropzone.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss', 'resources/assets/vendor/libs/tagify/tagify.scss', 'resources/assets/vendor/libs/toastr/toastr.scss',
+@vite(['resources/assets/vendor/libs/quill/typography.scss', 'resources/assets/vendor/libs/quill/katex.scss', 'resources/assets/vendor/libs/quill/editor.scss', 'resources/assets/vendor/libs/select2/select2.scss', 'resources/assets/vendor/libs/dropzone/dropzone.scss', 'resources/assets/vendor/libs/flatpickr/flatpickr.scss', 'resources/assets/vendor/libs/tagify/tagify.scss', 'resources/assets/vendor/libs/toastr/toastr.scss',
 ])
 @endsection
 
 @section('vendor-script')
-    @vite(['resources/assets/vendor/libs/quill/katex.js', 'resources/assets/vendor/libs/quill/quill.js', 'resources/assets/vendor/libs/select2/select2.js', 'resources/assets/vendor/libs/dropzone/dropzone.js', 'resources/assets/vendor/libs/jquery-repeater/jquery-repeater.js', 'resources/assets/vendor/libs/flatpickr/flatpickr.js', 'resources/assets/vendor/libs/tagify/tagify.js', 'resources/assets/vendor/libs/toastr/toastr.js',
-    ])
+@vite(['resources/assets/vendor/libs/quill/katex.js', 'resources/assets/vendor/libs/quill/quill.js', 'resources/assets/vendor/libs/select2/select2.js', 'resources/assets/vendor/libs/dropzone/dropzone.js', 'resources/assets/vendor/libs/jquery-repeater/jquery-repeater.js', 'resources/assets/vendor/libs/flatpickr/flatpickr.js', 'resources/assets/vendor/libs/tagify/tagify.js', 'resources/assets/vendor/libs/toastr/toastr.js',
+])
 @endsection
 
 @section('page-script')
-    @vite(['resources/assets/js/app-ecommerce-product-edit.js', 'resources/assets/js/app-ecommerce-product-edit-features.js', 'resources/assets/js/app-ecommerce-product-edit-gallery.js'])
+@vite(['resources/assets/js/app-ecommerce-product-edit.js', 'resources/assets/js/app-ecommerce-product-edit-features.js', 'resources/assets/js/app-ecommerce-product-edit-gallery.js'])
 @endsection
 
 @section('content')
@@ -44,13 +44,13 @@
 
 
         @if ($errors->any())
-            <div class="alert alert-danger">
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
+        <div class="alert alert-danger">
+            <ul>
+                @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
         @endif
 
         <div class="app-ecommerce" data-raw-materials='@json($rawMaterials)'
@@ -137,10 +137,10 @@
                                         name="flavors[]"
                                         data-selected="{{ json_encode($product->flavors->pluck('id')->toArray()) }}">
                                         @foreach ($flavors as $flavor)
-                                            <option value="{{ $flavor->id }}"
-                                                {{ in_array($flavor->id, $product->flavors->pluck('id')->toArray()) ? 'selected' : '' }}>
-                                                {{ $flavor->name }}
-                                            </option>
+                                        <option value="{{ $flavor->id }}"
+                                            {{ in_array($flavor->id, $product->flavors->pluck('id')->toArray()) ? 'selected' : '' }}>
+                                            {{ $flavor->name }}
+                                        </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -150,15 +150,15 @@
                     <!-- /Variants -->
                     <!-- Recipe -->
                     <div class="card mb-4" id="recipeCard" style="display: none;">
-                      <div class="card-header">
-                        <h5 class="card-title mb-0">Receta</h5>
-                      </div>
-                      <div class="card-body">
-                        <div data-repeater-list="recipes">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Receta</h5>
                         </div>
-                        <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
-                        {{-- <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button> --}}
-                      </div>
+                        <div class="card-body">
+                            <div data-repeater-list="recipes">
+                            </div>
+                            <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
+                            {{-- <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button> --}}
+                        </div>
                     </div>
 
                     <!-- Card con Tabs -->
@@ -196,18 +196,18 @@
                                 <div class="tab-pane fade show active" id="featuresTabContent" role="tabpanel" aria-labelledby="features-tab">
                                     <div id="featuresRepeater">
                                         @foreach ($product->features as $index => $feature)
-                                            <div class="row feature-row mb-3">
-                                                <div class="col-10">
-                                                    <input type="text" class="form-control" name="features[{{ $index }}][value]"
-                                                        placeholder="Ejemplo: Resistente al agua" value="{{ $feature->value }}">
-                                                    <div class="error-message text-danger small mt-1"></div>
-                                                </div>
-                                                <div class="col-2 text-center">
-                                                    <button type="button" class="btn btn-icon btn-outline-danger remove-row" title="Eliminar">
-                                                        <i class="bx bx-trash"></i>
-                                                    </button>
-                                                </div>
+                                        <div class="row feature-row mb-3">
+                                            <div class="col-10">
+                                                <input type="text" class="form-control" name="features[{{ $index }}][value]"
+                                                    placeholder="Ejemplo: Resistente al agua" value="{{ $feature->value }}">
+                                                <div class="error-message text-danger small mt-1"></div>
                                             </div>
+                                            <div class="col-2 text-center">
+                                                <button type="button" class="btn btn-icon btn-outline-danger remove-row" title="Eliminar">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                         @endforeach
                                     </div>
                                     <button type="button" class="btn btn-primary btn-sm" id="addFeature">
@@ -220,29 +220,29 @@
                                     <small>Todas las dimensiones deben ser introducidas en CM</small>
                                     <div id="sizesRepeater">
                                         @foreach ($product->sizes as $index => $size)
-                                            <div class="row size-row mb-3">
-                                                <div class="col-3">
-                                                    <input type="text" class="form-control" name="sizes[{{ $index }}][size]"
-                                                        placeholder="Nombre (Opcional)" value="{{ $size->size }}">
-                                                </div>
-                                                <div class="col-3">
-                                                    <input type="number" class="form-control" name="sizes[{{ $index }}][width]"
-                                                        placeholder="Ancho (Opcional)" value="{{ $size->width }}">
-                                                </div>
-                                                <div class="col-3">
-                                                    <input type="number" class="form-control" name="sizes[{{ $index }}][height]"
-                                                        placeholder="Alto (Opcional)" value="{{ $size->height }}">
-                                                </div>
-                                                <div class="col-2">
-                                                    <input type="number" class="form-control" name="sizes[{{ $index }}][length]"
-                                                        placeholder="Largo (Opcional)" value="{{ $size->length }}">
-                                                </div>
-                                                <div class="col-1 text-end">
-                                                    <button type="button" class="btn btn-icon btn-outline-danger remove-size" title="Eliminar">
-                                                        <i class="bx bx-trash"></i>
-                                                    </button>
-                                                </div>
+                                        <div class="row size-row mb-3">
+                                            <div class="col-3">
+                                                <input type="text" class="form-control" name="sizes[{{ $index }}][size]"
+                                                    placeholder="Nombre (Opcional)" value="{{ $size->size }}">
                                             </div>
+                                            <div class="col-3">
+                                                <input type="number" class="form-control" name="sizes[{{ $index }}][width]"
+                                                    placeholder="Ancho (Opcional)" value="{{ $size->width }}">
+                                            </div>
+                                            <div class="col-3">
+                                                <input type="number" class="form-control" name="sizes[{{ $index }}][height]"
+                                                    placeholder="Alto (Opcional)" value="{{ $size->height }}">
+                                            </div>
+                                            <div class="col-2">
+                                                <input type="number" class="form-control" name="sizes[{{ $index }}][length]"
+                                                    placeholder="Largo (Opcional)" value="{{ $size->length }}">
+                                            </div>
+                                            <div class="col-1 text-end">
+                                                <button type="button" class="btn btn-icon btn-outline-danger remove-size" title="Eliminar">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                         @endforeach
                                     </div>
                                     <button type="button" class="btn btn-primary btn-sm" id="addSize">
@@ -254,26 +254,26 @@
                                 <div class="tab-pane fade" id="colorsTabContent" role="tabpanel" aria-labelledby="colors-tab">
                                     <div id="colorsRepeater">
                                         @foreach ($product->colors as $index => $color)
-                                            <div class="row color-row mb-3">
-                                                <div class="col-5">
-                                                    <input type="text" class="form-control" name="colors[{{ $index }}][name]"
-                                                        placeholder="Nombre del Color" value="{{ $color->color_name }}">
-                                                </div>
-                                                <div class="col-5 d-flex align-items-center">
-                                                    <input type="color" class="form-control-color me-2" name="colors[{{ $index }}][color_picker]"
-                                                        value="{{ $color->hex_code ?? '#FFFFFF' }}" onchange="syncHexInput(this)"
-                                                        oninput="syncHexInput(this)">
-                                                    <input type="text" class="form-control" name="colors[{{ $index }}][hex_code]"
-                                                        placeholder="#FFFFFF" value="{{ $color->hex_code ?? '' }}"
-                                                        oninput="syncColorPicker(this)">
-                                                </div>
-                                                <div class="col-2">
-                                                    <button type="button" class="btn btn-icon btn-outline-danger remove-color" title="Eliminar">
-                                                        <i class="bx bx-trash"></i>
-                                                    </button>
-                                                </div>
-
+                                        <div class="row color-row mb-3">
+                                            <div class="col-5">
+                                                <input type="text" class="form-control" name="colors[{{ $index }}][name]"
+                                                    placeholder="Nombre del Color" value="{{ $color->color_name }}">
                                             </div>
+                                            <div class="col-5 d-flex align-items-center">
+                                                <input type="color" class="form-control-color me-2" name="colors[{{ $index }}][color_picker]"
+                                                    value="{{ $color->hex_code ?? '#FFFFFF' }}" onchange="syncHexInput(this)"
+                                                    oninput="syncHexInput(this)">
+                                                <input type="text" class="form-control" name="colors[{{ $index }}][hex_code]"
+                                                    placeholder="#FFFFFF" value="{{ $color->hex_code ?? '' }}"
+                                                    oninput="syncColorPicker(this)">
+                                            </div>
+                                            <div class="col-2">
+                                                <button type="button" class="btn btn-icon btn-outline-danger remove-color" title="Eliminar">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+                                            </div>
+
+                                        </div>
                                         @endforeach
                                     </div>
                                     <button type="button" class="btn btn-primary btn-sm" id="addColor">
@@ -295,6 +295,15 @@
                             <h5 class="card-title mb-0">Precio</h5>
                         </div>
                         <div class="card-body">
+                            <!-- Currency -->
+                            <div class="mb-3">
+                                <label class="form-label" for="ecommerce-product-currency">Moneda</label>
+                                <select class="form-select" id="ecommerce-product-currency" name="currency" required>
+                                    <option value="">Seleccionar moneda</option>
+                                    <option value="Peso" {{ $product->currency == 'Peso' ? 'selected' : '' }}>Peso</option>
+                                    <option value="Dólar" {{ $product->currency == 'Dólar' ? 'selected' : '' }}>Dólar</option>
+                                </select>
+                            </div>
                             <!-- Base Price -->
                             <div class="mb-3">
                                 <label class="form-label" for="ecommerce-product-price">Precio normal - <small>IVA
@@ -362,28 +371,30 @@
                                 <select id="vendor" class="select2 form-select" data-placeholder="Seleccionar local"
                                     name="store_id" required>
                                     @if (auth()->user()->hasPermissionTo('access_global_products'))
-                                        <option value="">Seleccionar local</option>
-                                        @foreach ($stores as $store)
-                                            <option value="{{ $store->id }}"
-                                                {{ $product->store_id == $store->id ? 'selected' : '' }}>
-                                                {{ $store->name }}</option>
-                                        @endforeach
+                                    <option value="">Seleccionar local</option>
+                                    @foreach ($stores as $store)
+                                    <option value="{{ $store->id }}"
+                                        {{ $product->store_id == $store->id ? 'selected' : '' }}>
+                                        {{ $store->name }}
+                                    </option>
+                                    @endforeach
                                     @else
-                                        <option value="{{ auth()->user()->store_id }}" selected>
-                                            {{ auth()->user()->store->name }}</option>
+                                    <option value="{{ auth()->user()->store_id }}" selected>
+                                        {{ auth()->user()->store->name }}
+                                    </option>
                                     @endif
                                 </select>
                             </div>
 
                             <!-- Category -->
                             <div class="mb-3 col ecommerce-select2-dropdown">
-                              <select id="category-org" class="select2 form-select" data-placeholder="Seleccione la categoría" name="categories[]" multiple data-selected="{{ json_encode($product->categories->pluck('id')->toArray()) }}">
-                                @foreach ($categories as $category)
-                                  <option value="{{ $category->id }}">
-                                      {{ $category->name }}
-                                  </option>
-                                @endforeach
-                              </select>
+                                <select id="category-org" class="select2 form-select" data-placeholder="Seleccione la categoría" name="categories[]" multiple data-selected="{{ json_encode($product->categories->pluck('id')->toArray()) }}">
+                                    @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}">
+                                        {{ $category->name }}
+                                    </option>
+                                    @endforeach
+                                </select>
                             </div>
 
 
@@ -443,10 +454,10 @@
                                         <!-- Imagen Principal -->
                                         <div class="mb-3 d-flex justify-content-center" id="existingImage">
                                             @if ($product->image)
-                                                <img src="{{ asset($product->image) }}" alt="Imagen del producto"
-                                                    class="img-thumbnail rounded shadow-sm"
-                                                    id="productImagePreview"
-                                                    style="max-width: 200px; border: 1px solid #ddd;">
+                                            <img src="{{ asset($product->image) }}" alt="Imagen del producto"
+                                                class="img-thumbnail rounded shadow-sm"
+                                                id="productImagePreview"
+                                                style="max-width: 200px; border: 1px solid #ddd;">
                                             @endif
                                         </div>
                                         <!-- Dropzone -->
@@ -471,21 +482,21 @@
                                     </div>
                                     <div id="galleryPreview" class="row g-2 mt-3">
                                         @foreach ($product->gallery as $image)
-                                            <div class="col-12 col-xl-6 d-flex justify-content-center">
-                                                <div class="card shadow-sm border-0 w-100 text-center">
-                                                    <div class="position-relative d-flex align-items-center justify-content-center">
-                                                        <img src="{{ asset($image->image) }}"
-                                                             class="card-img-top rounded mx-auto d-block"
-                                                             alt="Imagen del producto"
-                                                             style="max-height: 200px; object-fit: cover; width: 100%;">
-                                                        <button type="button" class="btn btn-sm btn-danger remove-image position-absolute top-0 end-0 m-2"
-                                                                data-url="{{ route('products.gallery.delete', ['imageId' => $image->id]) }}"
-                                                                style="border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
-                                                            <i class="bx bx-trash"></i>
-                                                        </button>
-                                                    </div>
+                                        <div class="col-12 col-xl-6 d-flex justify-content-center">
+                                            <div class="card shadow-sm border-0 w-100 text-center">
+                                                <div class="position-relative d-flex align-items-center justify-content-center">
+                                                    <img src="{{ asset($image->image) }}"
+                                                        class="card-img-top rounded mx-auto d-block"
+                                                        alt="Imagen del producto"
+                                                        style="max-height: 200px; object-fit: cover; width: 100%;">
+                                                    <button type="button" class="btn btn-sm btn-danger remove-image position-absolute top-0 end-0 m-2"
+                                                        data-url="{{ route('products.gallery.delete', ['imageId' => $image->id]) }}"
+                                                        style="border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+                                                        <i class="bx bx-trash"></i>
+                                                    </button>
                                                 </div>
                                             </div>
+                                        </div>
                                         @endforeach
                                     </div>
                                 </div>
@@ -501,5 +512,5 @@
 
             </div>
     </form>
-  </div>
+</div>
 @endsection

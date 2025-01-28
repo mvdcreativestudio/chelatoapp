@@ -139,6 +139,25 @@
         </div>
       </div>
 
+      <div class="currency-section mt-2">
+        <div class="card shadow-sm border-0">
+            <div class="card-header py-2 px-3">
+                <h6 class="mb-0">Moneda</h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="btn-group btn-group-sm w-100" data-toggle="buttons">
+                    <label class="btn btn-outline-secondary btn-sm">
+                        <input type="radio" name="currency" value="Peso" checked> 
+                        <i class="bx bx-dollar"></i> Peso
+                    </label>
+                    <label class="btn btn-outline-secondary btn-sm">
+                        <input type="radio" name="currency" value="Dólar"> 
+                        <i class="bx bx-dollar"></i> Dólar
+                    </label>
+                </div>
+            </div>
+        </div>
+      </div>
       <div class="discount-section mt-3">
         <div class="card shadow-sm border-0">
             <!-- Encabezado de la tarjeta colapsable -->

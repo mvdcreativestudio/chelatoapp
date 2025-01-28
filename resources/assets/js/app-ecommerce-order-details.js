@@ -30,34 +30,38 @@ $(function () {
           }
         },
         {
-          // Precio del producto
+          // Precio unitario con símbolo de moneda
           data: 'price',
           render: function (data, type, full, meta) {
-            return `${currencySymbol}${parseFloat(data).toFixed(2)}`;
+            const currencySymbol = full.currency === 'Dólar' ? 'USD' : 'UYU';
+            return `${currencySymbol} ${parseFloat(data).toFixed(2)}`;
           }
         },
         { data: 'quantity' },
         {
-          // Total por producto
+          // Total por producto con símbolo de moneda
           data: null,
           render: function (data, type, row, meta) {
-            return `${currencySymbol}${(row.price * row.quantity).toFixed(2)}`;
+            const currencySymbol = row.currency === 'Dólar' ? 'USD' : 'UYU';
+            return `${currencySymbol} ${(row.price * row.quantity).toFixed(2)}`;
           }
         }
       ],
       columnDefs: [
         {
-          // Renderizar Precio
+          // Renderizar precio.
           targets: 2,
           render: function (data, type, full, meta) {
-            return `${currencySymbol}${parseFloat(data).toFixed(2)}`;
+            const currencySymbol = full.currency === 'Dólar' ? 'USD' : 'UYU';
+            return `${currencySymbol} ${parseFloat(data).toFixed(2)}`;
           }
         },
         {
-          // Renderizar Total por Producto
+          // Renderizar total por producto.
           targets: -1,
           render: function (data, type, full, meta) {
-            return `${currencySymbol}${(full.price * full.quantity).toFixed(2)}`;
+            const currencySymbol = full.currency === 'Dólar' ? 'USD' : 'UYU';
+            return `${currencySymbol} ${(full.price * full.quantity).toFixed(2)}`;
           }
         }
       ],

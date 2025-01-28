@@ -21,8 +21,7 @@ class Supplier extends Model
       'email', 
       'doc_type', 
       'doc_number', 
-      'default_payment_method',
-      'store_id'
+      'default_payment_method'
     ];
 
     /**

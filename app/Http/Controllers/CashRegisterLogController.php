@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCashRegisterLogRequest;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateCashRegisterLogRequest;
+use App\Models\CurrencyRateHistory;
+use App\Models\CurrencyRate;
 use App\Models\MercadoPagoAccountPOS;
 use App\Models\Product;
 use App\Repositories\CashRegisterLogRepository;
@@ -318,13 +320,26 @@ class CashRegisterLogController extends Controller
     }
 
     /**
-     * Guarda el carrito del PDV de la session.
+     * Guarda el carrito del PDV de la session. Si el product tiene como 'currency':'Dólar', se fija la ult. cotización y 
+     * multiplica por el valor de venta del Dólar. 
      *
      * @return JsonResponse
      */
     public function saveCart(Request $request)
     {
         $cart = $request->input('cart');
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        foreach ($cart as &$item) {
+            if ($item['currency'] === 'Dólar' || $item['currency'] === 'D\u00f3lar') {
+                $item['exchange_price'] = $item['price'] / $rate->sell;
+            }
+        }
+
+        Log::info('Cart: ' . json_encode($cart));
         session(['cart' => $cart]);
         return response()->json(['status' => 'success']);
     }
@@ -338,6 +353,18 @@ class CashRegisterLogController extends Controller
     {
         $cart = session('cart', []);
         return response()->json(['cart' => $cart]);
+    }
+
+    /*
+    * Devuelve la última cotización del Dólar.
+    */
+    public function getExchangeRate()
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        return response()->json(['exchange_rate' => $rate]);
     }
 
     /**

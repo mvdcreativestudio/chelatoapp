@@ -251,30 +251,29 @@ $(function () {
   // Abrir FORM para editar el cupon.
   
   $('.datatables-coupons tbody').on('click', '.edit-record', function () {
-    var recordId = $(this).data('id'); // Obtener el ID del cupón
-    $('#updateCouponBtn').attr('data-id', recordId); // Asignar el ID del cupón al botón de "Actualizar Cupón"
+    var recordId = $(this).data('id');
+    $('#updateCouponBtn').attr('data-id', recordId);
 
-    // Acceder al input de fecha de expiración del modal de edición
-    var $couponExpiryInput = $('#editCouponModal #couponExpiry'); 
+    var $couponExpiryInput = $('#editCouponModal #couponExpiry');
+    var $editInputGroupText = $('#editCouponModal .input-group-text');
 
-    // Realizar la solicitud Ajax para obtener los detalles del cupón
     $.ajax({
-        url: 'coupons/' + recordId, // Reemplaza 'coupons/' por la ruta correcta para obtener los detalles del cupón
+        url: 'coupons/' + recordId,
         type: 'GET',
         success: function (response) {
-            // Llenar los campos del formulario de edición con los detalles del cupón obtenidos de la base de datos
-            console.log('Response:', response); // Añadir log para verificar la respuesta
+            console.log('Response:', response);
             
             $('#editCouponModal #couponCode').val(response.code);
             $('#editCouponModal #couponType').val(response.type);
             $('#editCouponModal #couponAmount').val(response.amount);
 
-            // Verificar si existe fecha de expiración antes de intentar dividirla
+            // Update input group text based on coupon type
+            $editInputGroupText.text(response.type === 'percentage' ? '%' : 'UYU');
+
             if (response.due_date) {
                 var dueDate = response.due_date.split(' ')[0];
                 $('#editCouponModal #couponExpiry').val(dueDate);
             } else {
-                // Si no hay fecha de expiración, dejar el campo vacío o manejarlo según sea necesario
                 $('#editCouponModal #couponExpiry').val('');
             }
 
@@ -282,7 +281,6 @@ $(function () {
         },
         error: function (xhr) {
             console.error('Error al obtener los detalles del cupón:', xhr);
-            // Manejar el error si es necesario
         }
     });
 });
@@ -396,34 +394,40 @@ $(function () {
   // Limitar a 100% cuando está seleccionado porcentaje en add-coupon
   $(document).ready(function() {
     // Función para aplicar la restricción de valor máximo
-    function applyMaxAmountConstraint($typeSelect, $amountInput) {
+    function applyMaxAmountConstraint($typeSelect, $amountInput, $inputGroupText) {
         if ($typeSelect.val() === 'percentage') {
             $amountInput.attr('max', '100');
             if (parseInt($amountInput.val()) > 100) {
                 $amountInput.val('100');
             }
+            $inputGroupText.text('%');
         } else {
             $amountInput.removeAttr('max');
+            $inputGroupText.text('UYU');
         }
     }
 
     // Aplicar las restricciones tanto en el modal de añadir como en el de editar
     var $addTypeSelect = $('#addCouponModal #couponType');
     var $addAmountInput = $('#addCouponModal #couponAmount');
+    var $addInputGroupText = $('#addCouponModal .input-group-text');
+
     $addTypeSelect.on('change', function() {
-        applyMaxAmountConstraint($addTypeSelect, $addAmountInput);
+        applyMaxAmountConstraint($addTypeSelect, $addAmountInput, $addInputGroupText);
     });
     $addAmountInput.on('input', function() {
-        applyMaxAmountConstraint($addTypeSelect, $addAmountInput);
+        applyMaxAmountConstraint($addTypeSelect, $addAmountInput, $addInputGroupText);
     });
 
     var $editTypeSelect = $('#editCouponModal #couponType');
     var $editAmountInput = $('#editCouponModal #couponAmount');
+    var $editInputGroupText = $('#editCouponModal .input-group-text');
+
     $editTypeSelect.on('change', function() {
-        applyMaxAmountConstraint($editTypeSelect, $editAmountInput);
+        applyMaxAmountConstraint($editTypeSelect, $editAmountInput, $editInputGroupText);
     });
     $editAmountInput.on('input', function() {
-        applyMaxAmountConstraint($editTypeSelect, $editAmountInput);
+        applyMaxAmountConstraint($editTypeSelect, $editAmountInput, $editInputGroupText);
     });
 
     // Inicialización inicial para ambos modales

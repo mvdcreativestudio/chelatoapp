@@ -333,6 +333,7 @@ Route::prefix('admin')->middleware([
     Route::get('/pdv/product-categories', [CashRegisterLogController::class, 'getCategories']);
     Route::post('/pdv/cart', [CashRegisterLogController::class, 'saveCart']);
     Route::get('/pdv/cart', [CashRegisterLogController::class, 'getCart']);
+    Route::get('/pdv/exchange-rate', [CashRegisterLogController::class, 'getExchangeRate']);
     Route::post('/pdv/client-session', [CashRegisterLogController::class, 'saveClient']);
     Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient']);
     Route::get('/pdv/storeid-session', [CashRegisterLogController::class, 'getStoreId']);
@@ -423,7 +424,6 @@ Route::prefix('admin')->middleware([
     Route::delete('/products/gallery/{imageId}', [ProductController::class, 'deleteGalleryImage'])->name('products.gallery.delete');
 
     // CRM y Contabilidad
-    Route::get('crm', [CrmController::class, 'index'])->name('crm');
     Route::get('receipts', [AccountingController::class, 'receipts'])->name('receipts');
     // Route::get('entries', [AccountingController::class, 'entries'])->name('entries');
     Route::get('entrie', [AccountingController::class, 'entrie'])->name('entrie');

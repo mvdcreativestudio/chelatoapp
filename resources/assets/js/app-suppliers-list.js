@@ -64,11 +64,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="clients-card-body" style="display: none;">
                       <div class="d-flex flex-column h-100">
                         <div>
-                          <p class="mb-2"><i class="bx bx-envelope me-2"></i> ${supplier.email || 'No disponible'}</p>
-                          <p class="mb-2"><i class="bx bx-phone me-2"></i> ${supplier.phone || 'No disponible'}</p>
-                          <p class="mb-2"><i class="bx bx-map me-2"></i> ${supplier.city || ''}, ${supplier.state || ''}, ${supplier.country || ''}</p>
-                        <p class="mb-2"><i class="bx bx-id-card me-2"></i> ${translateDocType(supplier.doc_type)}: ${supplier.doc_number || 'No disponible'}</p>
-                        <p class="mb-2"><i class="bx bx-credit-card me-2"></i> Método de pago: ${translatePaymentMethod(supplier.default_payment_method)}</p>
+                          <p class="mb-2"><i class="bx bx-envelope me-2"></i> ${supplier.email ?? 'No disponible'}</p>
+                          <p class="mb-2"><i class="bx bx-phone me-2"></i> ${supplier.phone ?? 'No disponible'}</p>
+                          <p class="mb-2"><i class="bx bx-map me-2"></i> ${[supplier.city, supplier.state, supplier.country].filter(Boolean).join(', ') || 'No disponible'}</p>
+                          <p class="mb-2"><i class="bx bx-id-card me-2"></i> ${supplier.doc_type ? `${translateDocType(supplier.doc_type)}: ${supplier.doc_number ?? 'No disponible'}` : 'No disponible'}</p>
+                          <p class="mb-2"><i class="bx bx-credit-card me-2"></i> Método de pago: ${supplier.default_payment_method ? translatePaymentMethod(supplier.default_payment_method) : 'No disponible'}</p>
                         </div>
                         <div class="d-inline-flex justify-content-end mt-auto mb-2 gap-1">
                           <a href="suppliers/${supplier.id}/edit" class="btn view-clients p-1"><i class="bx bx-edit"></i></a>
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <input type="hidden" name="_token" value="${$('meta[name="csrf-token"]').attr('content')}">
                             <input type="hidden" name="_method" value="DELETE">
                             <button type="button" class="btn view-clients p-1 delete-button mt-3" title="Eliminar Proveedor">       
-                       <i class="bx bx-trash"></i>
+                              <i class="bx bx-trash"></i>
                             </button>
                           </form>
                         </div>

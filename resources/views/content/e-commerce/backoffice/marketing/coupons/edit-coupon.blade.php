@@ -21,7 +21,10 @@
           </div>
           <div class="mb-3">
             <label for="couponAmount" class="form-label">Valor</label>
-            <input type="number" class="form-control" id="couponAmount" name="couponAmount" required>
+            <div class="input-group">
+              <span class="input-group-text">UYU</span>
+              <input type="number" class="form-control" id="couponAmount" name="couponAmount" required>
+            </div>
           </div>
           <div class="mb-3">
             <label for="couponExpiry" class="form-label">Fecha de Expiración</label>

@@ -82,7 +82,7 @@
   </div>
 
   <div class="col-12 col-md-5">
-    <div class="card h-100 
+    <div class="card h-100
        @if($dailyBalance['balance'] > 0)
             bg-success bg-opacity-50 text-dark
         @elseif($dailyBalance['balance'] < 0)
@@ -121,7 +121,7 @@
     <div class="card h-100 p-3 justify-content-center text-center">
       <h5 class="mb-4">Conectá tus cuentas</h5>
       <div class="d-flex flex-wrap justify-content-center">
-        @foreach(['pedidos-ya', 'rappi', 'mercadopago', 'handy', 'fiserv', 'oca'] as $integration)
+        @foreach(['pymo', 'pedidos-ya', 'mercadopago', 'handy', 'fiserv', 'oca', 'scanntech'] as $integration)
         <div class="me-3 mb-2">
           <img src="{{ asset("assets/img/ux-new/integraciones/$integration.png") }}" alt="Logo {{ ucfirst($integration) }}" class="img-fluid" style="width: 70px; height: auto;">
         </div>
@@ -242,7 +242,7 @@
     </div>
   </div>
 
-  <!-- Tarjetas cuarta línea -->
+  {{-- <!-- Tarjetas cuarta línea -->
   <div class="row mt-3 g-3">
     @foreach([['primary', 'bx-check'], ['warning', 'bx-time'], ['danger', 'bx-error-circle'], ['info', 'bx-line-chart']] as $card)
     <div class="col-12 col-sm-6 col-lg-3">
@@ -259,8 +259,8 @@
       </div>
     </div>
     @endforeach
-  </div>
-  @endsection
+  </div> --}}
+
 
   <div class="modal fade" id="topProductsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -296,3 +296,6 @@
       </div>
     </div>
   </div>
+</div>
+
+@endsection

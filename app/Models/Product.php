@@ -18,6 +18,7 @@ class Product extends Model
         'description',
         'type',
         'max_flavors',
+        'currency',
         'old_price',
         'price',
         'discount',

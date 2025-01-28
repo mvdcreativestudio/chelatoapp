@@ -12,6 +12,8 @@ $(document).ready(function () {
   let coupon = null;
   let currencySymbol = window.currencySymbol;
   let posResponsesConfig = {};
+  let exchange_price = 0;
+
   $('#client-info').hide();
 
   document.querySelectorAll('.card-header').forEach(header => {
@@ -22,6 +24,10 @@ $(document).ready(function () {
     });
   });
 
+  $(document).ready(function () {
+    $('input[name="currency"][value="Peso"]').prop('checked', true);
+    $('input[name="currency"][value="Peso"]').trigger('change');
+  });
 
   // Limitar la cantidad de decimales en los campos de descuento y valor recibido
   function limitTwoDecimals(event) {
@@ -99,60 +105,53 @@ $(document).ready(function () {
     console.log('Order ID recibido en enviarTransaccionPos:', orderId);
 
     $.ajax({
-        url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
-        type: 'GET',
-        success: function (device) {
-            const posID = device.data.identifier;
-            const empresa = device.data.company;
-            const local = device.data.branch;
-            const caja = device.data.cash_register;
-            const userId = device.data.user;
+      url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
+      type: 'GET',
+      success: function (device) {
+        const posID = device.data.identifier;
+        const transactionDateTime = new Date().toISOString().replace(/[-:.TZ]/g, '').substring(0, 17);
+        const amount = parseFloat($('.total').text().replace('$', ''));
+        const quotasInput = $('#quotas').val();
+        const quotas = quotasInput && !isNaN(quotasInput) ? parseInt(quotasInput) : 1;
 
-            const now = new Date();
-            const transactionDateTime = now.getFullYear().toString() +
-                String(now.getMonth() + 1).padStart(2, '0') +
-                String(now.getDate()).padStart(2, '0') +
-                String(now.getHours()).padStart(2, '0') +
-                String(now.getMinutes()).padStart(2, '0') +
-                String(now.getSeconds()).padStart(2, '0');
+        const transactionData = {
+          cash_register_id: cashRegisterId,
+          store_id: sessionStoreId,
+          pos_order_id: posOrderId,
+          order_id: orderId,
+          PosID: posID,
+          TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
+          Amount: Math.round(amount * 100).toString(),
+          Quotas: quotas,
+        };
 
-            const amount = parseFloat($('.total').text().replace('$', ''));
+        showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
 
-            // Obtener correctamente el valor de Quotas desde el input
-            const quotasInput = $('#quotas').val();
-            const quotas = quotasInput && !isNaN(quotasInput) ? parseInt(quotasInput) : 1; // Asignar 1 si es inválido
-
-            const transactionData = {
-                cash_register_id: cashRegisterId,
-                store_id: sessionStoreId,
-                pos_order_id: posOrderId, // Asociar la transacción al ID de la orden en pos-orders
-                order_id: orderId, // Asociar la transacción al ID de la orden en orders
-                PosID: posID,
-                Empresa: empresa,
-                Local: local,
-                Caja: caja,
-                UserId: userId,
-                TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
-                Amount: amount.toString() + "00",
-                Quotas: quotas,
-            };
-            console.log('Order ID enviado a la transacción:', transactionData.order_id);
-            console.log('Transaction Data', transactionData);
-
-
-            showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
-
-            // Obtener TransactionId y STransactionId con fallback a response.response
+        $.ajax({
+          url: `${baseUrl}api/pos/process-transaction`,
+          type: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          data: JSON.stringify(transactionData),
+          success: function (response) {
             const transactionId = response.TransactionId ?? response.response?.TransactionId;
             const sTransactionId = response.STransactionId ?? response.response?.STransactionId;
 
-            console.log('Transaction ID:', transactionId);
-            console.log('STransactionID:', sTransactionId);
-
-            // Validar los datos antes de proceder
             if (transactionId && sTransactionId) {
+              showTransactionStatus({
+                message: 'Procesando transacción...',
+                icon: 'info',
+                showCloseButton: false,
+                transactionId,
+                sTransactionId,
+                token
+              });
+
               consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid);
             } else {
+              console.error('Faltan TransactionId o STransactionId.');
               showTransactionStatus({
                 message: 'Error en la transacción POS. Intente nuevamente.',
                 icon: 'error',
@@ -171,7 +170,7 @@ $(document).ready(function () {
         });
       },
       error: function (xhr) {
-        console.error('Error al obtener la información del dispositivo POS:', xhr.responseText);
+        console.error('Error al obtener información del dispositivo POS:', xhr.responseText);
       }
     });
   }
@@ -275,42 +274,150 @@ $(document).ready(function () {
     });
   }
 
-
-
   let swalInstance;
 
   // Función para mostrar el mensaje de estado de la transacción
-  function showTransactionStatus({ message, icon, showCloseButton }) {
+  function showTransactionStatus({ message, icon, showCloseButton, transactionId, sTransactionId }) {
     if (!swalInstance) {
-      // Crear un nuevo SweetAlert si no existe
       swalInstance = Swal.fire({
         icon: icon || 'info',
         title: 'Estado de Transacción',
-        html: message || 'Procesando...',
+        html: `
+        ${message || 'Procesando...'}
+        <div class="mt-3">
+          <button
+            id="cancelTransactionButton"
+            class="btn btn-danger btn-sm"
+            style="display: ${transactionId && sTransactionId ? 'inline-block' : 'none'}"
+          >
+            Cancelar
+          </button>
+        </div>
+      `,
         showConfirmButton: showCloseButton,
         confirmButtonText: 'Cerrar',
         allowOutsideClick: showCloseButton,
         didOpen: () => {
+          const cancelButton = document.getElementById('cancelTransactionButton');
+          if (cancelButton) {
+            cancelButton.addEventListener('click', function () {
+              if (!transactionId || !sTransactionId) {
+                console.error('TransactionId, STransactionId o token están vacíos.');
+                Swal.fire({
+                  title: 'Error',
+                  text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+                  icon: 'error',
+                  confirmButtonText: 'Cerrar'
+                });
+                return;
+              }
+              cancelarTransaccion(transactionId, sTransactionId);
+            });
+          }
           if (!showCloseButton) {
             Swal.showLoading();
           }
         }
       });
     } else {
-      // Actualizar el SweetAlert existente
       swalInstance.update({
         icon: icon || 'info',
-        html: message || 'Procesando...',
+        html: `
+        ${message || 'Procesando...'}
+        <div class="mt-3">
+          <button
+            id="cancelTransactionButton"
+            class="btn btn-danger btn-sm"
+            style="display: ${transactionId && sTransactionId ? 'inline-block' : 'none'}"
+          >
+            Cancelar
+          </button>
+        </div>
+      `,
         showConfirmButton: showCloseButton,
         confirmButtonText: 'Cerrar',
         allowOutsideClick: showCloseButton
       });
+
+      const cancelButton = document.getElementById('cancelTransactionButton');
+      if (cancelButton) {
+        cancelButton.addEventListener('click', function () {
+          if (!transactionId || !sTransactionId) {
+            console.error('TransactionId o STransactionId  están vacíos.');
+            Swal.fire({
+              title: 'Error',
+              text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+              icon: 'error',
+              confirmButtonText: 'Cerrar'
+            });
+            return;
+          }
+          cancelarTransaccion(transactionId, sTransactionId);
+        });
+      }
 
       if (showCloseButton) {
         Swal.hideLoading();
       }
     }
   }
+
+
+
+
+
+  // Función para cancelar la transacción
+  function cancelarTransaccion(transactionId, sTransactionId, token) {
+    if (!transactionId || !sTransactionId) {
+      console.error('TransactionId o STransactionId son inválidos.');
+      Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+        icon: 'error',
+        confirmButtonText: 'Cerrar'
+      });
+      return;
+    }
+
+    // Solo enviar los datos mínimos necesarios
+    const requestData = {
+      TransactionId: transactionId,
+      STransactionId: sTransactionId,
+      store_id: sessionStoreId // Si el store_id es necesario
+    };
+
+    $.ajax({
+      url: `${baseUrl}api/pos/cancel-transaction`,
+      type: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      data: JSON.stringify(requestData),
+      success: function (response) {
+        console.log('Transacción cancelada exitosamente:', response);
+        Swal.fire({
+          title: 'Cancelación Exitosa',
+          text: 'La transacción ha sido cancelada con éxito.',
+          icon: 'success',
+          confirmButtonText: 'Cerrar'
+        });
+      },
+      error: function (xhr) {
+        console.error('Error al cancelar la transacción:', xhr.responseText);
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo cancelar la transacción. Haga click en el botón rojo del POS.',
+          icon: 'error',
+          confirmButtonText: 'Cerrar'
+        });
+      }
+    });
+  }
+
+
+
+
 
 
   // Función para mostrar el mensaje de respuesta POS en SweetAlert
@@ -500,19 +607,49 @@ $(document).ready(function () {
   }
 
   function calcularTotal() {
-    let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    let total = subtotal - discount;
-    if (total < 0) total = 0;
-
-    // Redondear subtotal, descuento y total a dos decimales
-    subtotal = Math.round(subtotal * 100) / 100;
-    total = Math.round(total * 100) / 100;
-    discount = Math.round(discount * 100) / 100;
-
-    // Mostrar los valores redondeados con dos decimales y separadores de miles
-    $('.subtotal').text(`${currencySymbol}${subtotal.toFixed(2).toLocaleString('es-ES')}`);
-    $('.total').text(`${currencySymbol}${total.toFixed(2).toLocaleString('es-ES')}`);
-    $('.discount-amount').text(`${currencySymbol}${discount.toFixed(2).toLocaleString('es-ES')}`);
+    $.ajax({
+      url: 'exchange-rate',
+      type: 'GET',
+      success: function (response) {
+        exchange_price = response.exchange_rate.sell;
+        const selectedCurrency = $('input[name="currency"]:checked').val();
+  
+        let subtotal = cart.reduce((sum, item) => {
+          let itemPrice = item.price;
+          if (selectedCurrency === 'Dólar') {
+            if (item.currency === 'Peso') {
+              itemPrice = item.price / exchange_price;
+            }
+          } else {
+            if (item.currency === 'Dólar') {
+              itemPrice = item.price * exchange_price;
+            }
+          }
+          return sum + (itemPrice * item.quantity);
+        }, 0);
+  
+        let discountInCurrency = discount;
+        if (selectedCurrency === 'Dólar' && coupon && coupon.coupon.type === 'fixed') {
+          discountInCurrency = discount;
+        }
+  
+        let total = subtotal - discountInCurrency;
+        if (total < 0) total = 0;
+  
+        subtotal = Math.round(subtotal * 100) / 100;
+        total = Math.round(total * 100) / 100;
+        discountInCurrency = Math.round(discountInCurrency * 100) / 100;
+  
+        const displaySymbol = selectedCurrency === 'Dólar' ? 'USD' : 'UYU';
+  
+        $('.subtotal').text(`${displaySymbol} ${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
+        $('.total').text(`${displaySymbol} ${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
+        $('.discount-amount').text(`${displaySymbol} ${discountInCurrency.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
+      },
+      error: function (xhr) {
+        console.error('Error al obtener tipo de cambio:', xhr.responseText);
+      }
+    });
   }
 
   function aplicarDescuento() {
@@ -545,54 +682,101 @@ $(document).ready(function () {
   }
 
   function aplicarDescuentoPorCupon(couponResponse) {
-    coupon = couponResponse;
-    let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-    if (coupon.coupon.type === 'percentage') {
-      discount = (coupon.coupon.amount / 100) * subtotal;
-    } else if (coupon.coupon.type === 'fixed') {
-      discount = coupon.coupon.amount;
-    }
-
-    if (discount > subtotal) {
-      discount = subtotal;
-    }
-
-    discount = Math.round(discount);
-    $('.discount-amount').text(`${currencySymbol}${discount.toFixed(0)}`);
-
-    calcularTotal();
-    $('#quitarDescuento').show(); // Mostrar el botón de eliminar descuento
+    $.ajax({
+      url: 'exchange-rate',
+      type: 'GET',
+      success: function (response) {
+        exchange_price = response.exchange_rate.sell;
+        coupon = couponResponse;
+        const selectedCurrency = $('input[name="currency"]:checked').val();
+  
+        let subtotal = cart.reduce((sum, item) => {
+          let itemPrice = item.price;
+          if (selectedCurrency === 'Dólar') {
+            if (item.currency === 'Peso') {
+              itemPrice = item.price / exchange_price;
+            }
+          } else {
+            if (item.currency === 'Dólar') {
+              itemPrice = item.price * exchange_price;
+            }
+          }
+          return sum + (itemPrice * item.quantity);
+        }, 0);
+  
+        if (coupon.coupon.type === 'percentage') {
+          discount = (coupon.coupon.amount / 100) * subtotal;
+        } else {
+          if (selectedCurrency === 'Dólar') {
+            discount = coupon.coupon.amount / exchange_price;
+          } else {
+            discount = coupon.coupon.amount;
+          }
+        }
+  
+        if (discount > subtotal) {
+          discount = subtotal;
+        }
+  
+        discount = Math.round(discount * 100) / 100;
+        calcularTotal();
+        $('#quitarDescuento').show();
+      },
+      error: function (xhr) {
+        console.error('Error al obtener tipo de cambio:', xhr.responseText);
+        mostrarError('Error al obtener tipo de cambio. No se puede aplicar el descuento.');
+      }
+    });
   }
-
+  
   function aplicarDescuentoFijo() {
-    const discountType = $('input[name="discount-type"]:checked').val();
-    const discountValue = parseFloat($('#fixed-discount').val());
-
-    if (!discountValue || isNaN(discountValue) || discountValue <= 0) {
-      mostrarError('Por favor, ingrese un valor de descuento válido.');
-      return;
-    }
-
-    let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-    if (discountType === 'percentage') {
-      discount = (discountValue / 100) * subtotal;
-    } else if (discountType === 'fixed') {
-      discount = discountValue;
-    }
-
-    if (discount > subtotal) {
-      discount = subtotal;
-    }
-
-    // Redondear el descuento a dos decimales
-    discount = Math.round(discount * 100) / 100;
-
-    $('.discount-amount').text(`${currencySymbol}${discount.toFixed(2)}`);
-
-    calcularTotal();
-    $('#quitarDescuento').show(); // Mostrar el botón de eliminar descuento
+    $.ajax({
+      url: 'exchange-rate',
+      type: 'GET',
+      success: function (response) {
+        exchange_price = response.exchange_rate.sell;
+        const selectedCurrency = $('input[name="currency"]:checked').val();
+        const discountType = $('input[name="discount-type"]:checked').val();
+        const discountValue = parseFloat($('#fixed-discount').val());
+  
+        if (!discountValue || isNaN(discountValue) || discountValue <= 0) {
+          mostrarError('Por favor, ingrese un valor de descuento válido.');
+          return;
+        }
+  
+        let subtotal = cart.reduce((sum, item) => {
+          let itemPrice = item.price;
+          if (selectedCurrency === 'Dólar') {
+            if (item.currency === 'Peso') {
+              itemPrice = item.price / exchange_price;
+            }
+          } else {
+            if (item.currency === 'Dólar') {
+              itemPrice = item.price * exchange_price;
+            }
+          }
+          return sum + (itemPrice * item.quantity);
+        }, 0);
+  
+        if (discountType === 'percentage') {
+          discount = (discountValue / 100) * subtotal;
+        } else {
+            discount = discountValue; 
+        }
+  
+        if (discount > subtotal) {
+          discount = subtotal;
+        }
+  
+        discount = Math.round(discount * 100) / 100;
+        calcularTotal();
+        $('#quitarDescuento').show();
+      },
+      error: function (xhr) {
+        console.error('Error al obtener tipo de cambio:', xhr.responseText);
+        mostrarError('Error al obtener tipo de cambio. No se puede aplicar el descuento.');
+      }
+    });
   }
 
 
@@ -627,48 +811,83 @@ $(document).ready(function () {
     let cartHtml = '';
     let subtotal = 0;
 
-    cart.forEach(item => {
-      const itemPrice = item.price && !isNaN(item.price) ? item.price : 0;  // Asegurar que el precio es válido
-      const itemTotal = itemPrice * item.quantity;
-      subtotal += itemTotal;
+    $.ajax({
+      url: 'exchange-rate',
+      type: 'GET',
+      success: function (response) {
+        const exchange_price = response.exchange_rate.sell;
+        const selectedCurrency = $('input[name="currency"]:checked').val();
+        const displaySymbol = selectedCurrency === 'Dólar' ? 'USD' : 'UYU';
 
-      // Redondear el precio del producto y el total del ítem a dos decimales
-      const formattedItemPrice = (Math.round(itemPrice * 100) / 100).toLocaleString('es-ES', {
-        minimumFractionDigits: 2
-      });
-      const formattedItemTotal = (Math.round(itemTotal * 100) / 100).toLocaleString('es-ES', {
-        minimumFractionDigits: 2
-      });
+        cart.forEach(item => {
+          let itemPrice = item.price && !isNaN(item.price) ? item.price : 0;
+          let itemTotal = 0;
 
-      cartHtml += `
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-                <img src="${baseUrl}${item.image}" alt="${item.name}" class="img-thumbnail me-2" style="width: 50px;">
-                <div>
-                    <h6 class="mb-0">${item.name}</h6>
-                    <small class="text-muted">Cantidad: ${item.quantity} x ${currencySymbol}${formattedItemPrice}</small>
-                </div>
-            </div>
-            <span>${currencySymbol}${formattedItemTotal}</span>
-        </li>
-        `;
+          if (selectedCurrency === 'Dólar') {
+            // Si la moneda seleccionada es Dólar
+            if (item.currency === 'Peso') {
+              // Convertir de Peso a Dólar
+              itemPrice = item.price / exchange_price;
+              itemTotal = itemPrice * item.quantity;
+            } else {
+              // Si ya está en dólares, usar precio original
+              itemPrice = item.price;
+              itemTotal = itemPrice * item.quantity;
+            }
+          } else {
+            // Si la moneda seleccionada es Peso
+            if (item.currency === 'Dólar') {
+              // Convertir de Dólar a Peso
+              itemPrice = item.price * exchange_price;
+              itemTotal = itemPrice * item.quantity;
+            } else {
+              // Si ya está en pesos, usar precio original
+              itemPrice = item.price;
+              itemTotal = itemPrice * item.quantity;
+            }
+          }
+
+          subtotal += itemTotal;
+
+          const formattedItemPrice = itemPrice.toLocaleString('es-ES', {
+            minimumFractionDigits: 2
+          });
+          const formattedItemTotal = itemTotal.toLocaleString('es-ES', {
+            minimumFractionDigits: 2
+          });
+
+          // Generar HTML del item
+          cartHtml += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <img src="${baseUrl}${item.image}" alt="${item.name}" class="img-thumbnail me-2" style="width: 50px;">
+                            <div>
+                                <h6 class="mb-0">${item.name}</h6>
+                                <small class="text-muted">Cantidad: ${item.quantity} x ${displaySymbol} ${formattedItemPrice}</small>
+                            </div>
+                        </div>
+                        <span>${displaySymbol} ${formattedItemTotal}</span>
+                    </li>
+                `;
+        });
+
+        let total = subtotal - (selectedCurrency === 'Dólar' ? discount / exchange_price : discount);
+        if (total < 0) total = 0;
+
+        subtotal = Math.round(subtotal * 100) / 100;
+        total = Math.round(total * 100) / 100;
+
+        const formattedSubtotal = subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+        const formattedTotal = total.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+
+        $('.list-group-flush').html(cartHtml);
+        $('.subtotal').text(`${displaySymbol} ${formattedSubtotal}`);
+        $('.total').text(`${displaySymbol} ${formattedTotal}`);
+      },
+      error: function (xhr) {
+        console.error('Error al obtener tipo de cambio:', xhr.responseText);
+      }
     });
-
-    let total = subtotal - discount;
-    if (total < 0) total = 0;
-
-    // Redondear subtotal y total a dos decimales
-    subtotal = Math.round(subtotal * 100) / 100;
-    total = Math.round(total * 100) / 100;
-
-    const formattedSubtotal = subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
-    const formattedTotal = total.toLocaleString('es-ES', { minimumFractionDigits: 2 });
-
-    $('.list-group-flush').html(cartHtml);
-    $('.subtotal').text(`${currencySymbol}${formattedSubtotal}`);
-    $('.total').text(`${currencySymbol}${formattedTotal}`);
-
-    calcularTotal();
   }
 
   $('.discount-section button').on('click', function () {
@@ -1084,14 +1303,16 @@ $(document).ready(function () {
 
   function postOrder(paymentMethod, paymentStatus) {
     ocultarError();
+    const selectedCurrency = $('input[name="currency"]:checked').val();
 
     const shippingStatus = $('#shippingStatus').val();
     let cashSales = 0;
     let posSales = 0;
 
-    const total = parseFloat($('.total').text().replace(/[^\d.-]/g, '')) || 0;
-    const subtotal = parseFloat($('.subtotal').text().replace(/[^\d.-]/g, '')) || 0;
-
+    let total = parseFloat($('.total').text().replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+    let subtotal = parseFloat($('.subtotal').text().replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
+    console.log(total);
+    console.log(subtotal);
     if (total > 25000 && (!client || !client.id)) {
       mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
       return;
@@ -1111,29 +1332,30 @@ $(document).ready(function () {
     // Capturar las cuotas si el método de pago es crédito
     let quotas = null;
     if (paymentMethod === 'credit') {
-        quotas = parseInt($('#quotas').val()) || 1; // Valor predeterminado de 1 si está vacío o no válido
+      quotas = parseInt($('#quotas').val()) || 1; // Valor predeterminado de 1 si está vacío o no válido
     }
 
     const orderData = {
-        date: new Date().toISOString().split('T')[0],
-        hour: new Date().toLocaleTimeString('it-IT'),
-        cash_register_log_id: cashRegisterLogId,
-        cash_sales: cashSales,
-        pos_sales: posSales,
-        discount: discount,
-        products: JSON.stringify(cart.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-            is_composite: item.isComposite || false
-        }))),
-        subtotal: subtotal,
-        total: total - discount,
-        notes: $('textarea').val() || '',
-        store_id: sessionStoreId,
-        shipping_status: shippingStatus,
-        quotas: quotas
+      date: new Date().toISOString().split('T')[0],
+      hour: new Date().toLocaleTimeString('it-IT'),
+      cash_register_log_id: cashRegisterLogId,
+      cash_sales: cashSales,
+      pos_sales: posSales,
+      discount: discount,
+      products: JSON.stringify(cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        currency: item.currency,
+        quantity: item.quantity,
+        is_composite: item.isComposite || false
+      }))),
+      subtotal: subtotal,
+      total: total - discount,
+      notes: $('textarea').val() || '',
+      store_id: sessionStoreId,
+      shipping_status: shippingStatus,
+      quotas: quotas
     };
 
     if (client && client.id) {
@@ -1160,6 +1382,7 @@ $(document).ready(function () {
           shipping_method: 'standard',
           coupon_id: coupon ? coupon.coupon.id : null,
           coupon_amount: coupon ? coupon.coupon.amount : 0,
+          currency: $('input[name="currency"]:checked').val(),
           estimate_id: null,
           shipping_id: null,
           preference_id: null,
@@ -1181,55 +1404,24 @@ $(document).ready(function () {
             if (paymentMethod === 'debit' || paymentMethod === 'credit') {
               // Si el método de pago es debit o credit, inicia el flujo de transacción POS
               obtenerTokenPos().then(token => {
-                enviarTransaccionPos(token, posOrderId, orderId, orderUuid); // Enviar la orden al POS
+                enviarTransaccionPos(token, posOrderId, orderId, orderUuid, quotas); // Enviar la orden al POS
               }).catch(error => {
                 console.error('Error al obtener token POS:', error);
                 mostrarError('Error al procesar el pago con POS.');
               });
             } else if (paymentMethod === 'qr_attended') {
-              handleMercadoPagoAtendido(response);
+              handleMercadoPagoAtendido(orderResponse);
               return;
-
-            $.ajax({
-                url: `${baseUrl}admin/orders`,
-                type: 'POST',
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr('content'),
-                    ...ordersData
-                },
-                success: function (orderResponse) {
-                  const orderId = orderResponse.order_id; // ID de la orden en orders
-                  const orderUuid = orderResponse.order_uuid; // UUID de la orden en orders
-
-                  if (paymentMethod === 'debit' || paymentMethod === 'credit') {
-                      // Si el método de pago es debit o credit, inicia el flujo de transacción POS
-                      obtenerTokenPos().then(token => {
-                          enviarTransaccionPos(token, posOrderId, orderId, orderUuid, quotas); // Enviar la orden al POS
-                      }).catch(error => {
-                          console.error('Error al obtener token POS:', error);
-                          mostrarError('Error al procesar el pago con POS.');
-                      });
-                  } else if (paymentMethod === 'qr_attended') {
-                    handleMercadoPagoAtendido(response);
-                    return;
-
-                  } else if (paymentMethod === 'qr_dynamic') {
-                    handleMercadoPagoDinamico(response);
-                    return;
-
-                  } else {
-                      // Para otros métodos de pago, confirmar venta directamente
-                      confirmarVenta(orderResponse, paymentMethod);
-                  }
-                },
-                error: function (xhr) {
-                    console.error('Error al guardar en /admin/orders:', xhr);
-                    mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
-                }
-            });
-        },
-        error: function (xhr) {
-            console.error('Error al guardar en /admin/pos-orders:', xhr);
+            } else if (paymentMethod === 'qr_dynamic') {
+              handleMercadoPagoDinamico(orderResponse);
+              return;
+            } else {
+              // Para otros métodos de pago, confirmar venta directamente
+              confirmarVenta(orderResponse, paymentMethod);
+            }
+          },
+          error: function (xhr) {
+            console.error('Error al guardar en /admin/orders:', xhr);
             mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
           }
         });
@@ -1240,6 +1432,41 @@ $(document).ready(function () {
       }
     });
   }
+
+  $('input[name="currency"]').on('change', function () {
+    const selectedCurrency = $(this).val();
+    const internalCreditInput = $('#internalCredit');
+    const internalCreditLabel = $('label[for="internalCredit"]');
+  
+    if (selectedCurrency === 'Dólar') {
+      internalCreditInput.prop('disabled', true);
+      internalCreditInput.prop('checked', false);
+      internalCreditLabel.addClass('opacity-50');
+    } else {
+      internalCreditInput.prop('disabled', false);
+      internalCreditLabel.removeClass('opacity-50');
+    }
+  
+    $.ajax({
+      url: 'exchange-rate',
+      type: 'GET',
+      success: function(response) {
+        exchange_price = response.exchange_rate.sell;
+        
+        if (selectedCurrency === 'Dólar') {
+          discount = discount / exchange_price;
+        } else {
+          discount = discount * exchange_price;
+        }
+  
+        calcularTotal();
+      },
+      error: function(xhr) {
+        console.error('Error al obtener tipo de cambio:', xhr.responseText);
+      }
+    });
+  });
+
 
 
   function clearCartAndClient() {

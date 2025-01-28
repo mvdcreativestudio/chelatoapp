@@ -14,6 +14,7 @@ class StoreProductRequest extends FormRequest
             'description' => 'nullable|string|max:1000',
             'type' => 'required|in:simple,configurable',
             'max_flavors' => 'nullable|integer|min:1',
+            'currency' => 'required|in:Peso,Dólar',
             'old_price' => 'required|numeric',
             'price' => 'nullable|numeric|lt:old_price',
             'discount' => 'nullable|numeric',
