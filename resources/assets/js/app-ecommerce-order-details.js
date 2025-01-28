@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const refundAmount = refundAmountInput.value;
     const refundReason = refundReasonInput.value;
-    const ticketNumber = document.getElementById('ticketNumberRefund').value; // Capturar el número de ticket
+    const ticketNumber = document.getElementById('ticketNumberRefund').value;
 
 
     const selectedOption = posDeviceSelectRefund.options[posDeviceSelectRefund.selectedIndex];
@@ -607,6 +607,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const branch = selectedOption.getAttribute('data-branch');
     const clientAppId = selectedOption.getAttribute('data-clientappid');
     const userId = selectedOption.getAttribute('data-user');
+
+    // Obtener y formatear la fecha original
+    const originalTransactionDateInput = document.getElementById('originalTransactionDate');
+    const originalTransactionDate = originalTransactionDateInput.value; // Formato inicial: YYYY-MM-DD
+    let formattedOriginalDate = '';
+    if (originalTransactionDate) {
+      formattedOriginalDate = formatDateToYYMMDD(originalTransactionDate); // Convertir a YYMMDD
+    }
 
     const refundData = {
       store_id: storeId,
@@ -622,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function () {
       ClientAppId: clientAppId || 'Caja1',
       UserId: userId || 'Usuario1',
       TransactionDateTimeyyyyMMddHHmmssSSS: new Date().toISOString().replace(/[-T:.Z]/g, '').padEnd(20, '0'),
-      OriginalTransactionDateyyMMdd: transactionId.substring(0, 6), // Suponiendo que TransactionId tiene formato YYMMDD
+      OriginalTransactionDateyyMMdd: formattedOriginalDate, // Fecha original formateada correctamente
     };
 
     // Enviar solicitud de refund
@@ -662,6 +670,15 @@ document.addEventListener('DOMContentLoaded', function () {
       });
   });
 
+  // Función para convertir la fecha a formato YYMMDD
+  function formatDateToYYMMDD(dateString) {
+    const date = new Date(dateString);
+    const year = String(date.getFullYear()).slice(-2); // Últimos 2 dígitos del año
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Mes con cero inicial si es necesario
+    const day = String(date.getDate()).padStart(2, '0'); // Día con cero inicial si es necesario
+    return `${year}${month}${day}`;
+  }
+
   $('#updateClientDataForm').on('submit', function (e) {
     e.preventDefault();
     const form = $(this);
@@ -688,7 +705,7 @@ document.addEventListener('DOMContentLoaded', function () {
               billingModal.show();
           }
       });
-      
+
       },
       error: function (xhr) {
         const errors = xhr.responseJSON.errors;
