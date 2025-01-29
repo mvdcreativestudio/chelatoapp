@@ -108,7 +108,6 @@ class DatacenterController extends Controller
         $endDate = null;
 
         list($startDate, $endDate) = $this->datacenterRepo->getDateRange($period, $startDate, $endDate);
-
         $incomeData = $this->datacenterRepo->getIncomeData($startDate, $endDate, $storeId, $period);
 
         return response()->json($incomeData);

@@ -1,9 +1,9 @@
 <?php
-
 namespace App\Helpers;
 
 use App\Services\Mail\EmailService;
 use Config;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class Helpers
@@ -15,23 +15,23 @@ class Helpers
 
         // default data array
         $DefaultData = [
-            'myLayout' => 'vertical',
-            'myTheme' => 'theme-default',
-            'myStyle' => 'light',
-            'myRTLSupport' => false,
-            'myRTLMode' => false,
-            'hasCustomizer' => true,
+            'myLayout'            => 'vertical',
+            'myTheme'             => 'theme-default',
+            'myStyle'             => 'light',
+            'myRTLSupport'        => false,
+            'myRTLMode'           => false,
+            'hasCustomizer'       => true,
             'showDropdownOnHover' => true,
-            'displayCustomizer' => true,
-            'contentLayout' => 'compact',
-            'headerType' => 'fixed',
-            'navbarType' => 'fixed',
-            'menuFixed' => true,
-            'menuCollapsed' => false,
-            'footerFixed' => false,
-            'menuFlipped' => false,
+            'displayCustomizer'   => true,
+            'contentLayout'       => 'compact',
+            'headerType'          => 'fixed',
+            'navbarType'          => 'fixed',
+            'menuFixed'           => true,
+            'menuCollapsed'       => false,
+            'footerFixed'         => false,
+            'menuFlipped'         => false,
             // 'menuOffcanvas' => false,
-            'customizerControls' => [
+            'customizerControls'  => [
                 'rtl',
                 'style',
                 'headerType',
@@ -49,23 +49,23 @@ class Helpers
 
         // All options available in the template
         $allOptions = [
-            'myLayout' => ['vertical', 'horizontal', 'blank', 'front'],
-            'menuCollapsed' => [true, false],
-            'hasCustomizer' => [true, false],
+            'myLayout'            => ['vertical', 'horizontal', 'blank', 'front'],
+            'menuCollapsed'       => [true, false],
+            'hasCustomizer'       => [true, false],
             'showDropdownOnHover' => [true, false],
-            'displayCustomizer' => [true, false],
-            'contentLayout' => ['compact', 'wide'],
-            'headerType' => ['fixed', 'static'],
-            'navbarType' => ['fixed', 'static', 'hidden'],
-            'myStyle' => ['light', 'dark', 'system'],
-            'myTheme' => ['theme-default', 'theme-bordered', 'theme-semi-dark'],
-            'myRTLSupport' => [true, false],
-            'myRTLMode' => [true, false],
-            'menuFixed' => [true, false],
-            'footerFixed' => [true, false],
-            'menuFlipped' => [true, false],
+            'displayCustomizer'   => [true, false],
+            'contentLayout'       => ['compact', 'wide'],
+            'headerType'          => ['fixed', 'static'],
+            'navbarType'          => ['fixed', 'static', 'hidden'],
+            'myStyle'             => ['light', 'dark', 'system'],
+            'myTheme'             => ['theme-default', 'theme-bordered', 'theme-semi-dark'],
+            'myRTLSupport'        => [true, false],
+            'myRTLMode'           => [true, false],
+            'menuFixed'           => [true, false],
+            'footerFixed'         => [true, false],
+            'menuFlipped'         => [true, false],
             // 'menuOffcanvas' => [true, false],
-            'customizerControls' => [],
+            'customizerControls'  => [],
             // 'defaultLanguage'=>array('en'=>'en','fr'=>'fr','de'=>'de','ar'=>'ar'),
         ];
 
@@ -78,7 +78,7 @@ class Helpers
                         // data key should not be empty
                         if (isset($data[$key]) && $data[$key] !== null) {
                             // data key should not be exist inside allOptions array's sub array
-                            if (!array_key_exists($data[$key], $value)) {
+                            if (! array_key_exists($data[$key], $value)) {
                                 // ensure that passed value should be match with any of allOptions array value
                                 $result = array_search($data[$key], $value, 'strict');
                                 if (empty($result) && $result !== 0) {
@@ -108,25 +108,25 @@ class Helpers
         isset($_COOKIE['theme']) ? $themeVal = $_COOKIE['theme'] : $themeVal = $data['myTheme'];
         //layout classes
         $layoutClasses = [
-            'layout' => $data['myLayout'],
-            'theme' => $themeVal,
-            'themeOpt' => $data['myTheme'],
-            'style' => $styleVal,
-            'styleOpt' => $data['myStyle'],
-            'rtlSupport' => $data['myRTLSupport'],
-            'rtlMode' => $data['myRTLMode'],
-            'textDirection' => $data['myRTLMode'],
-            'menuCollapsed' => $data['menuCollapsed'],
-            'hasCustomizer' => $data['hasCustomizer'],
+            'layout'              => $data['myLayout'],
+            'theme'               => $themeVal,
+            'themeOpt'            => $data['myTheme'],
+            'style'               => $styleVal,
+            'styleOpt'            => $data['myStyle'],
+            'rtlSupport'          => $data['myRTLSupport'],
+            'rtlMode'             => $data['myRTLMode'],
+            'textDirection'       => $data['myRTLMode'],
+            'menuCollapsed'       => $data['menuCollapsed'],
+            'hasCustomizer'       => $data['hasCustomizer'],
             'showDropdownOnHover' => $data['showDropdownOnHover'],
-            'displayCustomizer' => $data['displayCustomizer'],
-            'contentLayout' => $data['contentLayout'],
-            'headerType' => $data['headerType'],
-            'navbarType' => $data['navbarType'],
-            'menuFixed' => $data['menuFixed'],
-            'footerFixed' => $data['footerFixed'],
-            'menuFlipped' => $data['menuFlipped'],
-            'customizerControls' => $data['customizerControls'],
+            'displayCustomizer'   => $data['displayCustomizer'],
+            'contentLayout'       => $data['contentLayout'],
+            'headerType'          => $data['headerType'],
+            'navbarType'          => $data['navbarType'],
+            'menuFixed'           => $data['menuFixed'],
+            'footerFixed'         => $data['footerFixed'],
+            'menuFlipped'         => $data['menuFlipped'],
+            'customizerControls'  => $data['customizerControls'],
         ];
 
         // sidebar Collapsed
@@ -174,10 +174,10 @@ class Helpers
 
         // RTL Layout/Mode
         if ($layoutClasses['rtlMode'] == true) {
-            $layoutClasses['rtlMode'] = 'rtl';
+            $layoutClasses['rtlMode']       = 'rtl';
             $layoutClasses['textDirection'] = 'rtl';
         } else {
-            $layoutClasses['rtlMode'] = 'ltr';
+            $layoutClasses['rtlMode']       = 'ltr';
             $layoutClasses['textDirection'] = 'ltr';
         }
 
@@ -272,6 +272,39 @@ class Helpers
 
         // Combina todos los mensajes en un solo string
         return implode(' | ', $errorMessages);
+    }
+
+    public static function debugSql($queryBuilder)
+    {
+        $sql      = $queryBuilder->toSql();
+        $bindings = $queryBuilder->getBindings();
+
+        // Escapar valores y formatear correctamente
+        foreach ($bindings as &$binding) {
+            if (is_string($binding)) {
+                $binding = "'" . addslashes($binding) . "'";
+            } elseif ($binding === null) {
+                $binding = "NULL";
+            }
+        }
+        unset($binding);
+
+        // Reemplaza los ? por los valores de bindings
+        $fullSql = vsprintf(str_replace("?", "%s", $sql), $bindings);
+
+        // Ejecutar la consulta para obtener los resultados
+        $results = $queryBuilder->get();
+
+        // Loggear la consulta y los resultados
+        Log::channel('sqldebugger')->info("SQL DEBUG: $fullSql", ['results' => $results]);
+
+        // Mostrar en pantalla si estamos en modo debug
+        if (config('app.debug')) {
+            // Muestra el SQL y los resultados formateados
+            dump("SQL QUERY:", $fullSql);
+            dump("RESULTS:", $results->toArray());
+            dd();
+        }
     }
 
 }
