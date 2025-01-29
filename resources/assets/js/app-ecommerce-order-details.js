@@ -427,8 +427,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!swalInstance) {
       // Mostrar el Swal de "Anulación en proceso" solo una vez
       swalInstance = Swal.fire({
-        title: 'Anulación en proceso...',
-        text: 'Continúa con la anulación desde el POS.',
+        title: 'Procesando...',
+        text: 'Esperando confirmación del PINPad.',
         allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading(); // Mostrar el spinner de carga
@@ -465,6 +465,17 @@ document.addEventListener('DOMContentLoaded', function () {
           }).then(() => {
             location.reload();
           });
+        } else if (data.responseCode === 999) {
+          // Transacción cancelada desde el PINPad
+          swalInstance.close();
+          swalInstance = null;
+
+          Swal.fire({
+            icon: data.icon || 'error',
+            title: 'Operación cancelada',
+            text: data.message || 'La transacción fue cancelada desde el PINPad.',
+            showConfirmButton: true,
+          });
         } else if (data.keepPolling) {
           setTimeout(() => pollTransactionStatus(transactionId, sTransactionId, storeId), 2000);
         } else {
@@ -492,6 +503,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Error al consultar el estado de la transacción:', error);
       });
   }
+
 });
 
 
@@ -595,7 +607,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const refundReason = refundReasonInput.value;
     const ticketNumber = document.getElementById('ticketNumberRefund').value;
 
-
     const selectedOption = posDeviceSelectRefund.options[posDeviceSelectRefund.selectedIndex];
     if (!selectedOption) {
       Swal.fire('Error', 'Debe seleccionar un dispositivo POS.', 'error');
@@ -610,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Obtener y formatear la fecha original
     const originalTransactionDateInput = document.getElementById('originalTransactionDate');
-    const originalTransactionDate = originalTransactionDateInput.value; // Formato inicial: YYYY-MM-DD
+    const originalTransactionDate = originalTransactionDateInput.value;
     let formattedOriginalDate = '';
     if (originalTransactionDate) {
       formattedOriginalDate = formatDateToYYMMDD(originalTransactionDate); // Convertir a YYMMDD
@@ -630,8 +641,18 @@ document.addEventListener('DOMContentLoaded', function () {
       ClientAppId: clientAppId || 'Caja1',
       UserId: userId || 'Usuario1',
       TransactionDateTimeyyyyMMddHHmmssSSS: new Date().toISOString().replace(/[-T:.Z]/g, '').padEnd(20, '0'),
-      OriginalTransactionDateyyMMdd: formattedOriginalDate, // Fecha original formateada correctamente
+      OriginalTransactionDateyyMMdd: formattedOriginalDate,
     };
+
+    // Mostrar Swal de "Actualizando"
+    Swal.fire({
+      title: 'Actualizando...',
+      text: 'Esperando por operación en PINPad',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
 
     // Enviar solicitud de refund
     fetch(`/api/pos/refund`, {
@@ -644,6 +665,12 @@ document.addEventListener('DOMContentLoaded', function () {
     })
       .then(response => response.json())
       .then(data => {
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(refundTransactionModal);
+        modal.hide();
+
+        Swal.close(); // Cerrar el Swal de "Actualizando"
+
         if (data.success) {
           Swal.fire({
             icon: 'success',
@@ -661,6 +688,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       })
       .catch(error => {
+        Swal.close(); // Cerrar el Swal en caso de error
         Swal.fire({
           icon: 'error',
           title: 'Error',
@@ -669,6 +697,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Error al procesar el refund:', error);
       });
   });
+
 
   // Función para convertir la fecha a formato YYMMDD
   function formatDateToYYMMDD(dateString) {

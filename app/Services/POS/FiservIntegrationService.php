@@ -690,7 +690,6 @@ class FiservIntegrationService implements PosIntegrationInterface
                 'response_body' => $response->body(),
             ]);
 
-            // Manejar la respuesta de Fiserv
             if ($response->successful()) {
                 $jsonResponse = $response->json();
 
@@ -698,26 +697,36 @@ class FiservIntegrationService implements PosIntegrationInterface
                 $refundTransaction->update([
                     'TransactionId' => $jsonResponse['TransactionId'] ?? null,
                     'STransactionId' => $jsonResponse['STransactionId'] ?? null,
-                    'status' => 'completed', // Marcar como completada
                     'formatted_data' => array_merge($refundData, [
                         'TransactionId' => $jsonResponse['TransactionId'] ?? null,
                         'STransactionId' => $jsonResponse['STransactionId'] ?? null,
                     ]),
                 ]);
 
-                Log::info('Transacción de devolución actualizada en la base de datos:', $refundTransaction->toArray());
+                // Iniciar el polling para verificar el estado de la transacción
+                $pollingResult = $this->pollTransactionStatus($jsonResponse['TransactionId'], $jsonResponse['STransactionId']);
 
-                return [
-                    'success' => true,
-                    'message' => 'Devolución procesada exitosamente.',
-                    'details' => $jsonResponse,
-                ];
+                if ($pollingResult['success']) {
+                    // Actualizar el estado a completado si el polling tiene éxito
+                    $refundTransaction->update(['status' => 'completed']);
+
+                    return [
+                        'success' => true,
+                        'message' => 'Devolución procesada exitosamente.',
+                        'details' => $pollingResult['details'],
+                    ];
+                } else {
+                    return [
+                        'success' => false,
+                        'message' => 'Error al verificar el estado de la transacción.',
+                        'details' => $pollingResult['details'],
+                    ];
+                }
             }
 
             // Manejar errores en la solicitud
             Log::error('Error en la solicitud de devolución a Fiserv:', $response->body());
 
-            // Actualizar la transacción con el estado de fallo
             $refundTransaction->update([
                 'status' => 'failed',
                 'error_message' => $response->body(),
@@ -741,6 +750,59 @@ class FiservIntegrationService implements PosIntegrationInterface
             ];
         }
     }
+
+    protected function pollTransactionStatus(string $transactionId, string $sTransactionId): array
+    {
+        $maxAttempts = 30;
+        $delayBetweenAttempts = 2; // Segundos
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $statusResponse = $this->checkTransactionStatus([
+                    'TransactionId' => $transactionId,
+                    'STransactionId' => $sTransactionId,
+                ]);
+
+                Log::info("Intento $attempt: Estado de la transacción recibido", $statusResponse);
+
+                // Detectar si la transacción fue cancelada desde el PINPad
+                if (
+                    isset($statusResponse['PosResponseCode'], $statusResponse['PosResponseCodeExtension']) &&
+                    $statusResponse['PosResponseCode'] === 'CT' &&
+                    $statusResponse['PosResponseCodeExtension'] === '20'
+                ) {
+                  Log::info('La transacción fue cancelada desde el PINPad.');
+                    return [
+                        'success' => false,
+                        'responseCode' => 999,
+                        'message' => 'La transacción fue cancelada desde el PINPad.',
+                        'icon' => 'error',
+                        'keepPolling' => false,
+                        'details' => $statusResponse,
+                    ];
+                }
+
+                // Verificar si la transacción fue exitosa
+                if (isset($statusResponse['responseCode']) && $statusResponse['responseCode'] === 0) {
+                    return [
+                        'success' => true,
+                        'details' => $statusResponse,
+                    ];
+                }
+
+                sleep($delayBetweenAttempts); // Esperar antes de volver a intentar
+            } catch (\Exception $e) {
+                Log::error("Error en el intento $attempt al verificar el estado de la transacción: " . $e->getMessage());
+            }
+        }
+
+        return [
+            'success' => false,
+            'message' => 'No se pudo verificar el estado de la transacción después de múltiples intentos.',
+        ];
+    }
+
+
 
     public function fetchBatchCloses(array $queryData): array
     {
