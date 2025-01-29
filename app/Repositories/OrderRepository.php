@@ -326,7 +326,7 @@ class OrderRepository
             'doc_type' => $request->doc_type,
             'document' => $request->document,
             'cash_register_log_id' => $request->cash_register_log_id,
-            'notes' => $request->notes,
+            // 'notes' => $request->notes,
         ];
     }
 

@@ -10,20 +10,27 @@ use App\Repositories\StoreRepository;
 use App\Models\PosDevice;
 use App\Http\Requests\StoreEmailConfigRequest;
 use App\Enums\MercadoPago\MercadoPagoApplicationTypeEnum;
+use App\Exceptions\MercadoPagoException;
 use App\Http\Controllers\StoresEmailConfigController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
 use App\Repositories\AccountingRepository;
+use App\Repositories\MercadoPagoAccountStoreRepository;
+use App\Services\MercadoPagoService;
 
 class IntegrationController extends Controller
 {
     protected $storeRepository;
     protected $accountingRepository;
+    protected $mpService;
+    protected $mercadoPagoAccountStoreRepository;
 
-    public function __construct(StoreRepository $storeRepository, AccountingRepository $accountingRepository)
+    public function __construct(StoreRepository $storeRepository, AccountingRepository $accountingRepository, MercadoPagoService $mpService, MercadoPagoAccountStoreRepository $mercadoPagoAccountStoreRepository)
     {
         $this->storeRepository = $storeRepository;
         $this->accountingRepository = $accountingRepository;
+        $this->mpService = $mpService;
+        $this->mercadoPagoAccountStoreRepository = $mercadoPagoAccountStoreRepository;
     }
 
     /**
@@ -62,7 +69,12 @@ class IntegrationController extends Controller
             );
         });
 
-        return view('integrations.index', compact('stores'));
+        $data = [
+            'stores' => $stores,
+            'googleMapsApiKey' => config('services.google.maps_api_key')
+        ];
+
+        return view('integrations.index', $data);
     }
 
 
@@ -185,60 +197,130 @@ class IntegrationController extends Controller
 
     public function handleMercadoPagoIntegrationPresencial(Request $request, $store)
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
 
-            if ($request->has('mercadoPagoPublicKeyPresencial')) {
-                $validator = Validator::make($request->all(), [
-                    'mercadoPagoPublicKeyPresencial' => 'required',
-                    'mercadoPagoAccessTokenPresencial' => 'required',
-                    'mercadoPagoSecretKeyPresencial' => 'required',
-                    'mercadoPagoUserIdPresencial' => 'required'
-                ]);
-
-                if ($validator->fails()) {
+            if (!$request->boolean('accepts_mercadopago_presencial')) {
+                $this->mpService->setCredentials($store->id, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+                // Eliminar la sucursal de MercadoPago si existe
+                $mercadoPagoAccountStore = $this->mercadoPagoAccountStoreRepository->getStoreByExternalId($store->id);
+                if (!$mercadoPagoAccountStore) {
+                    DB::commit();
                     return response()->json([
-                        'success' => false,
-                        'message' => 'Error de validación',
-                        'errors' => $validator->errors()
-                    ], 422);
+                        'success' => true,
+                        'message' => 'Integración de MercadoPago Presencial desactivada exitosamente'
+                    ]);
+                }
+                $mercadoPagoAccountStore->load('mercadopagoAccountPOS');
+                // Eliminar POS de MercadoPago si existe
+                foreach ($mercadoPagoAccountStore->mercadopagoAccountPOS as $pos) {
+                    $this->mpService->deletePOS($pos->id_pos);
+                    $pos->delete();
+                }
+                if ($mercadoPagoAccountStore) {
+                    $this->mpService->deleteStore($mercadoPagoAccountStore->store_id);
+                    $mercadoPagoAccountStore->delete();
                 }
 
-                $store->mercadoPagoAccount()->updateOrCreate(
-                    [
-                        'store_id' => $store->id,
-                        'type' => MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL
-                    ],
-                    [
-                        'public_key' => $request->mercadoPagoPublicKeyPresencial,
-                        'access_token' => $request->mercadoPagoAccessTokenPresencial,
-                        'secret_key' => $request->mercadoPagoSecretKeyPresencial,
-                        'user_id_mp' => $request->mercadoPagoUserIdPresencial
-                    ]
-                );
+                $store->mercadoPagoAccount()->where('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL)->delete();
 
                 DB::commit();
                 return response()->json([
                     'success' => true,
-                    'message' => 'Configuración de MercadoPago Presencial actualizada exitosamente'
+                    'message' => 'Integración de MercadoPago Presencial desactivada exitosamente'
                 ]);
             }
+            $mercadoPagoAccount = $store->mercadoPagoAccount()->updateOrCreate(
+                ['store_id' => $store->id, 'type' => MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL],
+                [
+                    'public_key' => $request->input('mercadoPagoPublicKeyPresencial'),
+                    'access_token' => $request->input('mercadoPagoAccessTokenPresencial'),
+                    'secret_key' => $request->input('mercadoPagoSecretKeyPresencial'),
+                    'user_id_mp' => $request->input('mercadoPagoUserIdPresencial'),
+                ]
+            );
+            $this->mpService->setCredentials($store->id, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
 
-            $store->mercadoPagoAccount()
-                ->where('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL)
-                ->delete();
+            $name = $store->name;
+            $externalId = 'SUC' . $store->id;
+            $streetNumber = $request->input('street_number');
+            $streetName = $request->input('street_name');
+            $cityName = $request->input('city_name');
+            $stateName = $request->input('state_name');
+            $latitude = (float) $request->input('latitude');
+            $longitude = (float) $request->input('longitude');
+            $reference = $request->input('reference');
+
+            // Verificar si la sucursal ya existe
+            $mercadoPagoAccountStoreExist = $this->mercadoPagoAccountStoreRepository->getStoreByExternalId($store->id);
+
+            // Preparar datos de la sucursal
+            $storeData = [
+                'name' => $name,
+                'external_id' => $externalId,
+                'location' => [
+                    'street_number' => $streetNumber,
+                    'street_name' => $streetName,
+                    'city_name' => $cityName,
+                    'state_name' => $stateName,
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'reference' => $reference,
+                ],
+            ];
+            if (!$mercadoPagoAccountStoreExist) {
+                $resultMercadoPagoStore = $this->mpService->createStore($storeData);
+
+                $this->mercadoPagoAccountStoreRepository->store([
+                    'name' => $name,
+                    'external_id' => $externalId,
+                    'street_number' => $streetNumber,
+                    'street_name' => $streetName,
+                    'city_name' => $cityName,
+                    'state_name' => $stateName,
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'reference' => $reference,
+                    'store_id' => $resultMercadoPagoStore['id'],
+                    'mercado_pago_account_id' => $mercadoPagoAccount->id,
+                ]);
+            } else {
+                unset($storeData['external_id']);
+                $resultMercadoPagoStore = $this->mpService->updateStore($mercadoPagoAccountStoreExist->store_id, $storeData);
+                $this->mercadoPagoAccountStoreRepository->update($mercadoPagoAccountStoreExist, [
+                    'name' => $name,
+                    'street_number' => $streetNumber,
+                    'street_name' => $streetName,
+                    'city_name' => $cityName,
+                    'state_name' => $stateName,
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'reference' => $reference,
+                    'store_id' => $resultMercadoPagoStore['id'],
+                    'mercado_pago_account_id' => $mercadoPagoAccount->id,
+                ]);
+            }
 
             DB::commit();
             return response()->json([
                 'success' => true,
-                'message' => 'Integración de MercadoPago Presencial desactivada exitosamente'
+                'message' => 'Configuración de MercadoPago Presencial actualizada exitosamente'
             ]);
-        } catch (\Exception $e) {
+        } catch (MercadoPagoException $e) {
             DB::rollBack();
-            Log::error('Error en handleMercadoPagoIntegrationPresencial: ' . $e->getMessage());
+            Log::channel('mercadopago')->error('Error en la integración con MercadoPago: ' . $e->getMessage());
+            // Si es un error de MercadoPago, lanzar una excepción específica
             return response()->json([
                 'success' => false,
-                'message' => 'Error al procesar la integración de MercadoPago Presencial'
+                'message' => $e->getMessage()
+            ], 500);
+        }catch (\Exception $e) {
+            DB::rollBack();
+            // Si no es un error de MercadoPago, lanzar una excepción genérica
+            Log::channel('mercadopago')->error('Error en la integración con MercadoPago: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en la integración con MercadoPago.'
             ], 500);
         }
     }
@@ -750,5 +832,69 @@ class IntegrationController extends Controller
     public function destroy($id)
     {
         return;
+    }
+
+    /**
+     * Verifica la conexión con MercadoPago Presencial
+     *
+     * @param int $storeId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function checkMercadoPagoPresencialConnection($storeId)
+    {
+        try {
+            $store = $this->storeRepository->find($storeId);
+            if (!$store) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tienda no encontrada.'
+                ], 404);
+            }
+
+            $mercadoPagoAccount = $store->mercadoPagoAccount->firstWhere('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL);
+            $mercadoPagoAccount->load('mercadoPagoAccountStore');
+            if (!$mercadoPagoAccount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La tienda no tiene configurada la integración de MercadoPago Presencial.'
+                ]);
+            }
+            $storeData = [
+                'public_key' => $mercadoPagoAccount->public_key,
+                'access_token' => $mercadoPagoAccount->access_token,
+                'secret_key' => $mercadoPagoAccount->secret_key,
+                'user_id_mp' => $mercadoPagoAccount->user_id_mp,
+                'name' => $mercadoPagoAccount->mercadoPagoAccountStore[0]?->name,
+                'external_id' => 'SUC' . $mercadoPagoAccount->mercadoPagoAccountStore[0]?->external_id,
+                'location' => [
+                    'street_number' => $mercadoPagoAccount->mercadoPagoAccountStore[0]?->street_number,
+                    'street_name' => $mercadoPagoAccount->mercadoPagoAccountStore[0]?->street_name,
+                    'city_name' => $mercadoPagoAccount->mercadoPagoAccountStore[0]?->city_name,
+                    'state_name' => $mercadoPagoAccount->mercadoPagoAccountStore[0]?->state_name,
+                    'latitude' => $mercadoPagoAccount->mercadoPagoAccountStore[0]?->latitude,
+                    'longitude' => $mercadoPagoAccount->mercadoPagoAccountStore[0]?->longitude,
+                    'reference' => $mercadoPagoAccount->mercadoPagoAccountStore[0]?->reference,
+                ],
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $storeData
+            ]);
+
+        } catch (MercadoPagoException $e) {
+            Log::channel('mercadopago')->error('Error en la integración con MercadoPago: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        } catch (\Exception $e) {
+            Log::channel('mercadopago')->error('Error en la integración con MercadoPago: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en la integración con MercadoPago.'
+            ], 500);
+        }
+
     }
 }

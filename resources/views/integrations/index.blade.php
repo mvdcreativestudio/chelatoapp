@@ -19,6 +19,9 @@
 @endsection
 
 @section('page-script')
+<script
+  src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsApiKey }}&loading=async&libraries=places&callback=initMap">
+</script>
 <script type="text/javascript">
   window.baseUrl = "{{ url('/') }}";
   window.csrfToken = "{{ csrf_token() }}";
@@ -68,14 +71,9 @@
   <ul class="nav nav-tabs" id="storeTabs" role="tablist">
     @foreach($stores as $store)
     <li class="nav-item" role="presentation">
-      <button class="nav-link {{ $loop->first ? 'active' : '' }}"
-        id="store-tab-{{ $store->id }}"
-        data-bs-toggle="tab"
-        data-bs-target="#store-content-{{ $store->id }}"
-        type="button"
-        role="tab"
-        aria-controls="store-content-{{ $store->id }}"
-        aria-selected="{{ $loop->first ? 'true' : 'false' }}">
+      <button class="nav-link {{ $loop->first ? 'active' : '' }}" id="store-tab-{{ $store->id }}" data-bs-toggle="tab"
+        data-bs-target="#store-content-{{ $store->id }}" type="button" role="tab"
+        aria-controls="store-content-{{ $store->id }}" aria-selected="{{ $loop->first ? 'true' : 'false' }}">
         <i class='bx bx-store-alt me-1'></i>
         {{ $store->name }}
         <small class="ms-2 text-muted">#{{ $store->id }}</small>
@@ -86,10 +84,8 @@
 
   <div class="tab-content mt-3 overflow-hidden" id="storeTabsContent">
     @foreach($stores as $store)
-    <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}"
-      id="store-content-{{ $store->id }}"
-      data-store-id="{{ $store->id }}"
-      role="tabpanel">
+    <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="store-content-{{ $store->id }}"
+      data-store-id="{{ $store->id }}" role="tabpanel">
       <div class="integration-grid">
         @include('stores.partials.handy', ['store' => $store, 'devices' => $store->posDevices])
         @include('stores.partials.oca', ['store' => $store, 'devices' => $store->posDevices])
@@ -272,6 +268,254 @@
     margin-top: 0.25rem;
     display: block;
   }
-</style>
 
+  .swal-custom-popup {
+    z-index: 2999 !important;
+  }
+
+  .swal2-container {
+    z-index: 3000 !important;
+  }
+
+  /* Estilos para el mapa */
+  #map {
+    height: 300px;
+    width: 100%;
+    border-radius: 5px;
+  }
+</style>
+<script>
+  // Objeto para almacenar las referencias de cada mapa (map, marker)
+const mpMaps = {};
+
+// ======================
+// 1) Funciones de mapa
+// ======================
+function initMapForStore(storeId) {
+  const mapDiv         = document.getElementById(`map-${storeId}`);
+  const autocompleteEl = document.getElementById(`autocomplete-${storeId}`);
+
+  // Si no existe el contenedor del mapa, salimos
+  if (!mapDiv) return;
+
+  // Posición por defecto (Buenos Aires)
+
+  // Crear mapa
+  const map = new google.maps.Map(mapDiv, {
+    zoom: 15,
+    mapTypeControl: false,
+    fullscreenControl: false,
+    streetViewControl: false
+  });
+
+  // Crear marcador
+  const marker = new google.maps.Marker({
+    map: map,
+    title: "Ubicación seleccionada",
+    draggable: true
+  });
+
+  // Guardamos las referencias en mpMaps
+  mpMaps[storeId] = { map, marker };
+
+  // Autocomplete
+  if (autocompleteEl) {
+    const autocomplete = new google.maps.places.Autocomplete(autocompleteEl, {
+      types: ["geocode"]
+      // componentRestrictions: { country: "AR" }
+    });
+
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      if (!place.geometry) {
+        alert("No se encontraron coordenadas para esta dirección.");
+        return;
+      }
+      map.setCenter(place.geometry.location);
+      marker.setPosition(place.geometry.location);
+      fillLocationFields(place, storeId);
+    });
+  }
+
+  // Evento click en el mapa
+  map.addListener("click", (event) => {
+    marker.setPosition(event.latLng);
+    getAddressFromCoords(event.latLng.lat(), event.latLng.lng(), storeId);
+  });
+
+  // Botón "Mi Ubicación" (opcional)
+  addLocationButton(map, storeId, marker);
+}
+
+// Botón para centrar en la ubicación actual
+function addLocationButton(map, storeId, marker) {
+  const locationButton = document.createElement("button");
+  locationButton.textContent = "📍 Mi Ubicación";
+  // Estilos básicos
+  locationButton.style.background = "#fff";
+  locationButton.style.border = "none";
+  locationButton.style.padding = "8px 12px";
+  locationButton.style.fontSize = "14px";
+  locationButton.style.cursor = "pointer";
+  locationButton.style.borderRadius = "5px";
+  locationButton.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
+  locationButton.style.position = "absolute";
+  locationButton.style.top = "10px";
+  locationButton.style.right = "10px";
+  locationButton.style.zIndex = "5";
+
+  locationButton.addEventListener("click", () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const userLocation = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          };
+          map.setCenter(userLocation);
+          map.setZoom(16);
+          marker.setPosition(userLocation);
+          getAddressFromCoords(userLocation.lat, userLocation.lng, storeId);
+        },
+        (err) => {
+          console.error("Error geolocalización:", err);
+          // alert("No se pudo obtener tu ubicación.");
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de Ubicación',
+            text: 'No se pudo obtener tu ubicación.',
+            confirmButtonText: 'Cerrar'
+          });
+        }
+      );
+    } else {
+      // alert("Tu navegador no soporta la geolocalización.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de Ubicación',
+        text: 'Tu navegador no soporta la geolocalización.',
+        confirmButtonText: 'Cerrar'
+      });
+    }
+  });
+
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(locationButton);
+}
+
+// Rellena los campos lat/lng/calle/etc.
+function fillLocationFields(place, storeId) {
+  const latEl   = document.getElementById(`latitude-${storeId}`);
+  const lngEl   = document.getElementById(`longitude-${storeId}`);
+  const streetEl= document.getElementById(`street_name-${storeId}`);
+  const numEl   = document.getElementById(`street_number-${storeId}`);
+  const cityEl  = document.getElementById(`city_name-${storeId}`);
+  const stateEl = document.getElementById(`state_name-${storeId}`);
+
+  if (latEl) latEl.value = place.geometry.location.lat();
+  if (lngEl) lngEl.value = place.geometry.location.lng();
+
+  let streetName = "", streetNumber = "", city = "", state = "";
+  place.address_components.forEach((component) => {
+    if (component.types.includes("route")) {
+      streetName = component.long_name;
+    }
+    if (component.types.includes("street_number")) {
+      streetNumber = component.long_name;
+    }
+    if (component.types.includes("locality")) {
+      city = component.long_name;
+    }
+    if (component.types.includes("administrative_area_level_1")) {
+      state = component.long_name;
+    }
+  });
+
+  if (streetEl) streetEl.value = streetName;
+  if (numEl)    numEl.value    = streetNumber;
+  if (cityEl)   cityEl.value   = city;
+  if (stateEl)  stateEl.value  = state;
+}
+
+// Geocodifica coords -> dirección
+function getAddressFromCoords(lat, lng, storeId) {
+  const geocoder = new google.maps.Geocoder();
+  geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+    if (status === "OK" && results[0]) {
+      const autoEl = document.getElementById(`autocomplete-${storeId}`);
+      if (autoEl) autoEl.value = results[0].formatted_address;
+      fillLocationFields(results[0], storeId);
+    } else {
+      // alert("No se encontraron resultados en esta ubicación.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de Geocodificación',
+        text: 'No se encontraron resultados en esta ubicación.',
+        confirmButtonText: 'Cerrar'
+      });
+    }
+  });
+}
+
+// =====================
+// 2) Al abrir cada modal
+// =====================
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".mercadoPagoPresencialModal").forEach(modal => {
+    modal.addEventListener("shown.bs.modal", function () {
+      // 1) Identificar storeId
+      const storeId = this.id.split("-")[1];
+
+      // 2) Inicializa el mapa para esta tienda
+      initMapForStore(storeId);
+
+      // 3) Obtener ref al mapa y marcador (guardados en mpMaps)
+      const mapData = mpMaps[storeId];
+      if (!mapData) return; // Por seguridad
+
+      const map    = mapData.map;
+      const marker = mapData.marker;
+
+      // 4) Botón de credenciales
+      const btnCredenciales = document.getElementById(`btnCredencialesMercadoPagoPresencial-${storeId}`);
+      if (btnCredenciales) btnCredenciales.disabled = true; // Por defecto
+
+      // 5) Geolocalización automática
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            map.setCenter(userLocation);
+            map.setZoom(16);
+            marker.setPosition(userLocation);
+
+            // Rellena campos
+            getAddressFromCoords(userLocation.lat, userLocation.lng, storeId);
+
+            // Habilita el botón
+            if (btnCredenciales) {
+              btnCredenciales.disabled = false;
+            }
+          },
+          (err) => {
+            console.log("Geolocation error:", err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error de Ubicación',
+              text: 'No se pudo obtener tu ubicación.',
+              confirmButtonText: 'Cerrar'
+            });
+            // Si falla la geolocalización, deshabilitamos el botón
+            if (btnCredenciales) btnCredenciales.disabled = true;
+          }
+        );
+      } else {
+        // Si no soporta geolocalización, deshabilitamos
+        if (btnCredenciales) btnCredenciales.disabled = true;
+      }
+    });
+  });
+});
+
+
+</script>
 @endsection

@@ -54,6 +54,13 @@ class MercadoPagoService
      */
     private Client $client;
 
+
+    private array $errorMessages = [
+        'store coordinates (latitude 0 and longitue 0) are invalid' => 'Las coordenadas de la tienda (latitud 0 y longitud 0) no son válidas.',
+        'Validation Error'
+            => 'Los campos permitidos para su ubicación son: Buenos Aires, Capital Federal, Catamarca, Chaco, Chubut, Corrientes, Córdoba, Entre Ríos, Formosa, Jujuy, La Pampa, La Rioja, Mendoza, Misiones, Neuquén, Río Negro, Salta, San Juan, San Luis, Santa Cruz, Santa Fe, Santiago del Estero, Tierra del Fuego, Tucumán.',
+    ];
+
     /**
      * Constructor para configurar el acceso a la API de MercadoPago.
      */
@@ -88,13 +95,13 @@ class MercadoPagoService
             SDK::initialize();
             SDK::setPublicKey($this->publicKey);
             SDK::setAccessToken($this->accessToken);
-            Log::info('Credenciales de MercadoPago configuradas:', [
+            Log::channel('mercadopago')->info('Credenciales de MercadoPago configuradas:', [
                 'public_key' => $this->publicKey,
                 'access_token' => $this->accessToken,
                 'secret_key' => $this->secretKey,
             ]);
         } catch (\Exception $e) {
-            Log::error("Error al configurar las credenciales de la tienda: {$e->getMessage()}");
+            Log::channel('mercadopago')->error("Error al configurar las credenciales de la tienda: {$e->getMessage()}");
 
             throw $e;
         }
@@ -165,7 +172,7 @@ class MercadoPagoService
 
         // Guardar la preferencia y generar el log
         $preference->save();
-        Log::info('Preference created:', $preference->toArray());
+        Log::channel('mercadopago')->info('Preference created:', $preference->toArray());
 
         return $preference;
     }
@@ -204,7 +211,7 @@ class MercadoPagoService
 
             return json_decode($response->getBody(), true);
         } catch (\Exception $e) {
-            Log::error("Error al obtener la información del pago: " . $e->getMessage());
+            Log::channel('mercadopago')->error("Error al obtener la información del pago: " . $e->getMessage());
             return null;
         }
     }
@@ -241,24 +248,39 @@ class MercadoPagoService
         } catch (\GuzzleHttp\Exception\ClientException $e) {
             // Extraer el cuerpo completo de la respuesta
             $responseBody = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : null;
+            $decodedBody = json_decode($responseBody, true);
+            $translatedError = $this->translateError($decodedBody['message'] ?? $e->getMessage());
 
-            Log::error("Error en la solicitud a MercadoPago: {$e->getMessage()}");
-            Log::error("URL: {$url}");
-            Log::error("Headers: " . json_encode($headers));
-            Log::error("Body: " . json_encode($body));
-            Log::error("Query Params: " . json_encode($queryParams));
-            Log::error("Response Body: {$responseBody}");
 
-            throw new MercadoPagoException($e->getMessage(), json_decode($responseBody, true));
+            Log::channel('mercadopago')->error("Error en la solicitud a MercadoPago: {$e->getMessage()}");
+            Log::channel('mercadopago')->error("URL: {$url}");
+            Log::channel('mercadopago')->error("Headers: " . json_encode($headers));
+            Log::channel('mercadopago')->error("Body: " . json_encode($body));
+            Log::channel('mercadopago')->error("Query Params: " . json_encode($queryParams));
+            Log::channel('mercadopago')->error("Response Body: {$responseBody}");
+
+            throw new MercadoPagoException($translatedError, $decodedBody);
         } catch (\Exception $e) {
-            Log::error("Error en la solicitud a MercadoPago: {$e->getMessage()}");
-            Log::error("URL: {$url}");
-            Log::error("Headers: " . json_encode($headers));
-            Log::error("Body: " . json_encode($body));
-            Log::error("Query Params: " . json_encode($queryParams));
+            Log::channel('mercadopago')->error("Error en la solicitud a MercadoPago: {$e->getMessage()}");
+            Log::channel('mercadopago')->error("URL: {$url}");
+            Log::channel('mercadopago')->error("Headers: " . json_encode($headers));
+            Log::channel('mercadopago')->error("Body: " . json_encode($body));
+            Log::channel('mercadopago')->error("Query Params: " . json_encode($queryParams));
 
             throw $e;
         }
+    }
+
+
+    /**
+     * Traduce un mensaje de error utilizando el diccionario de errores.
+     *
+     * @param string $errorMessage
+     * @return string
+     */
+    public function translateError(string $errorMessage): string
+    {
+        return $this->errorMessages[$errorMessage] ?? 'Ocurrió un error desconocido.';
     }
     // Obtener las cabeceras estándar para las solicitudes
     private function getHeaders(): array
