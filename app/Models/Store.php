@@ -18,6 +18,7 @@ class Store extends Model
         'address',
         'email',
         'rut',
+        'tax_rate_id',
         'ecommerce',
         'status',
         'slug',

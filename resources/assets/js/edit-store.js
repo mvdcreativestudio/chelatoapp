@@ -1,100 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const switches = [
-    { id: 'peyaEnviosSwitch', fieldsId: 'peyaEnviosFields', requiredFields: ['peyaEnviosKey'] },
-    {
-      id: 'mercadoPagoSwitchOnline',
-      fieldsId: 'mercadoPagoFieldsOnline',
-      requiredFields: ['mercadoPagoPublicKeyOnline', 'mercadoPagoAccessTokenOnline', 'mercadoPagoSecretKeyOnline']
-    },
-    {
-      id: 'mercadoPagoSwitchPresencial',
-      fieldsId: 'mercadoPagoFieldsPresencial',
-      requiredFields: [
-        'mercadoPagoPublicKeyPresencial',
-        'mercadoPagoAccessTokenPresencial',
-        'mercadoPagoSecretKeyPresencial',
-        'user_id',
-        'street_number',
-        'street_name',
-        'city_name',
-        'state_name',
-        'latitude',
-        'longitude'
-      ]
-    },
-    { id: 'ecommerceSwitch', fieldsId: null },
-    {
-      id: 'invoicesEnabledSwitch',
-      fieldsId: 'pymoFields',
-      requiredFields: ['pymoUser', 'pymoPassword', 'pymoBranchOffice']
-    },
-    { id: 'scanntechSwitch', fieldsId: 'scanntechFields', requiredFields: ['scanntechCompany', 'scanntechBranch'] },
-
-    {
-      id: 'emailConfigSwitch',
-      fieldsId: 'emailConfigFields',
-      requiredFields: [
-        'mailHost',
-        'mailPort',
-        'mailUsername',
-        'mailPassword',
-        'mailEncryption',
-        'mailFromAddress',
-        'mailFromName'
-      ]
-    }
-
-  ];
-
-  // Añadir animación de transición
-  document.querySelectorAll('.integration-fields').forEach(field => {
-    field.style.transition = 'all 0.5s ease-in-out';
-  });
-
-  switches.forEach(switchObj => {
-    const toggleSwitch = document.getElementById(switchObj.id);
-    const fields = switchObj.fieldsId ? document.getElementById(switchObj.fieldsId) : null;
-
-    if (toggleSwitch && toggleSwitch.checked && fields) {
-      fields.style.display = 'block';
-    }
-
-    if (toggleSwitch) {
-      toggleSwitch.addEventListener('change', function () {
-        if (!this.checked && fields) {
-          Swal.fire({
-            title: '¿Estás seguro?',
-            text: 'Se perderán los datos de esta integración y deberá ser realizada nuevamente.',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí, desactivar',
-            cancelButtonText: 'Cancelar'
-          }).then(result => {
-            if (result.isConfirmed) {
-              fields.style.opacity = 0;
-              setTimeout(() => {
-                fields.style.display = 'none';
-                fields.style.opacity = 1;
-              }, 500);
-              // Limpia los campos al desactivar la integración
-              fields.querySelectorAll('input').forEach(input => (input.value = ''));
-              fields.querySelectorAll('.error-message').forEach(error => error.remove());
-            } else {
-              toggleSwitch.checked = true;
-            }
-          });
-        } else if (fields) {
-          fields.style.display = 'block';
-          fields.style.opacity = 0;
-          setTimeout(() => {
-            fields.style.opacity = 1;
-          }, 10);
-        }
-      });
-    }
-  });
 
   // Validación en tiempo real
   function validateInput(input, requiredFields = []) {
@@ -122,22 +26,6 @@ document.addEventListener('DOMContentLoaded', function () {
   submitButton.addEventListener('click', function (event) {
     let formIsValid = true;
 
-    switches.forEach(switchObj => {
-      const toggleSwitch = document.getElementById(switchObj.id);
-      const fields = switchObj.fieldsId ? document.getElementById(switchObj.fieldsId) : null;
-
-      if (toggleSwitch && toggleSwitch.checked && fields) {
-        const inputs = fields.querySelectorAll('input');
-
-        inputs.forEach(input => {
-          const isValid = validateInput(input, switchObj.requiredFields || []);
-          if (!isValid) {
-            formIsValid = false;
-          }
-        });
-      }
-    });
-
     if (!formIsValid) {
       event.preventDefault(); // Evita el envío del formulario si hay campos vacíos
       Swal.fire({
@@ -149,15 +37,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  const addressField = document.getElementById('store-address');
-  const streetNumberField = document.getElementById('street_number');
-  const streetNameField = document.getElementById('street_name');
-  const cityNameField = document.getElementById('city_name');
-  const stateNameField = document.getElementById('state_name');
-  const latitudeField = document.getElementById('latitude');
-  const longitudeField = document.getElementById('longitude');
-
-  const mercadoPagoSwitchPresencial = document.getElementById('mercadoPagoSwitchPresencial');
 
   function parseAddress() {
     // Si el campo de dirección ya tiene un valor

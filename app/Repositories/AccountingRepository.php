@@ -590,6 +590,8 @@ class AccountingRepository
                   'NroLinDet' => 1,
                   'IndFact' => $indFact,
                   'NomItem' => $appointment->comment,
+                  'IndFact' => $indFact,
+                  'NomItem' => $appointment->comment,
                   'Cantidad' => 1,
                   'UniMed' => 'N/A',
                   'DescuentoPct' => 0,
@@ -616,6 +618,7 @@ class AccountingRepository
 
               return [
                   'NroLinDet' => $index + 1,
+                  'IndFact' => $indFact,
                   'IndFact' => $indFact,
                   'NomItem' => $cleanedProductName,
                   'Cantidad' => $adjustedAmount,

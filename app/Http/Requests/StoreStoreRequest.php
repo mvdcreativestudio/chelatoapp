@@ -30,6 +30,7 @@ class StoreStoreRequest extends FormRequest
             'address' => 'string|max:255',
             'email' => 'required|email',
             'rut' => 'required|string|max:255',
+            'tax_rate_id' => 'required|exists:tax_rates,id',
             'status' => 'required|boolean',
         ];
 
