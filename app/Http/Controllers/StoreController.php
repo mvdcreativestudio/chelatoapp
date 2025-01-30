@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureUserCanAccessStore;
 use App\Http\Requests\StoreStoreRequest;
 use App\Http\Requests\UpdateStoreRequest;
 use App\Models\Store;
+use App\Models\TaxRate;
 use App\Repositories\AccountingRepository;
 use App\Repositories\MercadoPagoAccountStoreRepository;
 use App\Repositories\StoreRepository;
@@ -84,8 +85,13 @@ class StoreController extends Controller
      */
     public function create(): View
     {
-        return view('stores.create', ['googleMapsApiKey' => config('services.google.maps_api_key')]);
+        $taxRates = TaxRate::all(); // Obtener todas las tasas de impuestos
+        return view('stores.create', [
+            'googleMapsApiKey' => config('services.google.maps_api_key'),
+            'taxRates' => $taxRates
+        ]);
     }
+
 
     /**
      * Almacena una nueva empresa en la base de datos.
@@ -122,9 +128,16 @@ class StoreController extends Controller
     public function edit(Store $store): View
     {
         $googleMapsApiKey = config('services.google.maps_api_key');
+        $companyInfo = null;
+        $logoUrl = null;
 
-        return view('stores.edit', compact('store', 'googleMapsApiKey'));
+        // Obtener todas las tasas de IVA disponibles
+        $taxRates = TaxRate::all();
+
+        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'taxRates'));
     }
+
+
 
     /**
      * Actualiza una Empresa específica en la base de datos.
@@ -162,29 +175,11 @@ class StoreController extends Controller
             }
 
             // Actualización de la tienda excluyendo datos de integraciones específicas
-            $this->storeRepository->update($store, Arr::except($storeData, [
-                'mercadoPagoPublicKey',
-                'mercadoPagoAccessToken',
-                'mercadoPagoSecretKey',
-                'accepts_mercadopago_online',
-                'accepts_mercadopago_presencial',
-                'pymo_user',
-                'pymo_password',
-                'pymo_branch_office',
-                'accepts_peya_envios',
-                'peya_envios_key',
-                'callbackNotificationUrl',
-                'scanntechCompany',
-                'scanntechBranch',
-                'scanntechUser',
-                'mail_host',
-                'mail_port',
-                'mail_username',
-                'mail_password',
-                'mail_encryption',
-                'mail_from_address',
-                'mail_from_name',
-            ]));
+            $this->storeRepository->update($store, $storeData);
+
+            // Actualizar la tasa de IVA seleccionada
+            $store->tax_rate_id = $request->tax_rate_id;
+            $store->save();
 
             Log::info('Estado de la tienda después de la actualización:', $store->toArray());
 
@@ -210,12 +205,6 @@ class StoreController extends Controller
             $this->handleFiservIntegration($request, $store);
 
             return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
-        } catch (MercadoPagoException $e) {
-            Log::error('Error al actualizar la empresa: ' . $e->getMessage());
-            $errorMessage = Helpers::formatMercadoPagoErrors($e->getDetails());
-            return redirect()
-                ->route('stores.edit', $store->id)
-                ->with('mercado_pago_errors', 'Error durante la actualización: ' . $errorMessage);
         } catch (\Exception $e) {
             Log::error('Error al actualizar la empresa: ' . $e->getMessage());
             return redirect()
@@ -224,292 +213,6 @@ class StoreController extends Controller
         }
     }
 
-
-    /**
-     * Maneja la lógica de la integración con MercadoPago.
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     */
-    private function handleMercadoPagoIntegrationOnline(UpdateStoreRequest $request, Store $store): void
-    {
-        DB::beginTransaction();
-        try {
-            if ($request->boolean('accepts_mercadopago_online')) {
-                $store->mercadoPagoAccount()->updateOrCreate(
-                    ['store_id' => $store->id, 'type' => MercadoPagoApplicationTypeEnum::PAID_ONLINE],
-                    [
-                        'public_key' => $request->input('mercadoPagoPublicKeyOnline'),
-                        'access_token' => $request->input('mercadoPagoAccessTokenOnline'),
-                        'secret_key' => $request->input('mercadoPagoSecretKeyOnline'),
-                    ]
-                );
-            } else {
-                $store->mercadoPagoAccount()->where('type', MercadoPagoApplicationTypeEnum::PAID_ONLINE)->delete();
-            }
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error en la integración con MercadoPago.', [
-                'store_id' => $store->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            throw new \Exception('Error en la integración con MercadoPago: ' . $e->getMessage());
-        }
-    }
-
-    private function handleMercadoPagoIntegrationPresencial(UpdateStoreRequest $request, Store $store): bool
-    {
-        DB::beginTransaction();
-        try {
-
-            if (!$request->boolean('accepts_mercadopago_presencial')) {
-                $this->mpService->setCredentials($store->id, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
-                // Eliminar la sucursal de MercadoPago si existe
-                $mercadoPagoAccountStore = $this->mercadoPagoAccountStoreRepository->getStoreByExternalId($store->id);
-                $mercadoPagoAccountStore->load('mercadopagoAccountPOS');
-                // Eliminar POS de MercadoPago si existe
-                foreach ($mercadoPagoAccountStore->mercadopagoAccountPOS as $pos) {
-                    $this->mpService->deletePOS($pos->id_pos);
-                    $pos->delete();
-                }
-                if ($mercadoPagoAccountStore) {
-                    $this->mpService->deleteStore($mercadoPagoAccountStore->store_id);
-                    $mercadoPagoAccountStore->delete();
-                }
-
-                $store->mercadoPagoAccount()->where('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL)->delete();
-
-                DB::commit();
-                return true; // Detiene la ejecución si se eliminó correctamente
-            }
-            $mercadoPagoAccount = $store->mercadoPagoAccount()->updateOrCreate(
-                ['store_id' => $store->id, 'type' => MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL],
-                [
-                    'public_key' => $request->input('mercadoPagoPublicKeyPresencial'),
-                    'access_token' => $request->input('mercadoPagoAccessTokenPresencial'),
-                    'secret_key' => $request->input('mercadoPagoSecretKeyPresencial'),
-                    'user_id_mp' => $request->input('mercadoPagoUserIdPresencial'),
-                ]
-            );
-            $this->mpService->setCredentials($store->id, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
-
-            $name = $store->name;
-            $externalId = 'SUC' . $store->id;
-            $streetNumber = $request->input('street_number');
-            $streetName = $request->input('street_name');
-            $cityName = $request->input('city_name');
-            $stateName = $request->input('state_name');
-            $latitude = (float) $request->input('latitude');
-            $longitude = (float) $request->input('longitude');
-            $reference = $request->input('reference');
-
-            // Verificar si la sucursal ya existe
-            $mercadoPagoAccountStoreExist = $this->mercadoPagoAccountStoreRepository->getStoreByExternalId($store->id);
-
-            // Preparar datos de la sucursal
-            $storeData = [
-                'name' => $name,
-                'external_id' => $externalId,
-                'location' => [
-                    'street_number' => $streetNumber,
-                    'street_name' => $streetName,
-                    'city_name' => $cityName,
-                    'state_name' => $stateName,
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
-                    'reference' => $reference,
-                ],
-            ];
-            if (!$mercadoPagoAccountStoreExist) {
-                $resultMercadoPagoStore = $this->mpService->createStore($storeData);
-
-                $this->mercadoPagoAccountStoreRepository->store([
-                    'name' => $name,
-                    'external_id' => $externalId,
-                    'street_number' => $streetNumber,
-                    'street_name' => $streetName,
-                    'city_name' => $cityName,
-                    'state_name' => $stateName,
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
-                    'reference' => $reference,
-                    'store_id' => $resultMercadoPagoStore['id'],
-                    'mercado_pago_account_id' => $mercadoPagoAccount->id,
-                ]);
-            } else {
-                unset($storeData['external_id']);
-                $resultMercadoPagoStore = $this->mpService->updateStore($mercadoPagoAccountStoreExist->store_id, $storeData);
-                $this->mercadoPagoAccountStoreRepository->update($mercadoPagoAccountStoreExist, [
-                    'name' => $name,
-                    'street_number' => $streetNumber,
-                    'street_name' => $streetName,
-                    'city_name' => $cityName,
-                    'state_name' => $stateName,
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
-                    'reference' => $reference,
-                    'store_id' => $resultMercadoPagoStore['id'],
-                    'mercado_pago_account_id' => $mercadoPagoAccount->id,
-                ]);
-            }
-
-            DB::commit();
-            return true; // Indica éxito
-        } catch (MercadoPagoException $e) {
-            DB::rollBack();
-            // Si es un error de MercadoPago, lanzar una excepción específica
-            throw new MercadoPagoException($e->getMessage(), $e->getDetails());
-        }catch (\Exception $e) {
-            DB::rollBack();
-            // Si no es un error de MercadoPago, lanzar una excepción genérica
-            throw new \Exception('Error en la integración con MercadoPago: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Maneja la lógica de la integración con Pedidos Ya Envíos.
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     */
-    private function handlePedidosYaEnviosIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('accepts_peya_envios')) {
-            $store->update([
-                'accepts_peya_envios' => true,
-                'peya_envios_key' => $request->input('peya_envios_key'),
-            ]);
-        } else {
-            $store->update([
-                'accepts_peya_envios' => false,
-                'peya_envios_key' => null,
-            ]);
-        }
-    }
-
-    /**
-     * Maneja la lógica de la integración con Pymo (Facturación Electrónica).
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     */
-    private function handlePymoIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('invoices_enabled')) {
-            $updateData = [
-                'invoices_enabled' => true,
-                'pymo_user' => $request->input('pymo_user'),
-                'pymo_branch_office' => $request->input('pymo_branch_office'),
-            ];
-
-            // Solo encriptar la nueva contraseña si es enviada
-            if ($request->filled('pymo_password')) {
-                $updateData['pymo_password'] = Crypt::encryptString($request->input('pymo_password'));
-            }
-
-            if ($request->boolean('automatic_billing')) {
-                $updateData['automatic_billing'] = true;
-            } else {
-                $updateData['automatic_billing'] = false;
-            }
-
-            $store->update($updateData);
-        } else {
-            $store->update([
-                'invoices_enabled' => false,
-                'pymo_user' => null,
-                'pymo_password' => null,
-                'pymo_branch_office' => null,
-                'automatic_billing' => false,
-            ]);
-        }
-    }
-
-    /**
-     * Manejo de la integración de Scanntech
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     * @return void
-     */
-    private function handleScanntechIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('scanntech')) {
-            $store->posIntegrationInfo()->updateOrCreate(
-                ['store_id' => $store->id, 'pos_provider_id' => 1], // Scanntech
-                [
-                    'company' => $request->input('scanntechCompany'),
-                    'branch' => $request->input('scanntechBranch'),
-                ]
-            );
-
-            // Asegurarse de que pos_provider_id esté actualizado correctamente
-            $store->update(['pos_provider_id' => 1]);
-            Log::info('Integración Scanntech actualizada con éxito.');
-        } else {
-            // Elimina la integración si se desactiva
-            $store->posIntegrationInfo()->where('pos_provider_id', 1)->delete();
-            Log::info('Integración Scanntech eliminada.');
-        }
-    }
-
-    /**
-     * Maneja la lógica de la integración de configuración de correo.
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     */
-    public function handleEmailConfigIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('stores_email_config')) {
-            $store->emailConfig()->updateOrCreate(
-                ['store_id' => $store->id],
-                [
-                    'mail_host' => $request->input('mail_host'),
-                    'mail_port' => $request->input('mail_port'),
-                    'mail_username' => $request->input('mail_username'),
-                    'mail_password' => $request->input('mail_password'),
-                    'mail_encryption' => $request->input('mail_encryption'),
-                    'mail_from_address' => $request->input('mail_from_address'),
-                    'mail_from_name' => $request->input('mail_from_name'),
-                    'mail_reply_to_address' => $request->input('mail_reply_to_address'),
-                    'mail_reply_to_name' => $request->input('mail_reply_to_name'),
-                ]
-            );
-        } else {
-            $store->emailConfig()->delete();
-        }
-    }
-
-
-    /**
-     * Manejo de la integración de Fiserv
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     * @return void
-     */
-    private function handleFiservIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('fiserv')) {
-            $store->posIntegrationInfo()->updateOrCreate(
-                ['store_id' => $store->id, 'pos_provider_id' => 2], // Fiserv
-                [
-                    'system_id' => $request->input('fiservSystemId'), // Usar el nuevo nombre del input
-                ]
-            );
-
-            // Asegurarse de que pos_provider_id esté actualizado correctamente
-            $store->update(['pos_provider_id' => 2]);
-            Log::info('Integración Fiserv actualizada con éxito.');
-        } else {
-            // Elimina la integración si se desactiva
-            $store->posIntegrationInfo()->where('pos_provider_id', 2)->delete();
-            Log::info('Integración Fiserv eliminada.');
-        }
-    }
 
 
     /**

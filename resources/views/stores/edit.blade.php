@@ -113,6 +113,19 @@
                                 placeholder="RUT de la Empresa" value="{{ $store->rut }}">
                         </div>
 
+                        <!-- Régimen Impositivo -->
+                        <div class="mb-3">
+                          <label class="form-label" for="store-tax-rate">Régimen Impositivo</label>
+                          <select class="form-select" id="store-tax-rate" name="tax_rate_id" required>
+                              @foreach($taxRates as $taxRate)
+                                  <option value="{{ $taxRate->id }}" {{ $store->tax_rate_id == $taxRate->id ? 'selected' : '' }}>
+                                      {{ $taxRate->name }} ({{ $taxRate->rate }}%)
+                                  </option>
+                              @endforeach
+                          </select>
+                        </div>
+
+
                         <!-- Estado -->
                         <div class="mb-3">
                             <label class="form-label" for="store-status">Estado</label>

@@ -31,6 +31,7 @@ class UpdateStoreRequest extends FormRequest
             'address' => 'sometimes|string|max:255',
             'email' => ['sometimes', 'email'],
             'rut' => ['sometimes', 'string'],
+            'tax_rate_id' => ['sometimes', 'exists:tax_rates,id'],
             'status' => 'sometimes|boolean',
         ];
         return $rules;
