@@ -67,6 +67,10 @@ use App\Http\Controllers\DriverController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\DispatchNoteController;
 use App\Http\Controllers\NoteDeliveryController;
+use App\Http\Controllers\LeadController;
+use App\Http\Controllers\LeadTaskController;
+use App\Http\Controllers\LeadAttachedFileController;
+use App\Http\Controllers\LeadConversationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -202,6 +206,30 @@ Route::middleware([
         'income-categories' => IncomeCategoryController::class,
         'currencies' => CurrencyController::class,
     ]);
+
+    // CRM
+    Route::get('crm', [LeadController::class, 'index']);
+    Route::post('leads', [LeadController::class, 'store']);
+    Route::put('leads/{leadId}/update-category', [LeadController::class, 'updateCategory']);
+    Route::delete('leads/{id}', [LeadController::class, 'destroy']);
+    Route::put('leads/{id}', [LeadController::class, 'update']);
+    Route::post('lead-tasks', [LeadTaskController::class, 'store']);
+    Route::get('lead-tasks', [LeadTaskController::class, 'getAll']);
+    Route::delete('lead-tasks/{id}', [LeadTaskController::class, 'destroy']);
+    Route::put('lead-tasks/{leadId}/{status}', [LeadTaskController::class, 'updateStatus']);
+    Route::post('lead-attached-files', [LeadAttachedFileController::class, 'store']);
+    Route::get('lead-attached-files/{leadId}', [LeadAttachedFileController::class, 'getFilesByLead']);
+    Route::delete('lead-attached-files/{leadId}', [LeadAttachedFileController::class, 'destroy']);
+    Route::put('/leads/{id}/company-information', [LeadController::class, 'updateCompanyInformation']);
+    Route::get('leads/{id}', [LeadController::class, 'show']);
+    Route::get('leads/{leadId}/conversations', [LeadConversationController::class, 'index']);
+    Route::post('leads/{leadId}/conversations', [LeadConversationController::class, 'store']);
+    Route::get('leads/{leadId}/conversations/{id}', [LeadConversationController::class, 'show']);
+    Route::put('leads/{leadId}/conversations/{id}', [LeadConversationController::class, 'update']);
+    Route::delete('leads/{leadId}/conversations/{id}', [LeadConversationController::class, 'destroy']);
+    Route::post('leads/{id}/convert-to-client', [LeadController::class, 'convertToClient']);
+    Route::post('leads/{leadId}/assign-user', [LeadController::class, 'assignUser']);
+    Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::class, 'removeAssignment']);
 
     // Rutas logística
     Route::get('drivers', [DriverController::class, 'index']);
@@ -381,7 +409,6 @@ Route::middleware([
     Route::put('/product-flavors/{id}', [ProductController::class, 'updateFlavor'])->name('flavors.update');
 
     // CRM y Contabilidad
-    Route::get('crm', [CrmController::class, 'index'])->name('crm');
     Route::get('receipts', [AccountingController::class, 'receipts'])->name('receipts');
     // Route::get('entries', [AccountingController::class, 'entries'])->name('entries');
     Route::get('entrie', [AccountingController::class, 'entrie'])->name('entrie');

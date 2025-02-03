@@ -435,7 +435,8 @@ class OrderRepository
                 $query->where('orders.uuid', 'like', "%{$request->input('search')}%")
                     ->orWhere('orders.id', 'like', "%{$request->input('search')}%")
                     ->orWhere('clients.name', 'like', "%{$request->input('search')}%")
-                    ->orWhere('clients.lastname', 'like', "%{$request->input('search')}%");
+                    ->orWhere('clients.lastname', 'like', "%{$request->input('search')}%")
+                    ->orWhere('orders.construction_site', 'like', "%{$request->input('search')}%"); 
                 // ->orWhere('stores.name', 'like', "%{$request->input('search')}%");
             });
         }
