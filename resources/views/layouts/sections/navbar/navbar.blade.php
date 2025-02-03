@@ -24,7 +24,9 @@ $navbarDetached = ($navbarDetached ?? '');
                   .then(notifications => {
                       const notificationContainer = document.getElementById('notification-list');
                       const notificationIcon = document.getElementById('notification-icon');
-                      notificationContainer.innerHTML = ''; // Limpiar la lista de notificaciones
+                      if (notificationContainer) {
+                          notificationContainer.innerHTML = ''; // Limpiar la lista de notificaciones
+                      }
 
                       if (notifications.length > 0) {
                           console.log('Notificaciones recibidas:', notifications);
@@ -94,12 +96,16 @@ $navbarDetached = ($navbarDetached ?? '');
                                   });
                               }
 
-                              notificationIcon.textContent = unreadNotifications.length;
-                              notificationIcon.classList.add('bg-danger');
+                              if (notificationIcon) {
+                                notificationIcon.textContent = unreadNotifications.length;
+                                notificationIcon.classList.add('bg-danger');
+                              }
                           }
                       } else {
+                        if (notificationIcon) {
                           notificationIcon.textContent = '';
                           notificationIcon.classList.remove('bg-danger');
+                        }
                       }
                   }).catch(error => console.error('Error al obtener notificaciones:', error));
           }

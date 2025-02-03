@@ -190,6 +190,18 @@
                             <li>
                                 <button class="dropdown-item btn-delete" data-id="{{ $caja->id }}">Eliminar</button>
                             </li>
+                            <li>
+                                <button class="dropdown-item btn-edit-pos-mp" data-id="{{ $caja->id }}" data-store="{{ $caja->store_id }}">
+                                    Editar MercadoPago POS
+                                </button>
+                            </li>
+                            @if($caja->cash_register_id)
+                            <li>
+                                <button class="dropdown-item btn-delete-pos-mp" data-id="{{ $caja->id }}" data-store="{{ $caja->store_id }}">
+                                    Eliminar MercadoPago POS
+                                </button>
+                            </li>
+                            @endif
                             @endhasrole
                         </ul>
                     </div>
@@ -292,7 +304,7 @@
   </div>
 </div>
 <!-- Modal para editar los datos del POS de MercadoPago -->
-<div class="modal fade" id="editarPosModal" tabindex="-1" aria-labelledby="editarPosLabel" aria-hidden="true">
+<div class="modal fade" id="editarPosMpModal" tabindex="-1" aria-labelledby="editarPosLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <input type="hidden" id="edit_pos_id" name="edit_pos_id">
@@ -331,7 +343,7 @@
                 </div> --}}
             </div>
             <div class="modal-footer">
-                <button type="button" id="submit-editar-pos" class="btn btn-primary">Guardar Cambios</button>
+                <button type="button" id="submit-editar-pos-mp" class="btn btn-primary">Guardar Cambios</button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
             </div>
         </div>

@@ -126,6 +126,14 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+        'events' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/mail_events.log'),
+        ],
+        'mercadopago' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/mercadoPago.log'),
+        ],
     ],
 
 ];

@@ -200,10 +200,9 @@ $(document).ready(function () {
   // Mercado pago
 
   // Mostrar el modal para editar POS
-  $('.btn-edit-pos').click(function () {
+  $('.btn-edit-pos-mp').click(function () {
     const posId = $(this).data('id'); // ID del POS
     const storeId = $(this).data('store'); // ID de la tienda
-    console.log(storeId);
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
     // Obtener los datos del POS
@@ -214,14 +213,13 @@ $(document).ready(function () {
         'X-CSRF-TOKEN': csrfToken
       },
       success: function (data) {
-        console.log(data);
         // Cargar los datos en los campos del modal
         $('#edit_pos_id').val(posId);
         $('#edit_store_id').val(storeId);
         $('#edit_pos_name').val(data.mercadopago_pos?.name);
 
         // Mostrar el modal
-        $('#editarPosModal').modal('show');
+        $('#editarPosMpModal').modal('show');
       },
       error: function (xhr) {
         alert('Error al cargar los datos del POS.');
@@ -230,7 +228,7 @@ $(document).ready(function () {
   });
 
   // Enviar los datos actualizados al backend
-  $('#submit-editar-pos').click(function () {
+  $('#submit-editar-pos-mp').click(function () {
     const posId = $('#edit_pos_id').val(); // ID del POS (o del store si es necesario)
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
@@ -252,7 +250,7 @@ $(document).ready(function () {
     });
 
     // Cierra el modal antes de enviar la solicitud
-    $('#editarPosModal').modal('hide');
+    $('#editarPosMpModal').modal('hide');
 
     $.ajax({
       url: `point-of-sale/mercado-pago/update-pos/${posId}`,
@@ -280,16 +278,15 @@ $(document).ready(function () {
           text: 'Hubo un problema al actualizar el POS. Intenta nuevamente.'
         }).then(() => {
           // Reabrir el modal con los datos existentes
-          $('#editarPosModal').modal('show');
+          $('#editarPosMpModal').modal('show');
         });
       }
     });
   });
 
   // Mostrar el modal para eliminar POS
-  $('.btn-delete-pos').click(function () {
+  $('.btn-delete-pos-mp').click(function () {
     const posId = $(this).data('id'); // ID del POS
-    console.log(posId);
     // Mostrar el modal de confirmación
     Swal.fire({
       title: '¿Estás seguro?',

@@ -331,7 +331,7 @@ Route::prefix('admin')->middleware([
 
     Route::get('/pdv/product-categories', [CashRegisterLogController::class, 'getCategories']);
     Route::post('/pdv/cart', [CashRegisterLogController::class, 'saveCart']);
-    Route::get('/pdv/cart', [CashRegisterLogController::class, 'getCart']);
+    Route::get('/pdv/cart', [CashRegisterLogController::class, 'getCart'])->name('pdv.cart');
     Route::post('/pdv/client-session', [CashRegisterLogController::class, 'saveClient']);
     Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient'])  ;
     Route::get('/pdv/storeid-session', [CashRegisterLogController::class, 'getStoreId']);
@@ -390,6 +390,7 @@ Route::prefix('admin')->middleware([
     Route::post('/integrations/{store}/email-config', [IntegrationController::class, 'saveEmailConfig'])->name('integration.save-email-config');
     Route::post('/integrations/{store}/mercadopago-online', [IntegrationController::class, 'saveMercadoPagoOnline'])->name('integration.save-mercadopago-online');
     Route::post('/integrations/{store}/mercadopago-presencial', [IntegrationController::class, 'saveMercadoPagoPresencial'])->name('integration.save-mercadopago-presencial');
+    Route::get('/integrations/{store}/mercadopago-presencial-connection', [IntegrationController::class, 'checkMercadoPagoPresencialConnection'])->name('integration.mercadopago-presencial-connection');
     Route::post('/integrations/{store}/pymo', [IntegrationController::class, 'handlePymoIntegration'])->name('integration.pymo.update');
     Route::post('/integrations/{store}/pedidosya', [IntegrationController::class, 'handlePedidosYaIntegration'])->name('integration.pedidosya.update');
     Route::get('/integrations/pymo-connection/{storeId}', [IntegrationController::class, 'checkPymoConnection'])->name('integrations.pymo-connection');

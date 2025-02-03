@@ -1213,6 +1213,10 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         return;
     }
 
+    if (selectedQrMethod === 'qr_attended') paymentMethod = 'qr_attended';
+
+    if (selectedQrMethod === 'qr_dynamic') paymentMethod = 'qr_dynamic';
+
     // Capturar las cuotas si el método de pago es crédito
     let quotas = null;
     if (paymentMethod === 'credit' && storePosProviderId !== null) {
