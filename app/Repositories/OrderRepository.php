@@ -347,7 +347,7 @@ class OrderRepository
      * @return Order
      */
     public function loadOrderRelations(Order $order)
-    {
+    {   
         // Cargar las relaciones necesarias, incluyendo 'invoices'
         return $order->load([
             'client',

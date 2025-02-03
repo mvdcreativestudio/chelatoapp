@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\Currency;
+use Exception;
 
 class CurrencyController extends Controller
 {
@@ -162,5 +163,25 @@ class CurrencyController extends Controller
     public function datatable(Request $request): mixed
     {
         return $this->currencyRepository->getCurrenciesForDataTable();
+    }
+
+
+    /**
+     * Obtiene la tasa de cambio actual del dólar.
+     *
+     * @return JsonResponse
+     */
+    public function getCurrentRateDollar(): JsonResponse
+    {
+        try {
+            $data = $this->currencyRepository->getCurrentExchangeRate();
+            return response()->json($data);
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener la tasa de cambio'
+            ], 400);
+        }
     }
 }

@@ -262,6 +262,7 @@
       const formData = {
         name: $('#composite-product-name').val(),
         description: $('#description').val(),
+        currency: $('#currency').val(),
         price: $('#price').val(),
         recommended_price: $('#recommended_price').val(),
         store_id: $('#store_id').val(),

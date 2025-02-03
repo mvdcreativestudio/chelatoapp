@@ -31,7 +31,7 @@ $(function () {
                 productsList.append(`
                     <tr>
                         <td>${product.name}</td>
-                        <td>${priceValue}</td>
+                        <td>${product.currency === 'Dólar' ? 'USD' : 'UYU'} ${priceValue}</td>
                     </tr>
                 `);
             });

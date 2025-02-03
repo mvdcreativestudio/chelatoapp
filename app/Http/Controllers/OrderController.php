@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Repositories\AccountingRepository;
 use App\Repositories\OrderRepository;
 use App\Repositories\StoresEmailConfigRepository;
+use App\Repositories\CurrencyRepository;
 use App\Services\EventHandlers\EventService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,8 @@ class OrderController extends Controller
 
     protected $storesEmailConfigRepository;
 
+    protected $currencyRepository;
+
     protected $eventService;
 
     /**
@@ -44,7 +47,7 @@ class OrderController extends Controller
      * @param  OrderRepository  $orderRepository
      * @param  AccountingRepository  $accountingRepository
      */
-    public function __construct(OrderRepository $orderRepository, AccountingRepository $accountingRepository, StoresEmailConfigRepository $storesEmailConfigRepository, EventService $eventService)
+    public function __construct(OrderRepository $orderRepository, AccountingRepository $accountingRepository, StoresEmailConfigRepository $storesEmailConfigRepository, CurrencyRepository $currencyRepository, EventService $eventService)
     {
         $this->middleware(['check_permission:access_orders', 'user_has_store'])->only(
             [
@@ -60,6 +63,7 @@ class OrderController extends Controller
         $this->orderRepository = $orderRepository;
         $this->accountingRepository = $accountingRepository;
         $this->storesEmailConfigRepository = $storesEmailConfigRepository;
+        $this->currencyRepository = $currencyRepository;
         $this->eventService = $eventService;
     }
 
@@ -136,13 +140,15 @@ class OrderController extends Controller
         $products = json_decode($order->products, true);
         $store = $order->store;
         $invoice = $this->orderRepository->getSpecificInvoiceForOrder($order->id);
+        $exchange_rate = $this->currencyRepository->getExchangeRateByDate($order->created_at);
+        if($exchange_rate == null){$excange_rate = 0;}
         $isStoreConfigEmailEnabled = $this->storesEmailConfigRepository->getConfigByStoreId(auth()->user()->store_id);
         // Verificar si existe un client_id antes de llamar a getClientOrdersCount
         $clientOrdersCount = $order->client_id
             ? $this->orderRepository->getClientOrdersCount($order->client_id)
             : 0; // O cualquier valor predeterminado si no hay cliente
-
-        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled'));
+        Log::info($exchange_rate);
+        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled', 'exchange_rate'));
     }
 
     /**

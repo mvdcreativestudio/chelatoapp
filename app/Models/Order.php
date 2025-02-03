@@ -13,7 +13,8 @@ use Ramsey\Uuid\Uuid;
 class Order extends Model
 {
     use HasFactory;
-
+    
+    
     protected $fillable = ['date', 'time', 'origin', 'client_id',
       'store_id', 'products', 'subtotal', 'tax', 'shipping', 'coupon_id',
       'coupon_amount', 'discount', 'total', 'currency', 'payment_status', 'shipping_status',

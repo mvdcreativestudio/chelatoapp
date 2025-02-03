@@ -98,6 +98,19 @@
               <input type="number" class="form-control" id="stock" placeholder="Establecer stock incial del producto compuesto"
                 name="stock">
             </div>
+            <!-- Campo para la moneda del producto compuesto -->
+            <div class="mb-3">
+              <label class="form-label" for="currency">Moneda</label>
+              <div class="d-flex align-items-center gap-2">
+                <select class="form-select" id="currency" name="currency" required>
+                  <option value="Peso">Peso</option>
+                  <option value="Dólar">Dólar</option>
+                </select>
+                <div id="exchangeRateDisplay" class="d-none">
+                  <small class="text-muted">TC: <span id="exchangeRateValue"></span></small>
+                </div>
+              </div>
+            </div>
             <!-- Campo para el precio final -->
             <div class="mb-3">
               <label class="form-label" for="price">Precio Final</label>
@@ -171,11 +184,11 @@
             <div class="mb-3">
               <label class="form-label" for="store_id">Empresa</label>
               <select id="store_id" class="form-select" data-placeholder="Seleccione la Empresa" name="store_id"
-                  required {{ count($stores) === 1 ? 'disabled' : '' }}>
-                  <option value="" selected disabled>Seleccione una empresa</option>
-                  @foreach ($stores as $store)
-                      <option value="{{ $store->id }}" {{ count($stores) === 1 ? 'selected' : '' }}>{{ $store->name }}</option>
-                  @endforeach
+                required {{ count($stores) === 1 ? 'disabled' : '' }}>
+                <option value="" selected disabled>Seleccione una empresa</option>
+                @foreach ($stores as $store)
+                <option value="{{ $store->id }}" {{ count($stores) === 1 ? 'selected' : '' }}>{{ $store->name }}</option>
+                @endforeach
               </select>
             </div>
           </div>

@@ -12,49 +12,56 @@
             <label for="concept" class="form-label">Concepto</label>
             <input type="text" class="form-control" id="concept" name="concept" required placeholder="Ingrese el concepto del gasto">
           </div>
-          <div class="mb-3">
-            <label for="amount" class="form-label">Monto</label>
-            <input type="number" class="form-control" id="amount" name="amount" required placeholder="Ingrese el monto del gasto">
+          <div class="row mb-3">
+            <div class="col-4">
+              <label for="currency_id" class="form-label">Moneda</label>
+              <select class="form-select" id="currency_id" name="currency_id" required>
+                <option value="" selected disabled>Seleccione</option>
+                @foreach($currencies as $currency)
+                <option value="{{ $currency->id }}">{{ $currency->name }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-8">
+              <label for="amount" class="form-label">Monto</label>
+              <input type="number" class="form-control" id="amount" name="amount" required placeholder="Ingrese el monto del gasto">
+            </div>
           </div>
           <div class="mb-3">
             <label for="due_date" class="form-label">Fecha de Vencimiento</label>
             <input type="date" class="form-control" id="due_date" name="due_date" required value="{{ date('Y-m-d') }}">
           </div>
           <div class="mb-3">
-            <label for="supplier_id" class="form-label">Proveedor</label>
+            <label class="form-label mb-1 d-flex justify-content-between align-items-center" for="supplier_id">
+              <span>Proveedor</span><a href="{{ route('suppliers.create') }}" class="fw-medium">Ir a Crear proveedor</a>
+            </label>
             <select class="form-select" id="supplier_id" name="supplier_id" required>
               <option value="" selected disabled>Seleccione un proveedor</option>
               @foreach($suppliers as $supplier)
-                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+              <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
               @endforeach
             </select>
           </div>
           <div class="mb-3">
-            <label for="expense_category_id" class="form-label">Categoría de Gasto</label>
+            <label class="form-label mb-1 d-flex justify-content-between align-items-center" for="expense_category_id">
+              <span>Categoría del gasto</span><a href="{{ route('expense-categories.index') }}" class="fw-medium">Ir a Crear categoría</a>
+            </label>
             <select class="form-select" id="expense_category_id" name="expense_category_id" required>
               <option value="" selected disabled>Seleccione una categoría</option>
               @foreach($expenseCategories as $category)
-                <option value="{{ $category->id }}">{{ $category->name }}</option>
+              <option value="{{ $category->id }}">{{ $category->name }}</option>
               @endforeach
             </select>
           </div>
 
           <div class="mb-3">
-            <label for="currency_id" class="form-label">Moneda</label>
-            <select class="form-select" id="currency_id" name="currency_id" required>
-              <option value="" selected disabled>Seleccione una moneda</option>
-              @foreach($currencies as $currency)
-                <option value="{{ $currency->id }}">{{ $currency->name }}</option>
-              @endforeach
-            </select>
-          </div>
-
-          <div class="mb-3">
-            <label for="store_id" class="form-label">Empresa</label>
+            <label class="form-label mb-1 d-flex justify-content-between align-items-center" for="store_id">
+              <span>Empresa</span><a href="{{ route('stores.create') }}" class="fw-medium">Ir a Crear empresa</a>
+            </label>
             <select class="form-select" id="store_id" name="store_id" required>
               <option value="" selected>Ninguna</option>
               @foreach($stores as $store)
-                <option value="{{ $store->id }}">{{ $store->name }}</option>
+              <option value="{{ $store->id }}">{{ $store->name }}</option>
               @endforeach
             </select>
           </div>
@@ -74,7 +81,7 @@
               <select class="form-select" id="payment_method_id" name="payment_method_id">
                 <option value="" selected disabled>Seleccione un método de pago</option>
                 @foreach($paymentMethods as $method)
-                  <option value="{{ $method->id }}">{{ $method->description }}</option>
+                <option value="{{ $method->id }}">{{ $method->description }}</option>
                 @endforeach
               </select>
             </div>

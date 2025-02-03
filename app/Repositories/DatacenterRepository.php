@@ -809,7 +809,6 @@ class DatacenterRepository
 
             $subtotal = 0;
 
-            // First pass: calculate subtotal in UYU
             foreach ($products as $product) {
                 if (! isset($product['id'], $product['price'], $product['quantity'])) {
                     continue;

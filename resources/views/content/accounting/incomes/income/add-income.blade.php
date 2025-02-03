@@ -27,9 +27,20 @@
           </div>
 
           <!-- Importe del Ingreso -->
-          <div class="mb-3">
-            <label for="income_amount" class="form-label">Importe</label>
-            <input type="number" class="form-control" id="income_amount" name="income_amount" required placeholder="Ingrese el importe del ingreso">
+          <div class="row mb-3">
+            <div class="col-4">
+              <label for="currency_id" class="form-label">Moneda</label>
+              <select class="form-select" id="currency_id" name="currency_id" required>
+                <option value="" selected disabled>Seleccione</option>
+                @foreach($currencies as $currency)
+                <option value="{{ $currency->id }}">{{ $currency->name }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-8">
+              <label for="income_amount" class="form-label">Importe</label>
+              <input type="number" class="form-control" id="income_amount" name="income_amount" required placeholder="Ingrese el importe del ingreso">
+            </div>
           </div>
 
           <!-- Método de Pago -->
@@ -38,27 +49,20 @@
             <select class="form-select" id="payment_method_id" name="payment_method_id" required>
               <option value="" selected disabled>Seleccione un método de pago</option>
               @foreach($paymentMethods as $method)
-                <option value="{{ $method->id }}">{{ $method->description }}</option>
+              <option value="{{ $method->id }}">{{ $method->description }}</option>
               @endforeach
             </select>
           </div>
 
           <!-- Categoría del Ingreso -->
           <div class="mb-3">
-            <label for="income_category_id" class="form-label">Categoría del Ingreso</label>
+            <label class="form-label mb-1 d-flex justify-content-between align-items-center" for="income_category_id">
+              <span>Categoría del Ingreso</span><a href="{{ route('income-categories.index') }}" class="fw-medium">Ir a Crear categoría</a>
+            </label>
             <select class="form-select" id="income_category_id" name="income_category_id" required>
               <option value="" selected disabled>Seleccione una categoría</option>
               @foreach($incomeCategories as $category)
-                <option value="{{ $category->id }}">{{ $category->income_name }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div class="mb-3">
-            <label for="currency_id" class="form-label">Moneda</label>
-            <select class="form-select" id="currency_id" name="currency_id" required>
-              <option value="" selected disabled>Seleccione una moneda</option>
-              @foreach($currencies as $currency)
-                <option value="{{ $currency->id }}">{{ $currency->name }}</option>
+              <option value="{{ $category->id }}">{{ $category->income_name }}</option>
               @endforeach
             </select>
           </div>
@@ -75,22 +79,26 @@
 
           <!-- Cliente (se oculta inicialmente) -->
           <div class="mb-3" id="client_field" style="display: none;">
-            <label for="client_id" class="form-label">Cliente</label>
+            <label class="form-label mb-1 d-flex justify-content-between align-items-center" for="client_id">
+              <span>Cliente</span><a href="{{ route('clients.index') }}" class="fw-medium">Ir a Crear cliente</a>
+            </label>
             <select class="form-select" id="client_id" name="client_id">
               <option value="" selected disabled>Seleccione un cliente</option>
               @foreach($clients as $client)
-                <option value="{{ $client->id }}">{{ $client->name }} {{ $client->lastname }}</option>
+              <option value="{{ $client->id }}">{{ $client->name }} {{ $client->lastname }}</option>
               @endforeach
             </select>
           </div>
 
           <!-- Proveedor (se oculta inicialmente) -->
           <div class="mb-3" id="supplier_field" style="display: none;">
-            <label for="supplier_id" class="form-label">Proveedor</label>
+            <label class="form-label mb-1 d-flex justify-content-between align-items-center" for="supplier_id">
+              <span>Proveedor</span><a href="{{ route('suppliers.create') }}" class="fw-medium">Ir a Crear proveedor</a>
+            </label>
             <select class="form-select" id="supplier_id" name="supplier_id">
               <option value="" selected disabled>Seleccione un proveedor</option>
               @foreach($suppliers as $supplier)
-                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+              <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
               @endforeach
             </select>
           </div>

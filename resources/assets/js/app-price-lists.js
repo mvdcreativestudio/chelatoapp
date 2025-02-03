@@ -23,15 +23,18 @@ $(function () {
         } else {
           rows.forEach(function (rowData) {
             const card = `
-              <div class="col-md-6 col-lg-4 col-12 mb-4  ">
+              <div class="col-md-6 col-lg-4 col-12 mb-4">
                 <a href="${baseUrl}admin/price-lists/${rowData.id}" class="text-decoration-none">
-                  <div class="price-list-card position-relative">
-                    <div class="col-8">
-                      <div class="price-list-card-body">
-                        <h5 class="price-list-title" title="${rowData.name}">${rowData.name}</h5>
-                        <p class="price-list-description text-muted small">${rowData.description}</p>
-                        <p class="price-list-store text-muted small">${rowData.store_name}</p>
-                        <p class="text-muted small">Precios modificados: ${rowData.products_count}</p>
+                  <div class="price-list-card">
+                    <div class="price-list-card-body">
+                      <h5 class="price-list-title">${rowData.name}</h5>
+                      <p class="price-list-description">${rowData.description || 'Sin descripción'}</p>
+                      <p class="price-list-store">
+                        <i class='bx bx-store-alt'></i> ${rowData.store_name}
+                      </p>
+                      <div class="price-list-info">
+                        <i class='bx bx-purchase-tag'></i>
+                        Precios modificados: ${rowData.products_count}
                       </div>
                     </div>
                   </div>

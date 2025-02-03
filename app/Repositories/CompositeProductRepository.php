@@ -223,6 +223,7 @@ class CompositeProductRepository
         $query = CompositeProduct::select([
             'composite_products.id',
             'composite_products.name',
+            'composite_products.currency',
             'composite_products.price',
             'composite_products.recommended_price',
             'composite_products.store_id',

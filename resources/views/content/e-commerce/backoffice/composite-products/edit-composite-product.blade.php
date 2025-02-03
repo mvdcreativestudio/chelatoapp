@@ -86,7 +86,6 @@
           </div>
         </div>
       </div>
-
       <!-- Segunda columna (Precios) -->
       <div class="col-lg-4">
         <div class="card h-100">
@@ -94,6 +93,14 @@
             <h5 class="card-title mb-0">Precios</h5>
           </div>
           <div class="card-body">
+            <!-- Campo para la moneda del producto compuesto -->
+            <div class="mb-3">
+              <label class="form-label" for="currency">Moneda</label>
+              <select class="form-select" id="currency" name="currency" required>
+                <option value="Peso" {{ old('currency', $compositeProduct->currency) == 'Peso' ? 'selected' : '' }}>Peso</option>
+                <option value="Dólar" {{ old('currency', $compositeProduct->currency) == 'Dólar' ? 'selected' : '' }}>Dólar</option>
+              </select>
+            </div>
             <!-- Campo para el precio final -->
             <div class="mb-3">
               <label class="form-label" for="price">Precio Final</label>

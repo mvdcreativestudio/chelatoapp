@@ -207,6 +207,9 @@ Route::prefix('admin')->middleware([
         'currencies' => CurrencyController::class,
     ]);
 
+    Route::get('exchange-rate-dollar', [CurrencyController::class, 'getCurrentRateDollar']);
+
+
     //Freemium 
     Route::get('/raw-material-freemium', [RawMaterialController::class, 'createFreemium'])->name('raw-materials.createFreemium');
 

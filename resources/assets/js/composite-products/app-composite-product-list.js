@@ -53,13 +53,15 @@ $(function () {
           {
             targets: 4,
             render: function (data, type, full, meta) {
-              return $currencySymbol + parseFloat(data).toFixed(2);
+              var currency = full.currency === 'Dólar' ? 'USD' : 'UYU';
+              return `${currency} ${parseFloat(data).toFixed(2)}`;
             }
           },
           {
             targets: 5,
             render: function (data, type, full, meta) {
-              return $currencySymbol + parseFloat(data).toFixed(2);
+              var currency = full.currency === 'Dólar' ? 'USD' : 'UYU';
+              return `${currency} ${parseFloat(data).toFixed(2)}`;
             }
           },
           {

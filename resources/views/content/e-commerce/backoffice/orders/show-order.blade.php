@@ -380,9 +380,16 @@ $changeTypeTranslations = [
             $currencyDisplay = $order->currency === 'Dólar' ? 'USD' : 'UYU';
             @endphp
             <div class="d-flex justify-content-between mb-2">
-               <span class="w-px-100">Moneda:</span>
-                <span class="text-heading"><strong>{{ $order->currency }}</strong></span>
+              <span class="w-px-100">Moneda:</span>
+              <span class="text-heading"><strong>{{ $order->currency }}</strong></span>
             </div>
+            @if($order->currency === 'Dólar' || $order->currency === 'Peso')
+            <div class="exchange-rate-info mb-2">
+              <small class="text-muted">
+                TC Dólar: {{ number_format($exchange_rate, 2) }}
+              </small>
+            </div>
+            @endif
             <div class="d-flex justify-content-between mb-2">
               <span class="w-px-100">Subtotal:</span>
               <span class="text-heading">{{ $currencyDisplay }} {{ $order->subtotal }}</span>

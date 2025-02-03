@@ -120,10 +120,34 @@
         </div>
       </div>
     </div>
-
+    
     <div class="col-md-4">
+
+    <div class="currency-section mb-3">
+        <div class="card shadow-sm border-0">
+            <div class="card-header py-2 px-3">
+                <h6 class="mb-0">Moneda</h6>
+            </div>
+            <div class="card-body p-2">
+                <div class="btn-group btn-group-sm w-100" data-toggle="buttons">
+                    <label class="btn btn-outline-secondary btn-sm">
+                        <input type="radio" name="currency" value="Peso" checked> 
+                          Pesos (UYU)
+                    </label>
+                    <label class="btn btn-outline-secondary btn-sm">
+                        <input type="radio" name="currency" value="Dólar"> 
+                          Dólares (USD)
+                    </label>
+                </div>
+            </div>
+        </div>
+      </div>
+
       <div class="card shadow-sm p-3 mb-3">
         <h5>Resumen de la venta</h5>
+        <div class="exchange-rate-info mb-2 d-none">
+          <small class="text-muted">TC Dólar: <span class="exchange-rate-value">0.00</span></small>
+        </div>
         <div class="d-flex justify-content-between">
           <span>Subtotal de productos</span>
           <span class="subtotal">$0.00</span>
@@ -139,25 +163,6 @@
         </div>
       </div>
 
-      <div class="currency-section mt-2">
-        <div class="card shadow-sm border-0">
-            <div class="card-header py-2 px-3">
-                <h6 class="mb-0">Moneda</h6>
-            </div>
-            <div class="card-body p-2">
-                <div class="btn-group btn-group-sm w-100" data-toggle="buttons">
-                    <label class="btn btn-outline-secondary btn-sm">
-                        <input type="radio" name="currency" value="Peso" checked> 
-                        <i class="bx bx-dollar"></i> Peso
-                    </label>
-                    <label class="btn btn-outline-secondary btn-sm">
-                        <input type="radio" name="currency" value="Dólar"> 
-                        <i class="bx bx-dollar"></i> Dólar
-                    </label>
-                </div>
-            </div>
-        </div>
-      </div>
       <div class="discount-section mt-3">
         <div class="card shadow-sm border-0">
             <!-- Encabezado de la tarjeta colapsable -->

@@ -35,6 +35,18 @@ return new class extends Migration
                 'updated_at' => now(),
             ]);
         }
+
+        $existingCurrency = DB::table('currencies')->where('code', 'USD')->first();
+        if (!$existingCurrency) {
+            DB::table('currencies')->insert([
+                'code' => 'USD',
+                'symbol' => '$',
+                'name' => 'Dólar',
+                'exchange_rate' => 1.00,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 
     /**

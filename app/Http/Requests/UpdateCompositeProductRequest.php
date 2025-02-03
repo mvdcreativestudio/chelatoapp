@@ -26,6 +26,7 @@ class UpdateCompositeProductRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'currency' => ['required', 'in:Peso,Dólar'], // Validación para la moneda
             'price' => ['required', 'numeric'], // Validación para el precio
             'recommended_price' => ['required', 'numeric'], // Validación para el costo total
             'store_id' => ['required', 'exists:stores,id'],
@@ -55,6 +56,8 @@ class UpdateCompositeProductRequest extends FormRequest
             'products.*.quantity.required' => 'La cantidad es obligatoria para cada producto.',
             'products.*.quantity.integer' => 'La cantidad debe ser un número entero.',
             'products.*.quantity.min' => 'La cantidad debe ser al menos 1.',
+            'currency.required' => 'La moneda es obligatoria.',
+            'currency.in' => 'La moneda debe ser Peso o Dólar.',
         ];
     }
 }

@@ -206,7 +206,7 @@ class PriceListController extends Controller
                 $join->on('products.id', '=', 'price_list_products.product_id')
                      ->where('price_list_products.price_list_id', '=', $priceListId);
             })
-            ->select('products.id', 'products.name', 'price_list_products.price') // Seleccionar el nombre y el precio del producto
+            ->select('products.id', 'products.name', 'products.currency','price_list_products.price') // Seleccionar el nombre y el precio del producto
             ->get();
     
         return response()->json(['products' => $products]);

@@ -3,9 +3,12 @@
 namespace App\Repositories;
 
 use App\Models\Currency;
+use App\Models\CurrencyRateHistory;
+use App\Models\CurrencyRate;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Log;
 
 class CurrencyRepository
 {
@@ -113,5 +116,67 @@ class CurrencyRepository
         ])->orderBy('id', 'desc');
 
         return DataTables::of($query)->make(true);
+    }
+
+
+    /**
+     * Obtiene la última tasa de cambio del dólar.
+     *
+     * @return array
+     */
+    public function getCurrentExchangeRate(): array
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+
+        if (!$dollar) {
+            throw new Exception('No se encontró la moneda Dólar');
+        }
+
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+        Log::info($rate);
+        if (!$rate) {
+            throw new Exception('No se encontró tasa de cambio para el Dólar');
+        }
+
+        return [
+            'exchange_rate' => [
+                'sell' => $rate->sell,
+                'buy' => $rate->buy,
+                'date' => $rate->created_at
+            ]
+        ];
+    }
+
+    /**
+     * Obtiene la tasa de cambio más cercana a una fecha específica.
+     *
+     * @param string $date
+     * @return float|null
+     */
+    public function getExchangeRateByDate(string $date): ?float
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+
+        if (!$dollar) {
+            return null;
+        }
+
+        // Primero intenta obtener la tasa exacta del día
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->whereDate('created_at', $date)
+            ->first();
+
+        if ($rate) {
+            return $rate->sell;
+        }
+
+        // Si no encuentra, busca la tasa más cercana
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->orderByRaw("ABS(DATEDIFF(created_at, ?))", [$date])
+            ->first();
+
+        return $rate ? $rate->sell : null;
     }
 }

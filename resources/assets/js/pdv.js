@@ -558,6 +558,9 @@ $(document).ready(function () {
             type: 'GET',
             success: function (response) {
                  exchange_price = response.exchange_rate.sell;
+                 let tc_value = parseFloat(exchange_price);
+                 $('.exchange-rate-value').text(tc_value.toFixed(2));
+
                  let cartHtml = '';
                  let subtotal = 0;
                  let totalItems = 0;  // Contador de productos

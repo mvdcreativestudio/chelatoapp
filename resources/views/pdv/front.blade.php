@@ -171,7 +171,10 @@ $currencySymbol = $settings->currency_symbol;
 
         <!-- Totales -->
         <div class="totals-container mt-4 p-3 shadow-sm rounded bg-light d-flex flex-column align-items-end" style="max-width: 350px; margin-left: auto;">
-          <div class="totals-item d-flex justify-content-between align-items-center w-100 mb-2 animate__animated animate__fadeIn">
+            <div class="exchange-rate-info w-100 mb-2 text-muted">
+              <small class="d-block">TC Dólar: <span class="exchange-rate-value"></span></small>
+           </div>
+        <div class="totals-item d-flex justify-content-between align-items-center w-100 mb-2 animate__animated animate__fadeIn">
             <h6 class="text-muted">Subtotal:</h6>
             <h6 class="subtotal text-primary fw-bold">$770</h6>
           </div>

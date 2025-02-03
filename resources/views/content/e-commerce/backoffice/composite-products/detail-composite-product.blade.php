@@ -48,20 +48,26 @@
             </div>
             <div class="col-md-6">
                 <h6 class="mb-2">Precio:</h6>
-                <p>{{ $settings->currency_symbol }} {{ number_format($compositeProduct->price, 2) }}</p>
+                <p>
+                    {{ $compositeProduct->currency === 'Dólar' ? 'USD' : 'UYU' }}
+                    {{ number_format($compositeProduct->price, 2) }}
+                </p>
             </div>
             <div class="col-md-6">
                 <h6 class="mb-2">Costo Total:</h6>
-                <p>{{ $settings->currency_symbol }} {{ number_format($compositeProduct->recommended_price, 2) }}</p>
+                <p>
+                    {{ $compositeProduct->currency === 'Dólar' ? 'USD' : 'UYU' }}
+                    {{ number_format($compositeProduct->recommended_price, 2) }}
+                </p>
             </div>
             <div class="col-md-6">
                 <h6 class="mb-2">Fecha de Creación:</h6>
                 <p>{{ $compositeProduct->created_at->format('d/m/Y') }}</p>
             </div>
             <div class="col-md-6">
-              <h6 class="mb-2">Stock:</h6>
-              <p>{{ $compositeProduct->stock }}</p>
-          </div>
+                <h6 class="mb-2">Stock:</h6>
+                <p>{{ $compositeProduct->stock }}</p>
+            </div>
         </div>
     </div>
 </div>
@@ -88,7 +94,10 @@
                     <td>{{ $detail->product->name }}</td>
                     <td>{{ $detail->quantity_composite_product }}</td>
                     <td>{{ $detail->product->stock ?? 'Sin Stock' }}</td>
-                    <td>{{ $settings->currency_symbol }} {{ number_format($detail->product->build_price, 2) }}</td>
+                    <td>
+                        {{ $detail->product->currency === 'Dólar' ? 'USD' : 'UYU' }}
+                        {{ number_format($detail->product->build_price, 2) }}
+                    </td>
                 </tr>
                 @endforeach
             </tbody>

@@ -1437,12 +1437,15 @@ $(document).ready(function () {
     const selectedCurrency = $(this).val();
     const internalCreditInput = $('#internalCredit');
     const internalCreditLabel = $('label[for="internalCredit"]');
-  
+    const exchangeRateInfo = $('.exchange-rate-info');
+
     if (selectedCurrency === 'Dólar') {
+      exchangeRateInfo.removeClass('d-none');
       internalCreditInput.prop('disabled', true);
       internalCreditInput.prop('checked', false);
       internalCreditLabel.addClass('opacity-50');
     } else {
+      exchangeRateInfo.removeClass('d-none');
       internalCreditInput.prop('disabled', false);
       internalCreditLabel.removeClass('opacity-50');
     }
@@ -1452,7 +1455,9 @@ $(document).ready(function () {
       type: 'GET',
       success: function(response) {
         exchange_price = response.exchange_rate.sell;
-        
+        let tc_value = parseFloat(exchange_price);
+        $('.exchange-rate-value').text(tc_value.toFixed(2));
+
         if (selectedCurrency === 'Dólar') {
           discount = discount / exchange_price;
         } else {
