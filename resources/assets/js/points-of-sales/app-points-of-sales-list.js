@@ -201,10 +201,8 @@ $(document).ready(function () {
 
   // Mostrar el modal para editar POS
   $('.btn-edit-pos-mp').click(function () {
-    console.log('Editar POS');
     const posId = $(this).data('id'); // ID del POS
     const storeId = $(this).data('store'); // ID de la tienda
-    console.log(storeId);
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
     // Obtener los datos del POS
@@ -215,7 +213,6 @@ $(document).ready(function () {
         'X-CSRF-TOKEN': csrfToken
       },
       success: function (data) {
-        console.log(data);
         // Cargar los datos en los campos del modal
         $('#edit_pos_id').val(posId);
         $('#edit_store_id').val(storeId);
@@ -290,7 +287,6 @@ $(document).ready(function () {
   // Mostrar el modal para eliminar POS
   $('.btn-delete-pos-mp').click(function () {
     const posId = $(this).data('id'); // ID del POS
-    console.log(posId);
     // Mostrar el modal de confirmación
     Swal.fire({
       title: '¿Estás seguro?',

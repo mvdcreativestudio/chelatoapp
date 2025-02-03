@@ -76,11 +76,6 @@ class MercadoPagoRepository
                     return $this->processNotification($topic, $id, $mpService, $secretKey, 1);
                 }
             }
-            // if ($mpService->verifyHMAC($id, $request->header('x-request-id'), $ts, $receivedHash, $secretKey)) {
-            //     Log::channel('mercadopago')->info('La verificación HMAC pasó correctamente');
-            //     return $this->processNotification($topic, $id, $mpService);
-            // } else {
-            // }
             Log::channel('mercadopago')->error('La verificación HMAC falló');
             return ['message' => ['error' => 'HMAC verification failed'], 'status' => 400];
         } else {
