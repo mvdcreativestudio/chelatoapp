@@ -232,4 +232,13 @@ class Product extends Model
     {
         return $this->hasMany(ProductGallery::class);
     }
+
+    /**
+     * Obtiene los items de presupuesto asociados al producto.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function budgetItems() {
+        return $this->hasMany(BudgetItem::class);
+    }
 }

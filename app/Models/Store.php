@@ -181,4 +181,13 @@ class Store extends Model
     {
         return $this->hasOne(StoresEmailConfig::class, 'store_id');
     }
+
+    /**
+     * Obtiene los presupuestos generados en esta tienda.
+     *
+     * @return HasMany
+     */
+    public function budgets() {
+        return $this->hasMany(Budget::class);
+    }
 }

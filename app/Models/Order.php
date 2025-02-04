@@ -174,4 +174,13 @@ class Order extends Model
     {
         return $this->hasOne(Transaction::class, 'order_id', 'id');
     }
+
+    /**
+     * Obtiene los presupuestos que han generado esta orden.
+     *
+     * @return HasMany
+     */
+    public function budgets() {
+        return $this->hasMany(Budget::class);
+    }
 }

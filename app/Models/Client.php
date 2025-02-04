@@ -64,4 +64,13 @@ class Client extends Model
         return $this->belongsToMany(PriceList::class, 'client_price_lists');
     }
 
+    /**
+     * Obtiene los presupuestos asociados al cliente.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function budgets() {
+        return $this->hasMany(Budget::class);
+    }
+
 }
