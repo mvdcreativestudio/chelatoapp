@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('budget_statuses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('budget_id')->constrained('budgets')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('user_id')->constrained('users'); // soft delete
             $table->enum('status', ['draft', 'pending_approval', 'sent', 'negotiation', 'approved', 'rejected', 'expired', 'cancelled']);
             $table->timestamps();
+            $table->softDeletes(); // Agregar soft deletes
         });
     }
 
