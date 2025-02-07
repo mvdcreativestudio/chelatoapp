@@ -136,10 +136,23 @@ class CurrentAccountSettingsRepository
             'late_fee',
             'payment_terms',
             'created_at',
-        ])->orderBy('id', 'desc');
+        ]);
 
-        $dataTable = DataTables::of($query)->make(true);
+        // Aplicar filtro de tipo de transacción
+        if ($request->filled('transaction_type')) {
+            $query->where('transaction_type', TransactionTypeEnum::from($request->transaction_type));
+        }
 
-        return $dataTable;
+        // Aplicar filtros de fecha (desde)
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        // Aplicar filtros de fecha (hasta)
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        return DataTables::of($query)->make(true);
     }
 }

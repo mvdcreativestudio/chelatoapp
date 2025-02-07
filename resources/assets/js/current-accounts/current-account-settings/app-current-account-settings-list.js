@@ -19,15 +19,21 @@ $(function () {
     // Inicializa DataTable si el elemento existe
     if (dt_current_account_settings_table.length) {
       var dt_current_account_settings = dt_current_account_settings_table.DataTable({
+        processing: true,
+        serverSide: true,
         ajax: {
-          url: 'current-account-settings/datatable',
-          data: function (d) {
-            d.start_date = $('#startDate').val();
-            d.end_date = $('#endDate').val();
-          }
+            url: 'current-account-settings/datatable',
+            type: 'GET',
+            data: function (d) {
+              return {
+                  ...d,
+                  transaction_type: $('#transactionType').val() || null,
+                  start_date: $('#startDate').val() || null,
+                  end_date: $('#endDate').val() || null
+              };
+            }
         },
         columns: [
-          { data: 'switch', orderable: false, searchable: false },
           { data: 'id', type: 'num' },
           { data: 'transaction_type' },
           { data: 'late_fee' },
@@ -37,15 +43,8 @@ $(function () {
         ],
         columnDefs: [
           {
-            targets: 0,
+            targets: 1,
             render: function (data, type, full, meta) {
-              return `<input type="checkbox" class="form-check-input" data-id="${full['id']}">`;
-            }
-          },
-          {
-            targets: 2,
-            render: function (data, type, full, meta) {
-              console.log(data);
               if (data == 'Purchase') {
                 return `<span class="fw-bold text-success">Compra</span>`;
               }
@@ -53,13 +52,7 @@ $(function () {
             }
           },
           {
-            targets: 2,
-            render: function (data, type, full, meta) {
-              return `<span class="fw-bold">${data}</span>`;
-            }
-          },
-          {
-            targets: 5,
+            targets: 4,
             render: function (data, type, full, meta) {
               return moment(data).locale('es').format('DD/MM/YY');
             }
@@ -155,19 +148,18 @@ $(function () {
         $('#checkAll').prop('checked', allChecked);
       });
 
-      // Eliminar filtros de búsqueda
-      $(document).on('click', '#clear-filters', function () {
-        $('.transaction_type_filter select').val('').trigger('change');
+
+      // Filtrado
+      $('#transactionType, #startDate, #endDate').on('change', function () {
+          dt_current_account_settings.draw(); 
+      });
+    
+    $('#clear-filters').on('click', function () {
+        $('#transactionType').val('');
         $('#startDate').val('');
         $('#endDate').val('');
-        dt_current_account_settings.search('');
-        dt_current_account_settings.ajax.reload();
-      });
-
-      // Filtrar por fechas
-      $('#startDate, #endDate').on('change', function () {
-        dt_current_account_settings.ajax.reload();
-      });
+        dt_current_account_settings.draw(); 
+    });
 
       function toggleActionsMenu() {
         // Muestra u oculta el menú de acciones dependiendo de la cantidad de checkboxes seleccionados

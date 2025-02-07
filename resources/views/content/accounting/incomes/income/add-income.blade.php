@@ -59,7 +59,7 @@
             <label class="form-label mb-1 d-flex justify-content-between align-items-center" for="income_category_id">
               <span>Categoría del Ingreso</span><a href="{{ route('income-categories.index') }}" class="fw-medium">Ir a Crear categoría</a>
             </label>
-            <select class="form-select" id="income_category_id" name="income_category_id" required>
+            <select class="form-select" id="income_category_id" name="income_category_id">
               <option value="" selected disabled>Seleccione una categoría</option>
               @foreach($incomeCategories as $category)
               <option value="{{ $category->id }}">{{ $category->income_name }}</option>

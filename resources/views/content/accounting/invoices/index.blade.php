@@ -27,182 +27,79 @@
   window.isStoreConfigEmailEnabled = "{{ $isStoreConfigEmailEnabled }}";
 </script>
 @endsection
-
 @section('content')
-<h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Contabilidad /</span> Facturas
-</h4>
-
-{{-- <div class="card mb-4">
-  <div class="card-widget-separator-wrapper">
-    <div class="card-body card-widget-separator">
-      <div class="row gy-4 gy-sm-1">
-        <div class="col-sm-6 col-lg-4">
-          <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
-            <div>
-              <h6 class="mb-2">Total de Facturas</h6>
-              <h4 class="mb-2">{{ $totalReceipts }}</h4>
-              <p class="mb-0"><span class="text-muted me-2">Total</span></p>
-            </div>
-            <div class="avatar me-sm-4">
-              <span class="avatar-initial rounded bg-label-secondary">
-                <i class="bx bx-receipt bx-sm"></i>
-              </span>
-            </div>
-          </div>
-          <hr class="d-none d-sm-block d-lg-none me-4">
-        </div>
-        <div class="col-sm-6 col-lg-4">
-          <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
-            <div>
-              <h6 class="mb-2">Total Ingresos</h6>
-              <h4 class="mb-2">{{ $settings->currency_symbol }} {{ number_format($totalIncome, 2) }}</h4>
-              <p class="mb-0"><span class="text-muted me-2">Total</span></p>
-            </div>
-            <div class="avatar me-lg-4">
-              <span class="avatar-initial rounded bg-label-secondary">
-                <i class="bx bx-dollar bx-sm"></i>
-              </span>
-            </div>
-          </div>
-          <hr class="d-none d-sm-block d-lg-none">
-        </div>
-        <div class="col-sm-6 col-lg-4">
-          <div class="d-flex justify-content-between align-items-start">
-            <div>
-              <h6 class="mb-2">Empresa con más Emisiones</h6>
-              <h4 class="mb-2">{{ $storeNameWithMostReceipts }}</h4>
-              <p class="mb-0"><span class="text-muted me-2">Más Emisiones</span></p>
-            </div>
-            <div class="avatar">
-              <span class="avatar-initial rounded bg-label-secondary">
-                <i class="bx bx-store bx-sm"></i>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-2">
+        <span class="text-muted fw-light">Contabilidad /</span> Facturas
+    </h4>
+    <div class="d-flex gap-2">
+        <button id="btn-update-cfes" class="btn btn-outline-primary">
+            <i class="bx bx-refresh me-1"></i>
+            Actualizar CFEs
+        </button>
+        @if (auth()->user()->can('access_update_all_invoices'))
+        <button id="btn-update-all-cfes" class="btn btn-primary">
+            <i class="bx bx-refresh-alt me-1 btn-sm"></i>
+            Actualizar Todos
+        </button>
+        @endif
     </div>
-  </div>
-</div> --}}
+</div>
 
 @if (session('success'))
-<div class="alert alert-success mt-3 mb-3">
-  {{ session('success') }}
+<div class="alert alert-success alert-dismissible mb-4" role="alert">
+    {{ session('success') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 @endif
 
 @if (session('error'))
-<div class="alert alert-danger mt-3 mb-3">
-  {{ session('error') }}
+<div class="alert alert-danger alert-dismissible mb-4" role="alert">
+    {{ session('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 @endif
 
-@if ($errors->any())
-@foreach ($errors->all() as $error)
-  <div class="alert alert-danger">
-    {{ $error }}
-  </div>
-@endforeach
-@endif
-
-
-<!-- Receipts List Table -->
+<!-- DataTable Card -->
 <div class="card">
-  <div class="card-datatable table-responsive">
-    <div class="card-header" style="padding-bottom: 0px;">
-      <h5 class="card-title">Facturas</h5>
-      <div class="d-flex">
-        <p class="text-muted small">
-          <a href="#" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches" aria-expanded="false" aria-controls="columnSwitches">Ver / Ocultar columnas de la tabla</a>
-        </p>
-      </div>
-      <button id="btn-update-cfes" class="btn btn-primary">
-        Actualizar estado de CFEs
-      </button>
-      @if (auth()->user()->can('access_update_all_invoices'))
-        <button id="btn-update-all-cfes" class="btn btn-primary">
-          Actualizar estado de todos los CFEs
-        </button>
-      @endif
-      <div class="collapse" id="columnSwitches">
-        <div class="mt-0 d-flex flex-wrap">
-          <div class="mx-3">
-            <label class="switch switch-square">
-              <input type="checkbox" class="toggle-column switch-input" data-column="1" checked>
-              <span class="switch-toggle-slider">
-                <span class="switch-on"><i class="bx bx-check"></i></span>
-                <span class="switch-off"><i class="bx bx-x"></i></span>
-              </span>
-              <span class="switch-label">Fecha</span>
-            </label>
-          </div>
-          <div class="mx-3">
-            <label class="switch switch-square">
-              <input type="checkbox" class="toggle-column switch-input" data-column="2" checked>
-              <span class="switch-toggle-slider">
-                <span class="switch-on"><i class="bx bx-check"></i></span>
-                <span class="switch-off"><i class="bx bx-x"></i></span>
-              </span>
-              <span class="switch-label">Cliente</span>
-            </label>
-          </div>
-          <div class="mx-3">
-            <label class="switch switch-square">
-              <input type="checkbox" class="toggle-column switch-input" data-column="3" checked>
-              <span class="switch-toggle-slider">
-                <span class="switch-on"><i class="bx bx-check"></i></span>
-                <span class="switch-off"><i class="bx bx-x"></i></span>
-              </span>
-              <span class="switch-label">Empresa</span>
-            </label>
-          </div>
-          <div class="mx-3">
-            <label class="switch switch-square">
-              <input type="checkbox" class="toggle-column switch-input" data-column="4" checked>
-              <span class="switch-toggle-slider">
-                <span class="switch-on"><i class="bx bx-check"></i></span>
-                <span class="switch-off"><i class="bx bx-x"></i></span>
-              </span>
-              <span class="switch-label">Importe</span>
-            </label>
-          </div>
-          <div class="mx-3">
-            <label class="switch switch-square">
-              <input type="checkbox" class="toggle-column switch-input" data-column="8" checked>
-              <span class="switch-toggle-slider">
-                <span class="switch-on"><i class="bx bx-check"></i></span>
-                <span class="switch-off"><i class="bx bx-x"></i></span>
-              </span>
-              <span class="switch-label">Acciones</span>
-            </label>
-          </div>
-        </div>
-      </div>
+    <div class="card-header border-bottom">
+        <div class="d-flex justify-content-between align-items-center row py-3 gap-3 gap-md-0">
+            <div class="col-md-4 col-12">
+                <h5 class="card-title mb-0">Listado de Facturas</h5>
+            </div>
     </div>
-    <table class="datatables-invoice table border-top" data-symbol="{{ $settings->currency_symbol }}">
-      <thead>
-        <tr>
-          <th>N°</th>
-          <th>Empresa</th>
-          <th>Cliente</th>
-          <th>Orden</th>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>Razón</th>
-          <th>Balance</th>
-          <th>Moneda</th>
-          <th>Total</th>
-          <th>Asociado a</th>
-          <th>Status</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
-  </div>
+
+    <div class="card-datatable table-responsive">
+        @if($invoices->count() > 0)
+        <table class="datatables-invoice table border-top" data-symbol="{{ $settings->currency_symbol }}">
+            <thead class="table-light">
+                <tr>
+                    <th>N°</th>
+                    <th>Empresa</th>
+                    <th>Cliente</th>
+                    <th>Orden</th>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Razón</th>
+                    <th>Balance</th>
+                    <th>Moneda</th>
+                    <th>Total</th>
+                    <th>Asociado a</th>
+                    <th>Status</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+        </table>
+        @else
+        <div class="text-center p-5">
+            <img src="{{ asset('assets/img/illustrations/empty.svg') }}" class="mb-3" width="150">
+            <h4>No hay facturas registradas</h4>
+            <p class="text-muted">Aún no se han registrado facturas en el sistema</p>
+        </div>
+        @endif
+    </div>
 </div>
+
 <!--/ Responsive Datatable -->
 
 <div class="modal fade" id="emitirReciboModal" tabindex="-1" aria-labelledby="emitirReciboLabel" aria-hidden="true">
@@ -304,5 +201,50 @@
     </div>
   </div>
 </div>
+
+
+<style>
+    .card-header {
+        padding: 1.5rem 1.5rem 0;
+    }
+    
+    .dt-buttons .btn {
+        padding: 0.5rem 1rem;
+    }
+    
+    .alert {
+        margin-bottom: 1rem;
+    }
+    
+    .table thead th {
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+    
+    @media (max-width: 767.98px) {
+        .d-flex.gap-2 {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .d-flex.gap-2 .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .dt-buttons {
+            width: 100%;
+        }
+        
+        .dt-buttons .btn {
+            width: 100%;
+        }
+    }
+    .card-header {
+        padding: 0.5rem 1.5rem 0;
+    }
+    
+</style>
 
 @endsection

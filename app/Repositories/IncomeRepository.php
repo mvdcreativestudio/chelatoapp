@@ -24,14 +24,33 @@ class IncomeRepository
     public function getAllIncomes(): mixed
     {
         $incomes = Income::all();
-        $totalIncomes = Income::all()->count();
-        $totalIncomeAmount = Income::all()->sum('income_amount');
+        $totalIncomes = $incomes->count();
+        $totalIncomeAmount = $incomes->sum('income_amount');
+        
+        $averageIncome = $totalIncomes > 0 ? $totalIncomeAmount / $totalIncomes : 0;
+        
+        $monthlyIncome = Income::whereMonth('income_date', now()->month)
+                            ->whereYear('income_date', now()->year)
+                            ->sum('income_amount');
+        
         $paymentMethods = PaymentMethod::all();
         $incomeCategories = IncomeCategory::all();
         $clients = Client::all();
         $suppliers = Supplier::all();
         $currencies = Currency::all();
-        return compact('incomes', 'totalIncomes', 'totalIncomeAmount', 'paymentMethods', 'incomeCategories', 'clients', 'suppliers', 'currencies');
+        
+        return compact(
+            'incomes', 
+            'totalIncomes', 
+            'totalIncomeAmount', 
+            'averageIncome', 
+            'monthlyIncome',
+            'paymentMethods', 
+            'incomeCategories', 
+            'clients', 
+            'suppliers', 
+            'currencies'
+        );
     }
 
     /**

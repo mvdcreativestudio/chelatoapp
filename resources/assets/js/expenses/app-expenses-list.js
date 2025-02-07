@@ -43,7 +43,6 @@ $(function () {
           }
         },
         columns: [
-          { data: 'switch', orderable: false, searchable: false },
           { data: 'id', type: 'num' },
           { data: 'due_date' },
           { data: 'supplier_name' },
@@ -61,19 +60,20 @@ $(function () {
           {
             targets: 0,
             render: function (data, type, full, meta) {
-              return `<input type="checkbox" class="form-check-input" data-id="${full['id']}">`;
+              return `<a href="${baseUrl}admin/expenses/${data}/show" class="text-body">#${data}</a>`;
             }
           },
           {
             targets: 1,
             render: function (data, type, full, meta) {
-              return `<a href="${baseUrl}admin/expenses/${data}/show" class="text-body">#${data}</a>`;
+              return moment(data).locale('es').format('DD/MM/YY');
             }
           },
           {
-            targets: 2,
+            targets: 5,
             render: function (data, type, full, meta) {
-              return moment(data).locale('es').format('DD/MM/YY');
+              const symbol = full.currency_symbol ?? '$';
+              return symbol + parseFloat(data).toFixed(2);
             }
           },
           {
@@ -84,14 +84,7 @@ $(function () {
             }
           },
           {
-            targets: 7,
-            render: function (data, type, full, meta) {
-              const symbol = full.currency_symbol ?? '$';
-              return symbol + parseFloat(data).toFixed(2);
-            }
-          },
-          {
-            targets: 10,
+            targets: 9,
             render: function (data, type, full, meta) {
               const statusMap = {
                 Paid: { class: 'bg-success', text: 'PAGADO' },
@@ -102,7 +95,7 @@ $(function () {
             }
           },
           {
-            targets: 11,
+            targets: 10,
             render: function (data, type, full, meta) {
               return `<span class="badge pill ${temporalStatusMap[data].class}">${temporalStatusMap[data].text}</span>`;
             }

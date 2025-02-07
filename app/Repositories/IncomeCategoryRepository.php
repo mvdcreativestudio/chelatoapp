@@ -19,7 +19,11 @@ class IncomeCategoryRepository
     {
         $incomeCategories = IncomeCategory::all();
         $totalIncomeCategories = $incomeCategories->count();
-        return compact('incomeCategories', 'totalIncomeCategories');
+        $totalCategorizedIncomes = DB::table('incomes')
+            ->whereNotNull('income_category_id')
+            ->count();
+            
+        return compact('incomeCategories', 'totalIncomeCategories', 'totalCategorizedIncomes');
     }
 
     /**

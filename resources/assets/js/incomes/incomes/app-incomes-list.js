@@ -29,7 +29,6 @@ $(function () {
           }
         },
         columns: [
-          { data: 'switch', orderable: false, searchable: false },
           { data: 'id', type: 'num' },
           { data: 'income_date' },
           {
@@ -58,7 +57,12 @@ $(function () {
           },
           { data: 'payment_method_name' },
           { data: 'income_amount' },
-          { data: 'income_category_name' },
+          {
+            data: 'income_category_name',
+            render: function (data, type, full, meta) {
+              return data ? data : 'N/A';
+            }
+          },
           { data: 'currency_name' },
           { data: '' }
         ],
@@ -66,30 +70,24 @@ $(function () {
           {
             targets: 0,
             render: function (data, type, full, meta) {
-              return `<input type="checkbox" class="form-check-input" data-id="${full['id']}">`;
+              return `<a href="#" class="text-body">#${data}</a>`;
             }
           },
           {
             targets: 1,
             render: function (data, type, full, meta) {
-              return `<a href="#" class="text-body">#${data}</a>`;
-            }
-          },
-          {
-            targets: 2,
-            render: function (data, type, full, meta) {
               return moment(data).locale('es').format('DD/MM/YY');
             }
           },
           {
-            targets: 6,
+            targets: 5,
             render: function (data, type, full, meta) {
               const symbol = full.currency_symbol ?? '$';
               return symbol + parseFloat(data).toFixed(2);
             }
           },
           {
-            targets: 8,
+            targets: 7,
             render: function (data, type, full, meta) {
               return full.currency_name
                 ? full.currency_name

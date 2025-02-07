@@ -30,7 +30,12 @@ $(function () {
           { data: 'switch', orderable: false, searchable: false },
           { data: 'id', type: 'num' },
           { data: 'income_name' },
-          { data: 'income_description' },
+          {
+            data: 'income_description',
+            render: function (data, type, full, meta) {
+              return data ? data : 'N/A';
+            }
+          },
           { data: 'created_at' },
           { data: '' }
         ],

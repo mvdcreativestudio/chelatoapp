@@ -27,7 +27,6 @@ $(function () {
           }
         },
         columns: [
-          { data: 'switch', orderable: false, searchable: false },
           { data: 'id', type: 'num' },
           { data: 'code' },
           { data: 'symbol' },
@@ -40,17 +39,11 @@ $(function () {
           {
             targets: 0,
             render: function (data, type, full, meta) {
-              return `<input type="checkbox" class="form-check-input" data-id="${full['id']}">`;
-            }
-          },
-          {
-            targets: 1,
-            render: function (data, type, full, meta) {
               return `<a href="#" class="text-body">#${data}</a>`;
             }
           },
           {
-            targets: 6,
+            targets: 5,
             render: function (data, type, full, meta) {
               return moment(data).locale('es').format('DD/MM/YY');
             }
