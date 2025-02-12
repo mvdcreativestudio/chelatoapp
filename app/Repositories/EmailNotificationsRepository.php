@@ -35,44 +35,44 @@ class EmailNotificationsRepository
      * @param array $variables
      * @param string $recipient
      */
-    private function sendTemplateEmail(string $templateName, array $variables, string $recipient)
-{
-    try {
-        Log::channel('emails')->info('Iniciando envío de correo', ['templateName' => $templateName, 'variables' => $variables, 'recipient' => $recipient]);
+//     private function sendTemplateEmail(string $templateName, array $variables, string $recipient)
+// {
+//     try {
+//         Log::channel('emails')->info('Iniciando envío de correo', ['templateName' => $templateName, 'variables' => $variables, 'recipient' => $recipient]);
 
-        $template = EmailTemplate::where('name', $templateName)->firstOrFail();
-        Log::channel('emails')->info('Plantilla encontrada', ['template' => $template]);
+//         $template = EmailTemplate::where('name', $templateName)->firstOrFail();
+//         Log::channel('emails')->info('Plantilla encontrada', ['template' => $template]);
 
-        if (isset($variables['order_items'])) {
-            $variables['order_items'] = $this->generateOrderItemsHtml(json_decode($variables['order_items'], true));
-        } else {
-            Log::channel('emails')->error('La clave order_items no está presente en las variables');
-        }
+//         if (isset($variables['order_items'])) {
+//             $variables['order_items'] = $this->generateOrderItemsHtml(json_decode($variables['order_items'], true));
+//         } else {
+//             Log::channel('emails')->error('La clave order_items no está presente en las variables');
+//         }
 
-        $variables['year'] = date('Y');
+//         $variables['year'] = date('Y');
 
-        $subject = $this->replaceVariables($template->subject, $variables);
-        Log::channel('emails')->info('Asunto del correo generado', ['subject' => $subject]);
+//         $subject = $this->replaceVariables($template->subject, $variables);
+//         Log::channel('emails')->info('Asunto del correo generado', ['subject' => $subject]);
 
-        $replyTo = $template->reply_to ?? 'default_reply_to@example.com';
-        $viewName = $this->getViewNameByTemplateName($templateName);
-        Log::channel('emails')->info('Nombre de la vista obtenido', ['viewName' => $viewName]);
+//         $replyTo = $template->reply_to ?? 'default_reply_to@example.com';
+//         $viewName = $this->getViewNameByTemplateName($templateName);
+//         Log::channel('emails')->info('Nombre de la vista obtenido', ['viewName' => $viewName]);
 
-        $body = view($viewName, $variables)->render();
-        Log::channel('emails')->info('Cuerpo del correo renderizado');
+//         $body = view($viewName, $variables)->render();
+//         Log::channel('emails')->info('Cuerpo del correo renderizado');
 
-        Mail::send([], [], function ($message) use ($recipient, $subject, $body, $replyTo) {
-            $message->to($recipient)
-                ->subject($subject)
-                ->replyTo($replyTo)
-                ->html($body);
-        });
+//         Mail::send([], [], function ($message) use ($recipient, $subject, $body, $replyTo) {
+//             $message->to($recipient)
+//                 ->subject($subject)
+//                 ->replyTo($replyTo)
+//                 ->html($body);
+//         });
 
-        Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $subject);
-    } catch (\Exception $e) {
-        Log::channel('emails')->error('Error enviando correo: ' . $e->getMessage());
-    }
-}
+//         Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $subject);
+//     } catch (\Exception $e) {
+//         Log::channel('emails')->error('Error enviando correo: ' . $e->getMessage());
+//     }
+// }
 
 
 
@@ -180,22 +180,22 @@ class EmailNotificationsRepository
      *
      * @param array $variables
      */
-    public function sendProductUpdateEmail(array $variables)
-    {
-        try {
-            $ecommerceSettings = EcommerceSetting::firstOrFail();
-            $recipient = $ecommerceSettings->notifications_email;
+    // public function sendProductUpdateEmail(array $variables)
+    // {
+    //     try {
+    //         $ecommerceSettings = EcommerceSetting::firstOrFail();
+    //         $recipient = $ecommerceSettings->notifications_email;
 
-            $template = EmailTemplate::where('name', 'product-update')->firstOrFail();
-            $variables['subject'] = $this->replaceVariables($template->subject, $variables);
+    //         $template = EmailTemplate::where('name', 'product-update')->firstOrFail();
+    //         $variables['subject'] = $this->replaceVariables($template->subject, $variables);
 
-            Mail::to($recipient)->send(new ProductUpdateMail(null, $variables));
+    //         Mail::to($recipient)->send(new ProductUpdateMail(null, $variables));
 
-            Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
-        } catch (\Exception $e) {
-            Log::channel('emails')->error('Error enviando correo: ' . $e->getMessage());
-        }
-    }
+    //         Log::channel('emails')->info('Correo enviado a ' . $recipient . ' con el asunto ' . $variables['subject']);
+    //     } catch (\Exception $e) {
+    //         Log::channel('emails')->error('Error enviando correo: ' . $e->getMessage());
+    //     }
+    // }
 
     /**
      * Obtiene el nombre de la vista correspondiente a una plantilla.
