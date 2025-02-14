@@ -596,6 +596,16 @@ class OrderRepository
     }
 
     /**
+     * Obtiene todos los clientes
+     *
+     *
+     */
+    public function getAllClients()
+    {
+        return Client::all();
+    }
+
+    /**
      * Actualiza el estado del pago de un pedido.
      *
      * @param int $orderId

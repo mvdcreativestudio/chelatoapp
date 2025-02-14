@@ -133,6 +133,9 @@ class OrderController extends Controller
     {
         // Cargar las relaciones necesarias
         $order = $this->orderRepository->loadOrderRelations($order);
+
+        $clients = $this->orderRepository->getAllClients();
+
         $products = json_decode($order->products, true);
         $store = $order->store;
         $invoice = $this->orderRepository->getSpecificInvoiceForOrder($order->id);
@@ -142,7 +145,7 @@ class OrderController extends Controller
             ? $this->orderRepository->getClientOrdersCount($order->client_id)
             : 0; // O cualquier valor predeterminado si no hay cliente
 
-        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled'));
+        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'clients', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled'));
     }
 
     /**
@@ -336,4 +339,28 @@ class OrderController extends Controller
         $order = $this->orderRepository->refundMercadoPagoOrder($id);
         return response()->json($order);
     }
+
+    public function vincularCliente(Request $request, $orderId): JsonResponse
+    {
+        // Verifica si la orden existe manualmente
+        $order = Order::find($orderId);
+
+        if (!$order) {
+            return response()->json(['error' => 'La orden no existe en la base de datos'], 404);
+        }
+
+        if ($order->is_billed) {
+            return response()->json(['error' => 'No se puede vincular un cliente a una venta ya facturada'], 400);
+        }
+
+        $request->validate([
+            'client_id' => 'required|exists:clients,id',
+        ]);
+
+        $order->update(['client_id' => $request->client_id]);
+
+        return response()->json(['success' => 'Cliente vinculado correctamente']);
+    }
+
+
 }
