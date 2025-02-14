@@ -651,12 +651,20 @@ $changeTypeTranslations = [
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-              <select class="form-control select2" id="clienteSelect">
-                  <option value="">Seleccione un cliente</option>
-                  @foreach($clients as $client)
-                      <option value="{{ $client->id }}">{{ $client->name }} {{ $client->lastname }} - {{ $client->email }}</option>
-                  @endforeach
-              </select>
+            <select class="form-control select2" id="clienteSelect">
+              <option value="">Seleccione un cliente</option>
+              @foreach($clients as $client)
+                  @if($client->type === 'individual')
+                      <option value="{{ $client->id }}">
+                          {{ $client->name }} {{ $client->lastname }} - {{ $client->email }}
+                      </option>
+                  @elseif($client->type === 'company')
+                      <option value="{{ $client->id }}">
+                          {{ $client->company_name }}
+                      </option>
+                  @endif
+              @endforeach
+            </select>
           </div>
           <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
