@@ -656,7 +656,10 @@ $changeTypeTranslations = [
               @foreach($clients as $client)
                   @if($client->type === 'individual')
                       <option value="{{ $client->id }}">
-                          {{ $client->name }} {{ $client->lastname }} - {{ $client->email }}
+                          {{ $client->name }} {{ $client->lastname }}
+                          @if($client->email)
+                              - {{ $client->email }}
+                          @endif
                       </option>
                   @elseif($client->type === 'company')
                       <option value="{{ $client->id }}">
