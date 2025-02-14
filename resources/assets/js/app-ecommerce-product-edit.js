@@ -223,12 +223,19 @@ document.getElementById('bar_code').addEventListener('keypress', function(event)
 function initStateSwitch() {
   const statusSwitch = document.getElementById('statusSwitch');
   if (statusSwitch) {
-    statusSwitch.checked = statusSwitch.value === '1'; // Assumes '1' is active, adjust as necessary
-    statusSwitch.addEventListener('change', function () {
-      this.value = this.checked ? '1' : '2'; // Toggle between '1' and '2'
-    });
+      // Asegura que el switch refleje correctamente el estado al cargar la página
+      statusSwitch.checked = statusSwitch.dataset.status === '1';
+
+      statusSwitch.addEventListener('change', function () {
+          // No es necesario cambiar el value porque el input hidden ya maneja el estado '2'
+      });
   }
 }
+
+// Ejecutar la función cuando el DOM esté listo
+document.addEventListener("DOMContentLoaded", initStateSwitch);
+
+
 
 function setupDiscardButton() {
   const discardButton = document.getElementById('discardButton');

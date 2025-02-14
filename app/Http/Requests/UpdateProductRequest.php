@@ -23,7 +23,7 @@ class UpdateProductRequest extends FormRequest
           'price' => 'nullable|numeric',
           'discount' => 'nullable|numeric',
           'store_id' => 'required|exists:stores,id',
-          'status' => 'required|boolean',
+          'status' => 'required|int',
           'stock' => 'nullable|integer',
           'safety_margin' => 'nullable|numeric',
           'bar_code' => 'nullable|string|max:255',
