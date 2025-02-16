@@ -490,7 +490,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
   function loadCartFromSession() {
     $.ajax({
-      url: `cart`,
+      url: `api-cart`,
       type: 'GET',
       dataType: 'json',
       success: function (response) {
@@ -592,7 +592,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
   function saveCartToSession() {
     return $.ajax({
-      url: 'cart',
+      url: 'api-cart',
       type: 'POST',
       data: {
         _token: $('meta[name="csrf-token"]').attr('content'),
@@ -605,20 +605,49 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
   }
 
   function calcularTotal() {
-    let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    let total = subtotal - discount;
-    if (total < 0) total = 0;
+    let subtotal = 0; // Subtotal sin impuestos
+    let totalTax = 0; // Total del IVA
+    let total = 0; // Total con impuestos
 
-    // Redondear subtotal, descuento y total a dos decimales
+    cart.forEach(item => {
+        const basePrice = parseFloat(item.base_price || 0); // Precio base sin impuestos
+        const productTaxRate = parseFloat(item.tax_rate?.rate || 0); // Tasa de impuesto del producto
+        const clientTaxRate = client?.tax_rate?.rate !== undefined ? parseFloat(client.tax_rate.rate) : null; // Tasa de impuesto del cliente
+        const finalTaxRate = clientTaxRate !== null ? clientTaxRate : productTaxRate; // Priorizar el cliente si tiene tasa asignada
+        const quantity = parseInt(item.quantity || 1);
+
+        if (isNaN(basePrice) || isNaN(finalTaxRate) || isNaN(quantity)) {
+            console.error(`Error en datos del producto:`, item);
+            return; // Saltar este ítem si los datos no son válidos
+        }
+
+        const taxAmount = (basePrice * finalTaxRate / 100) * quantity;
+        const itemTotal = (basePrice * quantity) + taxAmount;
+
+        subtotal += basePrice * quantity;
+        totalTax += taxAmount;
+        total += itemTotal;
+    });
+
+    // Redondear valores a dos decimales
     subtotal = Math.round(subtotal * 100) / 100;
+    totalTax = Math.round(totalTax * 100) / 100;
     total = Math.round(total * 100) / 100;
-    discount = Math.round(discount * 100) / 100;
 
-    // Mostrar los valores redondeados con dos decimales y separadores de miles
-    $('.subtotal').text(`${currencySymbol}${subtotal.toFixed(2).toLocaleString('es-ES')}`);
-    $('.total').text(`${currencySymbol}${total.toFixed(2).toLocaleString('es-ES')}`);
-    $('.discount-amount').text(`${currencySymbol}${discount.toFixed(2).toLocaleString('es-ES')}`);
+    // Formatear valores para mostrarlos con separadores de miles y dos decimales
+    const formattedSubtotal = subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+    const formattedTotalTax = totalTax.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+    const formattedTotal = total.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+
+    // Actualizar los valores en la interfaz
+    $('.subtotal').text(`${currencySymbol}${formattedSubtotal}`);
+    $('.iva-total').text(`${currencySymbol}${formattedTotalTax}`);
+    $('.total').text(`${currencySymbol}${formattedTotal}`);
   }
+
+
+
+
 
   function aplicarDescuento() {
     const couponCode = $('#coupon-code').val();
@@ -730,51 +759,88 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
   function updateCheckoutCart() {
     let cartHtml = '';
-    let subtotal = 0;
+    let subtotal = 0; // Subtotal sin impuestos
+    let totalTax = 0; // Total del IVA
+    let total = 0; // Total con impuestos
+
+    console.log('Carrito actual:', cart); // Verificar el estado del carrito
 
     cart.forEach(item => {
-      const itemPrice = item.price && !isNaN(item.price) ? item.price : 0;  // Asegurar que el precio es válido
-      const itemTotal = itemPrice * item.quantity;
-      subtotal += itemTotal;
+      const basePrice = parseFloat(item.base_price || 0); // Asegurar que sea un número válido
+      const taxRate = parseFloat(item.tax_rate?.rate || 0); // Extraer y validar la tasa de impuesto
+      const quantity = parseInt(item.quantity || 1); // Validar cantidad
 
-      // Redondear el precio del producto y el total del ítem a dos decimales
-      const formattedItemPrice = (Math.round(itemPrice * 100) / 100).toLocaleString('es-ES', {
-        minimumFractionDigits: 2
-      });
-      const formattedItemTotal = (Math.round(itemTotal * 100) / 100).toLocaleString('es-ES', {
-        minimumFractionDigits: 2
-      });
+      if (isNaN(basePrice) || isNaN(taxRate) || isNaN(quantity)) {
+          console.error(`Error en datos del producto:`, item);
+          return; // Saltar este ítem si los datos no son válidos
+      }
 
-      cartHtml += `
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-                <img src="${baseUrl}${item.image}" alt="${item.name}" class="img-thumbnail me-2" style="width: 50px;">
-                <div>
-                    <h6 class="mb-0">${item.name}</h6>
-                    <small class="text-muted">Cantidad: ${item.quantity} x ${currencySymbol}${formattedItemPrice}</small>
-                </div>
-            </div>
-            <span>${currencySymbol}${formattedItemTotal}</span>
-        </li>
+      const taxAmount = (basePrice * taxRate / 100) * quantity;
+      const itemTotal = (basePrice * quantity) + taxAmount;
+
+      subtotal += basePrice * quantity;
+      totalTax += taxAmount;
+      total += itemTotal;
+
+
+        // Formatear los precios para mostrarlos
+        const formattedBasePrice = basePrice.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+        const formattedItemTotal = itemTotal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+
+        // Renderizar el HTML del producto con validaciones
+        cartHtml += `
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center">
+                  <img src="${baseUrl}${item.image || 'default.jpg'}" alt="${item.name || 'Producto'}" class="img-thumbnail me-2" style="width: 50px;">
+                  <div>
+                      <h6 class="mb-0 text-truncate" style="max-width: 150px;">${item.name || 'Sin nombre'}</h6>
+                      <small class="text-muted">Cantidad: ${quantity} x ${currencySymbol}${formattedBasePrice}</small>
+                  </div>
+              </div>
+              <span>${currencySymbol}${formattedItemTotal}</span>
+            </li>
         `;
     });
 
-    let total = subtotal - discount;
-    if (total < 0) total = 0;
-
-    // Redondear subtotal y total a dos decimales
+    // Redondear valores a dos decimales
     subtotal = Math.round(subtotal * 100) / 100;
+    totalTax = Math.round(totalTax * 100) / 100;
     total = Math.round(total * 100) / 100;
 
+    console.log('Resumen de totales:', {
+        subtotal,
+        totalTax,
+        total
+    });
+
+    // Formatear valores para mostrarlos con separadores de miles y dos decimales
     const formattedSubtotal = subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+    const formattedTotalTax = totalTax.toLocaleString('es-ES', { minimumFractionDigits: 2 });
     const formattedTotal = total.toLocaleString('es-ES', { minimumFractionDigits: 2 });
 
-    $('.list-group-flush').html(cartHtml);
-    $('.subtotal').text(`${currencySymbol}${formattedSubtotal}`);
-    $('.total').text(`${currencySymbol}${formattedTotal}`);
+    console.log('Valores formateados:', {
+        formattedSubtotal,
+        formattedTotalTax,
+        formattedTotal
+    });
 
+    // Actualizar los valores en la interfaz
+    $('.list-group-flush').html(cartHtml); // Renderizar el carrito
+    $('.subtotal').text(`${currencySymbol}${formattedSubtotal}`); // Mostrar subtotal sin impuestos
+    $('.iva-total').text(`${currencySymbol}${formattedTotalTax}`); // Mostrar total del IVA
+    $('.total').text(`${currencySymbol}${formattedTotal}`); // Mostrar total con impuestos
+
+    // Verificar si el carrito está vacío y mostrar un mensaje
+    if (cart.length === 0) {
+        $('.list-group-flush').html('<li class="list-group-item text-center">El carrito está vacío.</li>');
+    }
+
+    // Llamar a la función de cálculo total si es necesario
     calcularTotal();
-  }
+}
+
+
+
 
   $('.discount-section button').on('click', function () {
     aplicarDescuento();
@@ -982,8 +1048,8 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
       $('.responsible-text').hide();
 
-      $('#rutField, #razonSocialField').hide();
-      $('#razonSocialCliente, #rutCliente').val('').removeAttr('required');
+      $('#rutField, #razonSocialField, #taxIdField').hide();
+      $('#razonSocialCliente, #rutCliente, #taxIdCliente').val('').removeAttr('required');
       $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').hide();
 
     } else if (tipo == 'company') {
@@ -996,8 +1062,8 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
       $('.responsible-text').show();
 
-      $('#rutField, #razonSocialField').show();
-      $('#razonSocialCliente, #rutCliente').attr('required', true);
+      $('#rutField, #razonSocialField, #taxIdField').show();
+      $('#razonSocialCliente, #rutCliente, #taxIdField').attr('required', true);
       $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').show();
     }
   });
@@ -1014,6 +1080,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     const direccion = document.getElementById('direccionCliente');
     const razonSocial = document.getElementById('razonSocialCliente');
     const priceList = document.getElementById('price_list_id');
+    const taxId = document.getElementById('taxIdCliente');
 
     let hasError = false;
     clearErrors();
@@ -1041,6 +1108,11 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     if (tipo.value === 'company') {
       if (rut.value.trim() === '') {
         showError(rut, 'Este campo es obligatorio para empresas');
+        missingFields.push('RUT');
+      }
+
+      if (taxId.value.trim() === '') {
+        showError(taxId, 'Este campo es obligatorio para empresas');
         missingFields.push('RUT');
       }
 
@@ -1078,6 +1150,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     } else if (tipo.value === 'company') {
       data.rut = rut.value.trim();
       data.company_name = razonSocial.value.trim();
+      data.tax_rate_id = taxId.value;
     }
     // Realizar la petición para crear el cliente
     fetch(`${baseUrl}admin/clients`, {
@@ -1194,8 +1267,18 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     let cashSales = 0;
     let posSales = 0;
 
-    const total = parseFloat($('.total').text().replace(/[^\d.-]/g, '')) || 0;
-    const subtotal = parseFloat($('.subtotal').text().replace(/[^\d.-]/g, '')) || 0;
+    const subtotal = cart.reduce((sum, item) => sum + (item.base_price * item.quantity), 0);
+    const tax = cart.reduce((sum, item) => {
+      const taxRate = parseFloat(item.tax_rate?.rate || 0);
+      return sum + ((item.base_price * taxRate / 100) * item.quantity);
+    }, 0);
+
+    const total = subtotal + tax - discount; // Aplicar el descuento al total si es necesario
+
+    console.log('Subtotal de la venta:', subtotal.toFixed(2));
+    console.log('Tax (Impuestos):', tax.toFixed(2));
+    console.log('Total de la venta:', total.toFixed(2));
+
 
     if (total > 25000 && (!client || !client.id)) {
         mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
@@ -1219,6 +1302,8 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         quotas = parseInt($('#quotas').val()) || 1; // Valor predeterminado de 1 si está vacío o no válido
     }
 
+    console.log('carrito al crear venta:', cart);
+
     const orderData = {
         date: new Date().toISOString().split('T')[0],
         hour: new Date().toLocaleTimeString('it-IT'),
@@ -1229,12 +1314,15 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         products: JSON.stringify(cart.map(item => ({
             id: item.id,
             name: item.name,
+            base_price: item.base_price,
             price: item.price,
             quantity: item.quantity,
-            is_composite: item.isComposite || false
+            is_composite: item.isComposite || false,
+            tax_rate: item.tax_rate?.rate || 0
         }))),
-        subtotal: subtotal,
-        total: total - discount,
+        subtotal: subtotal.toFixed(2),
+        tax: tax.toFixed(2),
+        total: total.toFixed(2),
         notes: $('textarea').val() || '',
         store_id: sessionStoreId,
         shipping_status: shippingStatus,

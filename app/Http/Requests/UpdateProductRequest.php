@@ -21,9 +21,10 @@ class UpdateProductRequest extends FormRequest
             'max_flavors' => 'nullable|integer|min:1',
             'old_price' => 'required|numeric',
             'price' => 'nullable|numeric',
+            'tax_rate_id' => 'required|numeric',
             'discount' => 'nullable|numeric',
             'store_id' => 'required|exists:stores,id',
-            'status' => 'required|boolean',
+            'status' => 'required|int',
             'show_in_catalogue' => 'required|boolean',
             'stock' => 'nullable|integer',
             'safety_margin' => 'nullable|numeric',
@@ -39,22 +40,22 @@ class UpdateProductRequest extends FormRequest
             'recipes.*.used_flavor_id' => 'nullable|exists:flavors,id',
             'recipes.*.units_per_bucket' => 'nullable|numeric|min:1',
             'build_price' => 'nullable|numeric',
-    
+
             'features' => 'array',
             'features.*.name' => 'nullable|string|max:255',
-    
+
             'sizes' => 'array',
             'sizes.*.size' => 'nullable|string|max:255',
             'sizes.*.width' => 'nullable|numeric|min:0',
             'sizes.*.height' => 'nullable|numeric|min:0',
             'sizes.*.length' => 'nullable|numeric|min:0',
-    
+
             'colors' => 'array',
             'colors.*.color_name' => 'nullable|string|max:255',
             'colors.*.hex_code' => 'nullable|string|max:255',
         ];
     }
-    
+
 
     public function withValidator($validator)
     {
@@ -68,5 +69,5 @@ class UpdateProductRequest extends FormRequest
         });
     }
 
-    
+
 }

@@ -17,6 +17,7 @@ use App\Models\Store;
 use Illuminate\Http\Request;
 use App\Services\ExportService;
 use App\Models\Product;
+use App\Models\TaxRate;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\GenericExport;
 use App\Imports\ProductsImport;
@@ -93,9 +94,11 @@ class ProductController extends Controller
    */
   public function show(int $id): View
   {
-    $product = $this->productRepo->show($id);
-    return view('content.e-commerce.backoffice.products.show-product', $product);
+      $productData = $this->productRepo->show($id); // Esto ya contiene 'product'
+      $taxRates = TaxRate::all();
+      return view('content.e-commerce.backoffice.products.show-product', array_merge($productData, compact('taxRates')));
   }
+
 
     /**
    * Muestra una lista de todos los productos para Stock.
@@ -121,9 +124,11 @@ class ProductController extends Controller
   */
   public function create(): View
   {
-    $product = $this->productRepo->create();
-    return view('content.e-commerce.backoffice.products.add-product', $product);
+      $product = $this->productRepo->create();
+      $taxRates = TaxRate::all();
+      return view('content.e-commerce.backoffice.products.add-product', array_merge($product, compact('taxRates')));
   }
+
 
     /**
      * Almacena un nuevo producto en la base de datos.
@@ -168,9 +173,10 @@ class ProductController extends Controller
   {
       try {
           $data = $this->productRepo->edit($id);
+          $taxRates = TaxRate::all();
           \Log::info('Vista de edición cargada correctamente:', ['product_id' => $id]);
-          return view('content.e-commerce.backoffice.products.edit-product', $data);
-      } catch (\Exception $e) {
+          return view('content.e-commerce.backoffice.products.edit-product', array_merge($data, compact('taxRates')));
+        } catch (\Exception $e) {
           \Log::error('Error al cargar la vista de edición:', ['product_id' => $id, 'error' => $e->getMessage()]);
           return redirect()->route('products.index')->with('error', 'No se pudo cargar el producto para editar.');
       }

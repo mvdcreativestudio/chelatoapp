@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\Client;
 use App\Models\PriceList;
 use App\Models\Store;
+use App\Models\TaxRate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
@@ -59,8 +60,11 @@ class ClientController extends Controller
         // Obtener todas las listas de precios disponibles
         $priceLists = PriceList::all();
 
+        // Obtener Tasas de IVA disponibles (No se crean clientes con IVA Tasa Minima 10%)
+        $taxRates = TaxRate::where('rate', '!=', 10.00)->get();
 
-        return view('content.clients.clients', compact('companySettings', 'store', 'priceLists', 'stores'));
+
+        return view('content.clients.clients', compact('companySettings', 'store', 'priceLists', 'stores', 'taxRates'));
     }
 
 
@@ -154,6 +158,10 @@ class ClientController extends Controller
         // Obtén el cliente con sus listas de precios asociadas
         $client = $this->clientRepository->getClientById($id);
 
+        Log::error('Cliente obtenido', ['client' => $client]);
+
+        $taxRates = TaxRate::all();
+
         if (Auth::user()->can('view_all_price-lists')) {
             $priceLists = PriceList::all();
         } else {
@@ -165,7 +173,7 @@ class ClientController extends Controller
             ? $client->priceLists->first()->name
             : 'Sin lista de precios';
 
-        return view('content.clients.show', compact('client', 'priceLists', 'priceListName'));
+        return view('content.clients.show', compact('client', 'priceLists', 'priceListName', 'taxRates'));
     }
 
 
@@ -179,11 +187,12 @@ class ClientController extends Controller
     {
         $client = $this->clientRepository->getClientById($id);
         $orders = $client->orders;
+        $taxRates = TaxRate::all();
 
-        return view('content.clients.edit', compact('client'));
+        return view('content.clients.edit', compact('client', 'orders', 'taxRates'));
     }
 
-    /**
+/**
      * Actualiza un cliente existente en la base de datos.
      *
      * @param UpdateClientRequest $request
@@ -229,6 +238,7 @@ class ClientController extends Controller
             return response()->json(['success' => false, 'message' => 'Error al actualizar el cliente: ' . $e->getMessage()], 500);
         }
     }
+
 
 
     /**

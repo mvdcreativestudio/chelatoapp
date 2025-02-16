@@ -234,20 +234,41 @@ class DashboardRepository
         $today = Carbon::now()->toDateString();
 
         $totalIncome = Order::where('payment_status', 'paid')
-            ->whereDate('date', $today)
-            ->sum('total');
+        ->whereDate('date', $today)
+        ->sum(DB::raw('total - COALESCE(tax, 0)'));
+
+        $totalTax = Order::where('payment_status', 'paid')
+        ->whereDate('date', $today)
+        ->sum('tax');
+
 
         $totalExpenses = Expense::where('status', 'paid')
-            ->whereDate('due_date', $today)
-            ->sum('amount');
+        ->whereDate('due_date', $today)
+        ->sum('amount');
 
-        $balance = $totalIncome - $totalExpenses;
+        $balance = $totalIncome + $totalTax - $totalExpenses;
 
         return [
             'income' => $totalIncome,
             'expenses' => $totalExpenses,
-            'balance' => $balance
+            'balance' => $balance,
+            'tax' => $totalTax
         ];
     }
+
+    /**
+     * Retorna el total de IVA cobrado en el día
+     *
+     *
+     */
+    public function getDailyTax()
+    {
+        $tax = Order::whereDate('date', Carbon::now())
+            ->where('payment_status', 'paid')
+            ->sum('tax');
+
+        return $tax;
+    }
+
 
 }

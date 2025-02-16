@@ -55,11 +55,12 @@ class ProductRepository
    */
   public function show(int $id): array
   {
-    $product = Product::with('categories', 'store', 'flavors', 'recipes.rawMaterial', 'recipes.usedFlavor')
-      ->findOrFail($id);
+    $product = Product::with('taxRate', 'categories', 'store', 'flavors', 'recipes.rawMaterial', 'recipes.usedFlavor')
+          ->findOrFail($id);
 
     return compact('product');
   }
+
 
 
   /**
@@ -85,6 +86,7 @@ class ProductRepository
         'max_flavors',
         'old_price',
         'price',
+        'tax_rate_id',
         'discount',
         'store_id',
         'status',
@@ -293,6 +295,7 @@ class ProductRepository
         'max_flavors',
         'old_price',
         'price',
+        'tax_rate_id',
         'discount',
         'store_id',
         'status',
