@@ -8,6 +8,7 @@ use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateCashRegisterLogRequest;
 use App\Models\MercadoPagoAccountPOS;
 use App\Models\Product;
+use App\Models\TaxRate;
 use App\Repositories\CashRegisterLogRepository;
 use App\Repositories\CashRegisterRepository;
 use Illuminate\Http\JsonResponse;
@@ -38,17 +39,19 @@ class CashRegisterLogController extends Controller
         return view('pdv.index');
     }
 
-    public function newSale()
+    public function cart()
     {
         $products = Product::all();
+        $taxRates = TaxRate::all();
         $userId = auth()->user()->id;
         $openCashRegisterId = $this->cashRegisterLogRepository->hasOpenLogForUser($userId);
         $storeId = $this->cashRegisterRepository->findStoreByCashRegisterId($openCashRegisterId);
         Session::put('open_cash_register_id', $openCashRegisterId);
         Session::put('store_id', $storeId);
         $priceLists = PriceList::all();
-        return view('pdv.new-sale', compact('products', 'priceLists'));
+        return view('pdv.cart', compact('products', 'priceLists', 'taxRates'));
     }
+
 
     public function checkout()
     {
@@ -77,10 +80,16 @@ class CashRegisterLogController extends Controller
         $posDeviceName = $posDevice ? $posDevice->pos_device_name : null;
         $enableMercadoPagoAccountPos = MercadoPagoAccountPOS::where('cash_register_id', $openCashRegisterId)->exists();
         $priceLists = PriceList::all();
+        $taxRates = TaxRate::all();
 
-        return view('pdv.checkout', compact('store', 'priceLists', 'enableMercadoPagoAccountPos', 'posDeviceName'));
+        return view('pdv.checkout', compact('store', 'priceLists', 'enableMercadoPagoAccountPos', 'posDeviceName', 'taxRates'));
     }
 
+    public function taxRates()
+    {
+        $taxRates = TaxRate::all();
+        return response()->json(['taxRates' => $taxRates]);
+    }
 
 
 

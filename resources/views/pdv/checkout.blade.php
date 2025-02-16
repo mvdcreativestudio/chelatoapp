@@ -21,7 +21,7 @@
 <script>
     window.cashRegisterId = "{{ Session::get('open_cash_register_id') }}";
     window.baseUrl = "{{ url('') }}/";
-    window.frontRoute = "{{ route('pdv.new-sale') }}";
+    window.frontRoute = "{{ route('pdv.cart') }}";
     // Configuración de las respuestas del POS Scanntech
     const posResponsesConfig = @json(config('posResponses'));
     window.currencySymbol = '{{ $currencySymbol }}';
@@ -40,7 +40,7 @@
     <div class="col-12 d-flex justify-content-between align-items-center mb-4">
       <h5 class="mb-0">
         <button class="btn m-0 p-0">
-          <a href="{{ route('pdv.new-sale') }}"><i class="bx bx-chevron-left fs-2"></i></a>
+          <a href="{{ route('pdv.cart') }}"><i class="bx bx-chevron-left fs-2"></i></a>
         </button> Atras
       </h5>
     </div>
@@ -129,6 +129,10 @@
         <div class="d-flex justify-content-between">
           <span>Subtotal de productos</span>
           <span class="subtotal">$0.00</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>IVA</span>
+          <span class="iva-total">$0.00</span> <!-- Nuevo campo para mostrar el IVA -->
         </div>
         <div class="d-flex justify-content-between">
           <span>Descuentos</span>
@@ -291,7 +295,7 @@
     </div>
 
       <div class="demo-inline-spacing d-flex justify-content-between">
-        <a href="{{ route('pdv.new-sale') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
+        <a href="{{ route('pdv.cart') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
         <button class="btn btn-success w-100"><i class="bx bx-check"></i> Finalizar venta</button>
       </div>
       <!-- Contenedor para el estado de la transacción -->
@@ -345,6 +349,18 @@
           <option value="company">Empresa</option>
         </select>
       </div>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="taxIdField" style="display: none;">
+        <select id="taxIdCliente" name="tax_rate_id" for="tax_rate_id" class="form-control">
+          <option value="" disabled selected>Seleccione una tasa de impuestos</option>
+          @foreach($taxRates as $taxRate)
+              <option value="{{ $taxRate->id }}">
+                  {{ $taxRate->name }} ({{ $taxRate->rate }}%)
+              </option>
+          @endforeach
+        </select>
+      </div>
+      
       <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
         <label for="razonSocialCliente" class="form-label">
           Razón Social *<span class="text-danger">*</span>

@@ -38,8 +38,10 @@ class DashboardController extends Controller
 
         $dailyBalance = $this->dashboardRepository->getDailyBalance();
 
+        $dailyTax = $this->dashboardRepository->getDailyTax();
 
-        return view('content.dashboard.index', compact('stores', 'user', 'products','amountOfOrders','unpaidExpenses','monthlyExpenses','dailyBalance'));
+
+        return view('content.dashboard.index', compact('stores', 'user', 'products','amountOfOrders','unpaidExpenses','monthlyExpenses','dailyBalance', 'dailyTax'));
     }
 
     /*

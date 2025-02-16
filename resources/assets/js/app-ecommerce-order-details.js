@@ -30,42 +30,63 @@ $(function () {
           }
         },
         {
-          // Precio del producto
-          data: 'price',
-          render: function (data, type, full, meta) {
-            return `${currencySymbol}${parseFloat(data).toFixed(2)}`;
+          // Precio unitario sin IVA
+          data: 'base_price',
+          render: function (data) {
+            return `${currencySymbol}${parseFloat(data).toFixed(2)} (Sin IVA)`;
           }
         },
-        { data: 'quantity' },
         {
-          // Total por producto
+          // IVA aplicado por unidad
+          data: 'tax_rate',
+          render: function (data, type, row) {
+            if (parseFloat(data) === 0) {
+              return `${currencySymbol}0.00 (0%)`;
+            } else {
+              var taxAmount = row.base_price * (parseFloat(data) / 100);
+              return `${currencySymbol}${taxAmount.toFixed(2)} (${parseFloat(data).toFixed(0)}%)`;
+            }
+          }
+        },
+        {
+          // Precio total unitario con IVA
+          data: 'price',
+          render: function (data) {
+            return `${currencySymbol}${parseFloat(data).toFixed(2)} (Con IVA)`;
+          }
+        },
+        {
+          // Cantidad
+          data: 'quantity',
+          render: function (data) {
+            return `${data}`;
+          }
+        },
+        {
+          // Total por producto (cantidad * precio unitario con IVA)
           data: null,
-          render: function (data, type, row, meta) {
-            return `${currencySymbol}${(row.price * row.quantity).toFixed(2)}`;
+          render: function (data, type, row) {
+            var total = row.price * row.quantity;
+            return `${currencySymbol}${total.toFixed(2)}`;
           }
         }
       ],
       columnDefs: [
         {
-          // Renderizar Precio
-          targets: 2,
-          render: function (data, type, full, meta) {
-            return `${currencySymbol}${parseFloat(data).toFixed(2)}`;
-          }
-        },
-        {
-          // Renderizar Total por Producto
+          // Total por producto (cantidad * precio unitario con IVA)
           targets: -1,
-          render: function (data, type, full, meta) {
-            return `${currencySymbol}${(full.price * full.quantity).toFixed(2)}`;
+          render: function (data, type, row) {
+            var total = row.price * row.quantity;
+            return `${currencySymbol}${total.toFixed(2)}`;
           }
         }
       ],
-      order: [2, ''],
-      dom: 't'
+      order: [1, 'asc'], // Ordena por nombre del producto
+      dom: 't' // Solo muestra la tabla sin controles adicionales
     });
   }
 });
+
 
 document.addEventListener('DOMContentLoaded', function () {
   // Inicializar tooltips
@@ -688,7 +709,7 @@ document.addEventListener('DOMContentLoaded', function () {
               billingModal.show();
           }
       });
-      
+
       },
       error: function (xhr) {
         const errors = xhr.responseJSON.errors;

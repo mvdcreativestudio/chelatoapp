@@ -319,7 +319,7 @@ Route::prefix('admin')->middleware([
     Route::post('/pdv/close/{id}', [CashRegisterLogController::class, 'closeCashRegister']);
     Route::get('/pdv/clients/json', [CashRegisterLogController::class, 'getAllClients']);
     Route::get('/pdv', [CashRegisterLogController::class, 'index'])->name('pdv.index');
-    Route::get('/pdv/new-sale', [CashRegisterLogController::class, 'newSale'])->name('pdv.new-sale');
+    Route::get('/pdv/cart', [CashRegisterLogController::class, 'cart'])->name('pdv.cart');
     Route::get('/pdv/checkout', [CashRegisterLogController::class, 'checkout'])->name('pdv.checkout');
 
     // Productos para caja registradora
@@ -330,11 +330,12 @@ Route::prefix('admin')->middleware([
     Route::get('/pdv/log/{id}', [CashRegisterLogController::class, 'getCashRegisterLog']);
 
     Route::get('/pdv/product-categories', [CashRegisterLogController::class, 'getCategories']);
-    Route::post('/pdv/cart', [CashRegisterLogController::class, 'saveCart']);
-    Route::get('/pdv/cart', [CashRegisterLogController::class, 'getCart']);
+    Route::post('/pdv/api-cart', [CashRegisterLogController::class, 'saveCart']);
+    Route::get('/pdv/api-cart', [CashRegisterLogController::class, 'getCart']);
     Route::post('/pdv/client-session', [CashRegisterLogController::class, 'saveClient']);
     Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient'])  ;
     Route::get('/pdv/storeid-session', [CashRegisterLogController::class, 'getStoreId']);
+    Route::get('/pdv/tax-rates', [CashRegisterLogController::class, 'taxRates']);
 
     // Datacenter
     Route::get('/datacenter-sales', [DatacenterController::class, 'sales'])->name('datacenter.sales');

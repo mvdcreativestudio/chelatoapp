@@ -105,6 +105,15 @@ class StoreClientRequest extends FormRequest
                     }
                 },
             ],
+            'tax_rate_id' => [
+              'nullable',
+              'integer',
+              function ($attribute, $value, $fail) {
+                  if ($this->type === 'company' && empty($value)) {
+                      $fail('La Tasa de IVA es obligatoria en este tipo de cliente');
+                  }
+              },
+            ],
             'address' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
             'state' => 'nullable|string|max:255',
@@ -133,6 +142,7 @@ class StoreClientRequest extends FormRequest
             'email.email' => 'El correo electrónico debe ser una dirección válida.',
             'email.unique' => 'El correo electrónico ya está en uso.',
             'ci.required_if' => 'La CI es obligatoria para clientes de tipo Persona',
+            'tax_rate_id.required_if' => 'La Tasa de IVA es obligatoria para clientes de tipo Empresa',
         ];
     }
 }

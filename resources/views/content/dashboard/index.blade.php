@@ -109,9 +109,8 @@
         <div class="text-end">
           <p class="m-0">Ingresos: <span class="fw-bold">${{ number_format($dailyBalance['income'], 2) }}</span></p>
           <p class="m-0">Egresos: <span class="fw-bold">${{ number_format($dailyBalance['expenses'], 2) }}</span></p>
-          <p class="m-0">Total: <span class="fw-bold">
-              {{ $dailyBalance['balance'] > 0 ? '+' : ($dailyBalance['balance'] < 0 ? '-' : '') }}
-              ${{ number_format(abs($dailyBalance['balance']), 2) }}
+          <p class="m-0">IVA Cobrado: <span class="fw-bold">
+              ${{ number_format(abs($dailyTax), 2) }}
             </span></p>
         </div>
       </div>

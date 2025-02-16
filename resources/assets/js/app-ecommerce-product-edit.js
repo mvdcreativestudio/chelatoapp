@@ -382,7 +382,7 @@ function initRepeater() {
   document.getElementById('addRawMaterial').addEventListener('click', () => {
     addRawMaterialRow();
   });
-  
+
   document.getElementById('addUsedFlavor').addEventListener('click', () => {
     addUsedFlavorRow();
   });

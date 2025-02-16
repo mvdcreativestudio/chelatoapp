@@ -3,23 +3,37 @@
 @section('title', 'Editar Lista de Precios')
 
 @section('content')
+
 <div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">
-                    {{ $priceList->name }}
-                </h4>
-                <a href="#" id="backButton" class="btn btn-sm btn-primary">
-                    <i class="bx bx-arrow-back me-1"></i> Volver
-                </a>
-              </div>
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center">
+            <!-- Contenedor de botones con alineación -->
+            <div class="d-flex align-items-center">
+              <a href="{{ route('price-lists.show', $priceList->id) }}" class="btn btn-sm btn-primary me-2">
+                <i class="bx bx-arrow-back me-1"></i>Volver
+              </a>
+              @can('access_delete-price-lists')
+              <form id="delete-form" action="{{ route('price-lists.destroy', $priceList->id) }}" method="POST" class="m-0">
+                  @csrf
+                  @method('DELETE')
+                  <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDelete()">
+                      <i class="bx bx-trash"></i> Eliminar
+                  </button>
+              </form>
+              @endcan
             </div>
+            <!-- Título -->
+            <h4 class="mb-0">
+              {{ $priceList->name }}
+            </h4>
           </div>
         </div>
+      </div>
     </div>
+  </div>
 
 
     @if(session('success'))
@@ -116,23 +130,25 @@
             console.log('Error al cargar productos:', xhr);
         }
     });
+
+        // Función para mostrar la confirmación de eliminación con SweetAlert
+        window.confirmDelete = function() {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Se perderá toda la información de esta lista de precios.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('delete-form').submit();
+            }
+        });
+    };
 });
 </script>
-
-<script>
-    document.getElementById('backButton').addEventListener('click', function (event) {
-      event.preventDefault();
-
-      // Obtener la URL de la página anterior
-      var previousPage = document.referrer;
-
-      // Verificar si la página anterior es la misma que la actual
-      if (previousPage && previousPage !== window.location.href) {
-        window.location.href = previousPage; // Redirigir a la página anterior si es diferente
-      } else {
-        window.location.href = "{{ route('price-lists.index') }}"; // Redirigir a una página específica si es la misma
-      }
-    });
-  </script>
 
 @endsection

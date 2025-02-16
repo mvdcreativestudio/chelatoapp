@@ -3,6 +3,12 @@
 
 
 $(document).ready(function () {
+
+    // Asignar los taxRates desde la variable global
+    loadTaxRates().then(() => {
+      loadProducts(); // Cargá productos solo después de cargar impuestos
+    });
+
     const cashRegisterId = window.cashRegisterId;
     console.log('cashRegisterId:', cashRegisterId);
     const baseUrl = window.baseUrl;
@@ -62,6 +68,30 @@ $(document).ready(function () {
         extendedTimeOut: 1000            // Tiempo adicional antes de que desaparezca al hacer hover
     };
 
+    // Función para cargar los tax_rates
+    function loadTaxRates() {
+      return $.ajax({
+          url: `tax-rates`, // Endpoint del backend
+          type: 'GET',
+          success: function (response) {
+              // Cambiar a "response.taxRates" según el formato que llega del backend
+              if (response && response.taxRates) {
+                  taxRates = response.taxRates; // Asignar tasas globalmente
+                  console.log('Tasas de impuestos cargadas:', taxRates); // Verificar tasas cargadas
+              } else {
+                  console.warn('No se encontraron tasas de impuestos.');
+                  taxRates = []; // Vaciar si no se cargan correctamente
+              }
+          },
+          error: function (xhr) {
+              console.error('Error al cargar las tasas de impuestos:', xhr.responseText);
+          }
+      });
+    }
+
+
+
+
     // Cargar el cliente de la sesión
     function loadClientFromSession() {
         console.log('Ejecutando loadClientFromSession...'); // Marca el inicio de la ejecución de la función
@@ -104,7 +134,7 @@ $(document).ready(function () {
     // Cargar el carrito desde el servidor
     function loadCart() {
         $.ajax({
-            url: `cart`,
+            url: `api-cart`,
             type: 'GET',
             dataType: 'json',
             success: function (response) {
@@ -122,12 +152,15 @@ $(document).ready(function () {
     // Guardar el carrito en el servidor
     function saveCart() {
         $.ajax({
-            url: `cart`,
+            url: `api-cart`,
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ cart: cart }),
+            data: JSON.stringify({ cart: cart.map(item => ({
+                ...item,
+                tax_rate: { ...item.tax_rate }, // Asegurar que se envía el objeto completo
+            })) }),
             headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
             },
         });
     }
@@ -251,34 +284,58 @@ $(document).ready(function () {
 
     // Función para cargar productos
     function loadProducts() {
-        $.ajax({
-            url: `products/${cashRegisterId}`,
-            type: 'GET',
-            dataType: 'json',
-            success: function (response) {
-                if (response && response.products) {
+      $.ajax({
+          url: `products/${cashRegisterId}`,
+          type: 'GET',
+          dataType: 'json',
+          success: function (response) {
+              if (response && response.products) {
                     products = response.products.map(product => {
-                        // Asegura que original_price se establezca solo si aún no existe
-                        if (typeof product.original_price === 'undefined') {
-                            product.original_price = product.price || product.old_price;
-                        }
-                        return product;
-                    });
+                      const taxRate = taxRates.find(rate => rate.id == product.tax_rate_id);
 
-                    if (isListView) {
-                        displayProductsList(products); // Mostrar la vista de lista por defecto
-                    } else {
-                        displayProducts(products);
-                    }
-                } else {
-                    alert('No se encontraron productos.');
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('Error al obtener los productos:', error);
-            }
-        });
+                      // Asignar el taxRate al producto
+                      product.tax_rate = taxRate || { rate: 0, name: 'Sin impuesto' };
+
+                      console.log('Producto:', product.name, 'Tax Rate:', product.tax_rate);
+
+                      // Calcular el precio final con impuestos
+                      product.final_price = calculateFinalPrice(
+                          product.price || product.old_price,
+                          product.tax_rate.rate
+                      );
+
+                      return product;
+                  });
+
+
+                  // Renderizar productos
+                  if (isListView) {
+                      displayProductsList(products);
+                  } else {
+                      displayProducts(products);
+                  }
+              } else {
+                  alert('No se encontraron productos.');
+              }
+          },
+          error: function (xhr, status, error) {
+              console.error('Error al obtener los productos:', error);
+          }
+      });
     }
+
+
+    // Cargar precio final ($precio * impuesto)
+    function calculateFinalPrice(basePrice, taxRate) {
+      if (!basePrice || basePrice <= 0) return 0; // Validar precio base
+      if (!taxRate || taxRate < 0) taxRate = 0;  // Validar tasa de impuesto
+      console.log('Calculando precio final:', { basePrice, taxRate });
+      return basePrice * (1 + (taxRate / 100));
+    }
+
+
+
+
 
     // Cargar variaciones desde el backend
     function cargarVariaciones() {
@@ -327,8 +384,8 @@ $(document).ready(function () {
 
         let productsHtml = '';
         productsToDisplay.forEach(product => {
-            const priceToDisplay = product.price ? product.price : product.old_price;
-            const inactiveLabel = product.status == 2 ? `<span class="badge bg-warning text-dark position-absolute top-0 start-0 m-1">Inactivo</span>` : '';
+          const priceToDisplay = product.final_price.toFixed(2);
+          const inactiveLabel = product.status == 2 ? `<span class="badge bg-warning text-dark position-absolute top-0 start-0 m-1">Inactivo</span>` : '';
             const oldPriceHtml = product.price && product.old_price ? `<span class="text-muted" style="font-size: 0.8em;"><del>${currencySymbol}${product.old_price}</del></span>` : '';
 
             // Añadir indicador de stock
@@ -378,7 +435,7 @@ $(document).ready(function () {
         }
         let productsHtml = '<ul class="list-group w-100 p-0">';
         productsToDisplay.forEach(product => {
-            const priceToDisplay = product.price ? product.price.toLocaleString('es-ES') : product.old_price.toLocaleString('es-ES');
+            const priceToDisplay = product.final_price.toFixed(2); // Mostrar siempre con dos decimales
             const oldPriceFormatted = product.old_price ? product.old_price.toLocaleString('es-ES') : '';
             const inactiveText = product.status == 0 ? '<span class="badge bg-danger text-white ms-2">Inactivo</span>' : '';
             const oldPriceHtml = product.price && product.old_price ? `<small class="text-muted"><del>${currencySymbol}${oldPriceFormatted}</del></small>` : '';
@@ -420,92 +477,102 @@ $(document).ready(function () {
 
     // Función para agregar un producto al carrito
     function addToCart(productId, productType) {
-        const product = products.find(p => p.id === productId);
+      const product = products.find(p => p.id === productId);
+      if (!product) {
+          mostrarError('Producto no encontrado.');
+          return;
+      }
 
-        // Determinar el precio a usar
-        const priceToUse = product.price ? product.price : product.old_price;
+      const basePrice = product.price || product.old_price || 0; // Precio base
+      const taxRate = product.tax_rate ? parseFloat(product.tax_rate.rate) : 0; // Tasa de impuestos
+      const taxAmountPerUnit = (basePrice * taxRate) / 100; // Impuesto por unidad
+      const priceToUse = basePrice + taxAmountPerUnit; // Precio final con impuestos
 
-        // Comentar para permitir la venta de productos sin stock
-        // Verificar si el producto tiene stock suficiente antes de agregar
-        if (product.stock !== null && product.stock <= 0) {
-            mostrarError('No hay suficiente stock de este producto.');
-            return;
-        }
+      // Validar stock
+      if (product.stock !== null && product.stock <= 0) {
+          mostrarError('No hay suficiente stock de este producto.');
+          return;
+      }
 
-        // Obtener la cantidad deseada del input
-        const quantityInput = $(`.quantity-input[data-id="${productId}"]`);
-        const quantity = parseInt(quantityInput.val());
+      // Obtener la cantidad deseada desde el input
+      const quantityInput = $(`.quantity-input[data-id="${productId}"]`);
+      const quantity = parseInt(quantityInput.val()) || 1;
 
-        if (productType === 'configurable') {
-            // Mostrar el modal para seleccionar variaciones
-            $('#flavorModal').modal('show');
+      // Lógica para productos configurables (compuestos)
+      if (productType === 'configurable') {
+          // Mostrar el modal para seleccionar variaciones
+          $('#flavorModal').modal('show');
 
-            // Guardar el producto temporalmente hasta que se seleccionen los variaciones
-            $('#saveFlavors').off('click').on('click', function () {
-                const selectedFlavors = $('#flavorsSelect').val();
-                if (selectedFlavors.length === 0) {
-                    alert('Debe seleccionar al menos un sabor.');
-                    return;
-                }
+          // Guardar el producto temporalmente hasta que se seleccionen las variaciones
+          $('#saveFlavors').off('click').on('click', function () {
+              const selectedFlavors = $('#flavorsSelect').val(); // Obtener las variaciones seleccionadas
+              if (!selectedFlavors || selectedFlavors.length === 0) {
+                  alert('Debe seleccionar al menos una variación.');
+                  return;
+              }
 
-                var category = categories.find(category => category.product_id == product.id);
-                var category_id = category ? category.category_id : null;
-                // Agregar el producto como nuevo ítem en el carrito
-                cart.push({
-                    id: product.id,
-                    name: product.name,
-                    image: product.image,
-                    price: priceToUse,
-                    original_price: product.original_price, // Almacena el precio original
-                    original_price: priceToUse, // Guardar el precio original
-                    flavors: selectedFlavors,
-                    quantity: quantity, // Usar la cantidad deseada
-                    category_id: category_id,
+              const category = categories.find(category => category.product_id == product.id);
+              const category_id = category ? category.category_id : null;
+
+              // Agregar el producto con variaciones como nuevo ítem en el carrito
+              cart.push({
+                  id: product.id,
+                  name: product.name,
+                  image: product.image,
+                  base_price: basePrice,      // Precio sin impuestos
+                  price: priceToUse,          // Precio con impuestos
+                  original_price: priceToUse, // Guardar el precio original con impuestos
+                  flavors: selectedFlavors,   // Variaciones seleccionadas
+                  quantity: quantity,         // Cantidad seleccionada
+                  category_id: category_id,
+                  tax_rate: product.tax_rate, // Objeto completo de tasa de impuestos
+                  tax: taxAmountPerUnit * quantity, // Impuesto total
                 });
 
-                updateCart();
-                $('#flavorModal').modal('hide');
-                toastr.success(`<strong>${product.name}</strong> agregado correctamente`);
-            });
-        } else {
-            const cartItem = cart.find(item => item.id === productId && item.flavors.length === 0);
-            var category = categories.find(category => category.product_id == product.id);
-            var category_id = category ? category.category_id : null;
+              updateCart();
+              $('#flavorModal').modal('hide');
+              toastr.success(`<strong>${product.name}</strong> agregado correctamente con las variaciones seleccionadas.`);
+          });
+      }
+      // Lógica para productos simples
+      else {
+          const cartItem = cart.find(item => item.id === productId && item.flavors.length === 0); // Buscar ítem sin variaciones
+          const category = categories.find(category => category.product_id == product.id);
+          const category_id = category ? category.category_id : null;
 
-            if (cartItem) {
-                // Verificar si hay stock suficiente para incrementar la cantidad
-                if (product.stock !== null && cartItem.quantity + quantity > product.stock) {
-                    mostrarError('No hay suficiente stock para agregar más unidades de este producto.');
-                    return;
-                }
-                cartItem.quantity += quantity; // Incrementar por la cantidad deseada
-            } else {
-                // Descomentar para no permitir la venta de productos sin stock
-                // Verificar si hay stock suficiente para agregar el producto por primera vez
-                // if (product.stock !== null && product.stock < quantity) {
-                //     mostrarError('No hay suficiente stock de este producto.');
-                //     return;
-                // }
-                cart.push({
-                    id: product.id,
-                    name: product.name,
-                    image: product.image,
-                    price: priceToUse,
-                    original_price: priceToUse, // Guardar el precio original
-                    flavors: [],
-                    quantity: quantity, // Usar la cantidad deseada
-                    category_id: category_id,
-                    isComposite: product.is_composite ? 1 : 0
+          if (cartItem) {
+              // Incrementar cantidad y recalcular impuestos
+              if (product.stock !== null && cartItem.quantity + quantity > product.stock) {
+                  mostrarError('No hay suficiente stock para agregar más unidades de este producto.');
+                  return;
+              }
+              cartItem.quantity += quantity;
+              cartItem.tax += taxAmountPerUnit * quantity; // Incrementar el impuesto total
+          } else {
+              // Agregar el producto como nuevo ítem en el carrito
+              cart.push({
+                  id: product.id,
+                  name: product.name,
+                  image: product.image,
+                  base_price: basePrice,      // Precio sin impuestos
+                  price: priceToUse,          // Precio con impuestos
+                  original_price: priceToUse, // Guardar el precio original con impuestos
+                  flavors: [],                // Sin variaciones
+                  quantity: quantity,         // Cantidad seleccionada
+                  category_id: category_id,
+                  tax_rate: product.tax_rate, // Objeto completo de tasa de impuestos
+                  tax: taxAmountPerUnit * quantity, // Impuesto total
                 });
-            }
+          }
 
-            // Restablecer el contador de cantidad a 1 después de agregar al carrito
-            $(`.quantity-input[data-id="${productId}"]`).val(1);
+          // Restablecer el input de cantidad a 1 después de agregar al carrito
+          quantityInput.val(1);
 
-            updateCart();
-            toastr.success(`<strong>${product.name}</strong> agregado correctamente`);
-        }
+          updateCart();
+          toastr.success(`<strong>${product.name}</strong> agregado correctamente.`);
+      }
     }
+
 
     function addCompositeProductToCart(productId) {
         // Obtener los productos internos que componen el paquete
@@ -541,66 +608,92 @@ $(document).ready(function () {
         }, 5000);
     }
 
-    // Función para actualizar el carrito en el DOM
-    function updateCart() {
-        let cartHtml = '';
-        let subtotal = 0;
-        let totalItems = 0;  // Contador de productos
-
-        cartHtml = `
-        <div class="row gy-3 overflow-auto" style="max-height: 400px;">
-      `;
-
-        cart.forEach(item => {
-            const itemTotal = item.price * item.quantity;
-            subtotal += itemTotal;
-            totalItems += item.quantity;
-
-            cartHtml += `
-            <div class="col-12">
-              <div class="product-cart-card">
-                <div class="col-4 d-flex align-items-center">
-                  <img src="${baseUrl + item.image}" class="img-fluid product-cart-card-img" alt="${item.name}">
-                </div>
-                <div class="col-8">
-                  <div class="product-cart-card-body">
-                    <div class="d-flex justify-content-between">
-                      <h5 class="product-cart-title">${item.name}</h5>
-                      <div class="product-cart-actions">
-                        <span class="product-cart-remove" data-id="${item.id}"><i class="bx bx-trash"></i></span>
-                      </div>
-                    </div>
-                    <p class="product-cart-price">${currencySymbol}${item.price.toLocaleString('es-ES')}</p>
-                    <p class="product-cart-quantity">Cantidad: ${item.quantity}</p>
-                    <p><strong>Total: ${currencySymbol}${itemTotal.toLocaleString('es-ES')}</strong></p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `;
-        });
-
-        cartHtml += `</div>`; // Cerrar el contenedor de desplazamiento
-
-
-        // Actualiza el contenido del carrito
-        $('#cart-items').html(cartHtml);
-        $('.subtotal').text(`${currencySymbol}${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })}`);
-        $('.total').text(`${currencySymbol}${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 0 })}`);
-
-        // Actualiza el contador de productos en el botón "Ver Carrito"
-        $('#cart-count').text(totalItems);
-
-        // Habilitar o deshabilitar el botón "Finalizar Venta" según si hay productos en el carrito
-        if (cart.length === 0) {
-            $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
-        } else {
-            $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
-        }
-
-        // Guardar el carrito en el servidor
-        saveCart();
+    // Función para calcular el precio total de un ítem con impuestos
+    function calculateItemTotal(price, quantity, taxRate) {
+      if (!price || !quantity) return 0;
+      const priceWithTax = calculateFinalPrice(price, taxRate);
+      return priceWithTax * quantity;
     }
+
+
+    // Función para actualizar el carrito en el DOM
+function updateCart() {
+  let cartHtml = '';
+  let subtotal = 0; // Subtotal sin impuestos
+  let totalTax = 0; // Total de impuestos
+  let totalItems = 0; // Total de productos
+
+  cartHtml = `
+  <div class="row gy-3 overflow-auto" style="max-height: 400px;">
+  `;
+
+  cart.forEach(item => {
+      const taxRate = item.tax_rate && item.tax_rate.rate ? parseFloat(item.tax_rate.rate) : 0; // Tasa de impuestos
+      const basePrice = item.base_price || 0; // Precio base sin impuestos
+      const taxAmount = (basePrice * taxRate / 100) * item.quantity; // Impuesto total por producto
+      const itemTotal = (basePrice * item.quantity) + taxAmount; // Total con impuestos por producto
+
+      subtotal += basePrice * item.quantity; // Acumular subtotal sin impuestos
+      totalTax += taxAmount; // Acumular impuestos
+      totalItems += item.quantity; // Contar productos totales
+
+      cartHtml += `
+      <div class="col-12">
+          <div class="product-cart-card">
+              <div class="col-4 d-flex align-items-center">
+                  <img src="${baseUrl + item.image}" class="img-fluid product-cart-card-img" alt="${item.name}">
+              </div>
+              <div class="col-8">
+                  <div class="product-cart-card-body">
+                      <div class="d-flex justify-content-between">
+                          <h5 class="product-cart-title">${item.name}</h5>
+                          <div class="product-cart-actions">
+                              <span class="product-cart-remove" data-id="${item.id}"><i class="bx bx-trash"></i></span>
+                          </div>
+                      </div>
+                      <p class="product-cart-price">
+                          Precio unitario: ${currencySymbol}${basePrice.toFixed(2)}
+                          <small class="text-muted">(Incluye ${taxRate}% de impuestos)</small>
+                      </p>
+                      <p class="product-cart-quantity">Cantidad: ${item.quantity}</p>
+                      <p><strong>Total: ${currencySymbol}${itemTotal.toFixed(2)}</strong></p>
+                  </div>
+              </div>
+          </div>
+      </div>
+      `;
+  });
+
+  cartHtml += `</div>`;
+
+  // Actualizar el contenido del carrito
+  $('#cart-items').html(cartHtml);
+
+  // Subtotal (sin impuestos)
+  $('.subtotal').text(`${currencySymbol}${subtotal.toFixed(2)}`);
+
+  // Total del IVA (impuestos)
+  $('.iva-total').text(`${currencySymbol}${totalTax.toFixed(2)}`);
+
+  // Total (con impuestos)
+  const total = subtotal + totalTax;
+  $('.total').text(`${currencySymbol}${total.toFixed(2)}`);
+
+  // Actualizar el contador de productos
+  $('#cart-count').text(totalItems);
+
+  // Botón "Finalizar Venta"
+  if (cart.length === 0) {
+      $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
+  } else {
+      $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
+  }
+
+  // Guardar el carrito en el servidor
+  saveCart();
+}
+
+
 
     // Manejar el clic en el botón "Agregar al carrito"
     $(document).on('click', '.add-to-cart', function () {
@@ -763,7 +856,11 @@ $(document).ready(function () {
         products = products.map(product => {
             // Si hay una lista de precios seleccionada manualmente, se usa esa.
             const productInPriceList = priceListProducts.find(p => p.id === product.id);
-            product.price = productInPriceList ? productInPriceList.price : product.original_price;
+            product.price = calculateFinalPrice(
+              productInPriceList ? productInPriceList.price : product.original_price,
+              product.tax_rate ? parseFloat(product.tax_rate.rate) : 0
+            );
+
             return product;
         });
         displayProductsList(products); // Renderizar con los precios actualizados
@@ -936,9 +1033,9 @@ $(document).ready(function () {
 
             $('.responsible-text').hide();
 
-            $('#rutField, #razonSocialField').hide();
-            $('#razonSocialCliente, #rutCliente').val('').removeAttr('required');
-            $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').hide();
+            $('#rutField, #razonSocialField, #taxIdField').hide();
+            $('#razonSocialCliente, #rutCliente, taxIdCliente').val('').removeAttr('required');
+            $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger, label[for="taxIdCliente"] .text-danger').hide();
 
         } else if (tipo == 'company') {
             $('#ciField').hide();
@@ -950,9 +1047,9 @@ $(document).ready(function () {
 
             $('.responsible-text').show();
 
-            $('#rutField, #razonSocialField').show();
-            $('#razonSocialCliente, #rutCliente').attr('required', true);
-            $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').show();
+            $('#rutField, #razonSocialField, #taxIdField').show();
+            $('#razonSocialCliente, #rutCliente, #taxIdCliente').attr('required', true);
+            $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger, label[for="taxIdCliente"] .text-danger').show();
         }
     });
 
@@ -971,6 +1068,7 @@ $(document).ready(function () {
         } else if (clientType === 'company') {
             requiredFields.razonSocialCliente = 'Razón Social';
             requiredFields.rutCliente = 'RUT';
+            requiredFields.taxIdCliente = 'Tasa de Impuestos'
         }
 
         let missingFields = [];
@@ -1010,6 +1108,7 @@ $(document).ready(function () {
         } else if (clientType === 'company') {
             data.rut = document.getElementById('rutCliente').value.trim();
             data.company_name = document.getElementById('razonSocialCliente').value.trim();
+            data.tax_id = document.getElementById('taxIdCliente').value.trim();
         }
 
         fetch(`${baseUrl}admin/clients`, {

@@ -59,7 +59,7 @@ class ClientRepository
      */
     public function getClientById(int $id): ?Client
     {
-        return Client::with(['orders', 'priceLists'])->find($id);
+        return Client::with(['orders', 'priceLists', 'taxRate'])->find($id);
     }
 
 
