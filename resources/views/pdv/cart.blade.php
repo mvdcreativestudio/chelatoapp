@@ -30,6 +30,7 @@ $currencySymbol = $settings->currency_symbol;
   window.baseUrl = "{{ url('') }}/";
   window.currencySymbol = '{{ $currencySymbol }}';
   window.csrfToken = "{{ csrf_token() }}";
+  window.taxRates = @json($taxRates);
 </script>
 
 @if ($openCashRegister !== null)
@@ -173,11 +174,15 @@ $currencySymbol = $settings->currency_symbol;
         <div class="totals-container mt-4 p-3 shadow-sm rounded bg-light d-flex flex-column align-items-end" style="max-width: 350px; margin-left: auto;">
           <div class="totals-item d-flex justify-content-between align-items-center w-100 mb-2 animate__animated animate__fadeIn">
             <h6 class="text-muted">Subtotal:</h6>
-            <h6 class="subtotal text-primary fw-bold">$770</h6>
+            <h6 class="subtotal text-primary fw-bold"></h6>
+          </div>
+          <div class="totals-item d-flex justify-content-between align-items-center w-100 mb-2 animate__animated animate__fadeIn">
+            <h6 class="text-muted">IVA:</h6>
+            <h6 class="iva-total text-primary fw-bold"></h6>
           </div>
           <div class="totals-item d-flex justify-content-between align-items-center w-100 border-top pt-2 animate__animated animate__fadeIn">
             <h5 class="text-dark">Total:</h5>
-            <h4 class="total text-dark fw-bold">$770</h4>
+            <h4 class="total text-dark fw-bold"></h4>
           </div>
         </div>
 
@@ -227,6 +232,18 @@ $currencySymbol = $settings->currency_symbol;
           <option value="company">Empresa</option>
         </select>
       </div>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="taxIdField" style="display: none;">
+        <select id="taxIdCliente" name="tax_rate_id" for="tax_rate_id" class="form-control">
+          <option value="" disabled selected>Seleccione una tasa de impuestos</option>
+          @foreach($taxRates as $taxRate)
+              <option value="{{ $taxRate->id }}">
+                  {{ $taxRate->name }} ({{ $taxRate->rate }}%)
+              </option>
+          @endforeach
+        </select>
+      </div>
+
       <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
         <label for="razonSocialCliente" class="form-label">
           Razón Social *<span class="text-danger">*</span>

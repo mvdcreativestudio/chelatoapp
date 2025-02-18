@@ -40,7 +40,7 @@
           "name": "Ver Punto de Venta",
           "icon": "menu-icon tf-icons bx bx-home-circle",
           "slug": "point-of-sale",
-          "url": "/admin/pdv/new-sale"
+          "url": "/admin/pdv/cart"
         }
       ]
     },

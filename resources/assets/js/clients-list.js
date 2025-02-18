@@ -205,8 +205,8 @@ $(document).ready(function () {
 
       $('.responsible-text').hide();
 
-      $('#rutField, #razonSocialField').hide();
-      $('#company_name, #rut').val('').removeAttr('required');
+      $('#rutField, #razonSocialField, #taxRateField').hide();
+      $('#company_name, #rut, #tax_rate_id').val('').removeAttr('required');
 
       $('#ciudadAsterisk').hide();
       $('#departamentoAsterisk').hide();
@@ -219,8 +219,8 @@ $(document).ready(function () {
 
       $('.responsible-text').show();
 
-      $('#rutField, #razonSocialField').show();
-      $('#company_name, #rut').attr('required', true);
+      $('#rutField, #razonSocialField, #taxRateField').show();
+      $('#company_name, #rut, #tax_rate_id').attr('required', true);
 
       $('#ciudadAsterisk').show();
       $('#departamentoAsterisk').show();
@@ -238,6 +238,7 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
   const otroId = document.getElementById('other_id_type');
   const rut = document.getElementById('rut');
   const razonSocial = document.getElementById('company_name');
+  const taxRateId = document.getElementById('tax_rate_id');
   const direccion = document.getElementById('ecommerce-customer-add-address');
   const ciudad = document.getElementById('ecommerce-customer-add-town');
   const departamento = document.getElementById('ecommerce-customer-add-state');
@@ -265,6 +266,10 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
       showError($('#rut')[0], 'El RUT es obligatorio');
       hasError = true;
     }
+    if ($('#tax_rate_id').val().trim() === '') {
+      showError($('#tax_rate_id')[0], 'La Tasa de IVA es obligatoria');
+      hasError = true;
+    }
   }
   if (hasError) return;
   let data = {
@@ -280,6 +285,7 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
   else if (tipo.value === 'company') {
     data.rut = rut.value.trim();
     data.company_name = razonSocial.value.trim();
+    data.tax_rate_id = taxRateId.value.trim();
   }
   document.getElementById('eCommerceCustomerAddForm').submit();
   sessionStorage.clear();
@@ -376,6 +382,7 @@ $(document).ready(function () {
       } else if (clientType === 'company') {
         requiredFields.company_name = 'Razón Social';
         requiredFields.rut = 'RUT';
+        requiredFields.tax_rate_id = 'Tasa de IVA';
       }
 
       let missingFields = [];

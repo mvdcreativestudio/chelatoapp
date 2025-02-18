@@ -7,7 +7,7 @@ $navbarDetached = ($navbarDetached ?? '');
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {{-- Scripts para notificaciones --}}
-<script>
+{{-- <script>
   window.notificationUrl = '{{ route('notifications.index') }}';
   window.notificationReadUrl = '{{ route('notifications.markAsRead') }}';
   window.orderUrl = '{{ route('orders.index') }}';
@@ -171,7 +171,7 @@ $navbarDetached = ($navbarDetached ?? '');
           }).catch(error => console.error('Error al marcar todas como leídas:', error));
       };
   });
-  </script>
+  </script> --}}
 {{-- Fin scripts para notificaciones --}}
 
 

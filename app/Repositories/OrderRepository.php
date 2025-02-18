@@ -107,21 +107,12 @@ class OrderRepository
         );
     }
 
-    /**
-     * Almacena un nuevo pedido en la base de datos.
-     *
-     * @param  StoreOrderRequest  $request
-     * @return Order
-     */
+
     public function store($request, bool $deductStockOnCreate = true)
     {
         Log::info('Iniciando el proceso de creación de orden', ['request' => $request->all()]);
 
-        // Extraer datos del cliente solo si client_id está presente
         $clientData = $request->client_id ? $this->extractClientData($request->validated()) : [];
-        $orderData = $this->prepareOrderData($request->payment_method, $request);
-        Log::info('Datos preparados para la orden', ['orderData' => $orderData]);
-
 
         DB::beginTransaction();
 
@@ -137,37 +128,54 @@ class OrderRepository
                 Log::info('Cliente creado o encontrado', ['client_id' => $client->id]);
             }
 
+            // ✅ Obtener los productos del request
+            $products = json_decode($request['products'], true);
+
+            // ✅ Si el cliente está exento de IVA, forzar tax_rate a 0
+            if ($client && $client->tax_rate_id == 1) {
+                foreach ($products as &$product) {
+                    $product['tax_rate'] = 0;
+                }
+            }
+
+            // ✅ Recalcular los precios ANTES de asignarlos a la orden
+            foreach ($products as &$item) {
+                $taxAmount = ($item['base_price'] * $item['tax_rate']) / 100;
+                $item['price'] = $item['base_price'] + $taxAmount;
+            }
+
+            // ✅ Ahora pasamos los productos con los precios corregidos a `prepareOrderData()`
+            $orderData = $this->prepareOrderData($request->payment_method, $request, $products);
+            Log::info('Datos preparados para la orden', ['orderData' => $orderData]);
+
             $order = new Order($orderData);
             if ($client) {
                 $order->client()->associate($client);
             }
-            Log::info('Orden creada, asociada al cliente si corresponde', ['order' => $order]);
 
             $order->save();
             Log::info('Orden guardada en la base de datos', ['order_id' => $order->id]);
 
-            $products = json_decode($request['products'], true);
-
-            // Validar stock si $deductStockOnCreate es true
+            // ✅ Validar y actualizar stock
             $stockValidation = $this->validateAndUpdateStock($products, $deductStockOnCreate);
-            if (!$deductStockOnCreate && !$stockValidation['success']) {
-                Log::warning("Stock insuficiente, pero se permite la creación de la orden con estado pending: {$stockValidation['error']}");
-            } elseif ($deductStockOnCreate && !$stockValidation['success']) {
-                throw new Exception($stockValidation['error']);
+            if (!$stockValidation['success']) {
+                if (!$deductStockOnCreate) {
+                    Log::warning("Stock insuficiente, pero se permite la creación de la orden con estado pending: {$stockValidation['error']}");
+                } else {
+                    throw new Exception($stockValidation['error']);
+                }
             }
 
-            // Asignar los productos a la orden
-            $order->products = $products;
-            Log::info('Productos asociados a la orden', ['products' => $products]);
-
+            // ✅ Asignar los productos CORRECTAMENTE con los precios ya recalculados
+            $order->products = json_encode($products);
             $order->save();
-            Log::info('Orden actualizada con los productos');
+            Log::info('Orden actualizada con los productos', ['products' => $products]);
 
+            // ✅ Métodos de pago y lógica extra
             if ($request->payment_method === 'internalCredit' && $client) {
                 $this->createInternalCredit($order);
             }
 
-            // Mercado Pago
             if ($request->payment_method === 'qr_attended') {
                 $this->createMercadoPagoQrAttend($order);
                 $order->payment_status = 'pending';
@@ -203,6 +211,9 @@ class OrderRepository
             throw $e;
         }
     }
+
+
+
 
 
 
@@ -285,17 +296,12 @@ class OrderRepository
      *
      * @param string $paymentMethod
      * @param Request $request
+     * @param array $products
      * @return array
      */
-    private function prepareOrderData(string $paymentMethod, $request): array
+    private function prepareOrderData(string $paymentMethod, $request, array $products): array
     {
-        $products = json_decode($request['products'], true);
-        $subtotal = 0;
-
-        foreach ($products as $item) {
-            $price = $item['price'] ?? $item['old_price'];
-            $subtotal += $price * $item['quantity'];
-        }
+        $subtotal = array_sum(array_map(fn($item) => $item['base_price'] * $item['quantity'], $products));
 
         Log::info('Request de prepareOrderData', ['request' => $request->all()]);
         Log::info('Store_Id de prepareOrderData', ['store_id' => $request->store_id]);
@@ -307,18 +313,29 @@ class OrderRepository
 
         Log::info('Store ID validado para la orden', ['store_id' => $storeId]);
 
+        // Obtener descuento y asegurar que no sea mayor que el subtotal
+        $discount = $request->discount ?? 0;
+        $subtotalConDescuento = max($subtotal - $discount, 0); // Evitar negativos
+
+        // 🔥 Calcular el porcentaje de descuento aplicado
+        $discountPercentage = ($subtotal > 0) ? ($subtotalConDescuento / $subtotal) : 1;
+
+        // 🔥 Calcular TAX después de aplicar el descuento proporcionalmente
+        $tax = array_sum(array_map(fn($item) => (($item['base_price'] * $item['tax_rate']) / 100) * $item['quantity'], $products));
+        $taxConDescuento = $tax * $discountPercentage;
+
         return [
             'date' => now(),
             'time' => now()->format('H:i:s'),
             'origin' => 'physical',
-            'store_id' => $storeId, // Usamos la variable corregida
+            'store_id' => $storeId,
             'subtotal' => $subtotal,
-            'tax' => 0,
+            'tax' => $taxConDescuento,
             'shipping' => session('costoEnvio', 0),
-            'discount' => $request->discount,
+            'discount' => $discount,
             'coupon_id' => $request->coupon_id,
             'coupon_amount' => $request->coupon_amount,
-            'total' => $subtotal + session('costoEnvio', 0) - $request->discount,
+            'total' => $subtotalConDescuento + $taxConDescuento + session('costoEnvio', 0),
             'payment_status' => $request->payment_status ?? 'pending',
             'shipping_status' => $request->shipping_status ?? 'delivered',
             'payment_method' => $paymentMethod,
@@ -329,6 +346,8 @@ class OrderRepository
             // 'notes' => $request->notes,
         ];
     }
+
+
 
 
 

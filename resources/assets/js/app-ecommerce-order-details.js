@@ -30,42 +30,63 @@ $(function () {
           }
         },
         {
-          // Precio del producto
-          data: 'price',
-          render: function (data, type, full, meta) {
-            return `${currencySymbol}${parseFloat(data).toFixed(2)}`;
+          // Precio unitario sin IVA
+          data: 'base_price',
+          render: function (data) {
+            return `${currencySymbol}${parseFloat(data).toFixed(2)} (Sin IVA)`;
           }
         },
-        { data: 'quantity' },
         {
-          // Total por producto
+          // IVA aplicado por unidad
+          data: 'tax_rate',
+          render: function (data, type, row) {
+            if (parseFloat(data) === 0) {
+              return `${currencySymbol}0.00 (0%)`;
+            } else {
+              var taxAmount = row.base_price * (parseFloat(data) / 100);
+              return `${currencySymbol}${taxAmount.toFixed(2)} (${parseFloat(data).toFixed(0)}%)`;
+            }
+          }
+        },
+        {
+          // Precio total unitario con IVA
+          data: 'price',
+          render: function (data) {
+            return `${currencySymbol}${parseFloat(data).toFixed(2)} (Con IVA)`;
+          }
+        },
+        {
+          // Cantidad
+          data: 'quantity',
+          render: function (data) {
+            return `${data}`;
+          }
+        },
+        {
+          // Total por producto (cantidad * precio unitario con IVA)
           data: null,
-          render: function (data, type, row, meta) {
-            return `${currencySymbol}${(row.price * row.quantity).toFixed(2)}`;
+          render: function (data, type, row) {
+            var total = row.price * row.quantity;
+            return `${currencySymbol}${total.toFixed(2)}`;
           }
         }
       ],
       columnDefs: [
         {
-          // Renderizar Precio
-          targets: 2,
-          render: function (data, type, full, meta) {
-            return `${currencySymbol}${parseFloat(data).toFixed(2)}`;
-          }
-        },
-        {
-          // Renderizar Total por Producto
+          // Total por producto (cantidad * precio unitario con IVA)
           targets: -1,
-          render: function (data, type, full, meta) {
-            return `${currencySymbol}${(full.price * full.quantity).toFixed(2)}`;
+          render: function (data, type, row) {
+            var total = row.price * row.quantity;
+            return `${currencySymbol}${total.toFixed(2)}`;
           }
         }
       ],
-      order: [2, ''],
-      dom: 't'
+      order: [1, 'asc'], // Ordena por nombre del producto
+      dom: 't' // Solo muestra la tabla sin controles adicionales
     });
   }
 });
+
 
 document.addEventListener('DOMContentLoaded', function () {
   // Inicializar tooltips
@@ -427,8 +448,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!swalInstance) {
       // Mostrar el Swal de "Anulación en proceso" solo una vez
       swalInstance = Swal.fire({
-        title: 'Anulación en proceso...',
-        text: 'Continúa con la anulación desde el POS.',
+        title: 'Procesando...',
+        text: 'Esperando confirmación del PINPad.',
         allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading(); // Mostrar el spinner de carga
@@ -465,6 +486,17 @@ document.addEventListener('DOMContentLoaded', function () {
           }).then(() => {
             location.reload();
           });
+        } else if (data.responseCode === 999) {
+          // Transacción cancelada desde el PINPad
+          swalInstance.close();
+          swalInstance = null;
+
+          Swal.fire({
+            icon: data.icon || 'error',
+            title: 'Operación cancelada',
+            text: data.message || 'La transacción fue cancelada desde el PINPad.',
+            showConfirmButton: true,
+          });
         } else if (data.keepPolling) {
           setTimeout(() => pollTransactionStatus(transactionId, sTransactionId, storeId), 2000);
         } else {
@@ -492,6 +524,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Error al consultar el estado de la transacción:', error);
       });
   }
+
 });
 
 
@@ -593,8 +626,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const refundAmount = refundAmountInput.value;
     const refundReason = refundReasonInput.value;
-    const ticketNumber = document.getElementById('ticketNumberRefund').value; // Capturar el número de ticket
-
+    const ticketNumber = document.getElementById('ticketNumberRefund').value;
 
     const selectedOption = posDeviceSelectRefund.options[posDeviceSelectRefund.selectedIndex];
     if (!selectedOption) {
@@ -607,6 +639,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const branch = selectedOption.getAttribute('data-branch');
     const clientAppId = selectedOption.getAttribute('data-clientappid');
     const userId = selectedOption.getAttribute('data-user');
+
+    // Obtener y formatear la fecha original
+    const originalTransactionDateInput = document.getElementById('originalTransactionDate');
+    const originalTransactionDate = originalTransactionDateInput.value;
+    let formattedOriginalDate = '';
+    if (originalTransactionDate) {
+      formattedOriginalDate = formatDateToYYMMDD(originalTransactionDate); // Convertir a YYMMDD
+    }
 
     const refundData = {
       store_id: storeId,
@@ -622,8 +662,18 @@ document.addEventListener('DOMContentLoaded', function () {
       ClientAppId: clientAppId || 'Caja1',
       UserId: userId || 'Usuario1',
       TransactionDateTimeyyyyMMddHHmmssSSS: new Date().toISOString().replace(/[-T:.Z]/g, '').padEnd(20, '0'),
-      OriginalTransactionDateyyMMdd: transactionId.substring(0, 6), // Suponiendo que TransactionId tiene formato YYMMDD
+      OriginalTransactionDateyyMMdd: formattedOriginalDate,
     };
+
+    // Mostrar Swal de "Actualizando"
+    Swal.fire({
+      title: 'Actualizando...',
+      text: 'Esperando por operación en PINPad',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
 
     // Enviar solicitud de refund
     fetch(`/api/pos/refund`, {
@@ -636,6 +686,12 @@ document.addEventListener('DOMContentLoaded', function () {
     })
       .then(response => response.json())
       .then(data => {
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(refundTransactionModal);
+        modal.hide();
+
+        Swal.close(); // Cerrar el Swal de "Actualizando"
+
         if (data.success) {
           Swal.fire({
             icon: 'success',
@@ -653,6 +709,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       })
       .catch(error => {
+        Swal.close(); // Cerrar el Swal en caso de error
         Swal.fire({
           icon: 'error',
           title: 'Error',
@@ -661,6 +718,16 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Error al procesar el refund:', error);
       });
   });
+
+
+  // Función para convertir la fecha a formato YYMMDD
+  function formatDateToYYMMDD(dateString) {
+    const date = new Date(dateString);
+    const year = String(date.getFullYear()).slice(-2); // Últimos 2 dígitos del año
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Mes con cero inicial si es necesario
+    const day = String(date.getDate()).padStart(2, '0'); // Día con cero inicial si es necesario
+    return `${year}${month}${day}`;
+  }
 
   $('#updateClientDataForm').on('submit', function (e) {
     e.preventDefault();
@@ -688,7 +755,7 @@ document.addEventListener('DOMContentLoaded', function () {
               billingModal.show();
           }
       });
-      
+
       },
       error: function (xhr) {
         const errors = xhr.responseJSON.errors;

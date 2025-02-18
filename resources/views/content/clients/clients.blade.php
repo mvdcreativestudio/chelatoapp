@@ -108,7 +108,19 @@
             </div>
         </div>
 
-        <!-- Campo Razón Social y RUT para Empresa -->
+        <!-- Campo IVA, Razón Social, RUT para Empresa -->
+        <div class="mb-3" id="taxRateField" style="display: none;">
+          <label for="tax_rate_id" class="form-label">Tasa de Impuesto</label>
+          <select class="form-select" id="tax_rate_id" name="tax_rate_id" required>
+            <option value="" selected disabled>Seleccione una tasa de impuesto</option>
+            @foreach($taxRates as $taxRate)
+              <option value="{{ $taxRate->id }}">
+                {{ $taxRate->name }} ({{ number_format($taxRate->rate, 2) }}%)
+              </option>
+            @endforeach
+          </select>
+        </div>
+
         <div class="mb-3" id="razonSocialField" style="display: none;">
             <label class="form-label" for="company_name">Razón Social <span class="text-danger">*</span></label>
             <input type="text" class="form-control" id="company_name" placeholder="Ingrese la razón social" name="company_name" />
