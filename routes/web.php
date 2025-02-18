@@ -463,6 +463,7 @@ Route::prefix('admin')->middleware([
     Route::get('/orders/{order}/pdf', [OrderPdfController::class, 'generatePdf'])->name('orders.pdf');
     Route::post('/orders/{order}/emit-cfe', [OrderController::class, 'emitCFE'])->name('orders.emitCFE');
     Route::post('/orders/{orderId}/set-order-as-paid', [OrderController::class, 'setOrderAsPaid'])->name('orders.setOrderAsPaid');
+    Route::post('/orders/{order}/vincular-cliente', [OrderController::class, 'vincularCliente'])->name('orders.vincularCliente');
 
 
     // Gestión de Cupones
