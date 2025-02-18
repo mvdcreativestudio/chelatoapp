@@ -550,88 +550,65 @@ class AccountingRepository
     */
     private function prepareCFEData(Order $order, string $cfeType, float $amountToBill, int $payType, bool $hasSpecialCaes, ?string $adenda, ?string $emissionDate): array
     {
-        $client = Client::find($order->client_id);
+        $client = $order->client;
         $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
         $proportion = ($amountToBill < $order->total) ? $amountToBill / $order->total : 1;
 
-        // Activar para facturación en dolares
-        // $usdRate = CurrencyRate::where('name', 'Dólar')
-        //     ->first()
-        //     ->histories()
-        //     ->orderByRaw('ABS(TIMESTAMPDIFF(SECOND, date, ?))', [$order->created_at])
-        //     ->first();
-
-        // if ($usdRate) {
-        //     $exchangeRate = (float) $usdRate->sell;
-        // } else {
-        //     throw new \Exception('No se encontró el tipo de cambio para el dólar.');
-        // }
-
-        $taxRateId = $order->store->tax_rate_id ?? 3; // Por defecto, usa Tasa Básica (22%)
-
-        // Mapeo de tax_rate_id a IndFact
-        $indFactMap = [
-            1 => 1, // Exento de IVA
-            2 => 2, // Gravado a Tasa Mínima
-            3 => 3, // Gravado a Tasa Básica
+        // Mapear tasas de IVA
+        $taxRateMap = [
+            1 => 1, // Exento
+            2 => 2, // Tasa mínima (10%)
+            3 => 3, // Tasa básica (22%)
         ];
 
-        $indFact = $hasSpecialCaes ? 16 : ($indFactMap[$taxRateId] ?? 3);
+        // Si el cliente es exento de IVA, todos los productos serán exentos (IndFact = 1)
+        $isClientExempt = $client && $client->tax_rate_id == 1;
 
+        // Calcular descuento proporcional
+        $totalDiscount = $order->discount ?? 0;
+
+        // Evitar dividir por 0
+        $orderSubtotal = $order->subtotal > 0 ? $order->subtotal : 1;
 
         $subtotalConIVA = 0;
         $totalDescuento = 0;
 
-        if ($order->appointment_id) {
-          $appointment = $order->appointment;
+        $items = array_map(function ($product, $index) use ($proportion, $isClientExempt, $totalDiscount, $orderSubtotal, &$subtotalConIVA, &$totalDescuento, $taxRateMap, $hasSpecialCaes) {
+            $adjustedAmount = round($product['quantity'] * $proportion, 2);
 
-          $items = [
-              [
-                  'NroLinDet' => 1,
-                  'IndFact' => $indFact,
-                  'NomItem' => $appointment->comment,
-                  'Cantidad' => 1,
-                  'UniMed' => 'N/A',
-                  'DescuentoPct' => 0,
-                  'DescuentoMonto' => 0,
-                  'MontoItem' => $amountToBill,
-                  'PrecioUnitario' => $amountToBill,
-              ]
-          ];
-        } else {
-          $items = array_map(function ($product, $index) use ($proportion, $order, &$subtotalConIVA, &$totalDescuento, $indFact) {
-              $adjustedAmount = round($product['quantity'] * $proportion, 2);
+            // Si el cliente es exento, forzar IndFact = 1
+            if ($isClientExempt) {
+                $indFact = 1;
+            } else {
+                $taxRateId = $product['tax_rate_id'] ?? 3; // Default a Tasa Básica (22%)
+                $indFact = $hasSpecialCaes ? 16 : ($taxRateMap[$taxRateId] ?? 3);
+            }
 
-              // Ajuste en el cálculo del descuento basado en el precio original de cada producto
-              $productPriceConIVA = round($product['price'], 2);
-              $discountPercentage = (($order->subtotal - $order->total) / $order->subtotal) * 100;
-              $discountAmount = round($productPriceConIVA * ($discountPercentage / 100), 2);
+            $productPriceConIVA = round($product['price'], 2);
 
-              $totalDescuento += $discountAmount * $adjustedAmount;
-              $subtotalConIVA += ($productPriceConIVA - $discountAmount) * $adjustedAmount;
+            // Calcular el descuento proporcional del producto
+            $discountAmount = round(($totalDiscount * ($productPriceConIVA / $orderSubtotal)), 2);
 
-              $cleanedProductName = $this->cleanProductName($product['name']);
+            $totalDescuento += $discountAmount * $adjustedAmount;
+            $subtotalConIVA += ($productPriceConIVA - $discountAmount) * $adjustedAmount;
 
-              Log::info('Descuentos:', ['PrecioConIVA' => $productPriceConIVA, 'Descuento %' => $discountPercentage, 'Descuento $' => $discountAmount]);
+            return [
+                'NroLinDet' => $index + 1,
+                'IndFact' => $indFact,
+                'NomItem' => $this->cleanProductName($product['name']),
+                'Cantidad' => $adjustedAmount,
+                'UniMed' => 'N/A',
+                'DescuentoPct' => round(($discountAmount / $productPriceConIVA) * 100, 2),
+                'DescuentoMonto' => $discountAmount,
+                'MontoItem' => round(($productPriceConIVA - $discountAmount) * $adjustedAmount, 2),
+                'PrecioUnitario' => $productPriceConIVA,
+            ];
+        }, $products, array_keys($products));
 
-              return [
-                  'NroLinDet' => $index + 1,
-                  'IndFact' => $indFact,
-                  'NomItem' => $cleanedProductName,
-                  'Cantidad' => $adjustedAmount,
-                  'UniMed' => 'N/A',
-                  'DescuentoPct' => round($discountPercentage, 2),
-                  'DescuentoMonto' => $discountAmount,
-                  'MontoItem' => round(($productPriceConIVA - $discountAmount) * $adjustedAmount, 2),
-                  'PrecioUnitario' => $productPriceConIVA,
-              ];
-          }, $products, array_keys($products));
-        }
-
-        // Redondeo final del subtotal
+        // Redondear el subtotal final
         $subtotalConIVA = round($subtotalConIVA, 2);
 
-        // Creación de los datos finales del CFE
+        // Construcción del CFE
         $cfeData = [
             'clientEmissionId' => $order->uuid . now()->timestamp,
             'adenda' => $adenda ? $adenda : 'Orden ' . $order->id . ' - Sumeria.',
@@ -643,43 +620,27 @@ class AccountingRepository
             'Receptor' => (object) [],
             'Totales' => [
                 'TpoMoneda' => 'UYU',
-                // 'TpoCambio' => $exchangeRate,
             ],
             'Items' => $items,
         ];
 
-        // Agregar CAEEspecial solo si MntBruto = 3 (hasSpecialCaes)
+        // Agregar el CAEEspecial si se usa
         if ($hasSpecialCaes) {
             $cfeData['IdDoc']['CAEEspecial'] = 2;
         }
 
+        // Datos del cliente
         if ($client) {
-            $tipoDocRecep = null;
-            if ($client->type === 'company' && $client->rut) {
-                $tipoDocRecep = 2; // RUC
-            } elseif ($client->type === 'individual' && $client->ci) {
-                $tipoDocRecep = 3; // CI
-            } elseif ($client->type === 'individual' && $client->passport) {
-                $tipoDocRecep = 5; // Pasaporte
-            } elseif ($client->type === 'individual' && $client->other_id_type) {
-                $tipoDocRecep = 4; // Otros
-            }
+            $tipoDocRecep = match (true) {
+                $client->type === 'company' && $client->rut => 2, // RUC
+                $client->type === 'individual' && $client->ci => 3, // CI
+                $client->type === 'individual' && $client->passport => 5, // Pasaporte
+                $client->type === 'individual' && $client->other_id_type => 4, // Otros
+                default => null
+            };
 
-            $docRecep = null;
-
-            if ($client->rut) {
-                $docRecep = $client->rut;
-            } elseif ($client->ci) {
-                $docRecep = $client->ci;
-            }
-
-            $docRecepExt = null;
-
-            if ($client->passport) {
-                $docRecepExt = $client->passport;
-            } elseif ($client->other_id_type) {
-                $docRecepExt = $client->other_id_type;
-            }
+            $docRecep = $client->rut ?? $client->ci ?? null;
+            $docRecepExt = $client->passport ?? $client->other_id_type ?? null;
 
             $cfeData['Receptor'] = [
                 'TipoDocRecep' => $tipoDocRecep,
@@ -695,6 +656,8 @@ class AccountingRepository
 
         return $cfeData;
     }
+
+
 
 
     /**

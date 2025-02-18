@@ -138,6 +138,12 @@ class OrderRepository
                 }
             }
 
+            // ✅ Asegurar que cada producto tenga tax_rate_id asignado
+            foreach ($products as &$product) {
+              $productModel = Product::find($product['id']);
+              $product['tax_rate_id'] = $productModel ? $productModel->tax_rate_id : null; // Obtener el tax_rate_id del modelo si existe
+            }
+
             // ✅ Recalcular los precios ANTES de asignarlos a la orden
             foreach ($products as &$item) {
                 $taxAmount = ($item['base_price'] * $item['tax_rate']) / 100;
