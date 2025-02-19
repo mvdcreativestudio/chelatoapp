@@ -26,6 +26,7 @@ return [
     'access_invoices' => 'Acceder a Facturas',
     'access_receipts' => 'Acceder a Recibos',
     'access_accounting-settings' => 'Acceder a Configuración de Contabilidad',
+    'access_invoice-settings' => 'Acceder a Configuración de Facturas',
     'access_update_all_invoices' => 'Actualizar todos los CFE',
     'access_received-documents' => 'Acceder a Documentos Recibidos',
     'access_entries' => 'Acceder a Asientos',
@@ -53,6 +54,9 @@ return [
     'access_delete_composite-products' => 'Eliminar Productos Compuestos',
     'access_bulk-products' => 'Acceder a Productos en Masa',
     'access_global_products' => 'Acceder a Productos de todas las Empresas',
+    'view_all_products' => 'Ver todos los Productos',
+    'view_all_product-categories' => 'Ver todas las Categorías de Productos',
+    'access_sales-commerce' => 'Acceder a Ventas de E-Commerce',
 
     // Cuentas Corrientes
     'access_current-accounts' => 'Acceder a Cuentas Corrientes',
@@ -85,6 +89,12 @@ return [
     'access_income-categories' => 'Acceder a Categorías de Ingresos',
     'view_all_income-categories' => 'Ver todas las Categorías de Ingresos',
     'access_delete_income-categories' => 'Eliminar Categorías de Ingresos',
+    'access_incomes-clients' => 'Acceder a Ingresos de Clientes',
+    'access_incomes-suppliers' => 'Acceder a Ingresos de Proveedores',
+    'view_all_incomes-clients' => 'Ver todos los Ingresos de Clientes',
+    'access_delete_incomes-clients' => 'Eliminar Ingresos de Clientes',
+    'view_all_incomes-suppliers' => 'Ver todos los Ingresos de Proveedores',
+    'access_delete_incomes-suppliers' => 'Eliminar Ingresos de Proveedores',
 
     // Integraciones
     'access_integrations' => 'Acceder a Integraciones',
@@ -142,6 +152,24 @@ return [
     'access_create-price-lists' => 'Crear Listas de Precios',
     'access_edit-price-lists' => 'Editar Listas de Precios',
     'access_delete-price-lists' => 'Eliminar Listas de Precios',
+
+    // Calendario
+    'access_calendar' => 'Acceder a Calendario',
+    'view_all_calendar' => 'Ver todos los Eventos',
+
+    // Servicios
+    'access_services' => 'Acceder a Servicios',
+
+    // Turnos
+    'access_appointments' => 'Acceder a Turnos',
+    'view_all_appointments' => 'Ver todos los Turnos',
+
+    // Suscripciones
+    'access_subscriptions' => 'Acceder a Suscripciones',
+    'view_all_subscriptions' => 'Ver todas las Suscripciones',
+
+    // Recibidos
+    'receipts' => 'Recibos',
 
     // Logística
     'access_logistics' => 'Acceder a Logística',
