@@ -432,52 +432,90 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDa
   function aplicarDescuento() {
     const couponCode = $('#coupon-code').val();
 
-    // Si no hay ningún cupón o descuento, no realizar validación
-    if (!couponCode && !$('#fixed-discount').val()) {
-      removeDiscount();
-      return;
+    if (!couponCode) {
+        removeDiscount(); // Si no hay código, eliminar descuentos previos
+        return;
     }
 
-    if (couponCode) {
-      $.ajax({
+    $.ajax({
         url: `${baseUrl}admin/get-coupon/${couponCode}`,
         type: 'GET',
         success: function (response) {
-          if (response) {
-            aplicarDescuentoPorCupon(response);
-          } else {
-            mostrarError('Cupón no válido o no encontrado.');
-          }
+            if (response) {
+                aplicarDescuentoPorCupon(response);
+            } else {
+                mostrarError('Cupón no válido o no encontrado.');
+            }
         },
         error: function () {
-          mostrarError('Error al aplicar el cupón.');
+            mostrarError('Error al aplicar el cupón.');
         }
-      });
-    } else {
-      aplicarDescuentoFijo();
-    }
+    });
   }
+
 
   function aplicarDescuentoPorCupon(couponResponse) {
     coupon = couponResponse;
-    let subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    let subtotal = 0;
+    let excludedProducts = (coupon.coupon.excluded_products || []).map(id => id.toString()); // 🔥 Convertir todos los IDs a string
+    let currentDate = new Date().toISOString().split('T')[0]; // Obtener la fecha actual en formato YYYY-MM-DD
 
+    console.log("Productos Excluidos (Backend):", excludedProducts); // 🔍 Depuración
+
+    // 🔍 Verificar fechas de validez
+    let initDate = coupon.coupon.init_date;
+    let dueDate = coupon.coupon.due_date;
+
+    if (initDate && currentDate < initDate) {
+        mostrarError('Este cupón aún no está activo.');
+        return;
+    }
+
+    if (dueDate && currentDate > dueDate) {
+        mostrarError('Este cupón ha expirado.');
+        return;
+    }
+
+    // ✅ Calcular subtotal excluyendo productos restringidos
+    let filteredCart = cart.filter(item => {
+        let isExcluded = excludedProducts.includes(item.id.toString()); // Comparar como string
+        if (isExcluded) {
+            console.log(`❌ Producto excluido del descuento: ${item.name} (ID: ${item.id})`);
+        }
+        return !isExcluded;
+    });
+
+    console.log("🛒 Productos válidos para el descuento:", filteredCart.map(p => p.name)); // 🔍 Depuración
+
+    filteredCart.forEach(item => {
+        subtotal += item.price * item.quantity;
+    });
+
+    if (subtotal <= 0) {
+        mostrarError('Este cupón no aplica a los productos seleccionados.');
+        return;
+    }
+
+    // ✅ Aplicar descuento (porcentaje o fijo)
     if (coupon.coupon.type === 'percentage') {
         discount = (coupon.coupon.amount / 100) * subtotal;
     } else if (coupon.coupon.type === 'fixed') {
         discount = coupon.coupon.amount;
     }
 
+    // ❌ No permitir que el descuento sea mayor al subtotal
     if (discount > subtotal) {
         discount = subtotal;
     }
 
-    discount = Math.round(discount);
+    discount = Math.round(discount); // Redondear
     $('.discount-amount').text(`${currencySymbol}${discount.toFixed(0)}`);
 
     calcularTotal();
     $('#quitarDescuento').show(); // Mostrar el botón de eliminar descuento
   }
+
+
 
   function aplicarDescuentoFijo() {
     const discountType = $('input[name="discount-type"]:checked').val();

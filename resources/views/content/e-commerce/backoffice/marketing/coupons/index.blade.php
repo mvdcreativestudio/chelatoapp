@@ -145,16 +145,6 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="5" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Fecha de creación</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
             <input type="checkbox" class="toggle-column switch-input" data-column="6" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
@@ -204,7 +194,7 @@
             <th>Código</th>
             <th>Tipo</th>
             <th>Valor</th>
-            <th>Fecha de Creación</th>
+            <th>Fecha de Inicio</th>
             <th>Fecha de Expiración</th>
             <th>Creado por</th>
             <th>Acciones</th>

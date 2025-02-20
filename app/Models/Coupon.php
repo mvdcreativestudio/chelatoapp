@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 
 class Coupon extends Model
@@ -17,6 +18,7 @@ class Coupon extends Model
         'amount',
         'product_categories',
         'products',
+        'init_date',
         'due_date',
         'creator_id',
         'status'
@@ -36,5 +38,26 @@ class Coupon extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    /**
+     * Relación con los productos excluidos de este cupón.
+     *
+     * @return BelongsToMany
+     */
+    public function excludedProducts()
+    {
+        return $this->belongsToMany(Product::class, 'coupon_exclude_products');
+    }
+
+    /**
+     * Relación con las categorías excluidas de este cupón.
+     *
+     * @return BelongsToMany
+     */
+    public function excludedCategories()
+    {
+        return $this->belongsToMany(ProductCategory::class, 'coupon_exclude_categories', 'coupon_id', 'category_id');
+    }
+
 
 }
