@@ -202,14 +202,15 @@
                             <input type="hidden" name="status" value="2">
                             <!-- Instock switch -->
                             <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-3">
-                                <span class="mb-0 h6">Estado</span>
-                                <div class="w-25 d-flex justify-content-end">
-                                    <label class="switch switch-primary switch-sm me-4 pe-2">
-                                        <input type="checkbox" class="switch-input" value="1" id="statusSwitch"
-                                            {{ $product->status == 1 ? 'checked' : '' }} name="status">
-                                        <span class="switch-toggle-slider"></span>
-                                    </label>
-                                </div>
+                              <span class="mb-0 h6">Estado</span>
+                              <div class="w-25 d-flex justify-content-end">
+                                  <label class="switch switch-primary switch-sm me-4 pe-2">
+                                      <input type="checkbox" class="switch-input" id="statusSwitch"
+                                          name="status" value="1" data-status="{{ $product->status }}"
+                                          {{ $product->status == 1 ? 'checked' : '' }}>
+                                      <span class="switch-toggle-slider"></span>
+                                  </label>
+                              </div>
                             </div>
                         </div>
                     </div>
