@@ -18,6 +18,7 @@ use App\Http\Requests\CheckoutStoreOrderRequest;
 use Illuminate\Http\RedirectResponse;
 use App\Events\OrderCreatedEvent;
 use App\Repositories\PedidosYaRepository;
+
 use Exception;
 
 class CheckoutRepository
@@ -461,35 +462,85 @@ class CheckoutRepository
     }
 
     /**
-     * Aplica un cupón a la sesión.
+     * Aplica un cupón a la sesión, limitando el descuento solo a productos elegibles.
      *
      * @param string $couponCode
      * @param float $subtotal
      * @return array
      * @throws \Exception
-    */
+     */
     public function applyCouponToSession(string $couponCode, float $subtotal): array
     {
-        $coupon = Coupon::where('code', $couponCode)->first();
+        $coupon = Coupon::with(['excludedProducts', 'excludedCategories'])->where('code', $couponCode)->first();
 
         if (!$coupon) {
             throw new \Exception('El código del cupón no existe.');
         }
 
-        if ($coupon->due_date != null && $coupon->due_date < now()) {
+        $now = now();
+
+        // ✅ Verificar fechas del cupón
+        if ($coupon->init_date && $now < $coupon->init_date) {
+            throw new \Exception('El cupón aún no está disponible.');
+        }
+
+        if ($coupon->due_date && $now > $coupon->due_date) {
             throw new \Exception('El cupón ha expirado.');
         }
 
-        $discount = $coupon->type === 'fixed' ? $coupon->amount : round($subtotal * ($coupon->amount / 100), 2);
+        // ✅ Obtener productos y categorías excluidos
+        $excludedProductIds = $coupon->excludedProducts->pluck('id')->toArray();
+        $excludedCategoryIds = $coupon->excludedCategories->pluck('id')->toArray();
 
-        if ($discount > $subtotal) {
-            $discount = $subtotal;
+        Log::info('Productos excluidos por el cupón:', $excludedProductIds);
+        Log::info('Categorías excluidas por el cupón:', $excludedCategoryIds);
+
+        // ✅ Obtener los productos del carrito y sus categorías
+        $cartItems = session('cart', []);
+        $cartProducts = collect($cartItems)->map(function ($item) {
+            $category = DB::table('category_product')->where('product_id', $item['id'])->first();
+
+            return [
+                'id' => $item['id'],
+                'price' => $item['price'] ?? $item['old_price'],
+                'quantity' => $item['quantity'] ?? 1,
+                'total' => ($item['price'] ?? $item['old_price']) * ($item['quantity'] ?? 1),
+                'category_id' => $category ? $category->category_id : null,
+            ];
+        });
+
+        Log::info('Productos en el carrito:', $cartProducts->toArray());
+
+        // ✅ Filtrar solo los productos que SÍ PUEDEN recibir el cupón
+        $eligibleProducts = $cartProducts->reject(function ($item) use ($excludedProductIds, $excludedCategoryIds) {
+            return in_array($item['id'], $excludedProductIds) || in_array($item['category_id'], $excludedCategoryIds);
+        });
+
+        Log::info('Productos elegibles para el cupón:', $eligibleProducts->toArray());
+
+        // ✅ Si no hay productos elegibles, el cupón no se puede aplicar
+        if ($eligibleProducts->isEmpty()) {
+            throw new \Exception('El cupón no se puede aplicar porque todos los productos en el carrito están excluidos.');
         }
 
+        // ✅ Calcular el subtotal de los productos elegibles
+        $eligibleSubtotal = $eligibleProducts->sum('total');
+
+        Log::info('Subtotal de productos elegibles:', ['subtotal' => $eligibleSubtotal]);
+
+        // ✅ Calcular el descuento solo sobre los productos elegibles
+        $discount = $coupon->type === 'fixed'
+            ? min($coupon->amount, $eligibleSubtotal)  // Si el cupón es fijo, no debe exceder el subtotal de productos elegibles
+            : round($eligibleSubtotal * ($coupon->amount / 100), 2); // Si es porcentaje, se aplica solo al subtotal elegible
+
+        Log::info('Descuento calculado:', ['discount' => $discount]);
+
+        // ✅ Si el descuento es 0 o negativo, no se puede aplicar
         if ($discount <= 0) {
             throw new \Exception('No se pudo calcular un descuento válido.');
         }
 
+        // ✅ Guardar el cupón en la sesión
         session([
             'coupon' => [
                 'id' => $coupon->id,
@@ -499,6 +550,10 @@ class CheckoutRepository
             ]
         ]);
 
+        Log::info('Cupón aplicado correctamente:', ['coupon' => session('coupon')]);
+
         return ['code' => $coupon->code, 'discount' => $discount];
     }
+
+
 }

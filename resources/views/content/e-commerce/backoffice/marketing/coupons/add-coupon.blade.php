@@ -1,6 +1,3 @@
-
-
-
 <!-- Modal Add New Coupon -->
 <div class="modal fade" id="addCouponModal" tabindex="-1" aria-labelledby="addCouponModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -27,9 +24,40 @@
             <input type="number" class="form-control" id="couponAmount" name="couponAmount" required>
           </div>
           <div class="mb-3">
+            <label for="couponInit" class="form-label">Fecha de Inicio</label>
+            <input type="date" class="form-control" id="couponInit" name="couponInit">
+          </div>
+          <div class="mb-3">
             <label for="couponExpiry" class="form-label">Fecha de Expiración</label>
             <input type="date" class="form-control" id="couponExpiry" name="couponExpiry">
           </div>
+
+          <!-- Selección de productos excluidos -->
+          <div class="mb-3">
+            <label class="form-label">Productos Excluidos</label>
+            <div id="excludedProductsList">
+              @foreach($products as $product)
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" name="excluded_products[]" value="{{ $product->id }}">
+                  <label class="form-check-label">{{ $product->name }}</label>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
+          <!-- Selección de categorías excluidas -->
+          <div class="mb-3">
+            <label class="form-label">Categorías Excluidas</label>
+            <div id="excludedCategoriesList">
+              @foreach($categories as $category)
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" name="excluded_categories[]" value="{{ $category->id }}">
+                  <label class="form-check-label">{{ $category->name }}</label>
+                </div>
+              @endforeach
+            </div>
+          </div>
+
         </form>
       </div>
       <div class="modal-footer">

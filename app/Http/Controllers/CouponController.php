@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateCouponRequest;
 use App\Repositories\CouponRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
 
 class CouponController extends Controller
 {
@@ -49,7 +50,9 @@ class CouponController extends Controller
   public function index(): View
   {
     $coupon = $this->couponRepository->getAllCoupons();
-    return view('content.e-commerce.backoffice.marketing.coupons.index', compact('coupon'));
+    $products = $this->couponRepository->getAllProducts();
+    $categories = $this->couponRepository->getAllCategories();
+    return view('content.e-commerce.backoffice.marketing.coupons.index', compact('coupon', 'products', 'categories'));
   }
 
   /**
@@ -97,9 +100,12 @@ class CouponController extends Controller
   */
   public function update(UpdateCouponRequest $request, int $id): JsonResponse
   {
-    $result = $this->couponRepository->updateCoupon($id, $request->validated());
-    return response()->json($result);
+      Log::info('Datos recibidos en update:', $request->all()); // 🔎 Verifica si llegan los datos
+
+      $result = $this->couponRepository->updateCoupon($id, $request->validated());
+      return response()->json($result);
   }
+
 
   /**
    * Elimina un cupón específico de la base de datos.
