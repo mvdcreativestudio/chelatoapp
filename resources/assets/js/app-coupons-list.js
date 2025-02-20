@@ -17,93 +17,94 @@ $(function () {
       var dt_coupons = dt_coupon_table.DataTable({
           ajax: 'coupons/datatable',
           columns: [
-            { data: 'switch', orderable: false, searchable: false },
-            { data: 'id' },
-            { data: 'code' },
-            { data: 'type' },
-            {
-              data: 'amount',
-              render: function(data, type, full, meta) {
-                  if (full.type === 'percentage') {
-                      return data + '%'; // Agrega '%' después del número
-                  } else {
-                      return '$' + data; // Agrega '$' antes del número
-                  }
-              }
-            },
-            { data: 'created_at'},
-            { data: 'due_date' },
-            { data: 'creator_name' },
-            { data: null, defaultContent: '' }
+            { data: 'switch', orderable: false, searchable: false }, // 0️⃣ Checkbox
+            { data: 'id' }, // 1️⃣ ID
+            { data: 'code' }, // 2️⃣ Código
+            { data: 'type' }, // 3️⃣ Tipo
+            { data: 'amount' }, // 4️⃣ Valor
+            { data: 'init_date' }, // 5️⃣ Fecha de Inicio
+            { data: 'due_date' }, // 6️⃣ Fecha de Expiración
+            { data: 'creator_name' }, // 7️⃣ Creado por
+            { data: null, defaultContent: '' } // 8️⃣ Acciones
           ],
+
           columnDefs: [
             {
-                targets: 0,
+                targets: 0, // ✅ Checkbox (switch)
                 render: function (data, type, full, meta) {
                     return '<input type="checkbox" class="form-check-input" data-id="' + full['id'] + '">';
                 }
             },
             {
-                targets: 2,
+                targets: 2, // ✅ Código
                 render: function (data, type, full, meta) {
                     return '<a href="' + baseUrl + 'coupons/' + full['id'] + '/show" class="text-body">' + data + '</a>';
                 }
             },
             {
-                targets: 3,
+                targets: 3, // ✅ Tipo de cupón
                 render: function (data, type, full, meta) {
                     return data === 'percentage' ? 'Porcentaje' : 'Descuento fijo';
                 }
             },
             {
-                targets: 5,
+                targets: 4, // ✅ Valor del cupón (se muestra como "$" o "%")
                 render: function (data, type, full, meta) {
-                  if (data === null) {
-                      return 'No registrado';
-                  } else {
-                    return moment(data).locale('es').format('DD/MM/YYYY');
+                    return full.type === 'percentage' ? data + '%' : '$' + data;
                 }
-              }
             },
             {
-                targets: 6,
+                targets: 5, // ✅ Fecha de Inicio
                 render: function (data, type, full, meta) {
-                  if (data === null) {
-                      return 'Sin expiración';
-                  } else {
-                    var currentDate = moment().startOf('day');
-                    var dueDate = moment(data).startOf('day');
-                    var dateClass = dueDate.isBefore(currentDate) ? 'text-danger' : 'text-success';
-                    return '<span class="' + dateClass + '">' + moment(data).locale('es').format('DD/MM/YYYY') + '</span>';
+                    if (data === null) {
+                        return 'Sin comienzo';
+                    } else {
+                        var currentDate = moment().startOf('day');
+                        var initDate = moment(data).startOf('day');
+                        var dateClass = initDate.isBefore(currentDate) ? 'text-danger' : 'text-success';
+                        return '<span class="' + dateClass + '">' + moment(data).locale('es').format('DD/MM/YYYY') + '</span>';
+                    }
                 }
-              },
             },
             {
-                targets: 7,
+                targets: 6, // ✅ Fecha de Expiración
+                render: function (data, type, full, meta) {
+                    if (data === null) {
+                        return 'Sin expiración';
+                    } else {
+                        var currentDate = moment().startOf('day');
+                        var dueDate = moment(data).startOf('day');
+                        var dateClass = dueDate.isBefore(currentDate) ? 'text-danger' : 'text-success';
+                        return '<span class="' + dateClass + '">' + moment(data).locale('es').format('DD/MM/YYYY') + '</span>';
+                    }
+                }
+            },
+            {
+                targets: 7, // ✅ Creado por
                 render: function (data, type, full, meta) {
                     return data === null ? 'No registrado' : data;
                 }
             },
             {
-              targets: -1,
-              title: 'Acciones',
-              orderable: false,
-              searchable: false,
-              render: function (data, type, full, meta) {
-                  return (
-                      '<div class="d-flex justify-content-center align-items-center">' +
-                      '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
-                      '<div class="dropdown-menu dropdown-menu-end m-0">' +
-                      '<a href="javascript:void(0);" class="dropdown-item detail-record" data-id="' + full['id'] + '">Ver</a>' +
-                      '<a href="javascript:void(0);" class="dropdown-item edit-record" data-id="' + full['id'] + '">Editar</a>' +
-                      '<a href="javascript:void(0);" class="dropdown-item delete-record" data-id="' + full['id'] + '">Eliminar</a>' +
-                      
-                      '</div>' +
-                      '</div>'
-                  );
-              }
+                targets: 8, // ✅ Acciones
+                title: 'Acciones',
+                orderable: false,
+                searchable: false,
+                render: function (data, type, full, meta) {
+                    return (
+                        '<div class="d-flex justify-content-center align-items-center">' +
+                        '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
+                        '<div class="dropdown-menu dropdown-menu-end m-0">' +
+                        '<a href="javascript:void(0);" class="dropdown-item detail-record" data-id="' + full['id'] + '">Ver</a>' +
+                        '<a href="javascript:void(0);" class="dropdown-item edit-record" data-id="' + full['id'] + '">Editar</a>' +
+                        '<a href="javascript:void(0);" class="dropdown-item delete-record" data-id="' + full['id'] + '">Eliminar</a>' +
+                        '</div>' +
+                        '</div>'
+                    );
+                }
             }
-          ],
+        ],
+
 
           order: [2, 'asc'],
           dom:
@@ -212,19 +213,26 @@ $(function () {
   //Ver detalles del cupón.
 
   $('.datatables-coupons tbody').on('click', '.detail-record', function () {
-    var recordId = $(this).data('id'); 
+    var recordId = $(this).data('id');
 
-    var $couponExpiryInput = $('#detailCouponModal #couponExpiry'); 
+    var $couponExpiryInput = $('#detailCouponModal #couponExpiry');
 
     $.ajax({
-        url: 'coupons/' + recordId, 
+        url: 'coupons/' + recordId,
         type: 'GET',
         success: function (response) {
-            console.log('Detalles del cupon:', response); 
-            
+            console.log('Detalles del cupon:', response);
+
             $('#detailCouponModal #couponCode').val(response.code);
             $('#detailCouponModal #couponType').val(response.type);
             $('#detailCouponModal #couponAmount').val(response.amount);
+
+            if (response.init_date) {
+              var dueDate = response.init_date.split(' ')[0];
+              $('#detailCouponModal #couponInit').val(dueDate);
+            } else {
+                $('#detailCouponModal #couponInit').val('');
+            }
 
             if (response.due_date) {
                 var dueDate = response.due_date.split(' ')[0];
@@ -249,84 +257,104 @@ $(function () {
   });
 
   // Abrir FORM para editar el cupon.
-  
+
   $('.datatables-coupons tbody').on('click', '.edit-record', function () {
     var recordId = $(this).data('id'); // Obtener el ID del cupón
     $('#updateCouponBtn').attr('data-id', recordId); // Asignar el ID del cupón al botón de "Actualizar Cupón"
 
-    // Acceder al input de fecha de expiración del modal de edición
-    var $couponExpiryInput = $('#editCouponModal #couponExpiry'); 
-
-    // Realizar la solicitud Ajax para obtener los detalles del cupón
     $.ajax({
-        url: 'coupons/' + recordId, // Reemplaza 'coupons/' por la ruta correcta para obtener los detalles del cupón
+        url: 'coupons/' + recordId,
         type: 'GET',
         success: function (response) {
-            // Llenar los campos del formulario de edición con los detalles del cupón obtenidos de la base de datos
-            console.log('Response:', response); // Añadir log para verificar la respuesta
-            
+            console.log('Response:', response); // 🔎 Verificar datos en consola
+
             $('#editCouponModal #couponCode').val(response.code);
             $('#editCouponModal #couponType').val(response.type);
             $('#editCouponModal #couponAmount').val(response.amount);
 
-            // Verificar si existe fecha de expiración antes de intentar dividirla
-            if (response.due_date) {
-                var dueDate = response.due_date.split(' ')[0];
-                $('#editCouponModal #couponExpiry').val(dueDate);
-            } else {
-                // Si no hay fecha de expiración, dejar el campo vacío o manejarlo según sea necesario
-                $('#editCouponModal #couponExpiry').val('');
-            }
+            // ✅ Limpiar checkboxes antes de marcar los excluidos
+            $('.editExcludedProducts').prop('checked', false);
+            $('.editExcludedCategories').prop('checked', false);
+
+            // ✅ Marcar productos excluidos
+            response.excluded_products.forEach(id => {
+                $('.editExcludedProducts[value="' + id + '"]').prop('checked', true);
+            });
+
+            // ✅ Marcar categorías excluidas
+            response.excluded_categories.forEach(id => {
+                $('.editExcludedCategories[value="' + id + '"]').prop('checked', true);
+            });
+
+            // ✅ Verificar fecha de expiración
+            $('#editCouponModal #couponExpiry').val(response.due_date ? response.due_date.split(' ')[0] : '');
+
+            // ✅ Verificar fecha de inicio
+            $('#editCouponModal #couponInit').val(response.init_date ? response.init_date.split(' ')[0] : '');
 
             $('#editCouponModal').modal('show');
         },
         error: function (xhr) {
             console.error('Error al obtener los detalles del cupón:', xhr);
-            // Manejar el error si es necesario
         }
     });
 });
 
 
+
+
 // POST para editar el cupon en la base de datos.
 
-  function submitEditCoupon(recordId) {
-    var formData = {
-        'code': $('#editCouponModal #couponCode').val(),
-        'type': $('#editCouponModal #couponType').val(),
-        'amount': $('#editCouponModal #couponAmount').val(),
-        'due_date': $('#editCouponModal #couponExpiry').val(),
-        '_token': $('meta[name="csrf-token"]').attr('content')
-    };
+function submitEditCoupon(recordId) {
+  var formData = {
+      'code': $('#editCouponModal #couponCode').val(),
+      'type': $('#editCouponModal #couponType').val(),
+      'amount': $('#editCouponModal #couponAmount').val(),
+      'init_date': $('#editCouponModal #couponInit').val(),
+      'due_date': $('#editCouponModal #couponExpiry').val(),
+      'excluded_products': [],
+      'excluded_categories': [],
+      '_token': $('meta[name="csrf-token"]').attr('content')
+  };
 
-    $.ajax({
-        url: 'coupons/' + recordId,
-        type: 'PUT',
-        data: formData,
-        success: function (response) {
-            console.log('Cupón actualizado:', response);
-            $('#editCouponModal').modal('hide');
-            dt_coupons.ajax.reload(null, false);
+  // ✅ Capturar productos excluidos
+  $('input[name="excluded_products[]"]:checked').each(function () {
+      formData.excluded_products.push($(this).val());
+  });
 
-            // Mostrar SweetAlert de éxito
-            Swal.fire({
-                icon: 'success',
-                title: 'Cupón actualizado',
-                text: 'El cupón ha sido actualizado correctamente.'
-            }).then((result) => {window.location.reload();});    
-            
-        },
-        error: function (xhr) {
-            console.error('Error al actualizar el cupón:', xhr);
-            // Mostrar SweetAlert de error
-            Swal.fire({
-                icon: 'error',
-                title: 'Error al actualizar el cupón',
-                text: 'No se pudo actualizar el cupón. Intente nuevamente.'
-            });
-        }
-    });
-  }
+  // ✅ Capturar categorías excluidas
+  $('input[name="excluded_categories[]"]:checked').each(function () {
+      formData.excluded_categories.push($(this).val());
+  });
+
+  console.log('Datos enviados:', formData); // 🔎 Verificar en consola
+
+  $.ajax({
+      url: 'coupons/' + recordId,
+      type: 'PUT',
+      data: formData,
+      success: function (response) {
+          console.log('Cupón actualizado:', response);
+          $('#editCouponModal').modal('hide');
+          dt_coupons.ajax.reload(null, false);
+          Swal.fire({
+              icon: 'success',
+              title: 'Cupón actualizado',
+              text: 'El cupón ha sido actualizado correctamente.'
+          }).then(() => { window.location.reload(); });
+      },
+      error: function (xhr) {
+          console.error('Error al actualizar el cupón:', xhr);
+          Swal.fire({
+              icon: 'error',
+              title: 'Error al actualizar el cupón',
+              text: 'No se pudo actualizar el cupón. Intente nuevamente.'
+          });
+      }
+  });
+}
+
+
 
 
   $('#deleteSelected').on('click', function () {
@@ -439,15 +467,32 @@ $(function () {
 
 
   function submitNewCoupon() {
-      var route = $(this).data('route');
-      var formData = {
-          'code': $('#couponCode').val(),
-          'type': $('#couponType').val(),
-          'amount': $('#couponAmount').val(),
-          'due_date': $('#couponExpiry').val()
-      };
+    var route = $('#submitCouponBtn').data('route');
 
-      $.ajax({
+    // 🔎 Capturar valores del formulario
+    var formData = {
+        'code': $('#couponCode').val(),
+        'type': $('#couponType').val(),
+        'amount': $('#couponAmount').val(),
+        'init_date': $('#couponInit').val(),
+        'due_date': $('#couponExpiry').val(),
+        'excluded_products': [],
+        'excluded_categories': []
+    };
+
+    // ✅ Capturar los productos excluidos marcados
+    $('input[name="excluded_products[]"]:checked').each(function() {
+        formData.excluded_products.push($(this).val());
+    });
+
+    // ✅ Capturar las categorías excluidas marcadas
+    $('input[name="excluded_categories[]"]:checked').each(function() {
+        formData.excluded_categories.push($(this).val());
+    });
+
+    console.log('Datos enviados:', formData); // 🔎 Verificar en la consola del navegador
+
+    $.ajax({
         url: route,
         type: 'POST',
         headers: {
@@ -461,21 +506,22 @@ $(function () {
                 icon: 'success',
                 title: 'Cupón Agregado',
                 text: response.message
-            }).then((result) => {window.location.reload();});       
+            }).then((result) => {window.location.reload();});
         },
         error: function (xhr) {
-            
-            $('#addCouponModal').modal('hide'); 
+            $('#addCouponModal').modal('hide');
 
             var errorMessage = xhr.responseJSON && xhr.responseJSON.errors
                 ? Object.values(xhr.responseJSON.errors).flat().join('\n')
                 : 'Error desconocido al guardar.';
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error al guardar',
                 text: errorMessage
             });
         }
-      });
-  }
+    });
+}
+
 });
