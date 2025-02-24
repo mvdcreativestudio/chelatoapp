@@ -13,6 +13,8 @@ use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\OrderStatusChange;
 use App\Models\Product;
+use App\Models\CurrentAccountSettings;
+use App\Models\Currency;
 use App\Repositories\AccountingRepository;
 use Exception;
 use Illuminate\Http\Request;
@@ -688,9 +690,15 @@ class OrderRepository
 
     private function createInternalCredit(Order $order)
     {
-        // verify if exist client in current account
-        $currentAccount = CurrentAccount::where('client_id', $order->client_id)->first();
+        $accountSettings = CurrentAccountSettings::firstOrCreate(
+            ['transaction_type' => 'Sale'],  
+            [
+                'late_fee' => '0.05',
+                'payment_terms' => '30',
+            ]
+        );
 
+        $currentAccount = CurrentAccount::where('client_id', $order->client_id)->first();
         if ($currentAccount) {
             CurrentAccountInitialCredit::create([
                 'total_debit' => $order->total,
@@ -699,19 +707,29 @@ class OrderRepository
                 'current_account_settings_id' => 1,
             ]);
         } else {
+            $currencies = Currency::firstOrCreate(
+                ['id' => 1],
+                [
+                    'code' => 'UYU',
+                    'symbol' => '$',
+                    'name' => 'Peso Uruguayo',
+                    'exchange_rate' => 1.0000,
+                ]
+            );
+
             $currentAccount = CurrentAccount::create([
                 'client_id' => $order->client_id,
                 'payment_total_debit' => $order->total,
                 'status' => StatusPaymentEnum::UNPAID,
                 'transaction_type' => TransactionTypeEnum::SALE,
-                'currency_id' => 1,
+                'currency_id' => $currencies->id,
             ]);
 
             CurrentAccountInitialCredit::create([
                 'total_debit' => $order->total,
                 'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
-                'current_account_settings_id' => 1,
+                'current_account_settings_id' => $accountSettings->id,
             ]);
         }
     }
