@@ -45,8 +45,22 @@ class BudgetItem extends Model {
      */
     public function getFinalPriceAttribute() {
         if ($this->discount_type === 'Percentage') {
-            return $this->price - ($this->price * $this->discount / 100);
+            return $this->price - ($this->price * $this->discount_price / 100);
         }
-        return $this->price - $this->discount;
+        return $this->price - $this->discount_price;
+    }
+
+    /**
+     * Calcula el total del item.
+     *
+     * @return float
+     */
+    public function getTotalAttribute()
+    {
+        $subtotal = $this->quantity * $this->price;
+        if ($this->discount_type === 'Percentage') {
+            return $subtotal * (1 - ($this->discount_price / 100));
+        }
+        return $subtotal - ($this->quantity * $this->discount_price);
     }
 }

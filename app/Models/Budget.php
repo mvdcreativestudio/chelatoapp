@@ -14,7 +14,6 @@ class Budget extends Model {
     protected $fillable = [
         'client_id',
         'lead_id',
-        'order_id',
         'price_list_id',
         'store_id',
         'due_date',
@@ -24,6 +23,8 @@ class Budget extends Model {
         'discount',
         'is_blocked'
     ];
+
+    protected $appends = ['current_status'];
 
     /**
      * Obtiene los items asociados al presupuesto.
@@ -86,5 +87,20 @@ class Budget extends Model {
      */
     public function store() {
         return $this->belongsTo(Store::class, 'store_id');
+    }
+
+    /**
+     * Obtiene el último estado asociado al presupuesto.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function latestStatus()
+    {
+        return $this->hasOne(BudgetStatus::class)->latest();
+    }
+
+    public function getCurrentStatusAttribute()
+    {
+        return optional($this->latestStatus)->status ?? 'draft';
     }
 }
