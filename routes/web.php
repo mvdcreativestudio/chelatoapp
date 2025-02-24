@@ -70,6 +70,9 @@ use App\Http\Controllers\LeadAttachedFileController;
 use App\Http\Controllers\LeadConversationController;
 use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\BudgetItemController;
+use App\Http\Controllers\BudgetStatusController;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -204,6 +207,7 @@ Route::prefix('admin')->middleware([
         'incomes' => IncomeController::class,
         'income-categories' => IncomeCategoryController::class,
         'currencies' => CurrencyController::class,
+        'budgets' => BudgetController::class,
     ]);
 
     //Freemium
@@ -319,7 +323,7 @@ Route::prefix('admin')->middleware([
     Route::post('/pdv/close/{id}', [CashRegisterLogController::class, 'closeCashRegister']);
     Route::get('/pdv/clients/json', [CashRegisterLogController::class, 'getAllClients']);
     Route::get('/pdv', [CashRegisterLogController::class, 'index'])->name('pdv.index');
-    Route::get('/pdv/new-sale', [CashRegisterLogController::class, 'newSale'])->name('pdv.new-sale');
+    Route::get('/pdv/cart', [CashRegisterLogController::class, 'cart'])->name('pdv.cart');
     Route::get('/pdv/checkout', [CashRegisterLogController::class, 'checkout'])->name('pdv.checkout');
 
     // Productos para caja registradora
@@ -330,8 +334,8 @@ Route::prefix('admin')->middleware([
     Route::get('/pdv/log/{id}', [CashRegisterLogController::class, 'getCashRegisterLog']);
 
     Route::get('/pdv/product-categories', [CashRegisterLogController::class, 'getCategories']);
-    Route::post('/pdv/cart', [CashRegisterLogController::class, 'saveCart']);
-    Route::get('/pdv/cart', [CashRegisterLogController::class, 'getCart']);
+    Route::post('/pdv/api-cart', [CashRegisterLogController::class, 'saveCart']);
+    Route::get('/pdv/api-cart', [CashRegisterLogController::class, 'getCart']);
     Route::post('/pdv/client-session', [CashRegisterLogController::class, 'saveClient']);
     Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient'])  ;
     Route::get('/pdv/storeid-session', [CashRegisterLogController::class, 'getStoreId']);
@@ -401,11 +405,11 @@ Route::prefix('admin')->middleware([
 
     // Gestión de Roles
     Route::prefix('roles/{role}')->name('roles.')->group(function () {
-        Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('manageUsers');
-        Route::post('associate-user', [RoleController::class, 'associateUser'])->name('associateUser');
-        Route::post('disassociate-user', [RoleController::class, 'disassociateUser'])->name('disassociateUser');
-        Route::get('manage-permissions', [RoleController::class, 'managePermissions'])->name('managePermissions');
-        Route::post('assign-permissions', [RoleController::class, 'assignPermissions'])->name('assignPermissions');
+        Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('roles.manageUsers');
+        Route::post('associate-user', [RoleController::class, 'associateUser'])->name('roles.associateUser');
+        Route::post('disassociate-user', [RoleController::class, 'disassociateUser'])->name('roles.disassociateUser');
+        Route::get('manage-permissions', [RoleController::class, 'managePermissions'])->name('roles.managePermissions');
+        Route::post('assign-permissions', [RoleController::class, 'assignPermissions'])->name('roles.assignPermissions');
     });
 
     // Gestión de Variaciones de Productos
@@ -540,6 +544,19 @@ Route::prefix('admin')->middleware([
         Route::post('/delete-multiple', [ExpenseCategoryController::class, 'deleteMultiple'])->name('expense-categories.deleteMultiple');
     });
 
+    // Presupuestos
+        Route::get('/budgets', [BudgetController::class, 'index'])->name('budgets.index');
+        Route::get('/budgets/{budget}/detail', [BudgetController::class, 'detail'])->name('budgets.detail');
+        // Route::post('/budgets/delete-multiple', [BudgetController::class, 'deleteMultiple'])->name('budgets.deleteMultiple');
+        Route::put('/budgets/{budget}/status', [BudgetController::class, 'updateStatus'])->name('budgets.updateStatus');
+        Route::get('/budgets/{budget}/pdf', [BudgetController::class, 'generatePdf'])->name('budgets.pdf');
+        Route::post('/budgets/{budget}/order', [BudgetController::class, 'convertToOrder'])->name('budgets.convertToOrder');
+        Route::get('/budgets/{budget}/checkout', [BudgetController::class, 'checkout'])->name('budgets.checkout');
+        Route::post('/budgets/{budget}/process-checkout', [BudgetController::class, 'processCheckout'])->name('budgets.process-checkout');
+        Route::post('budgets/send-email', [AccountingController::class, 'sendBudgetEmail'])->name('budgets.sendEmail');
+
+
+
     // Métodos de Pago de Gastos
     Route::group(['prefix' => 'expense-payment-methods'], function () {
         // show
@@ -648,4 +665,4 @@ Route::get('/notifications', [NotificationController::class, 'index'])->name('no
 Route::post('/notifications/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
 // Sesión
-Route::get('/session/clear', [CartController::class, 'clearSession'])->name('session.clear'); // Limpiar Sesión
+Route::get('/session/clear', [CartController::class, 'clearSession'])->name('session.clear');
