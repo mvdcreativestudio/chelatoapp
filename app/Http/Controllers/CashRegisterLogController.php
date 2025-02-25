@@ -38,7 +38,7 @@ class CashRegisterLogController extends Controller
         return view('pdv.index');
     }
 
-    public function newSale()
+    public function cart()
     {
         $products = Product::all();
         $userId = auth()->user()->id;
@@ -47,7 +47,7 @@ class CashRegisterLogController extends Controller
         Session::put('open_cash_register_id', $openCashRegisterId);
         Session::put('store_id', $storeId);
         $priceLists = PriceList::all();
-        return view('pdv.new-sale', compact('products', 'priceLists'));
+        return view('pdv.cart', compact('products', 'priceLists'));
     }
 
     public function checkout()

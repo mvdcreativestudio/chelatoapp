@@ -21,7 +21,7 @@
 <script>
     window.cashRegisterId = "{{ Session::get('open_cash_register_id') }}";
     window.baseUrl = "{{ url('') }}/";
-    window.frontRoute = "{{ route('pdv.new-sale') }}";
+    window.frontRoute = "{{ route('pdv.checkout') }}";
     // Configuración de las respuestas del POS Scanntech
     const posResponsesConfig = @json(config('posResponses'));
     window.currencySymbol = '{{ $currencySymbol }}';
@@ -40,7 +40,7 @@
     <div class="col-12 d-flex justify-content-between align-items-center mb-4">
       <h5 class="mb-0">
         <button class="btn m-0 p-0">
-          <a href="{{ route('pdv.new-sale') }}"><i class="bx bx-chevron-left fs-2"></i></a>
+          <a href="{{ route('pdv.checkout') }}"><i class="bx bx-chevron-left fs-2"></i></a>
         </button> Atras
       </h5>
     </div>
@@ -291,7 +291,7 @@
     </div>
 
       <div class="demo-inline-spacing d-flex justify-content-between">
-        <a href="{{ route('pdv.new-sale') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
+        <a href="{{ route('pdv.checkout') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
         <button class="btn btn-success w-100"><i class="bx bx-check"></i> Finalizar venta</button>
       </div>
       <!-- Contenedor para el estado de la transacción -->

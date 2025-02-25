@@ -19,6 +19,11 @@ class Order extends Model
       'coupon_amount', 'discount', 'total', 'payment_status', 'shipping_status', 'notes',
       'payment_method', 'shipping_method', 'estimate_id', 'shipping_id', 'uuid', 'is_billed', 'doc_type', 'document', 'cash_register_log_id'];
 
+    protected $casts = [
+        'products' => 'array',
+        'is_billed' => 'boolean'
+    ];
+
     /**
      * The "booted" method of the model.
      *
@@ -55,7 +60,7 @@ class Order extends Model
     */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'order_products')
+        return $this->belongsToMany(Product::class, 'order_product')
                     ->withPivot('quantity', 'price')
                     ->withTimestamps();
     }
