@@ -133,6 +133,9 @@ $(function () {
       type: 'GET',
       success: function (response) {
         const formatDateTime = (dateString) => {
+          if (!dateString) {
+            return 'No disponible';
+          }
           const date = new Date(dateString);
           const day = String(date.getDate()).padStart(2, '0');
           const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -210,6 +213,113 @@ $(function () {
               'error'
             );
           }
+        });
+      }
+    });
+  });
+
+  $(document).on('click', '.edit-dispatch-note', function (e) {
+    e.preventDefault();
+    const dispatchNoteId = $(this).data('dispatch-note-id');
+    const editDeliveryUrl = `${baseUrl}admin/note-deliveries/${dispatchNoteId}`;
+  
+    $.ajax({
+      url: editDeliveryUrl,
+      type: 'GET',
+      success: function (response) {
+        $('#editDeliveryForm #note_delivery_id').val(response.id);
+        $('#editDeliveryForm #edit_dispatch_note_id').val(response.dispatch_note_id);
+        $('#editDeliveryForm #edit_vehicle').val(`${response.vehicle.number} - ${response.vehicle.plate}`);
+        $('#editDeliveryForm #edit_vehicle_id').val(response.vehicle_id);
+        $('#editDeliveryForm #edit_driver').val(`${response.driver.name} - ${response.driver.document}`);
+        $('#editDeliveryForm #edit_driver_id').val(response.driver_id);
+        $('#editDeliveryForm #edit_store').val(response.store.name);
+        $('#editDeliveryForm #edit_store_id').val(response.store_id);
+  
+        const formatDateTime = (dateString) => {
+          if (!dateString) return '';
+          const date = new Date(dateString);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+  
+        $('#editDeliveryForm #edit_departuring').val(formatDateTime(response.departuring));
+        $('#editDeliveryForm #edit_arriving').val(formatDateTime(response.arriving));
+        $('#editDeliveryForm #edit_unload_starting').val(formatDateTime(response.unload_starting));
+        $('#editDeliveryForm #edit_unload_finishing').val(formatDateTime(response.unload_finishing));
+        $('#editDeliveryForm #edit_departure_from_site').val(formatDateTime(response.departure_from_site));
+        $('#editDeliveryForm #edit_return_to_plant').val(formatDateTime(response.return_to_plant));
+  
+        // Si el usuario no tiene el permiso, bloquea solo los campos que ya tienen valor
+        if (!window.hasEditDeliveryData) {
+          let fields = [
+            '#edit_departuring',
+            '#edit_arriving',
+            '#edit_unload_starting',
+            '#edit_unload_finishing',
+            '#edit_departure_from_site',
+            '#edit_return_to_plant'
+          ];
+          fields.forEach(function (field) {
+            if ($(field).val()) {
+              $(field).prop('readonly', true);
+            } else {
+              $(field).prop('readonly', false);
+            }
+          });
+        }
+  
+        $('#offcanvasEditDelivery').offcanvas('show');
+      },
+      error: function (error) {
+        Swal.fire({
+          title: 'Error',
+          text: error.responseJSON.error || 'Hubo un problema al obtener la información del envío.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar'
+        });
+      }
+    });
+  });
+
+  $('#editDeliveryForm').on('submit', function (e) {
+    e.preventDefault();
+    
+    const formData = $(this).serialize();
+    const noteDeliveryId = $('#note_delivery_id').val();
+    const updateDeliveryUrl = `${baseUrl}admin/note-deliveries/${noteDeliveryId}`;
+
+    $.ajax({
+      url: updateDeliveryUrl,
+      type: 'PUT',
+      data: formData,
+      headers: {
+        'X-CSRF-TOKEN': window.csrfToken
+      },
+      success: function (response) {
+        $('#offcanvasEditDelivery').offcanvas('hide');
+        Swal.fire({
+          title: '¡Éxito!',
+          text: 'El envío ha sido actualizado correctamente.',
+          icon: 'success',
+          confirmButtonText: 'Aceptar'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            location.reload();
+          }
+        });
+      },
+      error: function (error) {
+        $('#offcanvasEditDelivery').offcanvas('hide');
+        Swal.fire({
+          title: 'Error',
+          text: error.responseJSON.error || 'Hubo un problema al actualizar el envío.',
+          icon: 'error',
+          confirmButtonText: 'Aceptar'
         });
       }
     });

@@ -18,12 +18,12 @@ class StoreNoteDeliveryRequest extends FormRequest
             'driver_id' => 'required|exists:drivers,id',
             'store_id' => 'required|exists:stores,id',
             'dispatch_note_id' => 'required|exists:dispatch_note,id',
-            'departuring' => 'required|date',
-            'arriving' => 'required|date|after:departuring',
-            'unload_starting' => 'required|date|after:arriving',
-            'unload_finishing' => 'required|date|after:unload_starting',
-            'departure_from_site' => 'required|date|after:unload_finishing',
-            'return_to_plant' => 'required|date|after:departure_from_site',
+            'departuring' => 'nullable|date',
+            'arriving' => 'nullable|date',
+            'unload_starting' => 'nullable|date',
+            'unload_finishing' => 'nullable|date',
+            'departure_from_site' => 'nullable|date',
+            'return_to_plant' => 'nullable|date',
         ];
     }
 }

@@ -249,6 +249,7 @@ Route::middleware([
     Route::get('note-deliveries/export-excel', [NoteDeliveryController::class, 'exportExcel']);  
     Route::delete('note-deliveries/{noteDeliveryId}', [NoteDeliveryController::class, 'destroy']);  
     Route::delete('dispatch-notes/{dispatchNoteId}', [DispatchNoteController::class, 'destroy']);  
+    Route::put('note-deliveries/{note_delivery}', [\App\Http\Controllers\NoteDeliveryController::class, 'update']);
 
     // Rutas específicas modulo de dalí
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');

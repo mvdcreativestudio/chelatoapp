@@ -23,6 +23,7 @@
 <script type="text/javascript">
     window.baseUrl = "{{ url('') }}/";
     window.csrfToken = "{{ csrf_token() }}";
+    window.hasEditDeliveryData = {{ auth()->user()->can('access_edit_delivery_data') ? 'true' : 'false' }};
 </script>
 @vite(['resources/assets/js/app-dispatch-notes-list.js'])
 @endsection
@@ -139,7 +140,11 @@
                                 @if($dispatchNote->noteDelivery->count() > 0)
                                 <button class="btn btn-sm btn-info show-delivery"
                                     data-dispatch-note-id="{{ $dispatchNote->noteDelivery->first()->id }}">
-                                    Ver Envío ID #{{ $dispatchNote->noteDelivery->first()->id }}
+                                    <i class="bx bx-show"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning edit-dispatch-note"
+                                    data-dispatch-note-id="{{ $dispatchNote->noteDelivery->first()->id}}">
+                                    <i class="bx bx-pencil"></i>
                                 </button>
                                 @else
                                 <button class="btn btn-sm btn-primary create-delivery"
@@ -298,4 +303,100 @@
     </div>
 </div>
 
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEditDelivery">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Editar Envío</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="editDeliveryForm" class="needs-validation" novalidate>
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="dispatch_note_id" id="edit_dispatch_note_id">
+            <input type="hidden" name="note_delivery_id" id="note_delivery_id">
+
+            <div class="mb-3">
+                <label class="form-label">Vehículo</label>
+                <input type="text" class="form-control bg-light" id="edit_vehicle" readonly>
+                <input type="hidden" name="vehicle_id" id="edit_vehicle_id">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Conductor</label>
+                <input type="text" class="form-control bg-light" id="edit_driver" readonly>
+                 <input type="hidden" name="driver_id" id="edit_driver_id">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Producido en</label>
+                <input type="text" class="form-control bg-light" id="edit_store" readonly>
+                <input type="hidden" name="store_id" id="edit_store_id">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Salida</label>
+                <input type="datetime-local" 
+                    class="form-control" 
+                    name="departuring" 
+                    id="edit_departuring" 
+                    {{ auth()->user()->cannot('access_edit_delivery_data') ? 'readonly' : '' }}
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Llegada</label>
+                <input type="datetime-local" 
+                    class="form-control" 
+                    name="arriving" 
+                    id="edit_arriving" 
+                    {{ auth()->user()->cannot('access_edit_delivery_data') ? 'readonly' : '' }}
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Inicio de descarga</label>
+                <input type="datetime-local" 
+                    class="form-control" 
+                    name="unload_starting" 
+                    id="edit_unload_starting" 
+                    {{ auth()->user()->cannot('access_edit_delivery_data') ? 'readonly' : '' }}
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Fin de descarga</label>
+                <input type="datetime-local" 
+                    class="form-control" 
+                    name="unload_finishing" 
+                    id="edit_unload_finishing" 
+                    {{ auth()->user()->cannot('access_edit_delivery_data') ? 'readonly' : '' }}
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Salida del sitio</label>
+                <input type="datetime-local" 
+                    class="form-control" 
+                    name="departure_from_site" 
+                    id="edit_departure_from_site" 
+                    {{ auth()->user()->cannot('access_edit_delivery_data') ? 'readonly' : '' }}
+                    required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Regreso a la planta</label>
+                <input type="datetime-local" 
+                    class="form-control" 
+                    name="return_to_plant" 
+                    id="edit_return_to_plant" 
+                    {{ auth()->user()->cannot('access_edit_delivery_data') ? 'readonly' : '' }}
+                    required>
+            </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Guardar</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="offcanvas">Cerrar</button>
+                </div>
+        </form>
+    </div>
+</div>
 @endsection

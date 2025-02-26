@@ -17,4 +17,7 @@ return [
     'integrations' => 'Integraciones',
     'sales' => 'Ventas',
     'products' => 'Productos',
+    'logistics' => 'Logística',
+    'orders' => 'Pedidos',
+    'entries' => 'Asientos'
 ];

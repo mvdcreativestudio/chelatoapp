@@ -5,6 +5,7 @@ namespace App\Repositories;
 use Spatie\Permission\Models\Role;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Log;
 
 class RoleRepository
 {
@@ -101,7 +102,8 @@ class RoleRepository
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAllPermissions(): \Illuminate\Database\Eloquent\Collection
-    {
+    {   
+        Log::info(Permission::all());
         return Permission::all();
     }
 
