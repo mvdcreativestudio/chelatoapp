@@ -403,13 +403,13 @@ Route::prefix('admin')->middleware([
     Route::post('/integrations/{store}/scanntech', [IntegrationController::class, 'handleScanntechIntegration']);
 
 
-    // Gestión de Roles
-    Route::prefix('roles/{role}')->name('roles.')->group(function () {
-        Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('roles.manageUsers');
-        Route::post('associate-user', [RoleController::class, 'associateUser'])->name('roles.associateUser');
-        Route::post('disassociate-user', [RoleController::class, 'disassociateUser'])->name('roles.disassociateUser');
-        Route::get('manage-permissions', [RoleController::class, 'managePermissions'])->name('roles.managePermissions');
-        Route::post('assign-permissions', [RoleController::class, 'assignPermissions'])->name('roles.assignPermissions');
+     // Gestión de Roles
+     Route::prefix('roles/{role}')->name('roles.')->group(function () {
+        Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('manageUsers');
+        Route::post('associate-user', [RoleController::class, 'associateUser'])->name('associateUser');
+        Route::post('disassociate-user', [RoleController::class, 'disassociateUser'])->name('disassociateUser');
+        Route::get('manage-permissions', [RoleController::class, 'managePermissions'])->name('managePermissions');
+        Route::post('assign-permissions', [RoleController::class, 'assignPermissions'])->name('assignPermissions');
     });
 
     // Gestión de Variaciones de Productos
