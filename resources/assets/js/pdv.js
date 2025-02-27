@@ -367,6 +367,31 @@ $(document).ready(function () {
         });
     }
 
+    // Función para generar el indicador de stock
+    function getStockIndicator(product) {
+        let stockClass, stockText;
+        const stock = product.stock;
+        const safetyMargin = product.safety_margin || 5;
+
+        if (stock === null) {
+            stockClass = 'bg-success';
+            stockText = 'En stock';
+        } else if (stock <= 0) {
+            stockClass = 'bg-danger';
+            stockText = 'Sin stock';
+        } else if (stock <= safetyMargin) {
+            stockClass = 'bg-warning';
+            stockText = 'Stock bajo';
+        } else {
+            stockClass = 'bg-success';
+            stockText = 'En stock';
+        }
+        return `<div class="mt-2">
+                  <span class="badge ${stockClass}">${stockText}</span>
+                  ${stock !== null ? `<small class="text-muted ms-1">(${stock} disponibles)</small>` : ''}
+              </div>`;
+    }
+
 
     // Función para mostrar productos en formato de tarjetas
     function displayProducts(productsToDisplay) {
@@ -438,8 +463,8 @@ $(document).ready(function () {
         let productsHtml = '<ul class="list-group w-100 p-0">';
         productsToDisplay.forEach(product => {
             const currencyLabel = product.currency === 'Dólar' ? 'USD' : 'UYU';
-            const priceToDisplay = product.price ? product.price.toLocaleString('es-ES') : product.old_price.toLocaleString('es-ES');
-            const oldPriceFormatted = product.old_price ? product.old_price.toLocaleString('es-ES') : '';
+            const priceToDisplay = product.price ? product.price : product.old_price;
+            const oldPriceFormatted = product.old_price ? product.old_price : '';
             const inactiveText = product.status == 0 ? '<span class="badge bg-danger text-white ms-2">Inactivo</span>' : '';
             const oldPriceHtml = product.price && product.old_price ? `<small class="text-muted"><del>${currencyLabel} ${oldPriceFormatted}</del></small>` : '';
 
@@ -621,113 +646,108 @@ $(document).ready(function () {
     }
 
 
-    // Función para actualizar el carrito en el DOM
     function updateCart() {
-
         var exchange_price = 0;
-
-
+    
         $.ajax({
             url: 'exchange-rate',
             type: 'GET',
             success: function (response) {
-                 exchange_price = response.exchange_rate.sell;
-                 let tc_value = parseFloat(exchange_price);
-                 $('.exchange-rate-value').text(tc_value.toFixed(2));
-
-                 let cartHtml = '';
-                 let subtotal = 0;
-                 let totalTax = 0; // Total de impuestos
-                 let totalItems = 0;  // Contador de productos
-         
-                 cartHtml = `
-                 <div class="row gy-3 overflow-auto" style="max-height: 400px;">
-               `;
-         
-                 cart.forEach(item => {
-                     var itemTotal = 0;
-                     const taxRate = item.tax_rate && item.tax_rate.rate ? parseFloat(item.tax_rate.rate) : 0; // Tasa de impuestos
-                     const basePrice = item.base_price || 0; // Precio base sin impuestos
-                     const taxAmount = (basePrice * taxRate / 100) * item.quantity; // Impuesto total por producto
-                     const itemTotal = (basePrice * item.quantity) + taxAmount; // Total con impuestos por producto
-               
-         
-                     if (item.currency == 'Dólar') {
-                         console.log(exchange_price);
-         
-                         var itemTotal = item.quantity * item.price * exchange_price;
-                     } else {
-                         var itemTotal = item.price * item.quantity
-                     }
-         
-                     subtotal += basePrice * item.quantity; // Acumular subtotal sin impuestos
-                     totalTax += taxAmount; // Acumular impuestos
-                     totalItems += item.quantity;
-                     const currencyLabel = item.currency === 'Dólar' ? 'USD' : 'UYU';
-
-      cartHtml += `
-      <div class="col-12">
-          <div class="product-cart-card">
-              <div class="col-4 d-flex align-items-center">
-                  <img src="${baseUrl + item.image}" class="img-fluid product-cart-card-img" alt="${item.name}">
-              </div>
-              <div class="col-8">
-                  <div class="product-cart-card-body">
-                      <div class="d-flex justify-content-between">
-                          <h5 class="product-cart-title">${item.name}</h5>
-                          <div class="product-cart-actions">
-                              <span class="product-cart-remove" data-id="${item.id}"><i class="bx bx-trash"></i></span>
-                          </div>
-                      </div>
-                      <p class="product-cart-price">
-                          Precio unitario: ${currencySymbol}${basePrice.toFixed(2)}
-                          <small class="text-muted">(Incluye ${taxRate}% de impuestos)</small>
-                      </p>
-                      <p class="product-cart-quantity">Cantidad: ${item.quantity}</p>
-                      <p><strong>Total: ${currencySymbol}${itemTotal.toFixed(2)}</strong></p>
-                  </div>
-              </div>
-          </div>
-      </div>
-      `;
-  });
-
-  cartHtml += `</div>`;
-
-  // Actualizar el contenido del carrito
-  $('#cart-items').html(cartHtml);
-
-  // Subtotal (sin impuestos)
-  $('.subtotal').text(`${currencySymbol}${subtotal.toFixed(2)}`);
-
-  // Total del IVA (impuestos)
-  $('.iva-total').text(`${currencySymbol}${totalTax.toFixed(2)}`);
-
-  // Total (con impuestos)
-  const total = subtotal + totalTax;
-  $('.total').text(`${currencySymbol}${total.toFixed(2)}`);
-
-  // Actualizar el contador de productos
-  $('#cart-count').text(totalItems);
-
-  // Botón "Finalizar Venta"
-  if (cart.length === 0) {
-      $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
-  } else {
-      $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
-  }
-
-  // Guardar el carrito en el servidor
-  saveCart();
-}
-
-
-
+                exchange_price = response.exchange_rate.sell;
+                let tc_value = parseFloat(exchange_price);
+                $('.exchange-rate-value').text(tc_value.toFixed(2));
+    
+                let cartHtml = '';
+                let subtotal = 0;
+                let totalTax = 0; // Total de impuestos
+                let totalItems = 0;  // Contador de productos
+    
+                cartHtml = `
+                <div class="row gy-3 overflow-auto" style="max-height: 400px;">
+                `;
+    
+                cart.forEach(item => {
+                    const taxRate = item.tax_rate && item.tax_rate.rate ? parseFloat(item.tax_rate.rate) : 0; // Tasa de impuestos
+                    const basePrice = item.base_price || 0; // Precio base sin impuestos
+                    const taxAmount = (basePrice * taxRate / 100) * item.quantity; // Impuesto total por producto
+                    var itemTotal = (basePrice * item.quantity) + taxAmount; // Total con impuestos por producto
+    
+                    if (item.currency == 'Dólar') {    
+                        var itemTotal = item.quantity * item.price * exchange_price;
+                        totalTax += taxAmount * exchange_price;
+                        subtotal += itemTotal - totalTax;
+                    } else {
+                        var itemTotal = item.price * item.quantity;
+                        totalTax += taxAmount;
+                        subtotal += itemTotal - taxAmount; // Acumular subtotal sin impuestos
+                    }
+    
+                    totalItems += item.quantity;
+                    const currencyLabel = item.currency === 'Dólar' ? 'USD' : 'UYU';
+    
+                    cartHtml += `
+                    <div class="col-12">
+                        <div class="product-cart-card">
+                            <div class="col-4 d-flex align-items-center">
+                                <img src="${baseUrl + item.image}" class="img-fluid product-cart-card-img" alt="${item.name}">
+                            </div>
+                            <div class="col-8">
+                                <div class="product-cart-card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h5 class="product-cart-title">${item.name}</h5>
+                                        <div class="product-cart-actions">
+                                            <span class="product-cart-remove" data-id="${item.id}"><i class="bx bx-trash"></i></span>
+                                        </div>
+                                    </div>
+                                    <p class="product-cart-price">
+                                        Precio unitario: ${currencyLabel} ${basePrice.toFixed(2)}
+                                        <small class="text-muted">(Incluye ${taxRate}% de impuestos)</small>
+                                    </p>
+                                    <p class="product-cart-quantity">Cantidad: ${item.quantity}</p>
+                                    <p><strong>Total: UYU ${itemTotal.toFixed(2)}</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+    
+                cartHtml += `</div>`;
+    
+                // Actualizar el contenido del carrito
+                $('#cart-items').html(cartHtml);
+    
+                // Subtotal (sin impuestos)
+                $('.subtotal').text(`UYU ${subtotal.toFixed(2)}`);
+    
+                // Total del IVA (impuestos)
+                $('.iva-total').text(`UYU ${totalTax.toFixed(2)}`);
+    
+                // Total (con impuestos)
+                const total = subtotal + totalTax;
+                $('.total').text(`UYU ${total.toFixed(2)}`);
+    
+                // Actualizar el contador de productos
+                $('#cart-count').text(totalItems);
+    
+                // Botón "Finalizar Venta"
+                if (cart.length === 0) {
+                    $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
+                } else {
+                    $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
+                }
+    
+                // Guardar el carrito en el servidor
+                saveCart();
+            }
+        });
+    }
+    
     // Manejar el clic en el botón "Agregar al carrito"
     $(document).on('click', '.add-to-cart', function () {
         const productId = $(this).data('id');
         const isComposite = $(this).data('composite'); // Cambiar "type" por "composite"
-
+    
         if (isComposite) {
             // Lógica para productos compuestos
             addCompositeProductToCart(productId);
@@ -735,9 +755,7 @@ $(document).ready(function () {
             addToCart(productId);
         }
     });
-
-
-
+    
     // Manejar el clic en el botón "Eliminar del carrito"
     $(document).on('click', '.product-cart-remove', function () {
         const productId = $(this).data('id');
@@ -745,7 +763,6 @@ $(document).ready(function () {
         updateCart();
         toastr.error(`Producto eliminado correctamente`);
     });
-
 
 
     // Manejar el cambio de vista de productos (tarjeta/lista)
@@ -831,32 +848,6 @@ $(document).ready(function () {
             input.val(currentValue - 1);
         }
     });
-
-    // Función para generar el indicador de stock
-    function getStockIndicator(product) {
-        let stockClass, stockText;
-        const stock = product.stock;
-        const safetyMargin = product.safety_margin || 5;
-
-        if (stock === null) {
-            stockClass = 'bg-success';
-            stockText = 'En stock';
-        } else if (stock <= 0) {
-            stockClass = 'bg-danger';
-            stockText = 'Sin stock';
-        } else if (stock <= safetyMargin) {
-            stockClass = 'bg-warning';
-            stockText = 'Stock bajo';
-        } else {
-            stockClass = 'bg-success';
-            stockText = 'En stock';
-        }
-        return `<div class="mt-2">
-                  <span class="badge ${stockClass}">${stockText}</span>
-                  ${stock !== null ? `<small class="text-muted ms-1">(${stock} disponibles)</small>` : ''}
-              </div>`;
-    }
-
 
     // Cargar la lista de precios del cliente si está asignada
     function loadClientPriceList(priceListId) {
@@ -1252,20 +1243,20 @@ $(document).ready(function () {
     function loadManualPriceListProducts(priceListId) {
         if (priceListId === "0") {
             loadNormalPrices(); // Restaurar precios originales en la vista
-
+    
             // Restaurar precios originales en el carrito
             cart = cart.map(item => {
                 const originalProduct = products.find(p => p.id === item.id);
                 item.price = originalProduct ? originalProduct.original_price : item.price;
                 return item;
             });
-
+    
             updateCart(); // Actualizar precios en el carrito
             return;
         } else if (priceListId === "") { // Si selecciona "Lista de precios manual"
             loadClientPriceList(client.price_list_id).then(updateCartPrices);
         }
-
+    
         $.ajax({
             url: `${baseUrl}admin/price-list/${priceListId}/products`,
             type: 'GET',
@@ -1279,9 +1270,6 @@ $(document).ready(function () {
             }
         });
     }
-
-
-
     // Inicializar funciones
     loadProducts();
     loadClientFromSession();
@@ -1290,4 +1278,5 @@ $(document).ready(function () {
     cargarCategoriaProducto();
     loadCart();
     loadStoreIdFromSession();
+
 });

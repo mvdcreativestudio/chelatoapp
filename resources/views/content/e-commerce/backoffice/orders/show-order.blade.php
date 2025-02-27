@@ -410,7 +410,6 @@ $changeTypeTranslations = [
               @else
               <span class="text-heading mb-0">{{ $currencyDisplay }} 0</span>
               @endif
-              @endif
             </div>
             @endif
             @if($order->shipping !== null && $order->shipping > 0)

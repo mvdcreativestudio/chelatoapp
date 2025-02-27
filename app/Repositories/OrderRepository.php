@@ -307,63 +307,72 @@ class OrderRepository
     {
         $products = json_decode($request['products'], true);
         $subtotal = 0;
+        $totalTax = 0;
         $dollarRate = $this->getDollarRate();
 
-        // Recorre los productos y usa el precio de la lista de precios si está disponible
-        foreach ($products as $item) {
-            // Si hay un precio específico en el carrito (de la lista de precios), úsalo
-            if($request->currency === 'Peso'){
-                if ($item['currency'] === 'Dólar' || $item['currency'] === 'D\u00f3lar') {
-                    $price = $item['price'] * $dollarRate;
-                } else {
-                    $price = $item['price'] ?? $item['old_price'];
-                }
-            }else{
-                if ($item['currency'] === 'Peso') {
-                    $price = $item['price'] / $dollarRate;
-                } else {
-                    $price = $item['price'] ?? $item['old_price'];
-                }            
-            }
-           
-            $subtotal += $price * $item['quantity'];
+        // 🔥 Determinar la moneda de la orden
+        $orderCurrency = $request->currency; // Puede ser 'Peso' o 'Dólar'
 
+        foreach ($products as $item) {
+            // 🔥 Determinar la moneda del producto
+            $productCurrency = $item['currency'] ?? 'Peso'; // Por defecto en Pesos
+
+            // 🔥 Obtener el precio correcto
+            if ($orderCurrency === 'Peso') {
+                // Si la orden está en Pesos, convertir productos en Dólares a Pesos
+                $price = ($productCurrency === 'Dólar') ? ($item['price'] * $dollarRate) : ($item['price'] ?? $item['old_price']);
+            } else {
+                // Si la orden está en Dólares, convertir productos en Pesos a Dólares
+                $price = ($productCurrency === 'Peso') ? ($item['price'] / $dollarRate) : ($item['price'] ?? $item['old_price']);
+            }
+
+            $quantity = $item['quantity'] ?? 1;
+
+            // 🔥 Calcular el impuesto del producto
+            $basePrice = ($productCurrency === 'Dólar' && $orderCurrency === 'Peso') ? ($item['base_price'] * $dollarRate) : 
+                        (($productCurrency === 'Peso' && $orderCurrency === 'Dólar') ? ($item['base_price'] / $dollarRate) : 
+                        $item['base_price']);
+
+            $taxRate = isset($item['tax_rate']) ? floatval($item['tax_rate']) : 0;
+            $taxAmount = (($basePrice * $taxRate) / 100) * $quantity;
+
+            $subtotal += ($price - $taxAmount) * $quantity;
+            $totalTax += $taxAmount;
         }
 
         Log::info('Request de prepareOrderData', ['request' => $request->all()]);
         Log::info('Store_Id de prepareOrderData', ['store_id' => $request->store_id]);
 
-        // Asegurar que store_id sea un entero
+        // 🔥 Asegurar que store_id sea un entero válido
         $storeId = is_array($request->store_id)
             ? $request->store_id['id']
             : ($request->store_id instanceof Store ? $request->store_id->id : $request->store_id);
 
         Log::info('Store ID validado para la orden', ['store_id' => $storeId]);
 
-        // Obtener descuento y asegurar que no sea mayor que el subtotal
+        // 🔥 Obtener descuento y asegurar que no sea mayor que el subtotal
         $discount = $request->discount ?? 0;
         $subtotalConDescuento = max($subtotal - $discount, 0); // Evitar negativos
 
         // 🔥 Calcular el porcentaje de descuento aplicado
         $discountPercentage = ($subtotal > 0) ? ($subtotalConDescuento / $subtotal) : 1;
 
-        // 🔥 Calcular TAX después de aplicar el descuento proporcionalmente
-        $tax = array_sum(array_map(fn($item) => (($item['base_price'] * $item['tax_rate']) / 100) * $item['quantity'], $products));
-        $taxConDescuento = $tax * $discountPercentage;
+        // 🔥 Ajustar TAX después del descuento
+        $taxConDescuento = $totalTax * $discountPercentage;
 
         return [
             'date' => now(),
             'time' => now()->format('H:i:s'),
             'origin' => 'physical',
             'store_id' => $storeId,
-            'subtotal' => $subtotal,
-            'tax' => $taxConDescuento,
+            'subtotal' => round($subtotal, 2),
+            'tax' => round($taxConDescuento, 2),
             'shipping' => session('costoEnvio', 0),
-            'discount' => $discount,
+            'discount' => round($discount, 2),
             'coupon_id' => $request->coupon_id,
             'coupon_amount' => $request->coupon_amount,
-            'total' => $subtotal + session('costoEnvio', 0) - $request->discount,
-            'currency' => $request->currency,
+            'total' => round($subtotal + $totalTax + session('costoEnvio', 0) - $request->discount, 2),
+            'currency' => $orderCurrency,
             'payment_status' => $request->payment_status ?? 'pending',
             'shipping_status' => $request->shipping_status ?? 'delivered',
             'payment_method' => $paymentMethod,
@@ -371,7 +380,6 @@ class OrderRepository
             'doc_type' => $request->doc_type,
             'document' => $request->document,
             'cash_register_log_id' => $request->cash_register_log_id,
-            // 'notes' => $request->notes,
         ];
     }
 
