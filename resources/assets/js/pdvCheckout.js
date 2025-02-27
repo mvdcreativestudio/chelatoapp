@@ -1518,6 +1518,8 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
             mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
         }
     });
+  }
+  
     $('input[name="currency"]').on('change', function () {
       const selectedCurrency = $(this).val();
       const internalCreditInput = $('#internalCredit');
@@ -1556,7 +1558,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         }
       });
     });
-  }
+
 
 
 

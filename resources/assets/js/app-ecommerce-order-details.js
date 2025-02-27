@@ -32,19 +32,21 @@ $(function () {
         {
           // Precio unitario sin IVA
           data: 'base_price',
-          render: function (data) {
-            return `${currencySymbol}${parseFloat(data).toFixed(2)} (Sin IVA)`;
+          render: function (data, type, row) {
+            const currencySymbol = row.currency === 'Dólar' ? 'USD' : 'UYU';
+            return `${currencySymbol} ${parseFloat(data).toFixed(2)} (Sin IVA)`;
           }
         },
         {
           // IVA aplicado por unidad
           data: 'tax_rate',
           render: function (data, type, row) {
+            const currencySymbol = row.currency === 'Dólar' ? 'USD' : 'UYU';
             if (parseFloat(data) === 0) {
-              return `${currencySymbol}0.00 (0%)`;
+              return `${currencySymbol} 0.00 (0%)`;
             } else {
               var taxAmount = row.base_price * (parseFloat(data) / 100);
-              return `${currencySymbol}${taxAmount.toFixed(2)} (${parseFloat(data).toFixed(0)}%)`;
+              return `${currencySymbol} ${taxAmount.toFixed(2)} (${parseFloat(data).toFixed(0)}%)`;
             }
           }
         },

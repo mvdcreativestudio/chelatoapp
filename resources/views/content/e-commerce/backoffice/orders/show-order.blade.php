@@ -400,7 +400,7 @@ $changeTypeTranslations = [
             </div>
             <div class="d-flex justify-content-between mb-2">
               <span class="w-px-100">IVA:</span>
-              <span class="text-heading">{{ $settings->currency_symbol }}{{ $order->tax }}</span>
+              <span class="text-heading">{{ $currencyDisplay }} {{ $order->tax }}</span>
             </div>
             @if($order->discount !== null && $order->discount > 0)
             <div class="d-flex justify-content-between mb-2">
