@@ -30,6 +30,7 @@ class UpdateLeadRequest extends FormRequest
             'type'            => 'nullable|in:company,individual,no-client',
             'archived'        => 'nullable|boolean',
             'name'            => 'sometimes|required|string|max:255',
+            'address'         => 'nullable|string|max:255',
             'description'     => 'nullable|string|max:500',
             'amount_of_money' => 'nullable|numeric|min:0',
             'category_id'     => 'nullable|integer',

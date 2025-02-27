@@ -88,7 +88,14 @@ class LeadRepository
     public function update($id, array $data)
     {
         $lead = $this->find($id);
+        $address = isset($data['address']) ? $data['address'] : null;
+        if (isset($data['address'])) {
+            unset($data['address']);
+        }
         $lead->update($data);
+        if ($address) {
+            $lead->companyInformation()->update(['address' => $address]);
+        }
         return $lead;
     }
 

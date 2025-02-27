@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
             email: document.getElementById('email').value,
             phone: document.getElementById('phone').value,
             description: document.getElementById('description').value,
+            address: document.getElementById('company_address').value,
             amount_of_money: document.getElementById('amount_of_money').value,
             category_id: document.getElementById('category_id').value,
             position: document.getElementById('position').value,
@@ -339,6 +340,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     modal.querySelector('#name').value = updatedLead.name || '';
                     modal.querySelector('#email').value = updatedLead.email || '';
                     modal.querySelector('#phone').value = updatedLead.phone || '';
+                    const addressField = modal.querySelector('#company_address');
+                    if (addressField) {
+                        if (updatedLead.company_information && updatedLead.company_information.address) {
+                            addressField.value = updatedLead.company_information.address;
+                        } else {
+                            addressField.value = '';
+                        }
+                    }
                     modal.querySelector('#description').value = updatedLead.description || '';
                     modal.querySelector('#amount_of_money').value = updatedLead.amount_of_money || '';
                     modal.querySelector('#category_id').value = updatedLead.category_id;
