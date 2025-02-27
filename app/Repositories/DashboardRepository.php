@@ -145,36 +145,22 @@ class DashboardRepository
     {
         $currentMonth = Carbon::now()->month;
         $lastMonth = Carbon::now()->subMonth()->month;
-        $year = Carbon::now()->year;
-
-        $currentMonthOrders = Order::whereYear('date', $year)
-            ->whereMonth('date', $currentMonth)
 
         $currentMonthOrders = Order::whereMonth('date', $currentMonth)
             ->where('payment_status', 'paid')
             ->count();
-        
+
         $lastMonthOrders = Order::whereMonth('date', $lastMonth)
             ->where('payment_status', 'paid')
-            ->get();
+            ->count();
 
-        $currentMonthTotal = $currentMonthOrders->sum(function ($order) {
-            return $this->convertOrderAmount($order, $order->total);
-        });
-
-        $lastMonthTotal = $lastMonthOrders->sum(function ($order) {
-            return $this->convertOrderAmount($order, $order->total);
-        });
-
-        $percentage = $lastMonthTotal > 0
-            ? round((($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100)
+        $percentage = $lastMonthOrders > 0
+            ? round((($currentMonthOrders - $lastMonthOrders) / $lastMonthOrders) * 100)
             : 0;
-
 
         $lastOrder = Order::where('payment_status', 'paid')
             ->orderBy('date', 'desc')
             ->first();
-
 
         $lastOrderInfo = [];
         if ($lastOrder) {
@@ -185,7 +171,6 @@ class DashboardRepository
             $topProductId = null;
             $otherProductsCount = 0;
 
-
             foreach ($products as $product) {
                 if ($product['quantity'] > $maxQuantity) {
                     $maxQuantity = $product['quantity'];
@@ -194,20 +179,17 @@ class DashboardRepository
                 $otherProductsCount++;
             }
 
-
             $topProduct = Product::find($topProductId);
-
 
             $lastOrderInfo = [
                 'product_name' => $topProduct ? $topProduct->name : 'N/A',
                 'other_products' => $otherProductsCount > 1 ? $otherProductsCount - 1 : 0,
-                'total' => $this->convertOrderAmount($lastOrder, $lastOrder->total)
+                'total' => $lastOrder->total
             ];
         }
-
         return [
             'last_order' => $lastOrderInfo,
-            'orders' => $currentMonthOrders->count(),
+            'orders' => $currentMonthOrders,
             'percentage' => $percentage
         ];
     }

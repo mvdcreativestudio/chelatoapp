@@ -144,7 +144,6 @@
         <div class="mb-3">
           <label class="form-label">Precio Final (Imp. Incluídos):</label>
           <p>
-            {{$settings->currency}}
             @if($product->price)
               {{ number_format($product->price * (1 + ($product->taxRate->rate ?? 0) / 100), 2) }}
             @else
