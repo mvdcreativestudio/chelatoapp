@@ -205,8 +205,8 @@ $(document).ready(function () {
 
       $('.responsible-text').hide();
 
-      $('#rutField, #razonSocialField').hide();
-      $('#company_name, #rut').val('').removeAttr('required');
+      $('#rutField, #razonSocialField, #taxRateField').hide();
+      $('#company_name, #rut, #tax_rate_id').val('').removeAttr('required');
 
       $('#ciudadAsterisk').hide();
       $('#departamentoAsterisk').hide();
@@ -219,8 +219,8 @@ $(document).ready(function () {
 
       $('.responsible-text').show();
 
-      $('#rutField, #razonSocialField').show();
-      $('#company_name, #rut').attr('required', true);
+      $('#rutField, #razonSocialField, #taxRateField').show();
+      $('#company_name, #rut, #tax_rate_id').attr('required', true);
 
       $('#ciudadAsterisk').show();
       $('#departamentoAsterisk').show();
@@ -238,6 +238,7 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
   const otroId = document.getElementById('other_id_type');
   const rut = document.getElementById('rut');
   const razonSocial = document.getElementById('company_name');
+  const taxRateId = document.getElementById('tax_rate_id');
   const direccion = document.getElementById('ecommerce-customer-add-address');
   const ciudad = document.getElementById('ecommerce-customer-add-town');
   const departamento = document.getElementById('ecommerce-customer-add-state');
@@ -265,6 +266,10 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
       showError($('#rut')[0], 'El RUT es obligatorio');
       hasError = true;
     }
+    if ($('#tax_rate_id').val().trim() === '') {
+      showError($('#tax_rate_id')[0], 'La Tasa de IVA es obligatoria');
+      hasError = true;
+    }
   }
   if (hasError) return;
   let data = {
@@ -280,6 +285,7 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
   else if (tipo.value === 'company') {
     data.rut = rut.value.trim();
     data.company_name = razonSocial.value.trim();
+    data.tax_rate_id = taxRateId.value.trim();
   }
   document.getElementById('eCommerceCustomerAddForm').submit();
   sessionStorage.clear();
@@ -293,20 +299,32 @@ function showError(input, message) {
 }
 
 function toggleDocumentFields(selectedType) {
-  $('#ciField, #passportField, #other_field').hide();
+  // Ocultar todos los campos inicialmente
+  $('#ciField, #passportField, #otherField').hide();
   $('#ci, #passport, #other_id_type').val('').removeAttr('required');
 
+  // Mostrar el campo correspondiente al tipo seleccionado
   if (selectedType === 'ci') {
-    $('#ciField').show();
-    $('#ci').attr('required', true);
+      $('#ciField').show();
+      $('#ci').attr('required', true);
   } else if (selectedType === 'passport') {
-    $('#passportField').show();
-    $('#passport').attr('required', true);
+      $('#passportField').show();
+      $('#passport').attr('required', true);
   } else if (selectedType === 'other_id_type') {
-    $('#other_field').show();
-    $('#other_id_type').attr('required', true);
+      $('#otherField').show();
+      $('#other_id_type').attr('required', true);
   }
 }
+
+// Ejecutar al cambiar el tipo de documento
+$(document).on('change', '#documentType', function () {
+  toggleDocumentFields($(this).val());
+});
+
+// Ejecutar al cargar la página (por si hay valores preseleccionados)
+$(document).ready(function () {
+  toggleDocumentFields($('#documentType').val());
+});
 
 function clearErrors() {
   const errors = document.querySelectorAll('.text-danger.error-message');
@@ -364,6 +382,7 @@ $(document).ready(function () {
       } else if (clientType === 'company') {
         requiredFields.company_name = 'Razón Social';
         requiredFields.rut = 'RUT';
+        requiredFields.tax_rate_id = 'Tasa de IVA';
       }
 
       let missingFields = [];

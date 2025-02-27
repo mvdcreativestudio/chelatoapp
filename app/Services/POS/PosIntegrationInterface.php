@@ -14,5 +14,6 @@ interface PosIntegrationInterface {
   public function fetchTransactionHistory(array $queryData): array;
   public function fetchBatchCloses(array $queryData): array;
   public function fetchOpenBatches(array $queryData): array;
+  public function cancelTransaction(array $transactionData): array;
 }
 

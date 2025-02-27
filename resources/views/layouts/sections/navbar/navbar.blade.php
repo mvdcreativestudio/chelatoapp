@@ -7,7 +7,7 @@ $navbarDetached = ($navbarDetached ?? '');
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 {{-- Scripts para notificaciones --}}
-<script>
+{{-- <script>
   window.notificationUrl = '{{ route('notifications.index') }}';
   window.notificationReadUrl = '{{ route('notifications.markAsRead') }}';
   window.orderUrl = '{{ route('orders.index') }}';
@@ -24,7 +24,9 @@ $navbarDetached = ($navbarDetached ?? '');
                   .then(notifications => {
                       const notificationContainer = document.getElementById('notification-list');
                       const notificationIcon = document.getElementById('notification-icon');
-                      notificationContainer.innerHTML = ''; // Limpiar la lista de notificaciones
+                      if (notificationContainer) {
+                          notificationContainer.innerHTML = ''; // Limpiar la lista de notificaciones
+                      }
 
                       if (notifications.length > 0) {
                           console.log('Notificaciones recibidas:', notifications);
@@ -94,12 +96,16 @@ $navbarDetached = ($navbarDetached ?? '');
                                   });
                               }
 
-                              notificationIcon.textContent = unreadNotifications.length;
-                              notificationIcon.classList.add('bg-danger');
+                              if (notificationIcon) {
+                                notificationIcon.textContent = unreadNotifications.length;
+                                notificationIcon.classList.add('bg-danger');
+                              }
                           }
                       } else {
+                        if (notificationIcon) {
                           notificationIcon.textContent = '';
                           notificationIcon.classList.remove('bg-danger');
+                        }
                       }
                   }).catch(error => console.error('Error al obtener notificaciones:', error));
           }
@@ -165,7 +171,7 @@ $navbarDetached = ($navbarDetached ?? '');
           }).catch(error => console.error('Error al marcar todas como leídas:', error));
       };
   });
-  </script>
+  </script> --}}
 {{-- Fin scripts para notificaciones --}}
 
 
@@ -243,7 +249,7 @@ $navbarDetached = ($navbarDetached ?? '');
       <ul class="navbar-nav flex-row align-items-center ms-auto">
 
         <!-- Notification -->
-        <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
+        {{-- <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
           <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
               <i class="bx bx-bell bx-sm"></i>
               <span id="notification-icon" class="badge rounded-pill badge-notifications"></span>
@@ -266,7 +272,7 @@ $navbarDetached = ($navbarDetached ?? '');
                   <button class="btn btn-primary text-uppercase w-100">Ver todas las notificaciones</button>
               </li>
           </ul>
-        </li>
+        </li> --}}
         <!--/ Notification -->
 
 

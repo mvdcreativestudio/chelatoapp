@@ -30,7 +30,7 @@ class HandyIntegrationService implements PosIntegrationInterface
             'Branch' => $transactionData['branch'],
             'UserId' => $transactionData['user'],
             'TransactionDateTimeyyyyMMddHHmmssSSS' => now()->format('YmdHis') . '000',
-            'Amount' => number_format($transactionData['Amount'], 0, '', ''), // Cambiar a 'Amount'
+            'Amount' => (int) $transactionData['Amount'], // Mantener el valor original como entero
             'Quotas' => isset($transactionData['Quotas']) && is_numeric($transactionData['Quotas']) ? (int) $transactionData['Quotas'] : 1, // Validar y asignar valor predeterminado
             'Plan' => $transactionData['Plan'] ?? 0,
             'Currency' => '858', // Código de moneda
@@ -145,40 +145,108 @@ class HandyIntegrationService implements PosIntegrationInterface
     public function checkTransactionStatus(array $transactionData): array
     {
         try {
-            Log::info('Iniciando consulta de estado para transacción (checkTransactionStatus)', $transactionData);
+            // Obtener la última transacción registrada
+            $lastTransaction = Transaction::latest()->first();
 
+            if (!$lastTransaction || !$lastTransaction->TransactionId || !$lastTransaction->STransactionId) {
+                throw new \Exception('No se encontró información de la última transacción.');
+            }
+
+            // Preparar los datos para la consulta
+            $queryData = array_merge($lastTransaction->formatted_data, [
+                'TransactionId' => $lastTransaction->TransactionId,
+                'STransactionId' => $lastTransaction->STransactionId,
+            ]);
+
+            Log::info('Cuerpo de la solicitud para Handy processFinancialPurchaseQuery', $queryData);
+
+            // Realizar la solicitud a Handy
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
-            ])->post($this->apiUrl . 'processFinancialPurchaseQuery', $transactionData);
+            ])->post($this->apiUrl . 'processFinancialPurchaseQuery', $queryData);
 
-            Log::info('Respuesta de Handy en checkTransactionStatus:', [
+            Log::info('Respuesta de Handy al consultar estado de transacción', [
                 'status_code' => $response->status(),
                 'response_body' => $response->body(),
             ]);
 
             if ($response->successful()) {
                 $jsonResponse = $response->json();
+                Log::info('Estado de transacción recibido de Handy', $jsonResponse);
+
 
                 // Verificar si ResponseCode es 0 (transacción exitosa)
                 if (isset($jsonResponse['ResponseCode']) && $jsonResponse['ResponseCode'] === 0) {
+                  Log::info('Transacción exitosa según Handy (ResponseCode 0):', $jsonResponse);
+
+                  // Obtener el Acquirer y asegurarnos de que esté presente
+                  $acquirer = $jsonResponse['Acquirer'] ?? null;
+                  if ($acquirer) {
+                      Log::info('Acquirer obtenido de la respuesta de Handy:', ['Acquirer' => $acquirer]);
+
+                      // Actualizar el registro de la transacción en la base de datos
+                      Transaction::where('TransactionId', $transactionData['TransactionId'])
+                          ->update([
+                              'status' => 'completed', // Cambiar el estado a completado
+                              'formatted_data->Acquirer' => $acquirer, // Actualizar el campo Acquirer en los datos formateados
+                          ]);
+
+                      Log::info('Transacción actualizada con el Acquirer en la base de datos.');
+                  } else {
+                      Log::warning('Acquirer no presente en la respuesta de Handy.');
+                  }
+
+                  return [
+                      'responseCode' => 0,
+                      'message' => 'La transacción fue exitosa.',
+                      'icon' => 'success',
+                      'keepPolling' => false,
+                      'transactionSuccess' => true,
+                      'details' => $jsonResponse,
+                  ];
+              }
+
+                // Manejar el caso donde PosResponseCode esté presente
+                $posResponseCode = $jsonResponse['PosResponseCode'] ?? '';
+                if (!empty($posResponseCode)) {
+                    // Si PosResponseCode es 'CT', la transacción fue cancelada
+                    if ($posResponseCode === 'CT') {
+                        return [
+                            'responseCode' => 999,
+                            'message' => 'La transacción fue cancelada.',
+                            'icon' => 'error',
+                            'keepPolling' => false,
+                            'transactionSuccess' => false,
+                            'details' => $jsonResponse,
+                        ];
+                    }
+
+                    // Si PosResponseCode es '00', la transacción fue exitosa
+                    if ($posResponseCode === '00') {
+                        // Actualizar el status de la transacción a 'completed'
+                        Transaction::where('TransactionId', $queryData['TransactionId'])
+                            ->update(['status' => 'completed']);
+
+                        return [
+                            'responseCode' => 0,
+                            'message' => 'La transacción fue exitosa.',
+                            'icon' => 'success',
+                            'keepPolling' => false,
+                            'transactionSuccess' => true,
+                            'details' => $jsonResponse,
+                        ];
+                    }
+                }
+
+                // Manejar ResponseCode específico
+                $responseCode = $jsonResponse['ResponseCode'] ?? 999;
+                if ($responseCode === 0) {
+                    // Si ResponseCode es 0 (transacción exitosa)
                     Log::info('Transacción exitosa según Handy (ResponseCode 0):', $jsonResponse);
 
-                    // Obtener el Acquirer y asegurarnos de que esté presente
-                    $acquirer = $jsonResponse['Acquirer'] ?? null;
-                    if ($acquirer) {
-                        Log::info('Acquirer obtenido de la respuesta de Handy:', ['Acquirer' => $acquirer]);
-
-                        // Actualizar el registro de la transacción en la base de datos
-                        Transaction::where('TransactionId', $transactionData['TransactionId'])
-                            ->update([
-                                'status' => 'completed', // Cambiar el estado a completado
-                                'formatted_data->Acquirer' => $acquirer, // Actualizar el campo Acquirer en los datos formateados
-                            ]);
-
-                        Log::info('Transacción actualizada con el Acquirer en la base de datos.');
-                    } else {
-                        Log::warning('Acquirer no presente en la respuesta de Handy.');
-                    }
+                    // Actualizar la transacción como completada
+                    Transaction::where('TransactionId', $queryData['TransactionId'])
+                        ->update(['status' => 'completed']);
 
                     return [
                         'responseCode' => 0,
@@ -190,23 +258,7 @@ class HandyIntegrationService implements PosIntegrationInterface
                     ];
                 }
 
-                // Manejar el caso donde PosResponseCode esté presente
-                $posResponseCode = $jsonResponse['PosResponseCode'] ?? '';
-                if (!empty($posResponseCode)) {
-                    if ($posResponseCode === 'CT') {
-                        return [
-                            'responseCode' => 999,
-                            'message' => 'La transacción fue cancelada.',
-                            'icon' => 'error',
-                            'keepPolling' => false,
-                            'transactionSuccess' => false,
-                            'details' => $jsonResponse,
-                        ];
-                    }
-                }
-
                 // Obtener la configuración del código de respuesta desde el archivo
-                $responseCode = $jsonResponse['ResponseCode'] ?? 999;
                 $responseConfig = $this->getResponses($responseCode);
 
                 return [
@@ -228,6 +280,7 @@ class HandyIntegrationService implements PosIntegrationInterface
             return $this->getResponses(999);
         }
     }
+
 
 
 
@@ -525,34 +578,96 @@ class HandyIntegrationService implements PosIntegrationInterface
     }
 
     public function fetchTransactionHistory(array $queryData): array
-    {
-        try {
-            // Obtener la URL base desde el método getHandyApiUrl
-            $baseUrl = $this->getHandyApiUrl();
+{
+    try {
+        // Obtener la URL base desde la configuración
+        $baseUrl = $this->getHandyApiUrl();
 
-            // Endpoint específico para el historial de transacciones
-            $endpoint = $baseUrl . 'processQuery?QueryRequest';
+        // Endpoint específico para el historial de transacciones
+        $endpoint = $baseUrl . 'processQuery';
 
-            // Validar datos antes de enviar la solicitud
-            Log::info('Preparando solicitud para obtener historial de transacciones:', [
-                'endpoint' => $endpoint,
-                'queryData' => $queryData,
+        // Validar datos antes de enviar la solicitud
+        Log::info('Preparando solicitud para obtener historial de transacciones:', [
+            'endpoint' => $endpoint,
+            'queryData' => $queryData,
+        ]);
+
+        // Enviar la solicitud utilizando sendRequest
+        $response = $this->sendRequest($endpoint, $queryData, 'POST');
+
+        // Registrar la respuesta completa para depuración
+        Log::info('Respuesta completa de Handy API (raw):', [
+            'response_body' => json_encode($response),
+        ]);
+
+        // Validar que la respuesta contiene un ResponseCode
+        if (!isset($response['ResponseCode'])) {
+            Log::error('Respuesta inválida de Handy: falta ResponseCode.', [
+                'response' => $response,
             ]);
-
-            // Enviar la solicitud utilizando sendRequest
-            $response = $this->sendRequest($endpoint, $queryData, 'POST');
-
-            // Validar la respuesta
-            if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
-                throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
-            }
-
-            return $response;
-        } catch (\Exception $e) {
-            Log::error('Error al obtener el historial de transacciones en HandyIntegrationService: ' . $e->getMessage());
-            throw $e;
+            throw new \Exception('Respuesta inválida: falta ResponseCode.');
         }
+
+        // Validar que ResponseCode sea 0 (transacción exitosa)
+        if ($response['ResponseCode'] !== 0) {
+            Log::warning('Error en la respuesta de Handy.', [
+                'ResponseCode' => $response['ResponseCode'],
+                'ResponseMessage' => $response['ResponseMessage'] ?? 'Mensaje no disponible',
+                'response' => $response,
+            ]);
+            throw new \Exception($response['ResponseMessage'] ?? 'Error desconocido.');
+        }
+
+        // Validar que las transacciones estén presentes
+        if (!isset($response['QueryTransaction']) || !is_array($response['QueryTransaction'])) {
+            Log::warning('No se encontraron transacciones en la respuesta de Handy.', [
+                'response' => $response,
+            ]);
+            throw new \Exception('No se encontraron transacciones en la respuesta.');
+        }
+
+        Log::info('Transacciones obtenidas de Handy:', $response['QueryTransaction']);
+
+        // Agregar validaciones adicionales sobre la estructura de las transacciones
+        foreach ($response['QueryTransaction'] as $index => $transaction) {
+            if (!isset($transaction['TransactionId']) || !isset($transaction['STransactionId'])) {
+                Log::error("Transacción inválida en índice $index:", [
+                    'transaction' => $transaction,
+                ]);
+                throw new \Exception("Transacción inválida en índice $index.");
+            }
+        }
+
+        // Lógica adicional: puedes guardar transacciones en la base de datos aquí
+        foreach ($response['QueryTransaction'] as $transaction) {
+            Log::info("Procesando transacción con ID: {$transaction['TransactionId']}", $transaction);
+
+            // Ejemplo de lógica adicional que puede lanzar errores
+            try {
+                // Procesar o guardar transacciones (simula con un comentario si no aplica)
+                // Transaction::create($transaction); // Si usas Eloquent, asegúrate de que no haya fallos aquí
+            } catch (\Exception $e) {
+                Log::error("Error al procesar la transacción {$transaction['TransactionId']}: " . $e->getMessage());
+                throw $e;
+            }
+        }
+
+        return $response['QueryTransaction'];
+    } catch (\Exception $e) {
+        Log::error('Error al obtener el historial de transacciones en HandyIntegrationService: ' . $e->getMessage(), [
+            'queryData' => $queryData,
+            'exception_trace' => $e->getTraceAsString(), // Traza de la excepción
+        ]);
+        return [
+            'success' => false,
+            'message' => 'Error al obtener el historial de transacciones.',
+            'details' => $e->getMessage(),
+        ];
     }
+}
+
+
+
 
 
 
@@ -588,6 +703,7 @@ class HandyIntegrationService implements PosIntegrationInterface
 
             // Realizar la solicitud HTTP
             $response = $client->request($method, $url, $options);
+
 
             // Decodificar la respuesta JSON
             $responseData = json_decode($response->getBody()->getContents(), true);
@@ -750,26 +866,80 @@ class HandyIntegrationService implements PosIntegrationInterface
     }
 
     public function fetchOpenBatches(array $queryData): array
-{
-    try {
-        Log::info('Preparando solicitud para obtener lotes abiertos:', $queryData);
+    {
+        try {
+            Log::info('Preparando solicitud para obtener lotes abiertos:', $queryData);
 
-        $url = $this->apiUrl . 'ProcessCurrentTransactionsBatchQuery';
-        $response = $this->sendRequest($url, $queryData, 'POST');
+            $url = $this->apiUrl . 'ProcessCurrentTransactionsBatchQuery';
+            $response = $this->sendRequest($url, $queryData, 'POST');
 
-        Log::info('Respuesta completa de Handy para fetchOpenBatches:', $response);
+            Log::info('Respuesta completa de Handy para fetchOpenBatches:', $response);
 
-        // Validar que la respuesta contiene los datos esperados
-        if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
-            throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+            // Validar que la respuesta contiene los datos esperados
+            if (!isset($response['ResponseCode']) || $response['ResponseCode'] !== 0) {
+                throw new \Exception('Error en la API de Handy: ' . ($response['ResponseMessage'] ?? 'Error desconocido'));
+            }
+
+            return $response;
+        } catch (\Exception $e) {
+            Log::error('Error al obtener los lotes abiertos en HandyIntegrationService: ' . $e->getMessage());
+            throw $e;
         }
-
-        return $response;
-    } catch (\Exception $e) {
-        Log::error('Error al obtener los lotes abiertos en HandyIntegrationService: ' . $e->getMessage());
-        throw $e;
     }
-}
+
+    public function cancelTransaction(array $transactionData): array
+    {
+        try {
+            Log::info('Iniciando cancelFinancialPurchase con los datos:', $transactionData);
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . 'cancelFinancialPurchase', $transactionData);
+
+            Log::info('Respuesta de cancelFinancialPurchase:', [
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+            ]);
+
+            if ($response->successful()) {
+                $jsonResponse = $response->json();
+
+                if ($jsonResponse['ResponseCode'] === 0) {
+                    // Actualizar el estado de la transacción en la base de datos
+                    Transaction::where('TransactionId', $transactionData['TransactionId'])
+                        ->update(['status' => 'canceled']);
+
+                    return [
+                        'success' => true,
+                        'message' => 'Transacción cancelada exitosamente.',
+                        'details' => $jsonResponse,
+                    ];
+                }
+
+                return [
+                    'success' => false,
+                    'message' => $jsonResponse['Message'] ?? 'Error al cancelar la transacción.',
+                    'details' => $jsonResponse,
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Error al conectarse a Handy.',
+                'details' => $response->body(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Excepción en cancelFinancialPurchase:', [
+                'message' => $e->getMessage(),
+                'transactionData' => $transactionData,
+            ]);
+            return [
+                'success' => false,
+                'message' => 'Error interno al cancelar la transacción.',
+                'details' => $e->getMessage(),
+            ];
+        }
+    }
 
 
 

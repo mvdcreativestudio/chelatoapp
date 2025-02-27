@@ -55,11 +55,12 @@ class CashRegisterRepository
         $cashRegister = CashRegister::find($cashRegisterId);
 
         if ($cashRegister) {
-            return $cashRegister->store_id;
+            return $cashRegister->store; // Retorna la relación completa de Store
         }
 
         return null;
     }
+
 
     /**
      * Crea un nuevo registro de caja.

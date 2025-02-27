@@ -21,6 +21,7 @@ class Product extends Model
         'currency',
         'old_price',
         'price',
+        'tax_rate_id',
         'discount',
         'categories',
         'tags',
@@ -58,7 +59,7 @@ class Product extends Model
         return $this->belongsToMany(ProductCategory::class, 'category_product', 'product_id', 'category_id');
     }
 
-      
+
 
     public function productPrices(): HasMany
     {
@@ -183,10 +184,10 @@ class Product extends Model
                     ->withPivot('price')
                     ->withTimestamps();
     }
-    
+
     /**
      * Obtiene los lotes del producto
-     * 
+     *
      * @return HasMany
      */
     public function batch(): HasMany
@@ -196,7 +197,7 @@ class Product extends Model
 
     /**
      * Obtiene las características del producto
-     * 
+     *
      * @return HasMany
      */
     public function features()
@@ -206,7 +207,7 @@ class Product extends Model
 
     /**
      * Obtiene los tamaños del producto
-     * 
+     *
      * @return HasMany
      */
     public function sizes()
@@ -216,7 +217,7 @@ class Product extends Model
 
     /**
      * Obtiene los colores del producto
-     * 
+     *
      * @return HasMany
      */
     public function colors()
@@ -226,11 +227,22 @@ class Product extends Model
 
     /**
      * Obtiene las imagenes de la galeria del producto
-     * 
+     *
      * @return HasMany
      */
     public function gallery()
     {
         return $this->hasMany(ProductGallery::class);
     }
+
+    /**
+     * Obtiene el impuesto asociado al producto
+     *
+     * @return BelongsTo
+     */
+    public function taxRate()
+    {
+        return $this->belongsTo(TaxRate::class);
+    }
+
 }

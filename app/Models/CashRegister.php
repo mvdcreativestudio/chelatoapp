@@ -93,7 +93,6 @@ class CashRegister extends Model
         return $this->posDevices()->latest('cash_register_pos_device.created_at')->first();
     }
 
-
     /**
      * Obtiene los POS de Mercado Pago asociados a la caja registradora.
      *

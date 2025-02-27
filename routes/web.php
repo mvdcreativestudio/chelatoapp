@@ -97,7 +97,7 @@ Route::prefix('admin')->middleware([
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/monthly-income/{month}', [DashboardController::class, 'monthlyIncomeDashboard'])->name('api.dashboard.monthly-income');
-    
+
     // Data Tables
     Route::get('/clients/datatable', [ClientController::class, 'datatable'])->name('clients.datatable');
     Route::get('/products/datatable', [ProductController::class, 'datatable'])->name('products.datatable');
@@ -134,7 +134,7 @@ Route::prefix('admin')->middleware([
 
     // Stock de productos
     Route::get('/products/stock', [ProductController::class, 'stock'])->name('products.stock');
-    
+
     // Exportaciones
     Route::get('/products/export', [ProductController::class, 'exportToExcel'])->name('products.export');
     Route::get('/products/download-template', [ProductController::class, 'downloadTemplate'])->name('products.download-template');
@@ -187,7 +187,6 @@ Route::prefix('admin')->middleware([
         'orders' => OrderController::class,
         'marketing/coupons' => CouponController::class,
         'company-settings' => CompanySettingsController::class,
-        'clients' => ClientController::class,
         'productions' => ProductionController::class,
         'points-of-sales' => CashRegisterController::class,
         'pos-orders' => PosOrderController::class,
@@ -210,7 +209,7 @@ Route::prefix('admin')->middleware([
     Route::get('exchange-rate-dollar', [CurrencyController::class, 'getCurrentRateDollar']);
 
 
-    //Freemium 
+    //Freemium
     Route::get('/raw-material-freemium', [RawMaterialController::class, 'createFreemium'])->name('raw-materials.createFreemium');
 
     // CRM
@@ -323,8 +322,8 @@ Route::prefix('admin')->middleware([
     Route::post('/pdv/close/{id}', [CashRegisterLogController::class, 'closeCashRegister']);
     Route::get('/pdv/clients/json', [CashRegisterLogController::class, 'getAllClients']);
     Route::get('/pdv', [CashRegisterLogController::class, 'index'])->name('pdv.index');
-    Route::get('/pdv/front', [CashRegisterLogController::class, 'front'])->name('pdv.front');
-    Route::get('/pdv/front2', [CashRegisterLogController::class, 'front2'])->name('pdv.front2');
+    Route::get('/pdv/cart', [CashRegisterLogController::class, 'cart'])->name('pdv.cart');
+    Route::get('/pdv/checkout', [CashRegisterLogController::class, 'checkout'])->name('pdv.checkout');
 
     // Productos para caja registradora
     Route::get('/pdv/products/{id}', [CashRegisterLogController::class, 'getProductsByCashRegister']);
@@ -334,12 +333,13 @@ Route::prefix('admin')->middleware([
     Route::get('/pdv/log/{id}', [CashRegisterLogController::class, 'getCashRegisterLog']);
 
     Route::get('/pdv/product-categories', [CashRegisterLogController::class, 'getCategories']);
-    Route::post('/pdv/cart', [CashRegisterLogController::class, 'saveCart']);
-    Route::get('/pdv/cart', [CashRegisterLogController::class, 'getCart']);
+    Route::post('/pdv/api-cart', [CashRegisterLogController::class, 'saveCart']);
+    Route::get('/pdv/api-cart', [CashRegisterLogController::class, 'getCart']);
     Route::get('/pdv/exchange-rate', [CashRegisterLogController::class, 'getExchangeRate']);
     Route::post('/pdv/client-session', [CashRegisterLogController::class, 'saveClient']);
-    Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient']);
+    Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient'])  ;
     Route::get('/pdv/storeid-session', [CashRegisterLogController::class, 'getStoreId']);
+    Route::get('/pdv/tax-rates', [CashRegisterLogController::class, 'taxRates']);
 
     // Datacenter
     Route::get('/datacenter-sales', [DatacenterController::class, 'sales'])->name('datacenter.sales');
@@ -395,6 +395,7 @@ Route::prefix('admin')->middleware([
     Route::post('/integrations/{store}/email-config', [IntegrationController::class, 'saveEmailConfig'])->name('integration.save-email-config');
     Route::post('/integrations/{store}/mercadopago-online', [IntegrationController::class, 'saveMercadoPagoOnline'])->name('integration.save-mercadopago-online');
     Route::post('/integrations/{store}/mercadopago-presencial', [IntegrationController::class, 'saveMercadoPagoPresencial'])->name('integration.save-mercadopago-presencial');
+    Route::get('/integrations/{store}/mercadopago-presencial-connection', [IntegrationController::class, 'checkMercadoPagoPresencialConnection'])->name('integration.mercadopago-presencial-connection');
     Route::post('/integrations/{store}/pymo', [IntegrationController::class, 'handlePymoIntegration'])->name('integration.pymo.update');
     Route::post('/integrations/{store}/pedidosya', [IntegrationController::class, 'handlePedidosYaIntegration'])->name('integration.pedidosya.update');
     Route::get('/integrations/pymo-connection/{storeId}', [IntegrationController::class, 'checkPymoConnection'])->name('integrations.pymo-connection');

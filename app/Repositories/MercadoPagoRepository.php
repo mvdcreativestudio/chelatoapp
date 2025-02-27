@@ -72,19 +72,14 @@ class MercadoPagoRepository
         if ($id) {
             foreach ($secretKeys as $secretKey) {
                 if ($mpService->verifyHMAC($id, $request->header('x-request-id'), $ts, $receivedHash, $secretKey->secret_key)) {
-                    Log::info('La verificación HMAC pasó correctamente');
+                    Log::channel('mercadopago')->info('La verificación HMAC pasó correctamente');
                     return $this->processNotification($topic, $id, $mpService, $secretKey, 1);
                 }
             }
-            // if ($mpService->verifyHMAC($id, $request->header('x-request-id'), $ts, $receivedHash, $secretKey)) {
-            //     Log::info('La verificación HMAC pasó correctamente');
-            //     return $this->processNotification($topic, $id, $mpService);
-            // } else {
-            // }
-            Log::error('La verificación HMAC falló');
+            Log::channel('mercadopago')->error('La verificación HMAC falló');
             return ['message' => ['error' => 'HMAC verification failed'], 'status' => 400];
         } else {
-            Log::error('El índice "data" o "resource" no está presente en los datos de la solicitud');
+            Log::channel('mercadopago')->error('El índice "data" o "resource" no está presente en los datos de la solicitud');
             return ['message' => ['error' => 'Invalid request data'], 'status' => 400];
         }
     }
@@ -101,29 +96,30 @@ class MercadoPagoRepository
     {
         switch ($topic) {
             case 'payment':
-                Log::info("Procesando 'payment' con ID: $id");
+                Log::channel('mercadopago')->info("Procesando 'payment' con ID: $id");
                 $paymentInfo = $mpService->getPaymentInfo($id);
 
                 if ($paymentInfo) {
-                    Log::info("Información del pago recibida:", $paymentInfo);
+                    Log::channel('mercadopago')->info("Información del pago recibida:", $paymentInfo);
 
                     $orderId = $paymentInfo['metadata']['order_id']; // Obtiene el ID de la orden desde el metadata
                     $this->updatePaymentStatus($orderId, 'paid'); // Método para actualizar el estado del pago
 
-                    Log::info("Estado del pago actualizado a 'paid' para la orden con ID: $orderId");
+                    Log::channel('mercadopago')->info("Estado del pago actualizado a 'paid' para la orden con ID: $orderId");
                     return ['message' => ['message' => 'Notification received'], 'status' => 200];
                 } else {
-                    Log::error("No se pudo obtener información del pago con ID: $id");
+                    Log::channel('mercadopago')->error("No se pudo obtener información del pago con ID: $id");
                     return ['message' => ['error' => 'Payment information not found'], 'status' => 400];
                 }
 
             case 'topic_merchant_order_wh':
+                Log::channel('mercadopago')->info("Procesando 'merchant_order' con ID: $id");
                 // Implementar lógica similar para 'merchant_order'
                 $this->processStatusOrder($id, $mpService, $secretKey);
                 return ['message' => ['message' => 'Notification received'], 'status' => 200];
 
             default:
-                Log::warning("Tipo de notificación no soportado: $topic");
+                Log::channel('mercadopago')->warning("Tipo de notificación no soportado: $topic");
                 return ['message' => ['error' => 'Unsupported notification type'], 'status' => 400];
         }
     }
@@ -143,7 +139,7 @@ class MercadoPagoRepository
             $order->payment_status = $status;
             $order->save();
 
-            Log::info("Estado de la orden actualizado a '$status' para la orden con ID: $orderId");
+            Log::channel('mercadopago')->info("Estado de la orden actualizado a '$status' para la orden con ID: $orderId");
 
             if ($status === 'paid') {
                 $this->sendOrderEmails($order);
@@ -155,7 +151,7 @@ class MercadoPagoRepository
 
             return true;
         } else {
-            Log::error("No se encontró la orden con ID: $orderId");
+            Log::channel('mercadopago')->error("No se encontró la orden con ID: $orderId");
             return false;
         }
     }
@@ -214,9 +210,9 @@ class MercadoPagoRepository
             $order->shipping_status = $response['status'];
             $order->save();
 
-            Log::info("Envío creado con éxito en PedidosYa para la orden con ID: $order->id");
+            Log::channel('mercadopago')->info("Envío creado con éxito en PedidosYa para la orden con ID: $order->id");
         } else {
-            Log::error("Error al crear el envío en PedidosYa para la orden con ID: $order->id", ['response' => $response]);
+            Log::channel('mercadopago')->error("Error al crear el envío en PedidosYa para la orden con ID: $order->id", ['response' => $response]);
         }
     }
 
@@ -245,19 +241,20 @@ class MercadoPagoRepository
 
     private function processStatusOrder(string $id, MercadoPagoService $mpService, $secretKey): void
     {
-
+        Log::channel('mercadopago')->info("Procesando 'merchant_order' con ID: $id");
+        Log::channel('mercadopago')->info("Secret Key: $secretKey");
         try {
             $mpService->setCredentials($secretKey->store_id, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
 
             $merchantOrderInfo = $mpService->getMerchantOrder($id);
 
             if ($merchantOrderInfo['status'] === 'closed') {
-                Log::info("Información de la orden recibida:", $merchantOrderInfo);
+                Log::channel('mercadopago')->info("Información de la orden recibida:", $merchantOrderInfo);
                 $orderId = $merchantOrderInfo['external_reference']; // Obtiene el ID de la orden desde el external_reference
                 $order = Order::find($orderId);
                 $order->payment_status = 'paid';
                 $order->save();
-                Log::info("Id del payment: ", $merchantOrderInfo['payments']);
+                Log::channel('mercadopago')->info("Id del payment: ", $merchantOrderInfo['payments']);
                 $existingOrder = MercadoPagoAccountOrder::where('payment_id', $merchantOrderInfo['payments'][0]['id'])->first();
 
                 if (!$existingOrder) {
@@ -268,12 +265,12 @@ class MercadoPagoRepository
                         "amount" => $merchantOrderInfo['total_amount'],
                     ]);
                 } else {
-                    Log::info('Payment ID already exists: ' . $merchantOrderInfo['payments'][0]['id']);
+                    Log::channel('mercadopago')->info('Payment ID already exists: ' . $merchantOrderInfo['payments'][0]['id']);
                 }
-                Log::info("Estado de la orden actualizado a 'paid' para la orden con ID: $orderId");
+                Log::channel('mercadopago')->info("Estado de la orden actualizado a 'paid' para la orden con ID: $orderId");
             }
         } catch (\Exception $e) {
-            Log::error($e->getMessage());
+            Log::channel('mercadopago')->error($e->getMessage());
         }
     }
 }

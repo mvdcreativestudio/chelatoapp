@@ -10,6 +10,7 @@ use App\Models\CurrencyRateHistory;
 use App\Models\CurrencyRate;
 use App\Models\MercadoPagoAccountPOS;
 use App\Models\Product;
+use App\Models\TaxRate;
 use App\Repositories\CashRegisterLogRepository;
 use App\Repositories\CashRegisterRepository;
 use Illuminate\Http\JsonResponse;
@@ -40,51 +41,56 @@ class CashRegisterLogController extends Controller
         return view('pdv.index');
     }
 
-    public function front()
+    public function cart()
     {
         $products = Product::all();
+        $taxRates = TaxRate::all();
         $userId = auth()->user()->id;
         $openCashRegisterId = $this->cashRegisterLogRepository->hasOpenLogForUser($userId);
         $storeId = $this->cashRegisterRepository->findStoreByCashRegisterId($openCashRegisterId);
         Session::put('open_cash_register_id', $openCashRegisterId);
         Session::put('store_id', $storeId);
         $priceLists = PriceList::all();
-        return view('pdv.front', compact('products', 'priceLists'));
+        return view('pdv.cart', compact('products', 'priceLists', 'taxRates'));
     }
 
-    public function front2()
+
+    public function checkout()
     {
-        // Obtener el ID de la caja registradora abierta desde la sesión
         $openCashRegisterId = Session::get('open_cash_register_id');
 
-        // Verificar si hay un cash_register_id activo
         if (!$openCashRegisterId) {
             Log::warning('No hay una caja registradora abierta.');
-            return view('pdv.front2', [
+            return view('pdv.checkout', [
                 'priceLists' => PriceList::all(),
                 'enableMercadoPagoAccountPos' => false,
-                'posDeviceName' => null // Enviar null si no hay un dispositivo POS conectado
+                'posDeviceName' => null,
+                'store' => null,
             ]);
         }
+
+        // Obtener el modelo completo de Store
+        $store = $this->cashRegisterRepository->findStoreByCashRegisterId($openCashRegisterId);
 
         // Consultar el nombre del dispositivo POS asociado al cash_register_id
         $posDevice = DB::table('cash_register_pos_device')
             ->where('cash_register_id', $openCashRegisterId)
             ->join('pos_devices', 'cash_register_pos_device.pos_device_id', '=', 'pos_devices.id')
-            ->select('pos_devices.name as pos_device_name') // Seleccionar el campo `name`
+            ->select('pos_devices.name as pos_device_name')
             ->first();
 
-        // Obtener el nombre del dispositivo POS (o null si no se encuentra)
         $posDeviceName = $posDevice ? $posDevice->pos_device_name : null;
-
-        // Verificar si Mercado Pago está habilitado
         $enableMercadoPagoAccountPos = MercadoPagoAccountPOS::where('cash_register_id', $openCashRegisterId)->exists();
-
-        // Obtener las listas de precios
         $priceLists = PriceList::all();
+        $taxRates = TaxRate::all();
 
-        // Retornar la vista con los datos
-        return view('pdv.front2', compact('priceLists', 'enableMercadoPagoAccountPos', 'posDeviceName'));
+        return view('pdv.checkout', compact('store', 'priceLists', 'enableMercadoPagoAccountPos', 'posDeviceName', 'taxRates'));
+    }
+
+    public function taxRates()
+    {
+        $taxRates = TaxRate::all();
+        return response()->json(['taxRates' => $taxRates]);
     }
 
 

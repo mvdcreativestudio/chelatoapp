@@ -25,34 +25,45 @@
 @endsection
 
 @section('content')
-<div>
-    <div class="d-flex align-items-center justify-content-between bg-white p-4 mb-3 rounded shadow-lg sticky-top border-bottom border-light">
-        <div class="d-flex flex-column justify-content-center">
-            <h4 class="mb-0 page-title">
-                <i class="bx bx-list-ul me-2"></i> {{ $priceList->name }}
-            </h4>
-        </div>
-        <div class="d-flex">
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <!-- Contenedor de botones con alineación -->
+          <div class="d-flex align-items-center">
+            <a href="{{ route('price-lists.index') }}" class="btn btn-sm btn-primary me-2">
+              <i class="bx bx-arrow-back me-1"></i>Volver a Listas de Precios
+            </a>
             @can('access_edit-price-lists')
-                <form action="{{ route('price-lists.edit', $priceList->id) }}" method="GET" style="display: inline;">
-                    <button type="submit" class="btn btn-outline-primary me-2">
-                        <i class="bx bx-edit-alt"></i>
-                    </button>
-                </form>
+            <form action="{{ route('price-lists.edit', $priceList->id) }}" method="GET" class="m-0">
+                <button type="submit" class="btn btn-outline-primary me-2 btn-sm">
+                    <i class="bx bx-edit"></i> Editar
+                </button>
+            </form>
             @endcan
             @can('access_delete-price-lists')
-                <form id="delete-form" action="{{ route('price-lists.destroy', $priceList->id) }}" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <button type="button" class="btn btn-outline-danger m-0" onclick="confirmDelete()">
-                        <i class="bx bx-trash"></i>
-                    </button>
-                </form>
+            <form id="delete-form" action="{{ route('price-lists.destroy', $priceList->id) }}" method="POST" class="m-0">
+                @csrf
+                @method('DELETE')
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmDelete()">
+                    <i class="bx bx-trash"></i> Eliminar
+                </button>
+            </form>
             @endcan
-        
+          </div>
+          <!-- Título -->
+          <h4 class="mb-0">
+            {{ $priceList->name }}
+          </h4>
         </div>
+      </div>
     </div>
-    
+  </div>
+</div>
+
+<div>
+
     <div class="card">
         <div class="card-body">
 

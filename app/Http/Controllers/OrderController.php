@@ -97,7 +97,7 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): JsonResponse
     {
         try {
-          
+
             $order = $this->orderRepository->store($request, true);
 
             $this->eventService->handleEvents(auth()->user()->store_id, [EventEnum::LOW_STOCK], ['order' => $order]);

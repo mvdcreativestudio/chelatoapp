@@ -30,6 +30,7 @@ $currencySymbol = $settings->currency_symbol;
   window.baseUrl = "{{ url('') }}/";
   window.currencySymbol = '{{ $currencySymbol }}';
   window.csrfToken = "{{ csrf_token() }}";
+  window.taxRates = @json($taxRates);
 </script>
 
 @if ($openCashRegister !== null)
@@ -111,26 +112,26 @@ $currencySymbol = $settings->currency_symbol;
         <i class="bx bx-x d-inline d-md-none"></i>
       </button>
     </div>
-    
+
     <div class="client-details">
       <div class="row g-3">
-        
-        <div class="col-auto px-4 border-end">
+
+        <div class="col-auto border-end">
           <small class="text-muted d-block mb-1">Nombre:</small>
           <span id="client-name" class="text-body fw-semibold">-</span>
         </div>
-        
+
         <div class="col-auto px-4 border-end">
           <small class="text-muted d-block mb-1">Tipo:</small>
           <span id="client-type" class="text-body fw-semibold">-</span>
         </div>
-        
+
         <div class="col-auto px-4 border-end">
           <p class="mb-0 d-none" id="client-company"></p>
           <small class="text-muted d-block mb-1">CI:</small>
           <span id="client-doc" class="text-body fw-semibold">-</span>
         </div>
-        
+
         <div class="col px-4">
           <small class="text-muted d-block mb-1">Lista:</small>
           <span id="client-price-list" class="text-body fw-semibold">-</span>
@@ -176,18 +177,22 @@ $currencySymbol = $settings->currency_symbol;
            </div>
         <div class="totals-item d-flex justify-content-between align-items-center w-100 mb-2 animate__animated animate__fadeIn">
             <h6 class="text-muted">Subtotal:</h6>
-            <h6 class="subtotal text-primary fw-bold">$770</h6>
+            <h6 class="subtotal text-primary fw-bold"></h6>
+          </div>
+          <div class="totals-item d-flex justify-content-between align-items-center w-100 mb-2 animate__animated animate__fadeIn">
+            <h6 class="text-muted">IVA:</h6>
+            <h6 class="iva-total text-primary fw-bold"></h6>
           </div>
           <div class="totals-item d-flex justify-content-between align-items-center w-100 border-top pt-2 animate__animated animate__fadeIn">
             <h5 class="text-dark">Total:</h5>
-            <h4 class="total text-dark fw-bold">$770</h4>
+            <h4 class="total text-dark fw-bold"></h4>
           </div>
         </div>
 
         <!-- Botón de acciones -->
         <div class="d-flex justify-content-end mt-3 animate__animated animate__fadeIn">
           <button class="btn btn-outline-danger me-2" type="button" data-bs-dismiss="modal">Cerrar</button>
-          <a href="{{ route('pdv.front2') }}" class="btn btn-primary disabled" id="finalizarVentaBtn" aria-disabled="true" tabindex="-1">Finalizar Venta</a>
+          <a href="{{ route('pdv.checkout') }}" class="btn btn-primary disabled" id="finalizarVentaBtn" aria-disabled="true" tabindex="-1">Finalizar Venta</a>
         </div>
       </div>
     </div>
@@ -230,6 +235,18 @@ $currencySymbol = $settings->currency_symbol;
           <option value="company">Empresa</option>
         </select>
       </div>
+
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="taxIdField" style="display: none;">
+        <select id="taxIdCliente" name="tax_rate_id" for="tax_rate_id" class="form-control">
+          <option value="" disabled selected>Seleccione una tasa de impuestos</option>
+          @foreach($taxRates as $taxRate)
+              <option value="{{ $taxRate->id }}">
+                  {{ $taxRate->name }} ({{ $taxRate->rate }}%)
+              </option>
+          @endforeach
+        </select>
+      </div>
+
       <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
         <label for="razonSocialCliente" class="form-label">
           Razón Social *<span class="text-danger">*</span>
@@ -252,59 +269,39 @@ $currencySymbol = $settings->currency_symbol;
         <input type="text" class="form-control" id="nombreCliente" placeholder="Ingrese el nombre">
       </div>
 
-      <label for="apellidoCliente" class="form-label">
-        Apellido<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
-        <span class="text-danger" id="apellidoAsterisk">*</span>
-      </label>
-
-      <div id="documentTypeField" class="mb-3">
-        <label class="form-label" for="documentType">Tipo de Documento</label>
-        <select class="form-select" id="documentType" name="documentType" required>
-          <option value="ci">Cédula de Identidad</option>
-          <option value="passport">Pasaporte</option>
-          <option value="other_id_type">Otro</option>
+      <div class="mb-3 animate__animated animate__fadeInLeft">
+        <label for="apellidoCliente" class="form-label">
+          Apellido<span class="responsible-text" style="display: none;"> DEL RESPONSABLE</span>
+          <span class="text-danger" id="apellidoAsterisk">*</span>
+        </label>
+        <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido">
+      </div>
+      <div class="mb-3 animate__animated animate__fadeInLeft" id="ciField">
+        <label for="ciCliente" class="form-label">CI </label>
+        <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
+      </div>
+      <div class="mb-3 animate__animated animate__fadeInLeft">
+        <label for="direccionCliente" class="form-label">Dirección </label>
+        <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
+      </div>
+      <div class="mb-3 animate__animated animate__fadeInLeft">
+        <label for="emailCliente" class="form-label">Correo Electrónico </label>
+        <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
+      </div>
+      <div class="mb-3 mt-3 animate__animated animate__fadeInLeft">
+        <label class="form-label" for="price_list_id">Lista de Precios</label>
+        <select id="price_list_id" class="form-select form-select" name="price_list_id">
+          <option value="" selected>Seleccionar Lista de Precios</option>
+          @foreach($priceLists as $priceList)
+          <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
+          @endforeach
         </select>
       </div>
-
-      <div id="ciField" class="mb-3">
-        <label class="form-label" for="ci">Cédula de Identidad</label>
-        <input type="text" class="form-control" id="ci" name="ci" placeholder="Ingrese el documento sin puntos ni guiones" />
-      </div>
-
-      <div id="passportField" class="mb-3" style="display: none;">
-        <label class="form-label" for="passport">Pasaporte</label>
-        <input type="text" class="form-control" id="passport" name="passport" placeholder="Ingrese el número de pasaporte" />
-      </div>
-
-      <div id="otherField" class="mb-3" style="display: none;">
-        <label class="form-label" for="other_id_type">Otro Documento</label>
-        <input type="text" class="form-control" id="other_id_type" name="other_id_type" placeholder="Ingrese el documento alternativo" />
-        <div class="mb-3 animate__animated animate__fadeInLeft" id="ciField">
-          <label for="ciCliente" class="form-label">CI </label>
-          <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el documento sin puntos ni guiones">
-        </div>
-        <div class="mb-3 animate__animated animate__fadeInLeft">
-          <label for="direccionCliente" class="form-label">Dirección</label>
-          <label for="direccionCliente" class="form-label">Dirección </label>
-          <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
-        </div>
-        <div class="mb-3 animate__animated animate__fadeInLeft">
-          <label for="emailCliente" class="form-label">Correo Electrónico </label>
-          <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
-        </div>
-        <div class="mb-3 mt-3 animate__animated animate__fadeInLeft">
-          <label class="form-label" for="price_list_id">Lista de Precios</label>
-          <select id="price_list_id" class="form-select form-select" name="price_list_id">
-            <option value="" selected>Seleccionar Lista de Precios</option>
-            @foreach($priceLists as $priceList)
-            <option value="{{ $priceList->id }}">{{ $priceList->name }}</option>
-            @endforeach
-          </select>
-        </div>
-        <button type="button" class="btn btn-primary animate__animated animate__bounceIn" id="guardarCliente">Guardar</button>
+      <button type="button" class="btn btn-primary animate__animated animate__bounceIn" id="guardarCliente">Guardar</button>
     </form>
   </div>
 </div>
+
 
 <!-- Modal para seleccionar variaciones -->
 <div class="modal fade animate__animated animate__fadeIn" id="flavorModal" tabindex="-1" aria-labelledby="flavorModalLabel" aria-hidden="true">

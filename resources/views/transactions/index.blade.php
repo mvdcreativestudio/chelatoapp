@@ -56,76 +56,50 @@
                 <div class="tab-pane fade show active" id="transacciones" role="tabpanel"
                     aria-labelledby="transacciones-tab">
                     <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Venta #</th>
-                                    <th>Tipo</th>
-                                    <th>Estado</th>
-                                    <th>Fecha</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                              @foreach ($transactions as $transaction)
+                      <table class="table table-striped table-hover align-middle">
+                          <thead class="table-light text-center">
                               <tr>
-                                  <td>{{ $transaction->TransactionId }}</td>
-                                  <td>
-                                      @if($transaction->order)
-                                          <a href="/admin/orders/{{ $transaction->order->uuid }}">
-                                              {{ $transaction->order_id }}
-                                          </a>
-                                      @endif
-                                  </td>
-                                  <td>
-                                      @switch($transaction->type)
-                                          @case('sale')
-                                              Venta
-                                              @break
-                                          @case('refund')
-                                              Devolución
-                                              @break
-                                          @case('cancellation')
-                                              Cancelación
-                                              @break
-                                          @case('void')
-                                              Anulación
-                                              @break
-                                          @default
-                                              Desconocido
-                                      @endswitch
-                                  </td>
-                                  <td>
-                                      @switch($transaction->status)
-                                          @case('pending')
-                                              Pendiente
-                                              @break
-                                          @case('void_request')
-                                              Anulación Pendiente
-                                              @break
-                                          @case('voided')
-                                              Anulación
-                                              @break
-                                          @case('failed')
-                                              Fallida
-                                              @break
-                                          @case('completed')
-                                              Completada
-                                              @break
-                                          @case('reversed')
-                                              Reversada
-                                              @break
-                                          @default
-                                              Desconocido
-                                      @endswitch
-                                  </td>
-                                  <td>{{ \Carbon\Carbon::parse($transaction->created_at)->format('d/m/Y H:i') }}</td>
-                                </tr>
-                              @endforeach
+                                  <th>ID</th>
+                                  <th>Venta #</th>
+                                  <th>Tipo</th>
+                                  <th>Estado</th>
+                                  <th>Fecha</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                            @foreach ($formattedTransactions as $transaction)
+                            <tr class="{{ $transaction['row_class'] }}">
+                                <td class="text-center">
+                                    {{ $transaction['id'] }}
+                                </td>
+                                <td class="text-center">
+                                    @if($transaction['order_link'])
+                                        <a href="{{ $transaction['order_link'] }}">
+                                            #{{ $transaction['order_id'] }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">N/A</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    <i class="bx {{ $transaction['type_icon'] }}"></i> {{ $transaction['type'] }}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge {{ $transaction['status_class'] }}">
+                                        <i class="bx {{ $transaction['status_icon'] }}"></i> {{ $transaction['status'] }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <i class="bx bx-calendar"></i> {{ $transaction['created_at'] }}
+                                </td>
+                            </tr>
+                            @endforeach
+                          </tbody>
 
-                            </tbody>
-                        </table>
-                    </div>
+
+
+                      </table>
+                  </div>
                 </div>
 
                 <!-- Historial de Transacciones (Consulta API) -->
@@ -383,6 +357,7 @@
     </div>
 </div>
 
+
 <!-- Modal para consultar cierres de lotes -->
 
 
@@ -442,70 +417,73 @@
 
       // Enviar formulario
       document.getElementById('submitTransactionForm').addEventListener('click', function () {
-          const formData = new FormData(document.getElementById('transactionHistoryForm'));
-          const data = Object.fromEntries(formData.entries());
+    const formData = new FormData(document.getElementById('transactionHistoryForm'));
+    const data = Object.fromEntries(formData.entries());
 
-          const storeId = document.getElementById('storeSelector').value;
-          if (!storeId) {
-              Swal.fire({
-                  title: 'Error',
-                  text: 'Por favor selecciona una tienda antes de consultar.',
-                  icon: 'error',
-                  confirmButtonText: 'OK',
-              });
-              return;
-          }
-          data.store_id = storeId;
-          data.only_confirmed = document.getElementById('only_confirmed').checked ? 1 : 0;
+    const storeId = document.getElementById('storeSelector').value;
+    if (!storeId) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Por favor selecciona una tienda antes de consultar.',
+            icon: 'error',
+            confirmButtonText: 'OK',
+        });
+        return;
+    }
+    data.store_id = storeId;
+    data.only_confirmed = document.getElementById('only_confirmed').checked ? 1 : 0;
 
-          Swal.fire({
-              title: 'Consultando...',
-              text: 'Por favor espera mientras obtenemos los datos.',
-              icon: 'info',
-              allowOutsideClick: false,
-              showConfirmButton: false,
-          });
+    Swal.fire({
+        title: 'Consultando...',
+        text: 'Por favor espera mientras obtenemos los datos.',
+        icon: 'info',
+        allowOutsideClick: false,
+        showConfirmButton: false,
+    });
 
-          fetch('/api/pos/fetchTransactionHistory', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-              },
-              body: JSON.stringify(data),
-          })
-              .then(response => response.json())
-              .then(result => {
-                  Swal.close();
-                  const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
-                  modal.hide();
+    fetch('/api/pos/fetchTransactionHistory', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+        },
+        body: JSON.stringify(data),
+    })
+        .then(response => response.json())
+        .then(result => {
+            Swal.close();
+            const modal = bootstrap.Modal.getInstance(document.getElementById('transactionModal'));
+            modal.hide();
 
-                  if (result.success) {
-                      renderTransactionResults(result.data);
-                      transactionResults.style.display = 'block';
-                      noResultsMessage.style.display = 'none';
-                  } else {
-                      transactionResults.style.display = 'none';
-                      noResultsMessage.style.display = 'block';
-                      Swal.fire({
-                          title: 'Error',
-                          text: result.message,
-                          icon: 'error',
-                          confirmButtonText: 'OK',
-                      });
-                  }
-              })
-              .catch(error => {
-                  Swal.close();
-                  Swal.fire({
-                      title: 'Error',
-                      text: 'Ocurrió un error al consultar las transacciones.',
-                      icon: 'error',
-                      confirmButtonText: 'OK',
-                  });
-                  console.error('Error al consultar transacciones:', error);
-              });
-      });
+            console.log('Respuesta de la API:', result); // Agregar para depurar la respuesta de la API
+
+            if (result.success) {
+                renderTransactionResults(result.data);
+                document.getElementById('transactionResults').style.display = 'block';
+                document.getElementById('noResultsMessage').style.display = 'none';
+            } else {
+                document.getElementById('transactionResults').style.display = 'none';
+                document.getElementById('noResultsMessage').style.display = 'block';
+                Swal.fire({
+                    title: 'Error',
+                    text: result.message,
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                });
+            }
+        })
+        .catch(error => {
+            Swal.close();
+            console.error('Error al consultar transacciones:', error); // Agregar para depurar errores en la solicitud
+            Swal.fire({
+                title: 'Error',
+                text: 'Ocurrió un error al consultar las transacciones.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+        });
+});
+
 
       function formatAmount(amount) {
           // Eliminar ceros a la izquierda

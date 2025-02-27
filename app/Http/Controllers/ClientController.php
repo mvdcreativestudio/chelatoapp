@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\Client;
 use App\Models\PriceList;
 use App\Models\Store;
+use App\Models\TaxRate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
@@ -55,75 +56,96 @@ class ClientController extends Controller
         } else {
             $stores = Store::select('id', 'name')->where('id', Auth::user()->store_id)->get();
         }
-    
+
         // Obtener todas las listas de precios disponibles
         $priceLists = PriceList::all();
-    
-        return view('content.clients.clients', compact('companySettings', 'store', 'priceLists', 'stores'));
+
+        // Obtener Tasas de IVA disponibles (No se crean clientes con IVA Tasa Minima 10%)
+        $taxRates = TaxRate::where('rate', '!=', 10.00)->get();
+
+
+        return view('content.clients.clients', compact('companySettings', 'store', 'priceLists', 'stores', 'taxRates'));
     }
-    
+
 
     /**
      * Almacena un nuevo cliente en la base de datos.
      *
      * @param StoreClientRequest $request
      * @return RedirectResponse
-     */
+    */
     public function store(StoreClientRequest $request)
-    {   
+    {
+        Log::info('Creando un nuevo cliente', ['request' => $request->all()]);
         try {
             // Validar los datos del cliente
             $validatedData = $request->validated();
 
-            // Obtener la configuración de la tienda si se requiere
+            // Manejar la lógica de documentos
+            if ($request->type === 'individual') {
+                $validatedData['rut'] = null;
+                $validatedData['company_name'] = null;
+
+                // Eliminar campos no usados para clientes individuales
+                if ($request->documentType === 'ci') {
+                    $validatedData['passport'] = null;
+                    $validatedData['other_id_type'] = null;
+                } elseif ($request->documentType === 'passport') {
+                    $validatedData['ci'] = null;
+                    $validatedData['other_id_type'] = null;
+                } elseif ($request->documentType === 'other_id_type') {
+                    $validatedData['ci'] = null;
+                    $validatedData['passport'] = null;
+                }
+            } elseif ($request->type === 'company') {
+                // Eliminar campos no usados para empresas
+                $validatedData['ci'] = null;
+                $validatedData['passport'] = null;
+                $validatedData['other_id_type'] = null;
+            }
+
+            // Asignar la tienda si está configurado
             $companySettings = CompanySettings::first();
             if ($companySettings->clients_has_store == 1) {
                 $validatedData['store_id'] = Auth::user()->store_id;
             }
 
-            // Crear el cliente en la base de datos
+            // Crear el cliente
             $client = $this->clientRepository->createClient($validatedData);
 
-            // Si se ha proporcionado una lista de precios, vincularla con el cliente
+            // Manejar la lista de precios asociada
             if ($request->has('price_list_id')) {
                 $priceListId = $request->input('price_list_id');
-
-                // Asegurarse de que la lista de precios existe
                 $priceListExists = DB::table('price_lists')->where('id', $priceListId)->exists();
+
                 if ($priceListExists) {
-                    // Insertar la relación en la tabla pivot `client_price_lists`
                     DB::table('client_price_lists')->insert([
                         'client_id' => $client->id,
-                        'price_list_id' => $priceListId
+                        'price_list_id' => $priceListId,
                     ]);
                 }
             }
 
-            // Check if the request expects a JSON response
-            if ($request->expectsJson()) {
-                return response()->json([
+            return $request->expectsJson()
+                ? response()->json([
                     'success' => true,
                     'message' => 'Cliente creado correctamente.',
-                    'client' => $client
-                ]);
-            }
-
-            return redirect()->route('clients.index')->with('success', 'Cliente creado correctamente.');
+                    'client' => $client,
+                ])
+                : redirect()->route('clients.index')->with('success', 'Cliente creado correctamente.');
         } catch (\Throwable $th) {
             Log::error('Error al crear cliente: ' . $th->getMessage(), ['trace' => $th->getTraceAsString()]);
 
-            // Check if the request expects a JSON response
-            if ($request->expectsJson()) {
-                return response()->json([
+            return $request->expectsJson()
+                ? response()->json([
                     'success' => false,
                     'message' => 'Error al crear el cliente.',
-                    'error' => $th->getMessage()
-                ], 500);
-            }
-
-            return redirect()->route('clients.index')->with('error', 'Error al crear el cliente.');
+                    'error' => $th->getMessage(),
+                ], 500)
+                : redirect()->route('clients.index')->with('error', 'Error al crear el cliente.');
         }
     }
+
 
     /**
      * Muestra los detalles de un cliente específico.
@@ -135,21 +157,25 @@ class ClientController extends Controller
     {
         // Obtén el cliente con sus listas de precios asociadas
         $client = $this->clientRepository->getClientById($id);
-    
+
+        Log::error('Cliente obtenido', ['client' => $client]);
+
+        $taxRates = TaxRate::all();
+
         if (Auth::user()->can('view_all_price-lists')) {
             $priceLists = PriceList::all();
         } else {
             $priceLists = PriceList::where('store_id', Auth::user()->store_id)->get();
         }
-    
+
         // Obtener la primera lista de precios asignada al cliente, o mostrar un mensaje si no hay lista asignada
         $priceListName = $client->priceLists->isNotEmpty()
             ? $client->priceLists->first()->name
             : 'Sin lista de precios';
-    
-        return view('content.clients.show', compact('client', 'priceLists', 'priceListName'));
+
+        return view('content.clients.show', compact('client', 'priceLists', 'priceListName', 'taxRates'));
     }
-    
+
 
     /**
      * Muestra el formulario para editar un cliente existente.
@@ -161,11 +187,12 @@ class ClientController extends Controller
     {
         $client = $this->clientRepository->getClientById($id);
         $orders = $client->orders;
+        $taxRates = TaxRate::all();
 
-        return view('content.clients.edit', compact('client'));
+        return view('content.clients.edit', compact('client', 'orders', 'taxRates'));
     }
 
-    /**
+/**
      * Actualiza un cliente existente en la base de datos.
      *
      * @param UpdateClientRequest $request
@@ -176,21 +203,21 @@ class ClientController extends Controller
     {
         try {
             Log::info('Iniciando actualización del cliente', ['client_id' => $id]);
-    
+
             // Buscar el cliente por ID
             $client = Client::findOrFail($id);
             Log::info('Cliente encontrado', ['client' => $client->id]);
-    
+
             // Actualizar los datos del cliente
             $client->update($request->validated());
-    
+
             // Verificar si se ha proporcionado un `price_list_id`
             if ($request->has('price_list_id')) {
                 $priceListId = $request->input('price_list_id');
-    
+
                 // Asegurarse de que el `price_list_id` exista en la tabla `price_lists`
                 $priceListExists = DB::table('price_lists')->where('id', $priceListId)->exists();
-    
+
                 if ($priceListExists) {
                     // Crear o actualizar la relación en la tabla pivot `client_price_lists`
                     DB::table('client_price_lists')
@@ -204,7 +231,7 @@ class ClientController extends Controller
             } else {
                 Log::info('No se ha recibido price_list_id');
             }
-    
+
             return response()->json(['success' => true, 'message' => 'Cliente y lista de precios actualizados correctamente.']);
         } catch (\Exception $e) {
             Log::error('Error al actualizar cliente: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -213,17 +240,32 @@ class ClientController extends Controller
     }
 
 
+
     /**
      * Elimina un cliente específico de la base de datos.
      *
      * @param int $id
-     * @return RedirectResponse
+     * @return RedirectResponse | JsonResponse
      */
-    public function destroy(int $id): RedirectResponse
+    public function destroy(int $id): JsonResponse
     {
-        $this->clientRepository->deleteClient($id);
-        return redirect()->route('clients.index');
+        try {
+            // Intentar eliminar el cliente usando el repositorio
+            $this->clientRepository->deleteClient($id);
+
+            return response()->json(['success' => true, 'message' => 'Cliente eliminado correctamente.']);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Manejar violaciones de restricciones de clave foránea
+            if ($e->getCode() === '23000') { // Código para Integrity Constraint Violation
+                return response()->json(['success' => false, 'message' => 'No se puede eliminar el cliente porque está asociado a una cuenta corriente.'], 400);
+            }
+
+            // Manejar otros errores inesperados
+            return response()->json(['success' => false, 'message' => 'Ocurrió un error al intentar eliminar el cliente.'], 500);
+        }
     }
+
+
 
     /**
      * Obtiene los datos para mostrar en la tabla de clientes.
@@ -234,7 +276,7 @@ class ClientController extends Controller
     {
         return $this->clientRepository->getClientsForDatatable();
     }
-    
+
     public function getProductsByPriceList($priceListId)
     {
         // Obtener los productos y el precio específico de la lista de precios desde la tabla price_list_products
@@ -242,7 +284,7 @@ class ClientController extends Controller
             ->join('price_list_products', 'products.id', '=', 'price_list_products.product_id')
             ->where('price_list_products.price_list_id', $priceListId)
             ->get();
-    
+
         return response()->json(['products' => $products]);
     }
 
@@ -250,15 +292,15 @@ class ClientController extends Controller
     {
         // Buscar el cliente por ID
         $client = Client::with('priceLists')->find($clientId);
-    
+
         if (!$client) {
             return response()->json(['error' => 'Cliente no encontrado'], 404);
         }
-    
+
         // Inicializamos $priceListName como 'Sin lista de precios '
         $priceListId = null;
         $priceListName = 'Sin lista de precios';
-    
+
         // Verificar si el cliente tiene una lista de precios asociada
         if ($client->priceLists->isNotEmpty()) {
             $priceListId = $client->priceLists->first()->id; // Obtenemos el primer ID de lista de precios
@@ -267,7 +309,7 @@ class ClientController extends Controller
 
         $rut = $client->rut;
         $ci = $client->ci;
-    
+
         return response()->json([
             'client' => [
                 'id' => $client->id,
@@ -282,7 +324,7 @@ class ClientController extends Controller
             ]
         ]);
     }
-    
+
     public function getPriceLists($clientId)
     {
         try {
@@ -333,23 +375,23 @@ class ClientController extends Controller
     {
         // Buscar el cliente por su ID
         $client = Client::findOrFail($clientId);
-    
+
         // Validar que la lista de precios es válida y está presente
         if ($request->has('price_list_id')) {
             $request->validate([
                 'price_list_id' => 'required|exists:price_lists,id',
             ]);
-    
+
             // Asignar o actualizar la lista de precios en la tabla pivot client_price_lists
             $client->priceLists()->sync([$request->input('price_list_id')]);
         }
-    
+
         // Actualizar los datos del cliente (esto ya está cubierto por UpdateClientRequest)
         $client->update($request->validated());
-    
+
         return response()->json(['success' => 'Cliente y lista de precios actualizados correctamente.']);
     }
-    
+
 
 
 }

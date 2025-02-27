@@ -38,8 +38,9 @@ class DashboardRepository
         return;
     }
 
-    /*
+    /**
     * Retorna los productos más vendidos
+    *
     * @param int $limit
     * @return array
     */
@@ -50,13 +51,29 @@ class DashboardRepository
 
         foreach ($orders as $order) {
             $products = json_decode($order->products, true);
+
+            // Verificar si el JSON se decodificó correctamente
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::error("Error al decodificar JSON en el pedido {$order->id}: " . json_last_error_msg());
+                continue;
+            }
+
             foreach ($products as $product) {
-                if (!isset($product['id'])) {
+                if (!isset($product['id'], $product['quantity'])) {
+                    Log::warning("Producto inválido en el pedido {$order->id}: " . json_encode($product));
                     continue;
                 }
 
                 $productId = $product['id'];
                 $quantity = $product['quantity'];
+
+                // Intentar obtener el modelo de la base de datos
+                $productModel = Product::find($productId);
+                $price = $product['price'] ?? $productModel->price ?? 0;
+
+                if (!$price) {
+                    Log::warning("Producto con ID {$productId} tiene un precio de 0 en el pedido {$order->id}");
+                }
                 $price = $product['price'];
 
                 // Pasar producto de dólares a pesos.
@@ -69,16 +86,13 @@ class DashboardRepository
                     $productSales[$productId]['quantity'] += $quantity;
                     $productSales[$productId]['total_sales'] += $price * $quantity;
                 } else {
-                    $productModel = Product::find($productId);
-                    if ($productModel) {
-                        $productSales[$productId] = [
-                            'id' => $productId,
-                            'name' => $productModel->name,
-                            'price' => $price,
-                            'quantity' => $quantity,
-                            'total_sales' => $price * $quantity,
-                        ];
-                    }
+                    $productSales[$productId] = [
+                        'id' => $productId,
+                        'name' => $productModel->name ?? $product['name'] ?? 'Desconocido',
+                        'price' => $price,
+                        'quantity' => $quantity,
+                        'total_sales' => $price * $quantity,
+                    ];
                 }
             }
         }
@@ -89,6 +103,7 @@ class DashboardRepository
 
         return array_slice($productSales, 0, $limit);
     }
+
 
     /*
     * Retorna los datos de ingresos mensuales
@@ -134,11 +149,12 @@ class DashboardRepository
 
         $currentMonthOrders = Order::whereYear('date', $year)
             ->whereMonth('date', $currentMonth)
-            ->where('payment_status', 'paid')
-            ->get();
 
-        $lastMonthOrders = Order::whereYear('date', $year)
-            ->whereMonth('date', $lastMonth)
+        $currentMonthOrders = Order::whereMonth('date', $currentMonth)
+            ->where('payment_status', 'paid')
+            ->count();
+        
+        $lastMonthOrders = Order::whereMonth('date', $lastMonth)
             ->where('payment_status', 'paid')
             ->get();
 
@@ -154,16 +170,21 @@ class DashboardRepository
             ? round((($currentMonthTotal - $lastMonthTotal) / $lastMonthTotal) * 100)
             : 0;
 
+
         $lastOrder = Order::where('payment_status', 'paid')
             ->orderBy('date', 'desc')
             ->first();
 
+
         $lastOrderInfo = [];
         if ($lastOrder) {
             $products = json_decode($lastOrder->products, true);
+
+            // Busca el producto que más se vendió en la orden.
             $maxQuantity = 0;
             $topProductId = null;
             $otherProductsCount = 0;
+
 
             foreach ($products as $product) {
                 if ($product['quantity'] > $maxQuantity) {
@@ -173,7 +194,9 @@ class DashboardRepository
                 $otherProductsCount++;
             }
 
+
             $topProduct = Product::find($topProductId);
+
 
             $lastOrderInfo = [
                 'product_name' => $topProduct ? $topProduct->name : 'N/A',
@@ -190,22 +213,19 @@ class DashboardRepository
     }
 
     /*
-    * Retorna la cantidad de facturas impagas que se vencen en el dia de hoy, y el total de las mismas.
+    * Retorna la cantidad de facturas impagas y el total de las mismas.
     * @return array
     */
-    public function getExpensesDueToday()
+    public function getUnpaidExpensesSummary()
     {
-        $today = Carbon::now()->toDateString();
+        $unpaidExpenses = Expense::where('status', 'unpaid')->get();
 
-        $expenses = Expense::where('status', 'unpaid')
-            ->where('due_date', $today)
-            ->get();
-
-        $total = $expenses->sum('amount');
+        $total = $unpaidExpenses->sum('amount');
+        $count = $unpaidExpenses->count();
 
         return [
-            'amount' => $expenses->count(),
-            'total' => $total
+            'count' => $count,
+            'total' => $total,
         ];
     }
 
@@ -253,19 +273,43 @@ class DashboardRepository
         foreach ($orders as $order) {
             $totalIncome += $this->convertOrderAmount($order, $order->total);
         }
+        $totalIncome = Order::where('payment_status', 'paid')
+        ->whereDate('date', $today)
+        ->sum(DB::raw('total - COALESCE(tax, 0)'));
+
+        $totalTax = Order::where('payment_status', 'paid')
+        ->whereDate('date', $today)
+        ->sum('tax');
+
 
         $totalExpenses = Expense::where('status', 'paid')
-            ->whereDate('due_date', $today)
-            ->sum('amount');
+        ->whereDate('due_date', $today)
+        ->sum('amount');
 
-        $balance = $totalIncome - $totalExpenses;
+        $balance = $totalIncome + $totalTax - $totalExpenses;
 
         return [
             'income' => $totalIncome,
             'expenses' => $totalExpenses,
-            'balance' => $balance
+            'balance' => $balance,
+            'tax' => $totalTax
         ];
     }
+
+    /**
+     * Retorna el total de IVA cobrado en el día
+     *
+     *
+     */
+    public function getDailyTax()
+    {
+        $tax = Order::whereDate('date', Carbon::now())
+            ->where('payment_status', 'paid')
+            ->sum('tax');
+
+        return $tax;
+    }
+
 
     /*
     * Retorna el precio del dólar para una determinada orden.

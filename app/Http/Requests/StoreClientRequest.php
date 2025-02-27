@@ -85,6 +85,16 @@ class StoreClientRequest extends FormRequest
                     }
                 },
             ],
+            'ci' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if ($this->type === 'company' && empty($value)) {
+                        $fail('La CI es obligatoria en este tipo de cliente');
+                    }
+                },
+            ],
             'company_name' => [
                 'nullable',
                 'string',
@@ -94,6 +104,15 @@ class StoreClientRequest extends FormRequest
                         $fail('La Razón Social de la empresa es obligatorio en este tipo de cliente');
                     }
                 },
+            ],
+            'tax_rate_id' => [
+              'nullable',
+              'integer',
+              function ($attribute, $value, $fail) {
+                  if ($this->type === 'company' && empty($value)) {
+                      $fail('La Tasa de IVA es obligatoria en este tipo de cliente');
+                  }
+              },
             ],
             'address' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
@@ -122,6 +141,8 @@ class StoreClientRequest extends FormRequest
             'company_name.required_if' => 'La Razón Social es obligatoria para clientes de tipo Empresa',
             'email.email' => 'El correo electrónico debe ser una dirección válida.',
             'email.unique' => 'El correo electrónico ya está en uso.',
+            'ci.required_if' => 'La CI es obligatoria para clientes de tipo Persona',
+            'tax_rate_id.required_if' => 'La Tasa de IVA es obligatoria para clientes de tipo Empresa',
         ];
     }
 }

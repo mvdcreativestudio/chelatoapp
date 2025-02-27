@@ -17,6 +17,7 @@ class StoreProductRequest extends FormRequest
             'currency' => 'required|in:Peso,Dólar',
             'old_price' => 'required|numeric',
             'price' => 'nullable|numeric|lt:old_price',
+            'tax_rate_id' => 'required|exists:tax_rates,id',
             'discount' => 'nullable|numeric',
             'store_id' => 'required|exists:stores,id',
             'status' => 'required|boolean',
@@ -37,13 +38,13 @@ class StoreProductRequest extends FormRequest
 
             'features' => 'array',
             'features.*.name' => 'nullable|string|max:255',
-    
+
             'sizes' => 'array',
             'sizes.*.size' => 'nullable|string|max:255',
             'sizes.*.width' => 'nullable|numeric|min:0',
             'sizes.*.height' => 'nullable|numeric|min:0',
             'sizes.*.length' => 'nullable|numeric|min:0',
-    
+
             'colors' => 'array',
             'colors.*.color_name' => 'nullable|string|max:255',
             'colors.*.hex_code' => 'nullable|string|max:255',
@@ -61,6 +62,7 @@ class StoreProductRequest extends FormRequest
             'build_price.numeric' => 'El precio de costo debe ser un número.',
             'categories.required' => 'Faltó completar el campo "Categoría"',
             'categories.*.exists' => 'La categoría seleccionada no es válida.',
+            'tax_rate_id.exists' => 'El impuesto seleccionado no es válido.',
         ];
     }
 

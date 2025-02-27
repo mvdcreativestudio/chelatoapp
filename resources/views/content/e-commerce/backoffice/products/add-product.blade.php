@@ -168,9 +168,9 @@
             </div>
             <button type="button" class="btn btn-primary" id="addRawMaterial">Agregar Materia Prima</button>
             <!-- <button type="button" class="btn btn-secondary" id="addUsedFlavor">Agregar Sabor Usado</button> -->
-          </div>
         </div>
-        <!-- /Recipe -->
+      </div>
+      <!-- /Recipe -->
 
         <!-- Card con Tabs -->
         <div class="card mb-4">
@@ -288,6 +288,17 @@
               <label class="form-label" for="ecommerce-product-discount-price">Precio oferta - <small>IVA INCLUÍDO</small></label></label>
               <input type="number" step=".01" min="0" class="form-control" id="ecommerce-product-discount-price" placeholder="Precio rebajado" name="price" aria-label="Introduzca el precio rebajado">
             </div>
+            <!-- Tax Rate -->
+            <div class="mb-3">
+              <label class="form-label" for="tax_rate_id">IVA</label>
+              <select class="form-control" id="tax_rate_id" name="tax_rate_id" aria-label="Seleccione el IVA">
+                <option value="" disabled selected>Seleccione una tasa de IVA</option>
+                <!-- Supongamos que estás pasando las tasas de IVA desde el backend -->
+                @foreach($taxRates as $taxRate)
+                  <option value="{{ $taxRate->id }}">{{ $taxRate->name }} ({{ $taxRate->rate }}%)</option>
+                @endforeach
+              </select>
+            </div>
             <!-- build_price -->
             <div class="mb-3">
               <label class="form-label" for="build_price">Costo</label>
@@ -377,13 +388,13 @@
                       type="button" role="tab" aria-controls="galleryTabContent" aria-selected="false">
                       Galería
                     </button>
-                  </li>
-                </ul>
+                </li>
+            </ul>
 
-                <!-- Tabs Content -->
-                <div class="tab-content" id="imageTabsContent">
-                  <!-- Main Image Tab -->
-                  <div class="tab-pane fade show active" id="mainImageTabContent" role="tabpanel" aria-labelledby="main-image-tab">
+            <!-- Tabs Content -->
+            <div class="tab-content" id="imageTabsContent">
+                <!-- Main Image Tab -->
+                <div class="tab-pane fade show active" id="mainImageTabContent" role="tabpanel" aria-labelledby="main-image-tab">
                     <div class="card-body text-center">
                       <!-- Dropzone -->
                       <div class="dropzone dz-clickable" id="dropzone">
@@ -395,10 +406,10 @@
                       </div>
                       <input type="file" name="image" id="productImage" class="d-none">>
                     </div>
-                  </div>
+                </div>
 
-                  <!-- Gallery Tab -->
-                  <div class="tab-pane fade" id="galleryTabContent" role="tabpanel" aria-labelledby="gallery-tab">
+                <!-- Gallery Tab -->
+                <div class="tab-pane fade" id="galleryTabContent" role="tabpanel" aria-labelledby="gallery-tab">
                     <div class="mb-3">
                       <label for="galleryImages" class="form-label fw-bold">Subir Imágenes</label>
                       <input type="file" class="form-control" name="gallery_images[]" id="galleryImages" multiple>

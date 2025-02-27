@@ -50,7 +50,7 @@ class PosController extends Controller
             $validated = $request->validate([
                 'TransactionId' => 'required',
                 'STransactionId' => 'required',
-                'store_id' => 'required|integer', // Asegúrate de que esté definido
+                'store_id' => 'required|integer',
             ]);
 
             // Llamar al servicio con los datos validados
@@ -111,13 +111,20 @@ class PosController extends Controller
       }
     }
 
-    // Obtener el token de acceso para el proveedor POS
     public function getPosToken(Request $request)
     {
         $storeId = $request->input('store_id');
 
+        // Asegurarse de que store_id sea un entero
+        if (is_array($storeId)) {
+            $storeId = $storeId['id'] ?? null;
+        } elseif (is_object($storeId)) {
+            $storeId = $storeId->id ?? null;
+        }
+
         if (!$storeId) {
-            return response()->json(['error' => 'Store ID no proporcionado'], 400);
+            Log::error("Store ID no proporcionado o no válido");
+            return response()->json(['error' => 'Store ID no proporcionado o no válido'], 400);
         }
 
         try {
@@ -139,10 +146,9 @@ class PosController extends Controller
                 if (!$accessToken) {
                     Log::error("No se pudo obtener el token para el store ID: " . $storeId);
                     return response()->json(['error' => 'No se pudo obtener el token de acceso para el proveedor POS'], 500);
-                } else {
-                  Log::info("Token obtenido para el store ID: " . $storeId);
                 }
 
+                Log::info("Token obtenido para el store ID: " . $storeId);
                 return response()->json(['access_token' => $accessToken]);
             }
 
@@ -153,6 +159,7 @@ class PosController extends Controller
             return response()->json(['error' => 'Error al obtener el token del POS'], 500);
         }
     }
+
 
 
 
@@ -358,177 +365,172 @@ class PosController extends Controller
     }
 
     public function voidTransaction(Request $request)
-{
-    try {
-        $validated = $request->validate([
-            'store_id' => 'required|integer|exists:stores,id',
-            'pos_device_id' => 'required|integer|exists:pos_devices,id',
-            'PosID' => 'required|string',
-            'SystemId' => 'required|string',
-            'Branch' => 'required|string',
-            'ClientAppId' => 'required|string',
-            'UserId' => 'required|string',
-            'TransactionDateTimeyyyyMMddHHmmssSSS' => 'required|string|size:17',
-            'TicketNumber' => 'required|string',
-            'order_id' => 'nullable|integer|exists:orders,id', // Permitir que sea opcional
-        ]);
+    {
+        try {
+            $validated = $request->validate([
+                'store_id' => 'required|integer|exists:stores,id',
+                'pos_device_id' => 'required|integer|exists:pos_devices,id',
+                'PosID' => 'required|string',
+                'SystemId' => 'required|string',
+                'Branch' => 'required|string',
+                'ClientAppId' => 'required|string',
+                'UserId' => 'required|string',
+                'TransactionDateTimeyyyyMMddHHmmssSSS' => 'required|string|size:17',
+                'TicketNumber' => 'required|string',
+                'order_id' => 'nullable|integer|exists:orders,id', // Permitir que sea opcional
+            ]);
 
-        // Buscar el Acquirer en la transacción original usando `order_id` en formatted_data
-        if (!isset($validated['order_id']) || is_null($validated['order_id'])) {
-            throw new \Exception('El order_id es obligatorio para esta operación.');
+            // Buscar el Acquirer en la transacción original usando `order_id` en formatted_data
+            if (!isset($validated['order_id']) || is_null($validated['order_id'])) {
+                throw new \Exception('El order_id es obligatorio para esta operación.');
+            }
+
+            $originalTransaction = \App\Models\Transaction::where('formatted_data->order_id', $validated['order_id'])
+                ->where('status', 'completed') // Solo buscar en transacciones completadas
+                ->first();
+
+            if (!$originalTransaction) {
+                throw new \Exception('No se encontró una transacción con el order_id proporcionado en formatted_data.');
+            }
+
+            // Obtener el Acquirer de formatted_data
+            $formattedData = $originalTransaction->formatted_data;
+            if (is_string($formattedData)) {
+                $formattedData = json_decode($formattedData, true); // Decodificar si es una cadena JSON
+            }
+
+
+
+            $acquirer = $formattedData['Acquirer'] ?? null;
+
+            // Agregar el Acquirer al request validado
+            $validated['Acquirer'] = $acquirer;
+
+            Log::info('Datos validados para voidTransaction con Acquirer:', $validated);
+
+            // Llamar al servicio POS para realizar la anulación
+            $response = $this->posService->voidTransaction($validated);
+
+            return response()->json($response);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Error de validación en voidTransaction: ' . json_encode($e->errors()));
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos: ' . $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error durante voidTransaction: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la anulación.',
+                'details' => $e->getMessage(),
+            ], 500);
         }
-
-        $originalTransaction = \App\Models\Transaction::where('formatted_data->order_id', $validated['order_id'])
-            ->where('status', 'completed') // Solo buscar en transacciones completadas
-            ->first();
-
-        if (!$originalTransaction) {
-            throw new \Exception('No se encontró una transacción con el order_id proporcionado en formatted_data.');
-        }
-
-        // Obtener el Acquirer de formatted_data
-        $formattedData = $originalTransaction->formatted_data;
-        if (is_string($formattedData)) {
-            $formattedData = json_decode($formattedData, true); // Decodificar si es una cadena JSON
-        }
-
-        if (!is_array($formattedData) || !isset($formattedData['Acquirer'])) {
-            throw new \Exception('El campo Acquirer no está presente en formatted_data.');
-        }
-
-        $acquirer = $formattedData['Acquirer'];
-
-        // Agregar el Acquirer al request validado
-        $validated['Acquirer'] = $acquirer;
-
-        Log::info('Datos validados para voidTransaction con Acquirer:', $validated);
-
-        // Llamar al servicio POS para realizar la anulación
-        $response = $this->posService->voidTransaction($validated);
-
-        return response()->json($response);
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        Log::error('Error de validación en voidTransaction: ' . json_encode($e->errors()));
-        return response()->json([
-            'success' => false,
-            'message' => 'Datos inválidos: ' . $e->getMessage(),
-            'errors' => $e->errors(),
-        ], 422);
-    } catch (\Exception $e) {
-        Log::error('Error durante voidTransaction: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al procesar la anulación.',
-            'details' => $e->getMessage(),
-        ], 500);
     }
-}
-
-
-
 
 
     public function pollVoidStatus(Request $request)
-{
-    try {
-        // Validar los datos iniciales
-        $validated = $request->validate([
-            'TransactionId' => 'required|integer', // Validar como entero porque viene de la base de datos
-            'STransactionId' => 'required|string',
-        ]);
+    {
+        try {
+            // Validar los datos iniciales
+            $validated = $request->validate([
+                'TransactionId' => 'required|integer', // Validar como entero porque viene de la base de datos
+                'STransactionId' => 'required|string',
+            ]);
 
-        // Buscar la transacción correspondiente
-        $transaction = \App\Models\Transaction::where('TransactionId', $validated['TransactionId'])
-            ->where('STransactionId', $validated['STransactionId'])
-            ->first();
+            // Buscar la transacción correspondiente
+            $transaction = \App\Models\Transaction::where('TransactionId', $validated['TransactionId'])
+                ->where('STransactionId', $validated['STransactionId'])
+                ->first();
 
-        if (!$transaction || !$transaction->formatted_data) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se encontraron datos formateados para la transacción.',
-            ], 404);
-        }
-
-        // Obtener el order_id de la transacción
-        $orderId = $transaction->order_id;
-        if (!$orderId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se encontró el order_id relacionado con esta transacción.',
-            ], 404);
-        }
-
-        // Obtener el store_id desde la tabla orders
-        $order = \App\Models\Order::find($orderId);
-        if (!$order || !$order->store_id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se encontró el store_id relacionado con esta transacción.',
-            ], 404);
-        }
-
-        $storeId = $order->store_id;
-
-        // Decodificar los datos formateados para el cuerpo de la solicitud
-        $pollData = $transaction->formatted_data;
-
-        // Verificar si es una cadena JSON y decodificarla si es necesario
-        if (is_string($pollData)) {
-            $pollData = json_decode($pollData, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::error('Error al decodificar formatted_data: ' . json_last_error_msg());
+            if (!$transaction || !$transaction->formatted_data) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Los datos formateados no están en un formato válido (JSON).',
+                    'message' => 'No se encontraron datos formateados para la transacción.',
+                ], 404);
+            }
+
+            // Obtener el order_id de la transacción
+            $orderId = $transaction->order_id;
+            if (!$orderId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró el order_id relacionado con esta transacción.',
+                ], 404);
+            }
+
+            // Obtener el store_id desde la tabla orders
+            $order = \App\Models\Order::find($orderId);
+            if (!$order || !$order->store_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró el store_id relacionado con esta transacción.',
+                ], 404);
+            }
+
+            $storeId = $order->store_id;
+
+            // Decodificar los datos formateados para el cuerpo de la solicitud
+            $pollData = $transaction->formatted_data;
+
+            // Verificar si es una cadena JSON y decodificarla si es necesario
+            if (is_string($pollData)) {
+                $pollData = json_decode($pollData, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    Log::error('Error al decodificar formatted_data: ' . json_last_error_msg());
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Los datos formateados no están en un formato válido (JSON).',
+                    ], 500);
+                }
+            }
+
+            // Si no es un array después de la decodificación, retornar un error
+            if (!is_array($pollData)) {
+                Log::error('formatted_data no es un array después de la decodificación.');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Los datos formateados no están en el formato esperado.',
                 ], 500);
             }
-        }
 
-        // Si no es un array después de la decodificación, retornar un error
-        if (!is_array($pollData)) {
-            Log::error('formatted_data no es un array después de la decodificación.');
+            if (!$pollData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Los datos formateados no están en un formato válido.',
+                ], 500);
+            }
+
+            // Asegurarnos de que TransactionId siga siendo un entero y STransactionId un string
+            $pollData['TransactionId'] = (int) $pollData['TransactionId']; // Asegurar entero
+            $pollData['STransactionId'] = (string) $pollData['STransactionId']; // Asegurar string
+            $pollData['store_id'] = $storeId; // Agregar el store_id al cuerpo de la solicitud
+
+            Log::info('Iniciando pollVoidStatus desde PosController con datos formateados:', $pollData);
+
+            // Enviar la solicitud al servicio POS
+            $response = $this->posService->pollVoidStatus($pollData);
+
+            return response()->json($response);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Error de validación en pollVoidStatus: ' . json_encode($e->errors()));
             return response()->json([
                 'success' => false,
-                'message' => 'Los datos formateados no están en el formato esperado.',
-            ], 500);
-        }
-
-        if (!$pollData) {
+                'message' => 'Datos inválidos: ' . $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error en pollVoidStatus: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Los datos formateados no están en un formato válido.',
+                'message' => 'Error al realizar la consulta.',
+                'details' => $e->getMessage(),
             ], 500);
         }
-
-        // Asegurarnos de que TransactionId siga siendo un entero y STransactionId un string
-        $pollData['TransactionId'] = (int) $pollData['TransactionId']; // Asegurar entero
-        $pollData['STransactionId'] = (string) $pollData['STransactionId']; // Asegurar string
-        $pollData['store_id'] = $storeId; // Agregar el store_id al cuerpo de la solicitud
-
-        Log::info('Iniciando pollVoidStatus desde PosController con datos formateados:', $pollData);
-
-        // Enviar la solicitud al servicio POS
-        $response = $this->posService->pollVoidStatus($pollData);
-
-        return response()->json($response);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        Log::error('Error de validación en pollVoidStatus: ' . json_encode($e->errors()));
-        return response()->json([
-            'success' => false,
-            'message' => 'Datos inválidos: ' . $e->getMessage(),
-            'errors' => $e->errors(),
-        ], 422);
-    } catch (\Exception $e) {
-        Log::error('Error en pollVoidStatus: ' . $e->getMessage());
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al realizar la consulta.',
-            'details' => $e->getMessage(),
-        ], 500);
     }
-}
 
 
 
@@ -740,7 +742,41 @@ class PosController extends Controller
         }
     }
 
+    public function cancelTransaction(Request $request)
+    {
+        try {
+            // Validar los datos enviados
+            $validated = $request->validate([
+                'TransactionId' => 'required|integer',
+                'STransactionId' => 'required|string',
+                'store_id' => 'required|integer', // Proveer store_id si es necesario
+            ]);
 
+            // Registrar los datos en los logs para depuración
+            Log::info('Datos recibidos para cancelTransaction:', $validated);
+
+            // Llamar al servicio POS para procesar la cancelación
+            $response = $this->posService->cancelTransaction($validated);
+
+            return response()->json($response, $response['success'] ? 200 : 400);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Manejo de errores de validación
+            Log::error('Error de validación en cancelTransaction:', $e->errors());
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            // Manejo de errores generales
+            Log::error('Error en cancelTransaction: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la cancelación.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
 
 }

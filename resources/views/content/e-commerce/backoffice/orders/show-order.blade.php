@@ -339,10 +339,12 @@ $changeTypeTranslations = [
 </div>
 
 @if(session('error'))
-<div class="alert alert-danger alert-dismissible fade show d-flex justify-content-between align-items-center" role="alert">
+<div class="alert alert-danger alert-dismissible fade show d-flex justify-content-between align-items-center"
+  role="alert">
   <div>{{ session('error') }}</div>
   @if($order->client)
-  <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="offcanvas" data-bs-target="#updateClientDataOffcanvas">
+  <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="offcanvas"
+    data-bs-target="#updateClientDataOffcanvas">
     Modificar datos
   </button>
   @endif
@@ -362,6 +364,8 @@ $changeTypeTranslations = [
             <tr>
               <th class="w-25">imagen</th>
               <th class="w-50">productos</th>
+              <th class="w-25">sin iva</th>
+              <th class="w-25">iva</th>
               <th class="w-25">precio</th>
               <th class="w-25">cantidad</th>
               <th>total</th>
@@ -395,7 +399,11 @@ $changeTypeTranslations = [
               <span class="text-heading">{{ $currencyDisplay }} {{ $order->subtotal }}</span>
             </div>
             <div class="d-flex justify-content-between mb-2">
-              @if($order->discount !== null && $order->discount !== 0)
+              <span class="w-px-100">IVA:</span>
+              <span class="text-heading">{{ $settings->currency_symbol }}{{ $order->tax }}</span>
+            </div>
+            @if($order->discount !== null && $order->discount > 0)
+            <div class="d-flex justify-content-between mb-2">
               <span class="w-px-100">Descuento:</span>
               @if($order->discount !== null && $order->discount !== 0)
               <span class="text-heading mb-0">{{ $currencyDisplay }} {{ $order->discount }}</span>
@@ -404,18 +412,30 @@ $changeTypeTranslations = [
               @endif
               @endif
             </div>
+            @endif
+            @if($order->shipping !== null && $order->shipping > 0)
             <div class="d-flex justify-content-between mb-2">
               <span class="w-px-100">Envío:</span>
               <span class="text-heading">{{ $currencyDisplay }} {{ $order->shipping }}</span>
             </div>
+            @endif
             <div class="d-flex justify-content-between">
               <h6 class="w-px-100 mb-0">Total:</h6>
               <h6 class="mb-0">{{ $currencyDisplay }} {{ $order->total }}</h6>
             </div>
           </div>
         </div>
+
+        <!-- Notas de la orden -->
+        @if(!empty($order->notes))
+        <div class="order-notes mt-3 p-3 rounded bg-light">
+          <h6 class="mb-2"><i class="bx bx-note"></i> Notas de la orden:</h6>
+          <p class="text-muted mb-0">{{ $order->notes }}</p>
+        </div>
+        @endif
       </div>
     </div>
+
     <!-- Order Status Changes Table -->
     <div class="card mb-4">
       <div class="card-header">

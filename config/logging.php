@@ -132,6 +132,14 @@ return [
             'path' => storage_path('logs/sql_debugger.log'),
             'level' => 'debug',
         ],
+        'events' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/mail_events.log'),
+        ],
+        'mercadopago' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/mercadoPago.log'),
+        ],
     ],
 
 ];

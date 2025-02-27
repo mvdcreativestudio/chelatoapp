@@ -12,9 +12,12 @@ $(document).ready(function () {
   let coupon = null;
   let currencySymbol = window.currencySymbol;
   let posResponsesConfig = {};
+  const storePosProviderId = window.storePosProviderId || null;
+  const posDeviceName = window.posDeviceName || null;
   let exchange_price = 0;
 
   $('#client-info').hide();
+
 
   document.querySelectorAll('.card-header').forEach(header => {
     header.addEventListener('click', function () {
@@ -176,82 +179,84 @@ $(document).ready(function () {
   }
 
 
-
-
   function consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid) {
     let attempts = 0;
     const maxAttempts = 30;
 
     function poll() {
-      if (attempts >= maxAttempts) {
-        showTransactionStatus({
-          message: 'El tiempo de espera para la transacción ha expirado.',
-          icon: 'error',
-          showCloseButton: true
-        });
-        return;
-      }
-
-      attempts++;
-
-      $.ajax({
-        url: `${baseUrl}api/pos/check-transaction-status`,
-        type: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        data: JSON.stringify({ TransactionId: transactionId, STransactionId: sTransactionId, store_id: sessionStoreId }),
-        success: function (response) {
-          const { transactionSuccess, message, icon, keepPolling, details } = response;
-
-          if (transactionSuccess) {
-            // Actualizar el estado de pago y confirmar la venta
-            $.ajax({
-              url: `${baseUrl}admin/orders/${orderId}/set-order-as-paid`,
-              type: 'POST',
-              data: {
-                _token: $('meta[name="csrf-token"]').attr('content'),
-                payment_status: 'paid'
-              },
-              success: function () {
-                confirmarVenta({ order_uuid: orderUuid }, 'POS');
-              },
-              error: function (xhr) {
-                console.error('Error al actualizar el estado de pago de la orden:', xhr.responseText);
-                showTransactionStatus({
-                  message: 'Error al actualizar el estado del pedido.',
-                  icon: 'error',
-                  showCloseButton: true
-                });
-              }
-            });
-          } else if (keepPolling) {
-            setTimeout(poll, 2000);
-          } else {
+        if (attempts >= maxAttempts) {
             showTransactionStatus({
-              message: message || 'Transacción fallida.',
-              icon: icon || 'error',
-              showCloseButton: true
+                message: 'El tiempo de espera para la transacción ha expirado.',
+                icon: 'error',
+                showCloseButton: true
             });
-
-            // Manejar casos como transacción cancelada (CT)
-            if (details && details.PosResponseCode === 'CT') {
-              console.warn('Transacción cancelada desde el dispositivo POS.');
-            }
-          }
-        },
-        error: function (xhr) {
-          console.error('Error al consultar estado de transacción:', xhr.responseText);
+            return;
         }
-      });
+
+        attempts++;
+
+        // Asegúrate de que `sessionStoreId` sea solo el ID
+        const storeId = typeof sessionStoreId === 'object' ? sessionStoreId.id : sessionStoreId;
+
+        $.ajax({
+            url: `${baseUrl}api/pos/check-transaction-status`,
+            type: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            data: JSON.stringify({
+                TransactionId: transactionId,
+                STransactionId: sTransactionId,
+                store_id: storeId // Solo enviamos el ID
+            }),
+            success: function (response) {
+                const { transactionSuccess, message, icon, keepPolling, details } = response;
+
+                if (transactionSuccess) {
+                    // Actualizar el estado de pago y confirmar la venta
+                    $.ajax({
+                        url: `${baseUrl}admin/orders/${orderId}/set-order-as-paid`,
+                        type: 'POST',
+                        data: {
+                            _token: $('meta[name="csrf-token"]').attr('content'),
+                            payment_status: 'paid'
+                        },
+                        success: function () {
+                            confirmarVenta({ order_uuid: orderUuid }, 'POS');
+                        },
+                        error: function (xhr) {
+                            console.error('Error al actualizar el estado de pago de la orden:', xhr.responseText);
+                            showTransactionStatus({
+                                message: 'Error al actualizar el estado del pedido.',
+                                icon: 'error',
+                                showCloseButton: true
+                            });
+                        }
+                    });
+                } else if (keepPolling) {
+                    setTimeout(poll, 2000);
+                } else {
+                    showTransactionStatus({
+                        message: message || 'Transacción fallida.',
+                        icon: icon || 'error',
+                        showCloseButton: true
+                    });
+
+                    // Manejar casos como transacción cancelada (CT)
+                    if (details && details.PosResponseCode === 'CT') {
+                        console.warn('Transacción cancelada desde el dispositivo POS.');
+                    }
+                }
+            },
+            error: function (xhr) {
+                console.error('Error al consultar estado de transacción:', xhr.responseText);
+            }
+        });
     }
 
     poll();
   }
-
-
-
 
 
   function confirmarVenta(response, paymentMethod) {
@@ -276,13 +281,13 @@ $(document).ready(function () {
 
   let swalInstance;
 
-  // Función para mostrar el mensaje de estado de la transacción
-  function showTransactionStatus({ message, icon, showCloseButton, transactionId, sTransactionId }) {
-    if (!swalInstance) {
-      swalInstance = Swal.fire({
-        icon: icon || 'info',
-        title: 'Estado de Transacción',
-        html: `
+// Función para mostrar el mensaje de estado de la transacción
+function showTransactionStatus({ message, icon, showCloseButton, transactionId, sTransactionId}) {
+  if (!swalInstance) {
+    swalInstance = Swal.fire({
+      icon: icon || 'info',
+      title: 'Estado de Transacción',
+      html: `
         ${message || 'Procesando...'}
         <div class="mt-3">
           <button
@@ -294,35 +299,35 @@ $(document).ready(function () {
           </button>
         </div>
       `,
-        showConfirmButton: showCloseButton,
-        confirmButtonText: 'Cerrar',
-        allowOutsideClick: showCloseButton,
-        didOpen: () => {
-          const cancelButton = document.getElementById('cancelTransactionButton');
-          if (cancelButton) {
-            cancelButton.addEventListener('click', function () {
-              if (!transactionId || !sTransactionId) {
-                console.error('TransactionId, STransactionId o token están vacíos.');
-                Swal.fire({
-                  title: 'Error',
-                  text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
-                  icon: 'error',
-                  confirmButtonText: 'Cerrar'
-                });
-                return;
-              }
-              cancelarTransaccion(transactionId, sTransactionId);
-            });
-          }
-          if (!showCloseButton) {
-            Swal.showLoading();
-          }
+      showConfirmButton: showCloseButton,
+      confirmButtonText: 'Cerrar',
+      allowOutsideClick: showCloseButton,
+      didOpen: () => {
+        const cancelButton = document.getElementById('cancelTransactionButton');
+        if (cancelButton) {
+          cancelButton.addEventListener('click', function () {
+            if (!transactionId || !sTransactionId) {
+              console.error('TransactionId, STransactionId o token están vacíos.');
+              Swal.fire({
+                title: 'Error',
+                text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+                icon: 'error',
+                confirmButtonText: 'Cerrar'
+              });
+              return;
+            }
+            cancelarTransaccion(transactionId, sTransactionId);
+          });
         }
-      });
-    } else {
-      swalInstance.update({
-        icon: icon || 'info',
-        html: `
+        if (!showCloseButton) {
+          Swal.showLoading();
+        }
+      }
+    });
+  } else {
+    swalInstance.update({
+      icon: icon || 'info',
+      html: `
         ${message || 'Procesando...'}
         <div class="mt-3">
           <button
@@ -334,86 +339,86 @@ $(document).ready(function () {
           </button>
         </div>
       `,
-        showConfirmButton: showCloseButton,
-        confirmButtonText: 'Cerrar',
-        allowOutsideClick: showCloseButton
+      showConfirmButton: showCloseButton,
+      confirmButtonText: 'Cerrar',
+      allowOutsideClick: showCloseButton
+    });
+
+    const cancelButton = document.getElementById('cancelTransactionButton');
+    if (cancelButton) {
+      cancelButton.addEventListener('click', function () {
+        if (!transactionId || !sTransactionId) {
+          console.error('TransactionId o STransactionId  están vacíos.');
+          Swal.fire({
+            title: 'Error',
+            text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+            icon: 'error',
+            confirmButtonText: 'Cerrar'
+          });
+          return;
+        }
+        cancelarTransaccion(transactionId, sTransactionId);
       });
+    }
 
-      const cancelButton = document.getElementById('cancelTransactionButton');
-      if (cancelButton) {
-        cancelButton.addEventListener('click', function () {
-          if (!transactionId || !sTransactionId) {
-            console.error('TransactionId o STransactionId  están vacíos.');
-            Swal.fire({
-              title: 'Error',
-              text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
-              icon: 'error',
-              confirmButtonText: 'Cerrar'
-            });
-            return;
-          }
-          cancelarTransaccion(transactionId, sTransactionId);
-        });
-      }
-
-      if (showCloseButton) {
-        Swal.hideLoading();
-      }
+    if (showCloseButton) {
+      Swal.hideLoading();
     }
   }
+}
 
 
 
 
 
-  // Función para cancelar la transacción
-  function cancelarTransaccion(transactionId, sTransactionId, token) {
-    if (!transactionId || !sTransactionId) {
-      console.error('TransactionId o STransactionId son inválidos.');
+// Función para cancelar la transacción
+function cancelarTransaccion(transactionId, sTransactionId, token) {
+  if (!transactionId || !sTransactionId) {
+    console.error('TransactionId o STransactionId son inválidos.');
+    Swal.fire({
+      title: 'Error',
+      text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+      icon: 'error',
+      confirmButtonText: 'Cerrar'
+    });
+    return;
+  }
+
+  // Solo enviar los datos mínimos necesarios
+  const requestData = {
+    TransactionId: transactionId,
+    STransactionId: sTransactionId,
+    store_id: sessionStoreId // Si el store_id es necesario
+  };
+
+  $.ajax({
+    url: `${baseUrl}api/pos/cancel-transaction`,
+    type: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    data: JSON.stringify(requestData),
+    success: function (response) {
+      console.log('Transacción cancelada exitosamente:', response);
+      Swal.fire({
+        title: 'Cancelación Exitosa',
+        text: 'La transacción ha sido cancelada con éxito.',
+        icon: 'success',
+        confirmButtonText: 'Cerrar'
+      });
+    },
+    error: function (xhr) {
+      console.error('Error al cancelar la transacción:', xhr.responseText);
       Swal.fire({
         title: 'Error',
-        text: 'No se pudo cancelar la transacción. Faltan datos requeridos.',
+        text: 'No se pudo cancelar la transacción. Haga click en el botón rojo del POS.',
         icon: 'error',
         confirmButtonText: 'Cerrar'
       });
-      return;
     }
-
-    // Solo enviar los datos mínimos necesarios
-    const requestData = {
-      TransactionId: transactionId,
-      STransactionId: sTransactionId,
-      store_id: sessionStoreId // Si el store_id es necesario
-    };
-
-    $.ajax({
-      url: `${baseUrl}api/pos/cancel-transaction`,
-      type: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      data: JSON.stringify(requestData),
-      success: function (response) {
-        console.log('Transacción cancelada exitosamente:', response);
-        Swal.fire({
-          title: 'Cancelación Exitosa',
-          text: 'La transacción ha sido cancelada con éxito.',
-          icon: 'success',
-          confirmButtonText: 'Cerrar'
-        });
-      },
-      error: function (xhr) {
-        console.error('Error al cancelar la transacción:', xhr.responseText);
-        Swal.fire({
-          title: 'Error',
-          text: 'No se pudo cancelar la transacción. Haga click en el botón rojo del POS.',
-          icon: 'error',
-          confirmButtonText: 'Cerrar'
-        });
-      }
-    });
-  }
+  });
+}
 
 
 
@@ -491,7 +496,7 @@ $(document).ready(function () {
 
   function loadCartFromSession() {
     $.ajax({
-      url: `cart`,
+      url: `api-cart`,
       type: 'GET',
       dataType: 'json',
       success: function (response) {
@@ -548,7 +553,6 @@ $(document).ready(function () {
   $('#manual_price_list_id').on('change', updateCartPrices);
 
 
-
   function loadStoreIdFromSession() {
     $.ajax({
       url: `storeid-session`,
@@ -594,7 +598,7 @@ $(document).ready(function () {
 
   function saveCartToSession() {
     return $.ajax({
-      url: 'cart',
+      url: 'api-cart',
       type: 'POST',
       data: {
         _token: $('meta[name="csrf-token"]').attr('content'),
@@ -608,49 +612,82 @@ $(document).ready(function () {
 
   function calcularTotal() {
     $.ajax({
-      url: 'exchange-rate',
-      type: 'GET',
-      success: function (response) {
-        exchange_price = response.exchange_rate.sell;
-        const selectedCurrency = $('input[name="currency"]:checked').val();
-  
-        let subtotal = cart.reduce((sum, item) => {
-          let itemPrice = item.price;
-          if (selectedCurrency === 'Dólar') {
-            if (item.currency === 'Peso') {
-              itemPrice = item.price / exchange_price;
+        url: 'exchange-rate',
+        type: 'GET',
+        success: function (response) {
+            exchange_price = response.exchange_rate.sell;
+            const selectedCurrency = $('input[name="currency"]:checked').val();
+
+            let subtotal = 0; // Subtotal sin impuestos
+            let totalTax = 0; // Total del IVA
+            let total = 0; // Total con impuestos
+
+            cart.forEach(item => {
+                let basePrice = parseFloat(item.base_price || 0); // Precio base sin impuestos
+                let productTaxRate = parseFloat(item.tax_rate?.rate || 0); // Impuesto del producto
+                let clientTaxRate = client?.tax_rate?.rate !== undefined ? parseFloat(client.tax_rate.rate) : null; // Impuesto del cliente
+                let finalTaxRate = clientTaxRate !== null ? clientTaxRate : productTaxRate; // Prioriza el cliente si tiene tasa asignada
+                let quantity = parseInt(item.quantity || 1);
+
+                if (isNaN(basePrice) || isNaN(finalTaxRate) || isNaN(quantity)) {
+                    console.error(`Error en datos del producto:`, item);
+                    return;
+                }
+
+                // Ajustar precio según moneda seleccionada
+                let itemPrice = basePrice;
+                if (selectedCurrency === 'Dólar') {
+                    if (item.currency === 'Peso') {
+                        itemPrice = basePrice / exchange_price;
+                    }
+                } else {
+                    if (item.currency === 'Dólar') {
+                        itemPrice = basePrice * exchange_price;
+                    }
+                }
+
+                // Calcular impuestos
+                let taxAmount = (itemPrice * finalTaxRate / 100) * quantity;
+                let itemTotal = (itemPrice * quantity) + taxAmount;
+
+                subtotal += itemPrice * quantity;
+                totalTax += taxAmount;
+                total += itemTotal;
+            });
+
+            // Aplicar descuentos
+            let discountInCurrency = discount;
+            if (selectedCurrency === 'Dólar' && coupon && coupon.coupon.type === 'fixed') {
+                discountInCurrency = discount;
             }
-          } else {
-            if (item.currency === 'Dólar') {
-              itemPrice = item.price * exchange_price;
-            }
-          }
-          return sum + (itemPrice * item.quantity);
-        }, 0);
-  
-        let discountInCurrency = discount;
-        if (selectedCurrency === 'Dólar' && coupon && coupon.coupon.type === 'fixed') {
-          discountInCurrency = discount;
+
+            total -= discountInCurrency;
+            if (total < 0) total = 0;
+
+            // Redondear valores a dos decimales
+            subtotal = Math.round(subtotal * 100) / 100;
+            totalTax = Math.round(totalTax * 100) / 100;
+            total = Math.round(total * 100) / 100;
+            discountInCurrency = Math.round(discountInCurrency * 100) / 100;
+
+            // Formatear valores con separadores de miles y dos decimales
+            const displaySymbol = selectedCurrency === 'Dólar' ? 'USD' : 'UYU';
+
+            $('.subtotal').text(`${displaySymbol} ${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
+            $('.iva-total').text(`${displaySymbol} ${totalTax.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
+            $('.total').text(`${displaySymbol} ${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
+            $('.discount-amount').text(`${displaySymbol} ${discountInCurrency.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
+        },
+        error: function (xhr) {
+            console.error('Error al obtener tipo de cambio:', xhr.responseText);
         }
-  
-        let total = subtotal - discountInCurrency;
-        if (total < 0) total = 0;
-  
-        subtotal = Math.round(subtotal * 100) / 100;
-        total = Math.round(total * 100) / 100;
-        discountInCurrency = Math.round(discountInCurrency * 100) / 100;
-  
-        const displaySymbol = selectedCurrency === 'Dólar' ? 'USD' : 'UYU';
-  
-        $('.subtotal').text(`${displaySymbol} ${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
-        $('.total').text(`${displaySymbol} ${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
-        $('.discount-amount').text(`${displaySymbol} ${discountInCurrency.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
-      },
-      error: function (xhr) {
-        console.error('Error al obtener tipo de cambio:', xhr.responseText);
-      }
     });
-  }
+}
+
+
+
+
+
 
   function aplicarDescuento() {
     const couponCode = $('#coupon-code').val();
@@ -810,85 +847,110 @@ $(document).ready(function () {
   function updateCheckoutCart() {
     let cartHtml = '';
     let subtotal = 0;
+    let totalTax = 0;
+    let total = 0;
 
     $.ajax({
-      url: 'exchange-rate',
-      type: 'GET',
-      success: function (response) {
-        const exchange_price = response.exchange_rate.sell;
-        const selectedCurrency = $('input[name="currency"]:checked').val();
-        const displaySymbol = selectedCurrency === 'Dólar' ? 'USD' : 'UYU';
+        url: 'exchange-rate',
+        type: 'GET',
+        success: function (response) {
+            const exchange_price = response.exchange_rate.sell;
+            const selectedCurrency = $('input[name="currency"]:checked').val();
+            const displaySymbol = selectedCurrency === 'Dólar' ? 'USD' : 'UYU';
 
-        cart.forEach(item => {
-          let itemPrice = item.price && !isNaN(item.price) ? item.price : 0;
-          let itemTotal = 0;
+            cart.forEach(item => {
+                let basePrice = parseFloat(item.base_price || 0); // Precio base sin impuestos
+                let productTaxRate = parseFloat(item.tax_rate?.rate || 0); // Impuesto del producto
+                let clientTaxRate = client?.tax_rate?.rate !== undefined ? parseFloat(client.tax_rate.rate) : null; // Impuesto del cliente
+                let finalTaxRate = clientTaxRate !== null ? clientTaxRate : productTaxRate; // Prioriza el cliente si tiene tasa asignada
+                let quantity = parseInt(item.quantity || 1);
 
-          if (selectedCurrency === 'Dólar') {
-            // Si la moneda seleccionada es Dólar
-            if (item.currency === 'Peso') {
-              // Convertir de Peso a Dólar
-              itemPrice = item.price / exchange_price;
-              itemTotal = itemPrice * item.quantity;
-            } else {
-              // Si ya está en dólares, usar precio original
-              itemPrice = item.price;
-              itemTotal = itemPrice * item.quantity;
-            }
-          } else {
-            // Si la moneda seleccionada es Peso
-            if (item.currency === 'Dólar') {
-              // Convertir de Dólar a Peso
-              itemPrice = item.price * exchange_price;
-              itemTotal = itemPrice * item.quantity;
-            } else {
-              // Si ya está en pesos, usar precio original
-              itemPrice = item.price;
-              itemTotal = itemPrice * item.quantity;
-            }
-          }
+                if (isNaN(basePrice) || isNaN(finalTaxRate) || isNaN(quantity)) {
+                    console.error(`Error en datos del producto:`, item);
+                    return;
+                }
 
-          subtotal += itemTotal;
+                // Ajustar precio según moneda seleccionada
+                let itemPrice = basePrice;
+                if (selectedCurrency === 'Dólar') {
+                    if (item.currency === 'Peso') {
+                        itemPrice = basePrice / exchange_price;
+                    }
+                } else {
+                    if (item.currency === 'Dólar') {
+                        itemPrice = basePrice * exchange_price;
+                    }
+                }
 
-          const formattedItemPrice = itemPrice.toLocaleString('es-ES', {
-            minimumFractionDigits: 2
-          });
-          const formattedItemTotal = itemTotal.toLocaleString('es-ES', {
-            minimumFractionDigits: 2
-          });
+                // Calcular impuestos
+                let taxAmount = (itemPrice * finalTaxRate / 100) * quantity;
+                let itemTotal = (itemPrice * quantity) + taxAmount;
 
-          // Generar HTML del item
-          cartHtml += `
+                subtotal += itemPrice * quantity;
+                totalTax += taxAmount;
+                total += itemTotal;
+
+                // Formatear los precios
+                const formattedItemPrice = itemPrice.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+                const formattedItemTotal = itemTotal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+
+                // Generar HTML del item
+                cartHtml += `
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
-                            <img src="${baseUrl}${item.image}" alt="${item.name}" class="img-thumbnail me-2" style="width: 50px;">
+                            <img src="${baseUrl}${item.image || 'default.jpg'}" alt="${item.name || 'Producto'}" class="img-thumbnail me-2" style="width: 50px;">
                             <div>
-                                <h6 class="mb-0">${item.name}</h6>
-                                <small class="text-muted">Cantidad: ${item.quantity} x ${displaySymbol} ${formattedItemPrice}</small>
+                                <h6 class="mb-0 text-truncate" style="max-width: 150px;">${item.name || 'Sin nombre'}</h6>
+                                <small class="text-muted">Cantidad: ${quantity} x ${displaySymbol} ${formattedItemPrice}</small>
                             </div>
                         </div>
                         <span>${displaySymbol} ${formattedItemTotal}</span>
                     </li>
                 `;
-        });
+            });
 
-        let total = subtotal - (selectedCurrency === 'Dólar' ? discount / exchange_price : discount);
-        if (total < 0) total = 0;
+            // Aplicar descuentos
+            let discountInCurrency = discount;
+            if (selectedCurrency === 'Dólar' && coupon && coupon.coupon.type === 'fixed') {
+                discountInCurrency = discount;
+            }
 
-        subtotal = Math.round(subtotal * 100) / 100;
-        total = Math.round(total * 100) / 100;
+            total -= discountInCurrency;
+            if (total < 0) total = 0;
 
-        const formattedSubtotal = subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
-        const formattedTotal = total.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+            // Redondear valores a dos decimales
+            subtotal = Math.round(subtotal * 100) / 100;
+            totalTax = Math.round(totalTax * 100) / 100;
+            total = Math.round(total * 100) / 100;
+            discountInCurrency = Math.round(discountInCurrency * 100) / 100;
 
-        $('.list-group-flush').html(cartHtml);
-        $('.subtotal').text(`${displaySymbol} ${formattedSubtotal}`);
-        $('.total').text(`${displaySymbol} ${formattedTotal}`);
-      },
-      error: function (xhr) {
-        console.error('Error al obtener tipo de cambio:', xhr.responseText);
-      }
+            // Formatear valores con separadores de miles y dos decimales
+            const formattedSubtotal = subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+            const formattedTotalTax = totalTax.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+            const formattedTotal = total.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+            const formattedDiscount = discountInCurrency.toLocaleString('es-ES', { minimumFractionDigits: 2 });
+
+            // Actualizar la interfaz con los valores calculados
+            $('.list-group-flush').html(cartHtml);
+            $('.subtotal').text(`${displaySymbol} ${formattedSubtotal}`);
+            $('.iva-total').text(`${displaySymbol} ${formattedTotalTax}`);
+            $('.total').text(`${displaySymbol} ${formattedTotal}`);
+            $('.discount-amount').text(`${displaySymbol} ${formattedDiscount}`);
+
+            // Verificar si el carrito está vacío y mostrar un mensaje
+            if (cart.length === 0) {
+                $('.list-group-flush').html('<li class="list-group-item text-center">El carrito está vacío.</li>');
+            }
+
+            // Llamar a la función de cálculo total
+            calcularTotal();
+        },
+        error: function (xhr) {
+            console.error('Error al obtener tipo de cambio:', xhr.responseText);
+        }
     });
-  }
+}
+
 
   $('.discount-section button').on('click', function () {
     aplicarDescuento();
@@ -1096,8 +1158,8 @@ $(document).ready(function () {
 
       $('.responsible-text').hide();
 
-      $('#rutField, #razonSocialField').hide();
-      $('#razonSocialCliente, #rutCliente').val('').removeAttr('required');
+      $('#rutField, #razonSocialField, #taxIdField').hide();
+      $('#razonSocialCliente, #rutCliente, #taxIdCliente').val('').removeAttr('required');
       $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').hide();
 
     } else if (tipo == 'company') {
@@ -1110,8 +1172,8 @@ $(document).ready(function () {
 
       $('.responsible-text').show();
 
-      $('#rutField, #razonSocialField').show();
-      $('#razonSocialCliente, #rutCliente').attr('required', true);
+      $('#rutField, #razonSocialField, #taxIdField').show();
+      $('#razonSocialCliente, #rutCliente, #taxIdField').attr('required', true);
       $('label[for="razonSocialCliente"] .text-danger, label[for="rutCliente"] .text-danger').show();
     }
   });
@@ -1128,6 +1190,7 @@ $(document).ready(function () {
     const direccion = document.getElementById('direccionCliente');
     const razonSocial = document.getElementById('razonSocialCliente');
     const priceList = document.getElementById('price_list_id');
+    const taxId = document.getElementById('taxIdCliente');
 
     let hasError = false;
     clearErrors();
@@ -1158,6 +1221,11 @@ $(document).ready(function () {
         missingFields.push('RUT');
       }
 
+      if (taxId.value.trim() === '') {
+        showError(taxId, 'Este campo es obligatorio para empresas');
+        missingFields.push('RUT');
+      }
+
       if (razonSocial.value.trim() === '') {
         showError(razonSocial, 'Este campo es obligatorio empresas');
         missingFields.push('Razón Social');
@@ -1178,7 +1246,7 @@ $(document).ready(function () {
 
     // Crear el objeto con los datos a enviar
     let data = {
-      store_id: sessionStoreId,
+      store_id: parseInt(sessionStoreId, 10),
       name: nombre.value.trim(),
       lastname: apellido.value.trim(),
       type: tipo.value,
@@ -1192,6 +1260,7 @@ $(document).ready(function () {
     } else if (tipo.value === 'company') {
       data.rut = rut.value.trim();
       data.company_name = razonSocial.value.trim();
+      data.tax_rate_id = taxId.value;
     }
     // Realizar la petición para crear el cliente
     fetch(`${baseUrl}admin/clients`, {
@@ -1309,31 +1378,46 @@ $(document).ready(function () {
     let cashSales = 0;
     let posSales = 0;
 
-    let total = parseFloat($('.total').text().replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
-    let subtotal = parseFloat($('.subtotal').text().replace(/[^\d,-]/g, '').replace(',', '.')) || 0;
-    console.log(total);
-    console.log(subtotal);
+    const subtotal = cart.reduce((sum, item) => sum + (item.base_price * item.quantity), 0);
+    const tax = cart.reduce((sum, item) => {
+      const taxRate = parseFloat(item.tax_rate?.rate || 0);
+      return sum + ((item.base_price * taxRate / 100) * item.quantity);
+    }, 0);
+
+    const total = subtotal + tax - discount; // Aplicar el descuento al total si es necesario
+
+    console.log('Subtotal de la venta:', subtotal.toFixed(2));
+    console.log('Tax (Impuestos):', tax.toFixed(2));
+    console.log('Total de la venta:', total.toFixed(2));
+
+
     if (total > 25000 && (!client || !client.id)) {
-      mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
-      return;
+        mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
+        return;
     }
 
     if (paymentMethod === 'cash') {
-      cashSales = total;
+        cashSales = total;
     } else {
-      posSales = total;
+        posSales = total;
     }
 
     if (paymentMethod === 'internalCredit' && (!client || !client.id)) {
-      mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido.');
-      return;
+        mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido.');
+        return;
     }
+
+    if (selectedQrMethod === 'qr_attended') paymentMethod = 'qr_attended';
+
+    if (selectedQrMethod === 'qr_dynamic') paymentMethod = 'qr_dynamic';
 
     // Capturar las cuotas si el método de pago es crédito
     let quotas = null;
-    if (paymentMethod === 'credit') {
-      quotas = parseInt($('#quotas').val()) || 1; // Valor predeterminado de 1 si está vacío o no válido
+    if (paymentMethod === 'credit' && storePosProviderId !== null) {
+        quotas = parseInt($('#quotas').val()) || 1; // Valor predeterminado de 1 si está vacío o no válido
     }
+
+    console.log('carrito al crear venta:', cart);
 
     const orderData = {
       date: new Date().toISOString().split('T')[0],
@@ -1345,13 +1429,16 @@ $(document).ready(function () {
       products: JSON.stringify(cart.map(item => ({
         id: item.id,
         name: item.name,
+        base_price: item.base_price,
         price: item.price,
         currency: item.currency,
         quantity: item.quantity,
-        is_composite: item.isComposite || false
+        is_composite: item.isComposite || false,
+            tax_rate: item.tax_rate?.rate || 0
       }))),
-      subtotal: subtotal,
-      total: total - discount,
+      subtotal: subtotal.toFixed(2),
+      tax: tax.toFixed(2),
+      total: total.toFixed(2),
       notes: $('textarea').val() || '',
       store_id: sessionStoreId,
       shipping_status: shippingStatus,
@@ -1359,19 +1446,19 @@ $(document).ready(function () {
     };
 
     if (client && client.id) {
-      orderData.client_id = client.id;
+        orderData.client_id = client.id;
     }
 
     // Crear la orden en pos-orders primero
     $.ajax({
-      url: `${baseUrl}admin/pos-orders`,
-      type: 'POST',
-      data: {
-        _token: $('meta[name="csrf-token"]').attr('content'),
-        ...orderData
-      },
-      success: function (posOrderResponse) {
-        const posOrderId = posOrderResponse.order_uuid; // ID de la orden en pos-orders
+        url: `${baseUrl}admin/pos-orders`,
+        type: 'POST',
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'),
+            ...orderData
+        },
+        success: function (posOrderResponse) {
+            const posOrderId = posOrderResponse.order_uuid; // ID de la orden en pos-orders
 
         // Crear la orden en orders
         const ordersData = {
@@ -1390,87 +1477,86 @@ $(document).ready(function () {
           is_billed: 0
         };
 
-        $.ajax({
-          url: `${baseUrl}admin/orders`,
-          type: 'POST',
-          data: {
-            _token: $('meta[name="csrf-token"]').attr('content'),
-            ...ordersData
-          },
-          success: function (orderResponse) {
-            const orderId = orderResponse.order_id; // ID de la orden en orders
-            const orderUuid = orderResponse.order_uuid; // UUID de la orden en orders
+            $.ajax({
+                url: `${baseUrl}admin/orders`,
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    ...ordersData
+                },
+                success: function (orderResponse) {
+                    const orderId = orderResponse.order_id; // ID de la orden en orders
+                    const orderUuid = orderResponse.order_uuid; // UUID de la orden en orders
 
-            if (paymentMethod === 'debit' || paymentMethod === 'credit') {
-              // Si el método de pago es debit o credit, inicia el flujo de transacción POS
-              obtenerTokenPos().then(token => {
-                enviarTransaccionPos(token, posOrderId, orderId, orderUuid, quotas); // Enviar la orden al POS
-              }).catch(error => {
-                console.error('Error al obtener token POS:', error);
-                mostrarError('Error al procesar el pago con POS.');
-              });
-            } else if (paymentMethod === 'qr_attended') {
-              handleMercadoPagoAtendido(orderResponse);
-              return;
-            } else if (paymentMethod === 'qr_dynamic') {
-              handleMercadoPagoDinamico(orderResponse);
-              return;
-            } else {
-              // Para otros métodos de pago, confirmar venta directamente
-              confirmarVenta(orderResponse, paymentMethod);
-            }
-          },
-          error: function (xhr) {
-            console.error('Error al guardar en /admin/orders:', xhr);
+                    if ((paymentMethod === 'debit' || paymentMethod === 'credit') && storePosProviderId !== null && posDeviceName !== null) {
+                      // Si el método de pago es debit o credit, inicia el flujo de transacción POS
+                        obtenerTokenPos().then(token => {
+                            enviarTransaccionPos(token, posOrderId, orderId, orderUuid, quotas); // Enviar la orden al POS
+                        }).catch(error => {
+                            console.error('Error al obtener token POS:', error);
+                            mostrarError('Error al procesar el pago con POS.');
+                        });
+                    } else if (paymentMethod === 'qr_attended') {
+                        handleMercadoPagoAtendido(orderResponse);
+                        return;
+                    } else if (paymentMethod === 'qr_dynamic') {
+                        handleMercadoPagoDinamico(orderResponse);
+                        return;
+                    } else {
+                        // Para otros métodos de pago, confirmar venta directamente
+                        confirmarVenta(orderResponse, paymentMethod);
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Error al guardar en /admin/orders:', xhr);
+                    mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
+                }
+            });
+        },
+        error: function (xhr) {
+            console.error('Error al guardar en /admin/pos-orders:', xhr);
             mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
-          }
-        });
-      },
-      error: function (xhr) {
-        console.error('Error al guardar en /admin/pos-orders:', xhr);
-        mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido al procesar la venta.');
+        }
+    });
+    $('input[name="currency"]').on('change', function () {
+      const selectedCurrency = $(this).val();
+      const internalCreditInput = $('#internalCredit');
+      const internalCreditLabel = $('label[for="internalCredit"]');
+      const exchangeRateInfo = $('.exchange-rate-info');
+  
+      if (selectedCurrency === 'Dólar') {
+        exchangeRateInfo.removeClass('d-none');
+        internalCreditInput.prop('disabled', true);
+        internalCreditInput.prop('checked', false);
+        internalCreditLabel.addClass('opacity-50');
+      } else {
+        exchangeRateInfo.removeClass('d-none');
+        internalCreditInput.prop('disabled', false);
+        internalCreditLabel.removeClass('opacity-50');
       }
+    
+      $.ajax({
+        url: 'exchange-rate',
+        type: 'GET',
+        success: function(response) {
+          exchange_price = response.exchange_rate.sell;
+          let tc_value = parseFloat(exchange_price);
+          $('.exchange-rate-value').text(tc_value.toFixed(2));
+  
+          if (selectedCurrency === 'Dólar') {
+            discount = discount / exchange_price;
+          } else {
+            discount = discount * exchange_price;
+          }
+    
+          calcularTotal();
+        },
+        error: function(xhr) {
+          console.error('Error al obtener tipo de cambio:', xhr.responseText);
+        }
+      });
     });
   }
-
-  $('input[name="currency"]').on('change', function () {
-    const selectedCurrency = $(this).val();
-    const internalCreditInput = $('#internalCredit');
-    const internalCreditLabel = $('label[for="internalCredit"]');
-    const exchangeRateInfo = $('.exchange-rate-info');
-
-    if (selectedCurrency === 'Dólar') {
-      exchangeRateInfo.removeClass('d-none');
-      internalCreditInput.prop('disabled', true);
-      internalCreditInput.prop('checked', false);
-      internalCreditLabel.addClass('opacity-50');
-    } else {
-      exchangeRateInfo.removeClass('d-none');
-      internalCreditInput.prop('disabled', false);
-      internalCreditLabel.removeClass('opacity-50');
-    }
-  
-    $.ajax({
-      url: 'exchange-rate',
-      type: 'GET',
-      success: function(response) {
-        exchange_price = response.exchange_rate.sell;
-        let tc_value = parseFloat(exchange_price);
-        $('.exchange-rate-value').text(tc_value.toFixed(2));
-
-        if (selectedCurrency === 'Dólar') {
-          discount = discount / exchange_price;
-        } else {
-          discount = discount * exchange_price;
-        }
-  
-        calcularTotal();
-      },
-      error: function(xhr) {
-        console.error('Error al obtener tipo de cambio:', xhr.responseText);
-      }
-    });
-  });
 
 
 
@@ -1515,27 +1601,33 @@ $(document).ready(function () {
 
     const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
     if (!paymentMethod) {
-      mostrarError('Por favor, seleccione un método de pago.');
-      return;
+        mostrarError('Por favor, seleccione un método de pago.');
+        return;
     }
 
     console.log('Método de pago seleccionado:', paymentMethod);
 
     // Validación adicional para crédito interno
     if (paymentMethod === 'internalCredit' && (!client || !client.id)) {
-      mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido.');
-      return;
+        mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado al pedido.');
+        return;
     }
 
     // Determinar el estado inicial de la orden basado en el método de pago
     let paymentStatus = 'paid'; // Por defecto, el estado es 'paid'
-    if (paymentMethod === 'debit' || paymentMethod === 'credit') {
-      paymentStatus = 'pending'; // Cambiar a 'pending' para métodos de pago con POS
+
+    // Verificar si posProviderId está definido para decidir el flujo del POS
+    if ((paymentMethod === 'debit' || paymentMethod === 'credit') && storePosProviderId === null || posDeviceName === null) {
+        console.log('Sin proveedor POS vinculado, marcando transacción como debit/credit en la DB.');
+        paymentStatus = 'paid'; // No se envía al POS, simplemente se marca como pago completado.
+    } else if (paymentMethod === 'debit' || paymentMethod === 'credit') {
+        paymentStatus = 'pending'; // Cambiar a 'pending' para métodos de pago con POS
     }
 
     // Crear la orden
     postOrder(paymentMethod, paymentStatus);
   });
+
 
 
   $('#descartarVentaBtn').on('click', function () {

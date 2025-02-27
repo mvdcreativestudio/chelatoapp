@@ -248,13 +248,14 @@
   <style>
     .order-card {
       display: flex;
+      flex-direction: column; /* Orden vertical */
+      justify-content: space-between;
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-      overflow: hidden;
+      padding: 15px;
       transition: transform 0.2s ease-in-out;
     }
-
     .order-card:hover {
       transform: translateY(-3px);
     }
@@ -277,11 +278,10 @@
       font-size: 0.75rem;
       margin-bottom: 5px;
     }
-
     .order-total {
       font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 5px;
+      font-weight: bold;
+      white-space: nowrap;
     }
 
     .order-date {
@@ -294,10 +294,6 @@
       margin-top: auto;
     }
 
-    .badge {
-      padding: 3px 8px;
-      font-size: 0.75rem;
-    }
 
     /* Modal de Filtros */
     .filter-modal {
@@ -330,6 +326,15 @@
       font-size: 20px;
       cursor: pointer;
     }
+
+    .order-card .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
 
     @media (max-width: 768px) {
       .d-flex {
@@ -364,5 +369,16 @@
         width: 100%;
       }
     }
+
+
+    .datatables-order .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-size: 1.1rem;
+    }
+
   </style>
   @endsection

@@ -25,21 +25,20 @@
 
             <!-- Título del formulario -->
             <div class="d-flex flex-column justify-content-center">
-                <h4 class="mb-0">
-                    <i class="bx bx-edit-alt me-2"></i> Editar Producto
-                </h4>
+              <h5 class="mb-0">
+                  <i class="bx bx-edit-alt me-2"></i> Editar Producto
+              </h5>
             </div>
 
             <!-- Botones de acciones -->
             <div class="d-flex justify-content-end gap-3">
-                <button type="button" class="btn btn-outline-secondary" onclick="history.back();">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="history.back();">
                     <i class="bx bx-x me-1"></i> Cancelar
                 </button>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary btn-sm">
                     <i class="bx bx-save me-1"></i> Guardar Cambios
                 </button>
             </div>
-
         </div>
 
 
@@ -320,6 +319,19 @@
                                     id="ecommerce-product-discount-price" placeholder="Precio oferta" name="price"
                                     value="{{ $product->price }}" aria-label="Introduzca el precio rebajado">
                             </div>
+                            <!-- Tax Rate -->
+                            <div class="mb-3">
+                              <label class="form-label" for="tax_rate_id">IVA</label>
+                              <select class="form-control" id="tax_rate_id" name="tax_rate_id" aria-label="Seleccione el IVA">
+                                  <option value="" disabled {{ $product->tax_rate_id ? '' : 'selected' }}>Seleccione una tasa de IVA</option>
+                                  @foreach($taxRates as $taxRate)
+                                      <option value="{{ $taxRate->id }}"
+                                          {{ $product->tax_rate_id == $taxRate->id ? 'selected' : '' }}>
+                                          {{ $taxRate->name }} ({{ $taxRate->rate }}%)
+                                      </option>
+                                  @endforeach
+                              </select>
+                            </div>
                             <!-- Build Price -->
                             <div class="mb-3">
                                 <label class="form-label" for="build_price">Costo</label>
@@ -334,11 +346,17 @@
                             <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-3">
                                 <span class="mb-0 h6">Estado</span>
                                 <div class="w-25 d-flex justify-content-end">
-                                    <label class="switch switch-primary switch-sm me-4 pe-2">
-                                        <input type="checkbox" class="switch-input" value="1" id="statusSwitch"
-                                            {{ $product->status == 1 ? 'checked' : '' }} name="status">
-                                        <span class="switch-toggle-slider"></span>
-                                    </label>
+                                  <label class="switch switch-primary switch-sm me-4 pe-2">
+                                    <input
+                                      type="checkbox"
+                                      class="switch-input"
+                                      value="{{ $product->status }}"
+                                      id="statusSwitch"
+                                      {{ $product->status == 1 ? 'checked' : '' }}
+                                      name="status"
+                                    >
+                                    <span class="switch-toggle-slider"></span>
+                                  </label>
                                 </div>
                             </div>
                             <!-- Show in catalogue switch -->
