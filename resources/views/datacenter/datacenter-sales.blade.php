@@ -306,7 +306,6 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
         <div class="col-md-8">
           <div class="card-header">
             <h5 class="card-title mb-0">Ingresos totales</h5>
-            <small class="card-subtitle">Reporte anual</small>
           </div>
           <div class="card-body">
             <div id="totalIncomeChart"></div>

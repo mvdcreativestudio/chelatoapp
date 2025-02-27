@@ -40,6 +40,7 @@ class UpdateCompanySettingsRequest extends FormRequest
         'hero_image' => ['nullable', 'image', 'max:3064'],
         'rut' => ['nullable', 'string', 'max:255'],
         'allow_registration' => ['required', 'boolean'],
+        'reports_include_taxes' => ['required', 'boolean'],
       ];
     }
 

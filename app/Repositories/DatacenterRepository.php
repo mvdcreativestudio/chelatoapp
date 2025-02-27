@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\DB;
 use App\Models\PosOrder;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\CompanySettingsHelper;
+
 
 
 class DatacenterRepository
@@ -185,13 +187,17 @@ class DatacenterRepository
      */
     public function ecommerceIncomes(string $startDate, string $endDate, int $storeId = null): string
     {
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+
         $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid')
             ->where('origin', 'ecommerce');
+
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
-        $totalPaidOrders = $query->sum('total');
+
+        $totalPaidOrders = $query->sum($includeTaxes ? 'total' : 'subtotal');
 
         return number_format($totalPaidOrders, 0, ',', '.');
     }
@@ -206,21 +212,19 @@ class DatacenterRepository
      */
     public function physicalIncomes(string $startDate, string $endDate, int $storeId = null): string
     {
-        // Orders origin 'physical'
-        $orderQuery = Order::whereBetween('date', [$startDate, $endDate])
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+
+        $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid')
             ->where('origin', 'physical');
 
         if ($storeId) {
-            $orderQuery->where('store_id', $storeId);
+            $query->where('store_id', $storeId);
         }
 
-        $totalOrderPaid = $orderQuery->sum('total');
+        $totalPaidOrders = $query->sum($includeTaxes ? 'total' : 'subtotal');
 
-
-        $totalPaid = $totalOrderPaid;
-
-        return number_format($totalPaid, 0, ',', '.');
+        return number_format($totalPaidOrders, 0, ',', '.');
     }
 
 
@@ -234,20 +238,20 @@ class DatacenterRepository
      */
     public function totalIncomes(string $startDate, string $endDate, int $storeId = null): string
     {
-        $orderQuery = Order::whereBetween('date', [$startDate, $endDate])
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+
+        $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
-
         if ($storeId) {
-            $orderQuery->where('store_id', $storeId);
+            $query->where('store_id', $storeId);
         }
 
-        $totalOrderPaid = $orderQuery->sum('total');
+        $totalPaidOrders = $query->sum($includeTaxes ? 'total' : 'subtotal');
 
-        $totalPaid = $totalOrderPaid;
-
-        return number_format($totalPaid, 0, ',', '.');
+        return number_format($totalPaidOrders, 0, ',', '.');
     }
+
 
 
     /**
@@ -302,27 +306,21 @@ class DatacenterRepository
      */
     public function averageTicket(string $startDate, string $endDate, int $storeId = null): string
     {
-        $orderQuery = Order::select(DB::raw('total'))
-            ->whereBetween('date', [$startDate, $endDate])
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+
+        $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
-        // Aplicar filtro por store_id si es proporcionado
         if ($storeId) {
-            $orderQuery->where('store_id', $storeId);
+            $query->where('store_id', $storeId);
         }
 
-        // Calcular el total de los ventas pagadas
-        $totalPaidOrders = $orderQuery->sum('total');
+        $totalPaidOrders = $query->sum($includeTaxes ? 'total' : 'subtotal');
+        $totalPaidOrdersCount = $query->count();
 
-        // Contar la cantidad de ventas pagadas
-        $totalPaidOrdersCount = $orderQuery->count();
-
-        if ($totalPaidOrdersCount > 0) {
-            return number_format($totalPaidOrders / $totalPaidOrdersCount, 0, ',', '.');
-        } else {
-            return 'N/A';
-        }
+        return $totalPaidOrdersCount > 0 ? number_format($totalPaidOrders / $totalPaidOrdersCount, 0, ',', '.') : 'N/A';
     }
+
 
 
     /**
@@ -338,13 +336,17 @@ class DatacenterRepository
      */
     public function getIncomeData(string $startDate, string $endDate, int $storeId = null, string $period = 'month'): EloquentCollection
     {
+        // Determinar si se deben incluir impuestos
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
+
         // Selección y agrupación dinámica de campos según el periodo
         switch ($period) {
             case 'today':
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)'), DB::raw('DAY(date)'), DB::raw('HOUR(time)')];
-                $selectFields = ['total', 'year', 'month', 'day', 'hour'];
+                $selectFields = [$sumColumn, 'year', 'month', 'day', 'hour'];
                 $select = [
-                    DB::raw('SUM(total) as total'),
+                    DB::raw("SUM($sumColumn) as total"),
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month'),
                     DB::raw('DAY(date) as day'),
@@ -354,9 +356,9 @@ class DatacenterRepository
             case 'week':
             case 'month':
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)'), DB::raw('DAY(date)')];
-                $selectFields = ['total', 'year', 'month', 'day'];
+                $selectFields = [$sumColumn, 'year', 'month', 'day'];
                 $select = [
-                    DB::raw('SUM(total) as total'),
+                    DB::raw("SUM($sumColumn) as total"),
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month'),
                     DB::raw('DAY(date) as day')
@@ -366,34 +368,33 @@ class DatacenterRepository
             case 'always':
             default:
                 $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)')];
-                $selectFields = ['total', 'year', 'month'];
+                $selectFields = [$sumColumn, 'year', 'month'];
                 $select = [
-                    DB::raw('SUM(total) as total'),
+                    DB::raw("SUM($sumColumn) as total"),
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month')
                 ];
                 break;
         }
-    
+
         // Consulta de ventas del módulo de e-commerce y ventas físicas
         $orderQuery = Order::select($select)
             ->where('payment_status', 'paid')
             ->whereBetween('date', [$startDate, $endDate])
             ->groupBy($groupBy);
-    
+
         // Aplicar filtro por store_id si se proporciona
         if ($storeId) {
             $orderQuery->where('store_id', $storeId);
         }
-    
+
         // Obtener los resultados de la consulta
         $results = $orderQuery->get();
         Log::info('Resultados de getIncomeData:', $results->toArray());
-    
+
         // Agregar cualquier campo faltante al resultado final
         $filledResults = $this->fillMissingData($results, $startDate, $endDate, $selectFields);
-    
-    
+
         return new EloquentCollection($filledResults);
     }
 
@@ -463,41 +464,32 @@ class DatacenterRepository
      */
     public function getSalesByStoreData(int $storeId = null): array
     {
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
+
         $stores = Store::all();
 
-        // Consulta de todos los ventas con estado pagado
-        $orderQuery = Order::where('payment_status', 'paid');
-        if ($storeId) {
-            $orderQuery->where('store_id', $storeId);
-        }
-        $totalPaidOrders = $orderQuery->sum('total');
+        // Obtener el total de ventas pagadas
+        $totalPaidOrders = Order::where('payment_status', 'paid')->sum($sumColumn);
 
         $data = [];
 
         foreach ($stores as $store) {
-            // Consulta de ventas por tienda específica con estado pagado
-            $storeOrdersQuery = Order::where('store_id', $store->id)
-                ->where('payment_status', 'paid');
-            if ($storeId) {
-                $storeOrdersQuery->where('store_id', $storeId);
-            }
-            $storeTotalOrders = $storeOrdersQuery->sum('total');
+            // Obtener ventas de cada tienda
+            $storeTotalOrders = Order::where('store_id', $store->id)
+                ->where('payment_status', 'paid')
+                ->sum($sumColumn);
 
-            if ($totalPaidOrders > 0) {
-                $percent = ($storeTotalOrders / $totalPaidOrders) * 100;
-            } else {
-                $percent = 0;
-            }
+            $percent = $totalPaidOrders > 0 ? ($storeTotalOrders / $totalPaidOrders) * 100 : 0;
 
             $data[] = [
                 'store' => $store->name,
-                'percent' => number_format($percent, 2, ',', '.')
+                'percent' => number_format($percent, 2, ',', '.'),
             ];
         }
 
         return $data;
     }
-
 
 
     /**
@@ -509,12 +501,16 @@ class DatacenterRepository
      */
     public function getSalesPercentByStore(string $startDate, string $endDate): array
     {
-        // Obtener el total de ventas pagados en el rango de fechas
-        $totalPaidOrdersQuery = Order::whereBetween('date', [$startDate, $endDate])
-            ->where('payment_status', 'paid');
-        $totalPaidOrders = $totalPaidOrdersQuery->sum('total');
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
 
-        $stores = Store::with(['orders' => function ($query) use ($startDate, $endDate) {
+        // Obtener el total de ventas pagadas en el rango de fechas
+        $totalPaidOrders = Order::whereBetween('date', [$startDate, $endDate])
+            ->where('payment_status', 'paid')
+            ->sum($sumColumn);
+
+        // Obtener todas las tiendas con sus ventas en el rango de fechas
+        $stores = Store::with(['orders' => function ($query) use ($startDate, $endDate, $sumColumn) {
             $query->whereBetween('date', [$startDate, $endDate])
                 ->where('payment_status', 'paid');
         }])->get();
@@ -522,7 +518,7 @@ class DatacenterRepository
         $data = [];
         foreach ($stores as $store) {
             // Calcular el total de ventas por tienda
-            $storeTotal = $store->orders->sum('total');
+            $storeTotal = $store->orders->sum($sumColumn);
 
             // Calcular el porcentaje de ventas por tienda
             $percent = $totalPaidOrders > 0 ? ($storeTotal / $totalPaidOrders) * 100 : 0;
@@ -535,13 +531,10 @@ class DatacenterRepository
         }
 
         // Ordenar los datos por el total de ventas en orden descendente
-        usort($data, function ($a, $b) {
-            return $b['storeTotal'] <=> $a['storeTotal'];
-        });
+        usort($data, fn($a, $b) => $b['storeTotal'] <=> $a['storeTotal']);
 
         return $data;
     }
-
 
 
 
@@ -555,7 +548,10 @@ class DatacenterRepository
      */
     public function getSalesPercentByProduct(string $startDate, string $endDate, int $storeId = null): array
     {
-        // Consulta de ventas con filtro de fecha y local
+        // Determinar si los reportes deben incluir impuestos
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+
+        // Consulta de órdenes filtradas por fecha y tienda
         $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
@@ -564,44 +560,44 @@ class DatacenterRepository
         }
 
         $orders = $query->get();
-
         $productSales = [];
 
-        // Procesar todos los ventas
         foreach ($orders as $order) {
             $products = json_decode($order->products, true);
+            if (!is_array($products) || count($products) === 0) {
+                continue;
+            }
 
-            if (is_array($products) && count($products) > 0) {
-                $subtotal = $order->subtotal; // Total sin descuentos
-                $total = $order->total; // Total cobrado al cliente (después de descuentos)
-
-                foreach ($products as $product) {
-                    if (is_array($product) && isset($product['name'], $product['price'], $product['quantity'])) {
-                        if (!isset($productSales[$product['name']])) {
-                            $productSales[$product['name']] = [
-                                'total' => 0,
-                                'count' => 0
-                            ];
-                        }
-
-                        // Calcular el porcentaje del subtotal que representa este producto
-                        $productSubtotal = $product['price'] * $product['quantity'];
-                        $productPercentageOfSubtotal = $subtotal > 0 ? $productSubtotal / $subtotal : 0;
-
-                        // Calcular el total ajustado de este producto en base al total cobrado al cliente
-                        $productAdjustedTotal = $productPercentageOfSubtotal * $total;
-
-                        // Acumular las ventas ajustadas y la cantidad
-                        $productSales[$product['name']]['total'] += $productAdjustedTotal;
-                        $productSales[$product['name']]['count'] += $product['quantity'];
-                    }
+            foreach ($products as $product) {
+                if (!isset($product['name'], $product['price'], $product['quantity'], $product['base_price'])) {
+                    continue;
                 }
+
+                $productName = $product['name'];
+
+                // Verificar si la orden tiene un `tax_rate_id == 1` (sin impuestos)
+                $isTaxExempt = isset($order->tax_rate_id) && $order->tax_rate_id == 1;
+
+                // Si la orden está exenta de impuestos o `includeTaxes` es falso, usamos `base_price`
+                $productPrice = ($isTaxExempt || !$includeTaxes) ? $product['base_price'] : $product['price'];
+
+                $productTotal = $productPrice * $product['quantity'];
+
+                // Acumular ventas y cantidad por producto
+                if (!isset($productSales[$productName])) {
+                    $productSales[$productName] = [
+                        'total' => 0,
+                        'count' => 0,
+                    ];
+                }
+
+                $productSales[$productName]['total'] += $productTotal;
+                $productSales[$productName]['count'] += $product['quantity'];
             }
         }
 
-        $totalSales = array_sum(array_map(function ($product) {
-            return $product['total'];
-        }, $productSales));
+        // Calcular el total de todas las ventas
+        $totalSales = array_sum(array_column($productSales, 'total'));
 
         $data = [];
         foreach ($productSales as $name => $info) {
@@ -609,17 +605,17 @@ class DatacenterRepository
             $data[] = [
                 'product' => $name,
                 'percent' => round($percent, 2),
-                'productTotal' => $info['total'],
+                'productTotal' => round($info['total'], 2),
             ];
         }
 
-        // Ordenar los productos por el total de ventas en orden descendente
-        usort($data, function ($a, $b) {
-            return $b['productTotal'] <=> $a['productTotal'];
-        });
+        // Ordenar los productos por total de ventas en orden descendente
+        usort($data, fn($a, $b) => $b['productTotal'] <=> $a['productTotal']);
 
         return $data;
     }
+
+
 
 
 
@@ -780,36 +776,23 @@ class DatacenterRepository
      */
     public function getPaymentMethodsData(string $startDate, string $endDate, int $storeId = null): array
     {
-        $orderQuery = Order::whereBetween('date', [$startDate, $endDate])
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
+
+        $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
         if ($storeId) {
-            $orderQuery->where('store_id', $storeId);
+            $query->where('store_id', $storeId);
         }
 
-        $orders = $orderQuery->get();
-
-
-        $paymentMethods = [
-            'Crédito' => 0,
-            'Débito' => 0,
-            'Efectivo' => 0,
-            'Otro' => 0,
-        ];
+        $orders = $query->get();
+        $paymentMethods = ['Crédito' => 0, 'Débito' => 0, 'Efectivo' => 0, 'Otro' => 0];
 
         foreach ($orders as $order) {
             $method = $order->payment_method;
-            if ($method === 'credit') {
-                $paymentMethods['Crédito'] += $order->total;
-            } elseif ($method === 'debit') {
-                $paymentMethods['Débito'] += $order->total;
-            } elseif ($method === 'cash') {
-                $paymentMethods['Efectivo'] += $order->total;
-            } else {
-                $paymentMethods['Otro'] += $order->total;
-            }
+            $paymentMethods[$method] = ($paymentMethods[$method] ?? 0) + $order->$sumColumn;
         }
-
 
         $total = array_sum($paymentMethods);
 
@@ -819,8 +802,10 @@ class DatacenterRepository
                 'percent' => $total > 0 ? ($amount / $total) * 100 : 0,
             ];
         }
+
         return $paymentMethods;
     }
+
 
     /**
      * Obtener ventas por vendedor para gráfica de barras con filtro de fecha y local.
@@ -832,6 +817,10 @@ class DatacenterRepository
      */
     public function getSalesBySellerData(string $startDate, string $endDate, int $storeId = null): array
     {
+        // Determinar si los reportes deben incluir impuestos
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
+
         // Filtrar por el rango de fechas y el estado de pago
         $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
@@ -841,22 +830,24 @@ class DatacenterRepository
             $query->where('store_id', $storeId);
         }
 
-        // Obtener el total de ventas por vendedor
-        $salesBySeller = $query->join('cash_register_logs', 'orders.cash_register_log_id', '=', 'cash_register_logs.id')
+        // Obtener el total de ventas por vendedor considerando la configuración de impuestos
+        $salesBySeller = $query
+            ->join('cash_register_logs', 'orders.cash_register_log_id', '=', 'cash_register_logs.id')
             ->join('cash_registers', 'cash_register_logs.cash_register_id', '=', 'cash_registers.id')
             ->join('users', 'cash_registers.user_id', '=', 'users.id')
-            ->select('users.name as seller', DB::raw('SUM(orders.total) as totalSales'))
+            ->select('users.name as seller', DB::raw("SUM(orders.$sumColumn) as totalSales"))
             ->groupBy('users.name')
-            ->orderBy('totalSales', 'desc')
+            ->orderByDesc('totalSales')
             ->get();
 
-
-        // Convertir los datos a un array
+        // Convertir los datos a un array y asegurar que totalSales sea numérico
         return $salesBySeller->map(function ($item) {
             return [
                 'seller' => $item->seller,
-                'totalSales' => (float) $item->totalSales,
+                'totalSales' => round((float) $item->totalSales, 2), // Asegurar número y redondeo a 2 decimales
             ];
         })->toArray();
     }
+
+
 }

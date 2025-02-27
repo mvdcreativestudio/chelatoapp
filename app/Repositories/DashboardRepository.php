@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\Expense;
+use App\Helpers\CompanySettingsHelper;
 
 class DashboardRepository
 {
@@ -44,56 +45,50 @@ class DashboardRepository
     */
     public function getTopSellingProducts($limit = 10)
     {
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+
         $orders = Order::where('payment_status', 'paid')->get();
         $productSales = [];
 
         foreach ($orders as $order) {
             $products = json_decode($order->products, true);
 
-            // Verificar si el JSON se decodificó correctamente
             if (json_last_error() !== JSON_ERROR_NONE) {
                 Log::error("Error al decodificar JSON en el pedido {$order->id}: " . json_last_error_msg());
                 continue;
             }
 
             foreach ($products as $product) {
-                if (!isset($product['id'], $product['quantity'])) {
-                    Log::warning("Producto inválido en el pedido {$order->id}: " . json_encode($product));
+                if (!isset($product['id'], $product['quantity'], $product['base_price'], $product['price'])) {
                     continue;
                 }
 
                 $productId = $product['id'];
                 $quantity = $product['quantity'];
 
-                // Intentar obtener el modelo de la base de datos
-                $productModel = Product::find($productId);
-                $price = $product['price'] ?? $productModel->price ?? 0;
+                // Usar base_price si no se incluyen impuestos
+                $productPrice = $includeTaxes ? $product['price'] : $product['base_price'];
 
-                if (!$price) {
-                    Log::warning("Producto con ID {$productId} tiene un precio de 0 en el pedido {$order->id}");
-                }
-
-                if (isset($productSales[$productId])) {
-                    $productSales[$productId]['quantity'] += $quantity;
-                    $productSales[$productId]['total_sales'] += $price * $quantity;
-                } else {
+                if (!isset($productSales[$productId])) {
                     $productSales[$productId] = [
                         'id' => $productId,
-                        'name' => $productModel->name ?? $product['name'] ?? 'Desconocido',
-                        'price' => $price,
+                        'name' => $product['name'] ?? 'Desconocido',
+                        'price' => $productPrice,
                         'quantity' => $quantity,
-                        'total_sales' => $price * $quantity,
+                        'total_sales' => $productPrice * $quantity,
                     ];
+                } else {
+                    $productSales[$productId]['quantity'] += $quantity;
+                    $productSales[$productId]['total_sales'] += $productPrice * $quantity;
                 }
             }
         }
 
-        usort($productSales, function ($a, $b) {
-            return $b['quantity'] <=> $a['quantity'];
-        });
+        usort($productSales, fn($a, $b) => $b['quantity'] <=> $a['quantity']);
 
         return array_slice($productSales, 0, $limit);
     }
+
 
 
     /*
@@ -103,14 +98,18 @@ class DashboardRepository
     */
     public function getMonthlyIncomeData($month = null)
     {
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
+
         if (!$month) {
             $month = Carbon::now()->month;
         }
 
         $year = Carbon::now()->year;
-        $incomeData = Order::select(
+
+        return Order::select(
             DB::raw('DAY(date) as day'),
-            DB::raw('SUM(total) as total')
+            DB::raw("SUM($sumColumn) as total")
         )
             ->whereYear('date', $year)
             ->whereMonth('date', $month)
@@ -118,9 +117,8 @@ class DashboardRepository
             ->groupBy(DB::raw('DAY(date)'))
             ->orderBy('day')
             ->get();
-
-        return $incomeData;
     }
+
 
     /*
     * Retorna la cantidad de ordenes pagadas, muestra en porcentaje cuantas ordenes se realizaron con respecto al mes pasado y retorna también
@@ -129,6 +127,9 @@ class DashboardRepository
     */
     public function getAmountOfOrders()
     {
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
+
         $currentMonth = Carbon::now()->month;
         $lastMonth = Carbon::now()->subMonth()->month;
 
@@ -149,36 +150,26 @@ class DashboardRepository
             ->first();
 
         $lastOrderInfo = [];
+
         if ($lastOrder) {
             $products = json_decode($lastOrder->products, true);
-
-            // Busca el producto que más se vendió en la orden.
-            $maxQuantity = 0;
-            $topProductId = null;
-            $otherProductsCount = 0;
-
-            foreach ($products as $product) {
-                if ($product['quantity'] > $maxQuantity) {
-                    $maxQuantity = $product['quantity'];
-                    $topProductId = $product['id'];
-                }
-                $otherProductsCount++;
-            }
-
+            $topProductId = collect($products)->sortByDesc('quantity')->first()['id'] ?? null;
             $topProduct = Product::find($topProductId);
 
             $lastOrderInfo = [
                 'product_name' => $topProduct ? $topProduct->name : 'N/A',
-                'other_products' => $otherProductsCount > 1 ? $otherProductsCount - 1 : 0,
-                'total' => $lastOrder->total
+                'other_products' => count($products) > 1 ? count($products) - 1 : 0,
+                'total' => $lastOrder->$sumColumn // Usa total o subtotal según configuración
             ];
         }
+
         return [
             'last_order' => $lastOrderInfo,
             'orders' => $currentMonthOrders,
             'percentage' => $percentage
         ];
     }
+
 
     /*
     * Retorna la cantidad de facturas impagas y el total de las mismas.
