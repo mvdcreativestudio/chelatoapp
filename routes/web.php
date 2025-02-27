@@ -68,6 +68,7 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadTaskController;
 use App\Http\Controllers\LeadAttachedFileController;
 use App\Http\Controllers\LeadConversationController;
+use App\Http\Controllers\LeadCategoriesController;
 use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\BudgetController;
@@ -236,6 +237,13 @@ Route::prefix('admin')->middleware([
     Route::post('leads/{id}/convert-to-client', [LeadController::class, 'convertToClient']);
     Route::post('leads/{leadId}/assign-user', [LeadController::class, 'assignUser']);
     Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::class, 'removeAssignment']);
+
+     // Lead Categories Routes
+     Route::get('lead-categories', [LeadCategoriesController::class, 'index'])->name('lead-categories.index');
+     Route::get('lead-categories/{leadCategory}', [LeadCategoriesController::class, 'show'])->name('lead-categories.show');
+     Route::post('lead-categories', [LeadCategoriesController::class, 'store'])->name('lead-categories.store');
+     Route::put('lead-categories/{leadCategory}', [LeadCategoriesController::class, 'update'])->name('lead-categories.update');
+     Route::delete('lead-categories/{leadCategory}', [LeadCategoriesController::class, 'destroy'])->name('lead-categories.destroy');
 
     // Rutas específicas modulo de dalí
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');

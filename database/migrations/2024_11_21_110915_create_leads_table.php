@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->string('name'); 
             $table->string('description')->nullable(); 
             $table->decimal('amount_of_money', 15, 2)->nullable();
-            $table->integer('category_id')->nullable(); 
+            $table->integer('category_id')->nullable(); // $table->unsignedBigInteger('category_id')->nullable(); 
             $table->string('phone')->nullable(); 
             $table->string('email')->nullable(); 
             $table->integer('position')->nullable(); 
@@ -30,6 +30,7 @@ return new class extends Migration {
             
             $table->foreign('user_creator_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('store_id')->references('id')->on('stores')->onDelete('cascade');
+            // $table->foreign('category_id')->references('id')->on('lead_categories')->onDelete('set null');
         });
     }
 

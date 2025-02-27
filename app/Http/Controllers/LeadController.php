@@ -11,6 +11,7 @@ use App\Http\Requests\UpdateLeadCompanyInformationRequest;
 use App\Models\User;
 use Illuminate\Support\Str;
 use App\Models\LeadAssignment;
+use App\Models\LeadCategories;
 
 class LeadController extends Controller
 {
@@ -31,7 +32,8 @@ class LeadController extends Controller
     {
         $leads = $this->leadRepository->getAll();
         $users = User::all();
-        return view('lead.index', compact('leads', 'users'));
+        $categories = LeadCategories::orderBy('order')->get();
+        return view('lead.index', compact('leads', 'users', 'categories'));
     }
 
     /**

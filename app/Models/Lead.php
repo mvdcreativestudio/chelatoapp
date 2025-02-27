@@ -50,4 +50,9 @@ class Lead extends Model
     public function budgets() {
         return $this->hasMany(Budget::class);
     }
+
+    public function category()
+    {
+        return $this->belongsTo(LeadCategories::class, 'category_id');
+    }
 }
