@@ -20,11 +20,16 @@
 
 @section('page-script')
 <script type="text/javascript">
-  window.baseUrl = "{{ url('/') }}";
+  // Asegúrate de que no tenga una barra al final
+  window.baseUrl = "{{ rtrim(url('/'), '/') }}";
   window.csrfToken = "{{ csrf_token() }}";
   var leads = @json($leads);
   var users = @json($users);
   var currentUserId = {{ auth()->id() }};
+  
+  // Debug
+  console.log('Base URL:', window.baseUrl);
+  console.log('CSRF Token:', window.csrfToken);
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @vite(['resources/assets/js/crm/app-lead-list.js'])
@@ -32,6 +37,7 @@
 @vite(['resources/assets/js/crm/app-lead-tasks.js'])
 @vite(['resources/assets/js/crm/app-lead-files.js'])
 @vite(['resources/assets/js/crm/app-lead-conversations.js'])
+@vite(['resources/assets/js/crm/app-lead-columns.js'])
 @endsection
 
 @section('content')
@@ -60,257 +66,165 @@
 @endif
 
 <!-- Kanban tablero contenedor -->
-<div class="kanban-container">
-  <div class="row g-4">
-    <!-- Columna nuevos -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <div class="kanban-column card">
-        <div class="card-header border-bottom sticky-top bg-white" style="border-top: 3px solid #696cff;">
-          <h5 class="card-title mb-0">Nuevo</h5>
-          <div class="d-flex align-items-center">
-            <span class="badge bg-label-primary rounded-pill me-2">{{ $leads->where('category_id', '0')->count() }}</span>
-            <button class="btn btn-icon btn-sm btn-primary add-lead-btn" data-category_id="0">
-              <i class="bx bx-plus"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-body kanban-items pt-3" data-category="0">
-          @foreach($leads->where('category_id', '0') as $lead)
-          <div class="kanban-item card mb-3 cursor-move w-95" data-id="{{ $lead->id }}" data-position="{{ $lead->position }}" data-email="{{ $lead->email }}" data-phone="{{ $lead->phone }}">
-            <div class="card-body p-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="card-title mb-0">{{ $lead->name }}</h6>
-                <div class="dropdown">
-                  <button class="btn btn-icon btn-sm text-muted dropdown-toggle hide-arrow p-0" data-bs-toggle="dropdown">
+<div class="kanban-outer-container">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Tablero CRM</h4>
+    <button class="btn btn-primary" id="add-column-btn">
+      <i class="bx bx-plus"></i> Nueva Columna
+    </button>
+  </div>
+  
+  <div class="kanban-scroll-container">
+    <div class="kanban-columns-wrapper" id="kanban-columns">
+      @foreach($categories as $category)
+      <div class="kanban-column-container">
+        <div class="kanban-column card">
+          <div class="card-header border-bottom sticky-top bg-white" style="border-top: 3px solid {{ $category->color }};">
+            <div class="d-flex justify-content-between align-items-center w-100">
+              <h5 class="card-title mb-0">{{ $category->name }}</h5>
+
+              <div class="d-flex align-items-center controls-container">
+                <span class="badge bg-label-primary rounded-pill me-2">{{ $leads->where('category_id', $category->id)->count() }}</span>
+             
+                <!-- Restaurar el botón de "+" para agregar leads directamente a cada columna -->
+                <button class="btn btn-icon btn-sm btn-primary add-lead-btn ms-2" data-category_id="{{ $category->id }}">
+                  <i class="bx bx-plus"></i>
+                </button>
+
+                <div class="dropdown ms-2">
+                  <button class="btn btn-icon btn-sm text-muted dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
                     <i class="bx bx-dots-vertical-rounded"></i>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                      <a class="dropdown-item view-lead-details" href="javascript:void(0);">
-                        <i class="bx bx-info-circle me-1"></i>
-                        Ver detalles
+                      <a class="dropdown-item edit-column" href="javascript:void(0);" data-id="{{ $category->id }}">
+                        <i class="bx bx-edit me-1"></i> Editar
                       </a>
                     </li>
                     <li>
-                      <a class="dropdown-item view-lead-conversations" href="javascript:void(0);" data-id="{{ $lead->id }}">
-                        <i class="bx bx-chat me-1"></i>
-                        Ver conversación
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item view-lead-files" href="javascript:void(0);">
-                        <i class="bx bx-images me-1"></i>
-                        Ver multimedia
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item text-danger delete-lead" href="javascript:void(0);">
-                        <i class="bx bx-trash me-1"></i>
-                        Eliminar
+                      <a class="dropdown-item text-danger delete-column" href="javascript:void(0);" data-id="{{ $category->id }}">
+                        <i class="bx bx-trash me-1"></i> Eliminar
                       </a>
                     </li>
                   </ul>
                 </div>
+
               </div>
-              @if($lead->email)
-              <p class="card-text small text-muted mb-1">{{ $lead->email }}</p>
-              @endif
-              @if($lead->phone)
-              <p class="card-text small text-muted mb-0">{{ $lead->phone }}</p>
-              @endif
             </div>
           </div>
-          @endforeach
+
+          <div class="card-body kanban-items pt-3" data-category="{{ $category->id }}">
+            @foreach($leads->where('category_id', $category->id) as $lead)
+            <!-- Lead item template restaurado del old_index.blade.php -->
+            <div class="kanban-item card mb-3 cursor-move" data-id="{{ $lead->id }}" data-position="{{ $lead->position }}" data-email="{{ $lead->email }}" data-phone="{{ $lead->phone }}">
+              <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="card-title mb-0">{{ $lead->name }}</h6>
+                  <div class="dropdown">
+                    <button class="btn btn-icon btn-sm text-muted dropdown-toggle hide-arrow p-0" data-bs-toggle="dropdown">
+                      <i class="bx bx-dots-vertical-rounded"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <a class="dropdown-item view-lead-details" href="javascript:void(0);">
+                          <i class="bx bx-info-circle me-1"></i>
+                          Ver detalles
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item view-lead-conversations" href="javascript:void(0);" data-id="{{ $lead->id }}">
+                          <i class="bx bx-chat me-1"></i>
+                          Ver conversación
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item view-lead-files" href="javascript:void(0);">
+                          <i class="bx bx-images me-1"></i>
+                          Ver multimedia
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item text-danger delete-lead" href="javascript:void(0);">
+                          <i class="bx bx-trash me-1"></i>
+                          Eliminar
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                @if($lead->email)
+                <p class="card-text small text-muted mb-1">{{ $lead->email }}</p>
+                @endif
+                @if($lead->phone)
+                <p class="card-text small text-muted mb-0">{{ $lead->phone }}</p>
+                @endif
+              </div>
+            </div>
+            @endforeach
+          </div>
         </div>
       </div>
+      @endforeach
     </div>
+  </div>
+</div>
 
-    <!-- Columna contactado -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <div class="kanban-column card">
-        <div class="card-header border-bottom sticky-top bg-white" style="border-top: 3px solid #03c3ec;">
-          <h5 class="card-title mb-0">Contactado</h5>
-          <div class="d-flex align-items-center">
-            <span class="badge bg-label-info rounded-pill me-2">{{ $leads->where('category_id', '1')->count() }}</span>
-            <button class="btn btn-icon btn-sm btn-info add-lead-btn" data-category_id="1">
-              <i class="bx bx-plus"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-body kanban-items pt-3" data-category="1">
-          @foreach($leads->where('category_id', '1') as $lead)
-          <div class="kanban-item card mb-3 cursor-move w-95" data-id="{{ $lead->id }}" data-position="{{ $lead->position }}" data-email="{{ $lead->email }}" data-phone="{{ $lead->phone }}">
-            <div class="card-body p-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="card-title mb-0">{{ $lead->name }}</h6>
-                <div class="dropdown">
-                  <button class="btn btn-icon btn-sm text-muted dropdown-toggle hide-arrow p-0" data-bs-toggle="dropdown">
-                    <i class="bx bx-dots-vertical-rounded"></i>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <a class="dropdown-item view-lead-details" href="javascript:void(0);">
-                        <i class="bx bx-info-circle me-1"></i>
-                        Ver detalles
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item view-lead-conversations" href="javascript:void(0);" data-id="{{ $lead->id }}">
-                        <i class="bx bx-chat me-1"></i>
-                        Ver conversación
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item view-lead-files" href="javascript:void(0);">
-                        <i class="bx bx-images me-1"></i>
-                        Ver multimedia
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item text-danger delete-lead" href="javascript:void(0);">
-                        <i class="bx bx-trash me-1"></i>
-                        Eliminar
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              @if($lead->email)
-              <p class="card-text small text-muted mb-1">{{ $lead->email }}</p>
-              @endif
-              @if($lead->phone)
-              <p class="card-text small text-muted mb-0">{{ $lead->phone }}</p>
-              @endif
-            </div>
-          </div>
-          @endforeach
-        </div>
+<!-- Modal para crear/editar columna -->
+<div class="modal fade" id="columnModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="columnModalTitle">Nueva Columna</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-    </div>
-
-    <!-- Propuesta enviada columna -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <div class="kanban-column card">
-        <div class="card-header border-bottom sticky-top bg-white" style="border-top: 3px solid #ffab00;">
-          <h5 class="card-title mb-0">Propuesta enviada</h5>
-          <div class="d-flex align-items-center">
-            <span class="badge bg-label-warning rounded-pill me-2">{{ $leads->where('category_id', '2')->count() }}</span>
-            <button class="btn btn-icon btn-sm btn-warning add-lead-btn" data-category_id="2">
-              <i class="bx bx-plus"></i>
-            </button>
+      <div class="modal-body">
+        <form id="columnForm">
+          @csrf <!-- Asegúrate de incluir el token CSRF -->
+          <input type="hidden" id="column-id">
+          <div class="mb-3">
+            <label class="form-label">Nombre <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="column-name" required>
           </div>
-        </div>
-        <div class="card-body kanban-items pt-3" data-category="2">
-          @foreach($leads->where('category_id', '2') as $lead)
-          <div class="kanban-item card mb-3 cursor-move w-95" data-id="{{ $lead->id }}" data-position="{{ $lead->position }}" data-email="{{ $lead->email }}" data-phone="{{ $lead->phone }}">
-            <div class="card-body p-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="card-title mb-0">{{ $lead->name }}</h6>
-                <div class="dropdown">
-                  <button class="btn btn-icon btn-sm text-muted dropdown-toggle hide-arrow p-0" data-bs-toggle="dropdown">
-                    <i class="bx bx-dots-vertical-rounded"></i>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <a class="dropdown-item view-lead-details" href="javascript:void(0);">
-                        <i class="bx bx-info-circle me-1"></i>
-                        Ver detalles
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item view-lead-conversations" href="javascript:void(0);" data-id="{{ $lead->id }}">
-                        <i class="bx bx-chat me-1"></i>
-                        Ver conversación
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item view-lead-files" href="javascript:void(0);">
-                        <i class="bx bx-images me-1"></i>
-                        Ver multimedia
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item text-danger delete-lead" href="javascript:void(0);">
-                        <i class="bx bx-trash me-1"></i>
-                        Eliminar
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+          <div class="mb-3">
+            <label class="form-label">Color</label>
+            
+            <div class="color-picker-container mb-2">
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                <!-- Colores primarios -->
+                <div class="color-option" style="background-color: #0d6efd" data-color="#0d6efd"></div>
+                <div class="color-option" style="background-color: #0dcaf0" data-color="#0dcaf0"></div>                
+                <div class="color-option" style="background-color: #20c997" data-color="#20c997"></div>
+                <div class="color-option" style="background-color: #198754" data-color="#198754"></div>                
+                <div class="color-option" style="background-color: #ffc107" data-color="#ffc107"></div>
+                <div class="color-option" style="background-color: #fd7e14" data-color="#fd7e14"></div>
+                <div class="color-option" style="background-color: #dc3545" data-color="#dc3545"></div>
+                <div class="color-option" style="background-color: #d63384" data-color="#d63384"></div>
+                <div class="color-option" style="background-color: #696cff" data-color="#696cff"></div>
+                <div class="color-option" style="background-color: #6f42c1" data-color="#6f42c1"></div>
+                <div class="color-option" style="background-color: #6c757d" data-color="#6c757d"></div>
               </div>
-              @if($lead->email)
-              <p class="card-text small text-muted mb-1">{{ $lead->email }}</p>
-              @endif
-              @if($lead->phone)
-              <p class="card-text small text-muted mb-0">{{ $lead->phone }}</p>
-              @endif
+              
+              <button type="button" class="btn btn-outline-secondary btn-sm" id="more-colors-btn">
+                Más colores <i class="bx bx-palette"></i>
+              </button>
+              
+              <!-- Color picker oculto inicialmente -->
+              <div class="mt-2" id="custom-color-picker" style="display: none;">
+                <input type="color" class="form-control" id="column-color" value="#0d6efd" style="height: 40px; cursor: pointer;">
+              </div>
+            </div>
+            
+            <div class="selected-color-preview mt-2 d-flex align-items-center">
+              <span class="me-2">Color seleccionado:</span>
+              <div id="selected-color-box" style="width: 24px; height: 24px; border-radius: 4px; background-color: #0d6efd; border: 1px solid #dee2e6;"></div>
+              <span id="selected-color-hex" class="ms-2">#0d6efd</span>
             </div>
           </div>
-          @endforeach
-        </div>
+        </form>
       </div>
-    </div>
-
-    <!-- Columna avanzado -->
-    <div class="col-12 col-md-6 col-lg-3">
-      <div class="kanban-column card">
-        <div class="card-header border-bottom sticky-top bg-white" style="border-top: 3px solid #71dd37;">
-          <h5 class="card-title mb-0">Avanzado</h5>
-          <div class="d-flex align-items-center">
-            <span class="badge bg-label-success rounded-pill me-2">{{ $leads->where('category_id', '3')->count() }}</span>
-            <button class="btn btn-icon btn-sm btn-success add-lead-btn" data-category_id="3">
-              <i class="bx bx-plus"></i>
-            </button>
-          </div>
-        </div>
-        <div class="card-body kanban-items pt-3" data-category="3">
-          @foreach($leads->where('category_id', '3') as $lead)
-          <div class="kanban-item card mb-3 cursor-move w-95" data-id="{{ $lead->id }}" data-position="{{ $lead->position }}" data-email="{{ $lead->email }}" data-phone="{{ $lead->phone }}">
-            <div class="card-body p-3">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="card-title mb-0">{{ $lead->name }}</h6>
-                <div class="dropdown">
-                  <button class="btn btn-icon btn-sm text-muted dropdown-toggle hide-arrow p-0" data-bs-toggle="dropdown">
-                    <i class="bx bx-dots-vertical-rounded"></i>
-                  </button>
-                  <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                      <a class="dropdown-item view-lead-details" href="javascript:void(0);">
-                        <i class="bx bx-info-circle me-1"></i>
-                        Ver detalles
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item view-lead-conversations" href="javascript:void(0);" data-id="{{ $lead->id }}">
-                        <i class="bx bx-chat me-1"></i>
-                        Ver conversación
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item view-lead-files" href="javascript:void(0);">
-                        <i class="bx bx-images me-1"></i>
-                        Ver multimedia
-                      </a>
-                    </li>
-                    <li>
-                      <a class="dropdown-item text-danger delete-lead" href="javascript:void(0);">
-                        <i class="bx bx-trash me-1"></i>
-                        Eliminar
-                      </a>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              @if($lead->email)
-              <p class="card-text small text-muted mb-1">{{ $lead->email }}</p>
-              @endif
-              @if($lead->phone)
-              <p class="card-text small text-muted mb-0">{{ $lead->phone }}</p>
-              @endif
-            </div>
-          </div>
-          @endforeach
-        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="save-column">Guardar</button>
       </div>
     </div>
   </div>
@@ -857,6 +771,107 @@
 
   .remove-assignment-btn i {
     font-size: 1rem;
+  }
+
+  /* Estilos para la columna del kanban */
+  .kanban-column .card-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .kanban-column .card-header .d-flex.align-items-center {
+    margin-left: auto; /* Empuja los elementos más hacia la derecha */
+  }
+  
+  .kanban-column .card-header .controls-container {
+    display: flex;
+    align-items: center;
+  }
+  
+  .kanban-column .card-header .card-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60%;
+  }
+
+   /* Estilos para las opciones de color */
+   .color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid #dee2e6;
+    transition: transform 0.2s;
+  }
+
+  .color-option:hover {
+    transform: scale(1.1);
+  }
+
+  .color-option.selected {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000;
+  }
+
+  /* Estilos para el contenedor principal del Kanban */
+  .kanban-outer-container {
+    width: 100%;
+    overflow: hidden;
+    padding: 1rem;
+  }
+
+  /* Contenedor con scroll horizontal */
+  .kanban-scroll-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 1rem;
+    -webkit-overflow-scrolling: touch; /* Para un desplazamiento suave en iOS */
+  }
+
+  /* Wrapper de las columnas */
+  .kanban-columns-wrapper {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    padding: 0.5rem;
+    /* Quitamos el min-height de aquí */
+  }
+
+  /* Contenedor de cada columna */
+  /* Contenedor de cada columna - alternativa con porcentaje */
+  .kanban-column-container {
+    flex: 0 0 calc(25% - 1rem); /* 25% menos el espacio del gap */
+    min-width: 350px; /* Ancho mínimo para que sea usable */
+    /* Aseguramos que el contenedor tome la altura completa disponible */
+    height: calc(100vh - 277px);
+  }
+
+  /* Estilo para la columna Kanban */
+  .kanban-column {
+    /* Volvemos a poner la altura fija como estaba antes */
+    height: calc(100vh - 277px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Personalización de la barra de desplazamiento */
+  .kanban-scroll-container::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .kanban-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .kanban-scroll-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+
+  .kanban-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
   }
 </style>
 @endsection

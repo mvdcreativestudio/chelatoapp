@@ -133,7 +133,8 @@ class OrderController extends Controller
     {
         // Cargar las relaciones necesarias
         $order = $this->orderRepository->loadOrderRelations($order);
-        $products = json_decode($order->products, true);
+        //$products = json_decode($order->products, true); // Revisar en mergeo
+        $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
         $store = $order->store;
         $invoice = $this->orderRepository->getSpecificInvoiceForOrder($order->id);
         $isStoreConfigEmailEnabled = $this->storesEmailConfigRepository->getConfigByStoreId(auth()->user()->store_id);
