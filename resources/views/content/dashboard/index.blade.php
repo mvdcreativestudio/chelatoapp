@@ -57,7 +57,6 @@
               <h5 class="m-0">${{ number_format($amountOfOrders['last_order']['total'], 2) }}</h5>
               @else
               <p class="m-0">No hay ventas realizadas</p>
-              <a href="{{ route('pdv.cart') }}" class="btn btn-primary btn-sm mt-2">Creá tu primer venta</a>
               @endif
             </div>
           </div>
@@ -318,7 +317,6 @@
       <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-0 pb-3">
         <p class="m-0 text-warning bold">No hay ventas realizadas</p>
         <p class="m-0">Crea tu primer venta para ver información aquí.</p>
-        <a href="{{ route('pdv.cart') }}" class="btn btn-primary btn-sm mt-4" style="max-width: 150px;">Crear nueva venta</a>
       </div>
     </div>
   </div>

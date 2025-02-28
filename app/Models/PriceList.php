@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PriceList extends Model
 {
@@ -27,5 +28,14 @@ class PriceList extends Model
     public function store()
     {
         return $this->belongsTo(Store::class);
+    }
+
+     /**
+     * Obtiene los presupuestos que usan esta lista de precios.
+     *
+     * @return HasMany
+     */
+    public function budgets() {
+        return $this->hasMany(Budget::class);
     }
 }

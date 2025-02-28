@@ -50,29 +50,35 @@ class DashboardRepository
         $productSales = [];
 
         foreach ($orders as $order) {
-            $products = json_decode($order->products, true);
+            // Get products and ensure it's an array
+            $products = $order->products;
+            
+            // If it's a string, try to decode it
+            if (is_string($products)) {
+                $products = json_decode($products, true);
+            }
 
-            // Verificar si el JSON se decodificó correctamente
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                Log::error("Error al decodificar JSON en el pedido {$order->id}: " . json_last_error_msg());
+            // Skip if products is not an array
+            if (!is_array($products)) {
+                Log::error("Invalid products data in order {$order->id}");
                 continue;
             }
 
             foreach ($products as $product) {
                 if (!isset($product['id'], $product['quantity'])) {
-                    Log::warning("Producto inválido en el pedido {$order->id}: " . json_encode($product));
+                    Log::warning("Invalid product in order {$order->id}: " . json_encode($product));
                     continue;
                 }
 
                 $productId = $product['id'];
                 $quantity = $product['quantity'];
 
-                // Intentar obtener el modelo de la base de datos
+                // Try to get the product model
                 $productModel = Product::find($productId);
                 $price = $product['price'] ?? $productModel->price ?? 0;
 
                 if (!$price) {
-                    Log::warning("Producto con ID {$productId} tiene un precio de 0 en el pedido {$order->id}");
+                    Log::warning("Product with ID {$productId} has price 0 in order {$order->id}");
                 }
                 $price = $product['price'];
 
@@ -88,7 +94,7 @@ class DashboardRepository
                 } else {
                     $productSales[$productId] = [
                         'id' => $productId,
-                        'name' => $productModel->name ?? $product['name'] ?? 'Desconocido',
+                        'name' => $productModel->name ?? $product['name'] ?? 'Unknown',
                         'price' => $price,
                         'quantity' => $quantity,
                         'total_sales' => $price * $quantity,

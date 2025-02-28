@@ -9,6 +9,8 @@ use App\Http\Requests\StorePosOrderRequest;
 use App\Http\Requests\UpdatePosOrderRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use App\Models\Client;
+use App\Models\Product;
 
 class PosOrderController extends Controller
 {

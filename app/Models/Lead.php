@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lead extends Model
 {
@@ -39,5 +40,19 @@ class Lead extends Model
     public function assignments()
     {
         return $this->hasMany(LeadAssignment::class);
+    }
+
+    /**
+     * Obtiene los presupuestos asociados a este lead.
+     *
+     * @return HasMany
+     */
+    public function budgets() {
+        return $this->hasMany(Budget::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(LeadCategories::class, 'category_id');
     }
 }

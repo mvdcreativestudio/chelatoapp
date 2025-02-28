@@ -123,6 +123,13 @@
       "url": "/admin/integrations"
     },
     {
+      "id": "tour-budget",
+      "name": "Presupuestos",
+      "icon": "menu-icon tf-icons bx bx-calculator",
+      "slug": "budgets",
+      "url": "/admin/budgets"
+    },
+    {
       "id": "tour-gestion-proveedores",
       "name": "Fabricación",
       "icon": "menu-icon tf-icons bx bx-briefcase",

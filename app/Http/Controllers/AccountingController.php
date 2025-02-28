@@ -18,6 +18,8 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\DataTables;
+use App\Models\Budget;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AccountingController extends Controller
 {
@@ -421,8 +423,68 @@ class AccountingController extends Controller
         }
     }
 
+    public function sendBudgetEmail(Request $request)
+    {
+        try {
+            $request->validate([
+                'budget_id' => 'required|exists:budgets,id',
+                'email' => 'required|email'
+            ]);
+
+            $budget = Budget::with(['client', 'lead', 'store', 'items.product'])
+                ->findOrFail($request->budget_id);
+            
+            $companySettings = \App\Models\CompanySettings::first();
+
+            // Generar PDF
+            $pdf = PDF::loadView('budgets.pdf', [
+                'budget' => $budget,
+                'companySettings' => $companySettings
+            ]);
+
+            $tempPdfPath = tempnam(sys_get_temp_dir(), 'pdf_');
+            file_put_contents($tempPdfPath, $pdf->output());
+
+            $subject = 'Presupuesto #' . $budget->id;
+            $attachmentName = "Presupuesto_{$budget->id}.pdf";
+
+            // Enviar email con los datos correctos
+            Helpers::emailService()->sendMail(
+                $request->email,
+                $subject,
+                'content.budgets.email',
+                $tempPdfPath,
+                $attachmentName,
+                ['budget' => $budget] // Asegúrate de que se pase como array asociativo
+            );
+
+            @unlink($tempPdfPath);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Correo enviado correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al enviar correo del presupuesto: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al enviar el correo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
 
-
+    // Add this helper method
+    private function generateBudgetPdf($budgetId)
+    {
+        $budget = Budget::findOrFail($budgetId);
+        $companySettings = \App\Models\CompanySettings::first();
+        
+        $pdf = PDF::loadView('budgets.pdf', compact('budget', 'companySettings'));
+        return $pdf->output();
+    }
 
 }

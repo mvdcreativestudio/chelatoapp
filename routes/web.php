@@ -68,8 +68,12 @@ use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadTaskController;
 use App\Http\Controllers\LeadAttachedFileController;
 use App\Http\Controllers\LeadConversationController;
+use App\Http\Controllers\LeadCategoriesController;
 use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\BudgetItemController;
+use App\Http\Controllers\BudgetStatusController;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -204,6 +208,7 @@ Route::prefix('admin')->middleware([
         'incomes' => IncomeController::class,
         'income-categories' => IncomeCategoryController::class,
         'currencies' => CurrencyController::class,
+        'budgets' => BudgetController::class,
     ]);
 
     Route::get('exchange-rate-dollar', [CurrencyController::class, 'getCurrentRateDollar']);
@@ -235,6 +240,13 @@ Route::prefix('admin')->middleware([
     Route::post('leads/{id}/convert-to-client', [LeadController::class, 'convertToClient']);
     Route::post('leads/{leadId}/assign-user', [LeadController::class, 'assignUser']);
     Route::delete('leads/{leadId}/remove-assignment/{userId}', [LeadController::class, 'removeAssignment']);
+
+     // Lead Categories Routes
+     Route::get('lead-categories', [LeadCategoriesController::class, 'index'])->name('lead-categories.index');
+     Route::get('lead-categories/{leadCategory}', [LeadCategoriesController::class, 'show'])->name('lead-categories.show');
+     Route::post('lead-categories', [LeadCategoriesController::class, 'store'])->name('lead-categories.store');
+     Route::put('lead-categories/{leadCategory}', [LeadCategoriesController::class, 'update'])->name('lead-categories.update');
+     Route::delete('lead-categories/{leadCategory}', [LeadCategoriesController::class, 'destroy'])->name('lead-categories.destroy');
 
     // Rutas específicas modulo de dalí
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
@@ -405,8 +417,8 @@ Route::prefix('admin')->middleware([
     Route::post('/integrations/{store}/scanntech', [IntegrationController::class, 'handleScanntechIntegration']);
 
 
-    // Gestión de Roles
-    Route::prefix('roles/{role}')->name('roles.')->group(function () {
+     // Gestión de Roles
+     Route::prefix('roles/{role}')->name('roles.')->group(function () {
         Route::get('manage-users', [RoleController::class, 'manageUsers'])->name('manageUsers');
         Route::post('associate-user', [RoleController::class, 'associateUser'])->name('associateUser');
         Route::post('disassociate-user', [RoleController::class, 'disassociateUser'])->name('disassociateUser');
@@ -546,6 +558,19 @@ Route::prefix('admin')->middleware([
         Route::post('/delete-multiple', [ExpenseCategoryController::class, 'deleteMultiple'])->name('expense-categories.deleteMultiple');
     });
 
+    // Presupuestos
+        Route::get('/budgets', [BudgetController::class, 'index'])->name('budgets.index');
+        Route::get('/budgets/{budget}/detail', [BudgetController::class, 'detail'])->name('budgets.detail');
+        // Route::post('/budgets/delete-multiple', [BudgetController::class, 'deleteMultiple'])->name('budgets.deleteMultiple');
+        Route::put('/budgets/{budget}/status', [BudgetController::class, 'updateStatus'])->name('budgets.updateStatus');
+        Route::get('/budgets/{budget}/pdf', [BudgetController::class, 'generatePdf'])->name('budgets.pdf');
+        Route::post('/budgets/{budget}/order', [BudgetController::class, 'convertToOrder'])->name('budgets.convertToOrder');
+        Route::get('/budgets/{budget}/checkout', [BudgetController::class, 'checkout'])->name('budgets.checkout');
+        Route::post('/budgets/{budget}/process-checkout', [BudgetController::class, 'processCheckout'])->name('budgets.process-checkout');
+        Route::post('budgets/send-email', [AccountingController::class, 'sendBudgetEmail'])->name('budgets.sendEmail');
+
+
+
     // Métodos de Pago de Gastos
     Route::group(['prefix' => 'expense-payment-methods'], function () {
         // show
@@ -654,4 +679,4 @@ Route::get('/notifications', [NotificationController::class, 'index'])->name('no
 Route::post('/notifications/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
 // Sesión
-Route::get('/session/clear', [CartController::class, 'clearSession'])->name('session.clear'); // Limpiar Sesión
+Route::get('/session/clear', [CartController::class, 'clearSession'])->name('session.clear');
