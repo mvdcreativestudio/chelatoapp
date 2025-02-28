@@ -98,17 +98,17 @@ class AccountingRepository
 
       return $invoices->map(function ($invoice) {
           $typeCFEs = [
-            101 => 'eTicket',
-            102 => 'eTicket - Nota de Crédito',
-            103 => 'eTicket - Nota de Débito',
-            111 => 'eFactura',
-            112 => 'eFactura - Nota de Crédito',
-            113 => 'eFactura - Nota de Débito',
+            101 => 'ET',
+            102 => 'ET-NC',
+            103 => 'ET-ND',
+            111 => 'EF',
+            112 => 'EF-NC',
+            113 => 'EF-ND',
           ];
 
-          if ($invoice->is_receipt) {
-              $typeCFEs[101] = 'eTicket - Recibo';
-              $typeCFEs[111] = 'eFactura - Recibo';
+          if ($invoice->is_receipt && $isReceipt) {
+              $typeCFEs[101] = 'ET-R';
+              $typeCFEs[111] = 'EF-R';
           }
 
           if (
@@ -131,8 +131,7 @@ class AccountingRepository
               'date' => $invoice->emitionDate,
               'order_id' => $invoice->order->id,
               'type' => $typeCFEs[$invoice->type] ?? '',
-              'currency' => 'UYU',
-              'total' => $invoice->total,
+              'total' => $invoice->currency .' '. $invoice->total,
               'qrUrl' => $invoice->qrUrl,
               'order_uuid' => $invoice->order->uuid,
               'serie' => $invoice->serie,
@@ -144,11 +143,11 @@ class AccountingRepository
               'caeExpirationDate' => $invoice->caeExpirationDate,
               'sentXmlHash' => $invoice->sentXmlHash,
               'securityCode' => $invoice->securityCode,
-              'reason' => $invoice->reason,
               'associated_id' => $invoice->main_cfe_id,
               'is_receipt' => $invoice->is_receipt,
               'hide_emit' => $invoice->hide_emit,
               'status' => $invoice->status ?? '',
+              'total_original' => $invoice->total,
           ];
       });
     }
@@ -2100,4 +2099,11 @@ class AccountingRepository
         }
     }
 
+
+    // getInvoiceDetails
+    public function getInvoiceDetails($cfeId)
+    {
+        $invoice = CFE::find($cfeId);
+        return $invoice;
+    }
 }

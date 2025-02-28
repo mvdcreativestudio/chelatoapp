@@ -23,7 +23,7 @@
 
 @section('page-script')
 @vite([
-  'resources/assets/js/app-invoices-list.js'
+  'resources/assets/js/receipts/app-invoices-receipts-list.js'
 ])
 <script>
   window.isStoreConfigEmailEnabled = "{{ $isStoreConfigEmailEnabled }}";
@@ -32,7 +32,7 @@
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Facturación /</span> Facturas de Venta
+  <span class="text-muted fw-light">Facturación /</span> Recibos
 </h4>
 
 <div class="card mb-4">
@@ -42,7 +42,7 @@
         <div class="col-sm-6 col-lg-4">
           <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
             <div>
-              <h6 class="mb-2">Total de Facturas</h6>
+              <h6 class="mb-2">Total de Recibos</h6>
               <h4 class="mb-2">{{ $totalReceipts }}</h4>
               <p class="mb-0"><span class="text-muted me-2">Total</span></p>
             </div>
@@ -55,26 +55,11 @@
           <hr class="d-none d-sm-block d-lg-none me-4">
         </div>
         <div class="col-sm-6 col-lg-4">
-          <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
-            <div>
-              <h6 class="mb-2">Total Ingresos</h6>
-              <h4 class="mb-2">{{ $settings->currency_symbol }} {{ number_format($totalIncome, 2) }}</h4>
-              <p class="mb-0"><span class="text-muted me-2">Total</span></p>
-            </div>
-            <div class="avatar me-lg-4">
-              <span class="avatar-initial rounded bg-label-secondary">
-                <i class="bx bx-dollar bx-sm"></i>
-              </span>
-            </div>
-          </div>
-          <hr class="d-none d-sm-block d-lg-none">
-        </div>
-        <div class="col-sm-6 col-lg-4">
           <div class="d-flex justify-content-between align-items-start">
             <div>
-              <h6 class="mb-2">Empresa con más Emisiones</h6>
+              <h6 class="mb-2">Empresa con más recibos emitidos</h6>
               <h4 class="mb-2">{{ $storeNameWithMostReceipts }}</h4>
-              <p class="mb-0"><span class="text-muted me-2">Más Emisiones</span></p>
+              <p class="mb-0"><span class="text-muted me-2">Más Recibos</span></p>
             </div>
             <div class="avatar">
               <span class="avatar-initial rounded bg-label-secondary">
@@ -216,7 +201,7 @@
         </div>
       </div>
     </div>
-    <table class="datatables-invoice table border-top" data-symbol="{{ $settings->currency_symbol }}">
+    <table class="datatables-invoices-receipts table border-top" data-symbol="{{ $settings->currency_symbol }}">
       <thead>
         <tr>
           <th>N°</th>
@@ -364,6 +349,7 @@
     </div>
   </div>
 </div>
+
 
 <!-- Modal de Filtros -->
 <div id="filterModal" class="filter-modal">

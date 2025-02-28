@@ -1,6 +1,6 @@
 $(function () {
   let borderColor, bodyBg, headingColor;
-  let $currencySymbol = $('.datatables-invoice').data('symbol');
+  let $currencySymbol = $('.datatables-invoices-receipts').data('symbol');
 
   if (isDarkStyle) {
     borderColor = config.colors_dark.borderColor;
@@ -12,7 +12,14 @@ $(function () {
     headingColor = config.colors.headingColor;
   }
 
-  var dt_invoice_table = $('.datatables-invoice');
+  var dt_invoice_table = $('.datatables-invoices-receipts');
+  var searchInput = $('#searchInvoice');
+  var storeFilter = $('#storeFilter');
+  var clientFilter = $('#clientFilter');
+  var invoiceTypeFilter = $('#invoiceTypeFilter');
+  var invoiceStatusFilter = $('#invoiceStatusFilter');
+  var startDateFilter = $('#startDate');
+  var endDateFilter = $('#endDate');
 
   $.fn.dataTable.ext.errMode = 'throw';
 
@@ -20,8 +27,20 @@ $(function () {
     try {
       var dt_invoices = dt_invoice_table.DataTable({
         ajax: {
-          url: 'invoices/datatable',
-          dataSrc: 'data'
+          url: 'invoices-receipts/datatable',
+          data: function (d) {
+            d.search = searchInput.val();
+            d.store_name = storeFilter.val();
+            d.client_name = clientFilter.val();
+            d.type = invoiceTypeFilter.val();
+            d.status = invoiceStatusFilter.val();
+            d.start_date = startDateFilter.val();
+            d.end_date = endDateFilter.val();
+          },
+          dataSrc: function (json) {
+            populateFilters(json.data);
+            return json.data;
+          }
         },
         columns: [
           { data: 'id', type: 'num' },
@@ -447,7 +466,7 @@ $(function () {
       $('.dataTables_filter label input').addClass('form-control');
 
       // Después de inicializar dt_invoices...
-      $('.datatables-invoice tbody').on('click', 'tr', function () {
+      $('.datatables-invoices-receipts tbody').on('click', 'tr', function () {
         // Obtenemos los datos de la fila
         var invoice = dt_invoices.row(this).data();
 
@@ -535,6 +554,49 @@ $(function () {
 
     } catch (error) {
       console.log(error);
+    }
+
+    function populateFilters(data) {
+      let uniqueStores = new Set();
+      let uniqueClients = new Set();
+      let uniqueTypes = new Set();
+      let uniqueStatuses = new Set();
+
+      data.forEach(invoice => {
+        if (invoice.store_name) uniqueStores.add(invoice.store_name);
+        if (invoice.client_name) uniqueClients.add(invoice.client_name);
+        if (invoice.type) uniqueTypes.add(invoice.type);
+        if (invoice.status) uniqueStatuses.add(invoice.status);
+      });
+
+      populateSelect(storeFilter, uniqueStores, 'Todas las empresas');
+      populateSelect(clientFilter, uniqueClients, 'Todos los clientes');
+      populateSelect(invoiceTypeFilter, uniqueTypes, 'Todos los tipos de factura');
+      populateSelect(invoiceStatusFilter, translateStatuses(uniqueStatuses), 'Todos los estados');
+    }
+
+    function populateSelect(filter, items, defaultOptionText) {
+      const currentValue = filter.val();
+      filter.empty();
+      filter.append(`<option value="">${defaultOptionText}</option>`);
+      items.forEach(item => {
+        filter.append(`<option value="${item}">${item}</option>`);
+      });
+      filter.val(currentValue);
+    }
+
+    function translateStatuses(statuses) {
+      const translations = {
+        PROCESSED_ACCEPTED: 'Procesado y Aceptado',
+        PROCESSED_REJECTED: 'Procesado y Rechazado',
+        FORMAT_REJECTED: 'Rechazado por Formato',
+        SCHEDULED: 'Programado',
+        CREATED: 'Creado',
+        SENT: 'Enviado',
+        CFE_UNKNOWN_ERROR: 'Error desconocido'
+      };
+
+      return new Set([...statuses].map(status => translations[status] || 'Estado Desconocido'));
     }
   }
 
@@ -664,7 +726,7 @@ $(function () {
     const endDate = $('#endDate').val();
 
     // Construir la URL con los parámetros de los filtros
-    const exportUrl = new URL(window.location.origin + '/admin/cfes-invoices-export-excel');
+    const exportUrl = new URL(window.location.origin + '/admin/cfes-receipts-export-excel');
 
     if (store) exportUrl.searchParams.append('store_name', store);
     if (client) exportUrl.searchParams.append('client_name', client);
@@ -688,7 +750,7 @@ $(function () {
     const endDate = $('#endDate').val();
   
     // Construir la URL con parámetros
-    const exportUrl = new URL(window.location.origin + '/admin/cfes-invoices-export-pdf');
+    const exportUrl = new URL(window.location.origin + '/admin/cfes-receipts-export-pdf');
     
     if (store) exportUrl.searchParams.append('store_name', store);
     if (client) exportUrl.searchParams.append('client_name', client);
@@ -711,7 +773,7 @@ $(function () {
     const endDate = $('#endDate').val();
   
     // Construir la URL con parámetros
-    const exportUrl = new URL(window.location.origin + '/admin/cfes-invoices-export-csv');
+    const exportUrl = new URL(window.location.origin + '/admin/cfes-receipts-export-csv');
     
     if (store) exportUrl.searchParams.append('store_name', store);
     if (client) exportUrl.searchParams.append('client_name', client);
@@ -724,6 +786,7 @@ $(function () {
     window.open(exportUrl.toString(), '_blank').focus();
   });
   
+
 
   function applyFilters() {
     dt_invoices.ajax.reload();

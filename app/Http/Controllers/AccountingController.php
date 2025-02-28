@@ -10,6 +10,7 @@ use App\Models\CFE;
 use App\Models\Store;
 use App\Repositories\AccountingRepository;
 use App\Repositories\StoresEmailConfigRepository;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -479,7 +480,136 @@ class AccountingController extends Controller
 
     // Add this helper method
     private function generateBudgetPdf($budgetId)
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar los asientos a Excel. Por favor, intente nuevamente.');
+        }
+    }
+
+
+    /**
+     * Exporta los CFEs Invoices a PDF.
+     *
+     * @param Request $request
+     * @return mixed
+     */
+
+    public function cfesInvoicesExportPDF(Request $request)
     {
+        $invoicesData = $this->accountingRepository->getInvoicesDataForDatatables($request);
+        $pdf = Pdf::loadView('content.accounting.invoices.pdf', compact('invoicesData'));
+
+        return $pdf->download('facturas-' . date('Y-m-d_H-i-s') . '.pdf');
+    }
+
+    /**
+     * Exporta los CFEs Invoices a CSV.
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function cfesInvoicesExportCSV(Request $request)
+    {
+        $invoicesData = $this->accountingRepository->getInvoicesDataForDatatables($request);
+        try {
+            // Reutilizas la misma clase export, pero specifies CSV writer:
+            return Excel::download(new CFEExport($invoicesData), 'facturas-' . date('Y-m-d_H-i-s') . '.csv', \Maatwebsite\Excel\Excel::CSV);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar las facturas a CSV. Por favor, intente nuevamente.');
+        }
+    }
+
+
+    /**
+     * Exporta los CFEs Invoices Receipts a Excel.
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function cfesInvoicesReceiptsExportExcel(Request $request)
+    {
+        $invoicesData = $this->accountingRepository->getInvoicesDataForDatatables($request, true);
+        try {
+            return Excel::download(new CFEExport($invoicesData), 'facturas-recibos-' . date('Y-m-d_H-i-s') . '.xlsx');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar los asientos a Excel. Por favor, intente nuevamente.');
+        }
+    }
+
+    /**
+     * Exporta los CFEs Invoices Receipts a PDF.
+     *
+     * @param Request $request
+     * @return mixed
+     */
+
+    public function cfesInvoicesReceiptsExportPDF(Request $request)
+    {
+        $invoicesData = $this->accountingRepository->getInvoicesDataForDatatables($request, true);
+        $pdf = Pdf::loadView('content.accounting.receipts.pdf', compact('invoicesData'));
+
+        return $pdf->download('facturas-recibos-' . date('Y-m-d_H-i-s') . '.pdf');
+    }
+
+    /**
+     * Exporta los CFEs Invoices Receipts a CSV.
+     *
+     * @param Request $request
+     * @return mixed
+     */
+
+    public function cfesInvoicesReceiptsExportCSV(Request $request)
+    {
+        $invoicesData = $this->accountingRepository->getInvoicesDataForDatatables($request, true);
+
+        try {
+            return Excel::download(new CFEExport($invoicesData), 'facturas-recibos-' . date('Y-m-d_H-i-s') . '.csv', \Maatwebsite\Excel\Excel::CSV);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar las facturas a CSV. Por favor, intente nuevamente.');
+        }
+    }
+
+    /**
+     * Obtiene los detalles de una factura.
+     *
+     * @param Request $request
+     * @param string $invoice
+     * @return JsonResponse
+     */
+    public function getInvoiceDetails(Request $request, $invoice)
+    {
+        try {
+            $invoice = $this->accountingRepository->getInvoiceDetails($invoice);
+
+            if (!$invoice) {
+                return response()->json(['error' => 'No se encontró la factura especificada.'], 404);
+            }
+
+            return response()->json(['success' => true, 'data' => $invoice]);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener los detalles de la factura: ' . $e->getMessage());
+            return response()->json(['error' => 'Ocurrió un error al obtener los detalles de la factura.'], 500);
+        }
+    }
+
+    /**
+     * Obtiene los detalles de un recibo.
+     *
+     * @param Request $request
+     * @param string $invoice
+     * @return JsonResponse
+     */
+
+    public function exportPdf(Request $request)
+    {
+        $invoiceId = $request->invoice_id;
+        $factura = $this->downloadCfePdf($invoiceId);
+        $tempPdfPath = tempnam(sys_get_temp_dir(), 'pdf_');
+        file_put_contents($tempPdfPath, $factura);
+        return response()->download($tempPdfPath, 'factura.pdf');
+    }
         $budget = Budget::findOrFail($budgetId);
         $companySettings = \App\Models\CompanySettings::first();
         
