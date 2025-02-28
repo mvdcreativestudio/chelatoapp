@@ -76,6 +76,14 @@ $(function () {
     function addProductToTable(product) {
         const buildPrice = parseFloat(product.build_price) || 0;
         const stock = product.stock || 0;
+        
+        // Añadir console.log para depurar
+        console.log('Stock setting value:', $('.app-ecommerce').attr('data-allow-no-stock'));
+        
+        // Verificar estrictamente que sea la cadena "true"
+        const allowNoStock = $('.app-ecommerce').attr('data-allow-no-stock') === 'true';
+        console.log('Allow no stock interpreted as:', allowNoStock);
+        
         let rowClass = '';
         const disabled = buildPrice === 0 ? 'disabled' : '';
 
@@ -93,10 +101,11 @@ $(function () {
                                class="form-control form-control-sm product-quantity" 
                                value="1" 
                                min="1"
-                               max="${stock}" 
+                               ${!allowNoStock ? `max="${stock}"` : ''} 
                                name="items[${product.id}][quantity]"
                                data-product-id="${product.id}" 
-                               data-build-price="${buildPrice}" 
+                               data-build-price="${buildPrice}"
+                               data-stock="${stock}" 
                                ${disabled}>
                     </td>
                     <td class="text-center">${stock}</td>
@@ -137,7 +146,10 @@ $(function () {
             // Quantity change handler
             $row.find('.product-quantity').on('input', function() {
                 const value = parseInt($(this).val()) || 0;
-                if (value > stock) {
+                // Volver a verificar el valor para cada evento
+                const allowNoStock = $('.app-ecommerce').attr('data-allow-no-stock') === 'true';
+                
+                if (!allowNoStock && value > stock) {
                     $(this).val(stock);
                     Swal.fire({
                         title: 'Stock insuficiente',
@@ -224,7 +236,7 @@ $(function () {
         window.location.href = url;
     });
 
-    // Manejar el envío del formulario
+    // Modificar el evento de submit del formulario
     $('#addBudgetForm').on('submit', function(e) {
         e.preventDefault();
 
@@ -246,6 +258,36 @@ $(function () {
                 icon: 'error'
             });
             return false;
+        }
+
+        // Verificar stock si la configuración no permite presupuestos sin stock
+        const allowNoStock = $('.app-ecommerce').attr('data-allow-no-stock') === 'true';
+        if (!allowNoStock) {
+            let stockError = false;
+            let productsWithoutStock = [];
+
+            $('#selectedProductsTable tbody tr').each(function() {
+                const quantity = parseInt($(this).find('.product-quantity').val()) || 0;
+                const stock = parseInt($(this).find('.product-quantity').data('stock')) || 0;
+                const productName = $(this).find('td:first').text();
+                
+                if (quantity > stock) {
+                    stockError = true;
+                    productsWithoutStock.push(productName + ' (stock: ' + stock + ', solicitado: ' + quantity + ')');
+                }
+            });
+
+            if (stockError) {
+                Swal.fire({
+                    title: 'Stock insuficiente',
+                    html: 'Los siguientes productos no tienen stock suficiente:<br><br>' + 
+                          productsWithoutStock.join('<br>') +
+                          '<br><br>La configuración actual no permite crear presupuestos con productos sin stock.',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                });
+                return false;
+            }
         }
 
         // Convertir el checkbox is_blocked a valor booleano

@@ -202,8 +202,10 @@ class BudgetController extends Controller
         $priceLists = PriceList::all();
         $stores = Store::all();
         $userId = Auth::id();
-        $products = Product::all();// product where store id
-        return view('budgets.create', compact('clients', 'leads', 'priceLists', 'stores', 'products'));
+        $products = Product::all();
+        $companySettings = \App\Models\CompanySettings::first();
+        
+        return view('budgets.create', compact('clients', 'leads', 'priceLists', 'stores', 'products', 'companySettings'));
     }
 
     public function destroy(Budget $budget)
@@ -423,8 +425,9 @@ class BudgetController extends Controller
         $stores = Store::all();
         $products = Product::all();
         $currentStatus = optional($budget->status()->latest()->first())->status ?? 'draft';
+        $companySettings = \App\Models\CompanySettings::first();
 
-        return view('budgets.edit', compact('budget', 'clients', 'leads', 'priceLists', 'stores', 'products', 'currentStatus'));
+        return view('budgets.edit', compact('budget', 'clients', 'leads', 'priceLists', 'stores', 'products', 'currentStatus', 'companySettings'));
     }
 
     public function update(UpdateBudgetRequest $request, Budget $budget)

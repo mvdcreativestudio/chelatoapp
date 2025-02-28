@@ -95,6 +95,7 @@ $(function () {
     function addProductToTable(product, budgetItem = null) {
         const buildPrice = parseFloat(product.build_price) || 0;
         const stock = product.stock || 0;
+        const allowNoStock = $('.app-ecommerce').attr('data-allow-no-stock') === 'true';
         let rowClass = '';
         const disabled = buildPrice === 0 ? 'disabled' : '';
         const quantity = budgetItem ? budgetItem.quantity : 1;
@@ -114,10 +115,11 @@ $(function () {
                                class="form-control form-control-sm product-quantity" 
                                value="${quantity}" 
                                min="1"
-                               max="${stock}" 
+                               ${!allowNoStock ? `max="${stock}"` : ''} 
                                name="items[${product.id}][quantity]"
                                data-product-id="${product.id}" 
-                               data-build-price="${buildPrice}" 
+                               data-build-price="${buildPrice}"
+                               data-stock="${stock}" 
                                ${disabled}>
                     </td>
                     <td class="text-center">${stock}</td>
@@ -158,7 +160,9 @@ $(function () {
             // Quantity change handler
             $row.find('.product-quantity').on('input', function() {
                 const value = parseInt($(this).val()) || 0;
-                if (value > stock) {
+                const allowNoStock = $('.app-ecommerce').attr('data-allow-no-stock') === 'true';
+                
+                if (!allowNoStock && value > stock) {
                     $(this).val(stock);
                     Swal.fire({
                         title: 'Stock insuficiente',
@@ -273,6 +277,36 @@ $(function () {
                 icon: 'error'
             });
             return;
+        }
+
+        // Verificar stock si la configuración no permite presupuestos sin stock
+        const allowNoStock = $('.app-ecommerce').attr('data-allow-no-stock') === 'true';
+        if (!allowNoStock) {
+            let stockError = false;
+            let productsWithoutStock = [];
+
+            $('#selectedProductsTable tbody tr').each(function() {
+                const quantity = parseInt($(this).find('.product-quantity').val()) || 0;
+                const stock = parseInt($(this).find('.product-quantity').data('stock')) || 0;
+                const productName = $(this).find('td:first').text();
+                
+                if (quantity > stock) {
+                    stockError = true;
+                    productsWithoutStock.push(productName + ' (stock: ' + stock + ', solicitado: ' + quantity + ')');
+                }
+            });
+
+            if (stockError) {
+                Swal.fire({
+                    title: 'Stock insuficiente',
+                    html: 'Los siguientes productos no tienen stock suficiente:<br><br>' + 
+                          productsWithoutStock.join('<br>') +
+                          '<br><br>La configuración actual no permite editar presupuestos con productos sin stock.',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                });
+                return false;
+            }
         }
 
         // Crear FormData

@@ -48,7 +48,7 @@
 @endforeach
 @endif
 
-<div class="app-ecommerce" data-products='@json($products)' data-budget-items='@json($budget->items)'>
+<div class="app-ecommerce" data-products='@json($products)' data-budget-items='@json($budget->items)' data-allow-no-stock='{{ $companySettings->allow_BudgetsWhitoutStock ? "true" : "false" }}'>
     <form action="{{ route('budgets.update', $budget->id) }}" method="POST" enctype="multipart/form-data" id="editBudgetForm">
         @csrf
         <input type="hidden" name="_method" value="PUT">
