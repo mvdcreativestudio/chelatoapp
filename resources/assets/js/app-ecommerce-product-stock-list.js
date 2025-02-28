@@ -19,6 +19,7 @@ $(function () {
   var statusFilter = $('#statusFilter');
   var minStockFilter = $('#minStockFilter');
   var maxStockFilter = $('#maxStockFilter');
+  var sortStockFilter = $('#sortStockFilter');
 
   function isFilterApplied() {
     return (
@@ -36,7 +37,14 @@ $(function () {
     statusFilter.val('');
     minStockFilter.val('');
     maxStockFilter.val('');
+    sortStockFilter.val('');
     fetchProducts();
+    
+    // Opcional: cerrar el offcanvas al resetear filtros
+    const filterOffcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('filterOffcanvas'));
+    if (filterOffcanvas) {
+      filterOffcanvas.hide();
+    }
   }
 
   function fetchProducts() {
@@ -46,7 +54,10 @@ $(function () {
     var status = statusFilter.val();
     var minStock = minStockFilter.val();
     var maxStock = maxStockFilter.val();
-    var sortStock = $('#sortStockFilter').val(); // Nueva variable para el orden de stock
+    var sortStock = sortStockFilter.val();
+
+    // Mostrar un indicador de carga
+    $('#product-list-container').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Cargando productos...</p></div>');
 
     $.ajax({
       url: ajaxUrl,
@@ -70,10 +81,10 @@ $(function () {
               <div class="alert alert-warning text-center w-100">
                 <i class="bx bx-filter-alt"></i> No existen productos que concuerden con el filtro.
                 <br>
-                <button id="clearFilters" class="btn btn-outline-danger mt-3">Borrar filtros</button>
+                <button id="clearFiltersAlert" class="btn btn-outline-danger mt-3">Borrar filtros</button>
               </div>
             `);
-            $('#clearFilters').on('click', function () {
+            $('#clearFiltersAlert').on('click', function () {
               resetFilters();
             });
           } else {
@@ -92,30 +103,33 @@ $(function () {
 
             const statusText = rowData.status === 1 ? 'Activo' : 'Inactivo';
             const statusTextClass = rowData.status === 1 ? 'text-success' : 'text-danger';
+            
+            // Uso del símbolo de moneda según corresponda
+            const currencySymbol = rowData.currency === 'Dólar' ? 'USD' : 'UYU';
 
             const card = `
-              <div class="col-md-6 col-lg-4 col-12 mb-4">
+              <div class="col-md-6 col-lg-4 col-xl-4 mb-4">
                 <div class="card h-100 shadow-sm">
                   <div class="row g-0">
                     <div class="col-4 d-flex align-items-center">
                       <img src="${baseUrl + rowData.image}" class="img-fluid rounded-start w-100 h-auto object-fit-cover" alt="Imagen del producto" style="max-height: 150px;">
                     </div>
                     <div class="col-8">
-                      <div class="card-body p-1 d-flex flex-column justify-content-between">
+                      <div class="card-body p-3 d-flex flex-column justify-content-between">
                         <div>
-                          <h6 class="card-title">${rowData.name}</h6>
+                          <h6 class="card-title mb-2">${rowData.name}</h6>
                           <p class="card-text mb-2">Stock: <span class="badge ${stockClass}">${rowData.stock}</span></p>
-                          <p class="card-text mb-2">Empresa: ${rowData.store_name}</p>
+                          <p class="card-text mb-2">${rowData.store_name}</p>
+                          <p class="card-text mb-2">${currencySymbol} ${parseFloat(rowData.price || 0).toFixed(2)}</p>
                         </div>
                         <div>
-                          <p class="card-text">Estado: <span class="${statusTextClass}">${statusText}</span></p>
+                          <p class="card-text"><span class="${statusTextClass}">${statusText}</span></p>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-
             `;
 
             cardContainer.append(card);
@@ -125,6 +139,11 @@ $(function () {
       },
       error: function (xhr, status, error) {
         console.error('Error al obtener los datos:', error);
+        $('#product-list-container').html(`
+          <div class="alert alert-danger text-center w-100">
+            <i class="bx bx-error-circle"></i> Error al cargar los productos. Inténtelo nuevamente.
+          </div>
+        `);
       }
     });
   }
@@ -132,31 +151,32 @@ $(function () {
   // Fetch products on page load
   fetchProducts();
 
-  // Trigger search on input change
+  // Trigger search on input change with debounce
+  let searchTimeout;
   searchInput.on('input', function () {
-    fetchProducts();
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      fetchProducts();
+    }, 500); // espera 500ms después de dejar de escribir
   });
 
   // Trigger fetch on filter change
-  storeFilter.on('change', function () {
-    fetchProducts();
+  storeFilter.on('change', fetchProducts);
+  statusFilter.on('change', fetchProducts);
+  sortStockFilter.on('change', fetchProducts);
+
+  // Trigger fetch on stock range change with debounce
+  let stockTimeout;
+  minStockFilter.on('input', function() {
+    clearTimeout(stockTimeout);
+    stockTimeout = setTimeout(fetchProducts, 500);
+  });
+  
+  maxStockFilter.on('input', function() {
+    clearTimeout(stockTimeout);
+    stockTimeout = setTimeout(fetchProducts, 500);
   });
 
-  statusFilter.on('change', function () {
-    fetchProducts();
-  });
-
-  // Trigger fetch on stock range change
-  minStockFilter.on('input', function () {
-    fetchProducts();
-  });
-
-  maxStockFilter.on('input', function () {
-    fetchProducts();
-  });
-
-  $('#sortStockFilter').on('change', function () {
-    fetchProducts();
-  });
-
+  // Clear filters button
+  $('#clearFilters').on('click', resetFilters);
 });
