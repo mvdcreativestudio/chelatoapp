@@ -111,6 +111,11 @@
           <input class="form-check-input" type="checkbox" value="1" id="allow_registration" name="allow_registration" {{ $companySettings->allow_registration ? 'checked' : '' }}>
           <label class="form-check-label" for="allow_registration">Permitir registro en página de Login</label>
         </div>
+        <div class="form-check form-switch mb-3">
+          <input type="hidden" name="allow_BudgetsWhitoutStock" value="0"/>
+          <input class="form-check-input" type="checkbox" value="1" id="allow_BudgetsWhitoutStock" name="allow_BudgetsWhitoutStock" {{ $companySettings->allow_BudgetsWhitoutStock ? 'checked' : '' }}>
+          <label class="form-check-label" for="allow_BudgetsWhitoutStock">Permitir presupuestos con productos sin stock.</label>
+        </div>
 
         <!-- Sección Marca -->
         <h5 class="mt-5">Marca</h5>

@@ -48,7 +48,7 @@
 @endforeach
 @endif
 
-<div class="app-ecommerce" data-products='@json($products)'>
+<div class="app-ecommerce" data-products='@json($products)' data-allow-no-stock='{{ $companySettings->allow_BudgetsWhitoutStock ? "true" : "false" }}'>
 
   <!-- Add Budget -->
   <form action="{{ route('budgets.store') }}" method="POST" enctype="multipart/form-data" id="addBudgetForm">
