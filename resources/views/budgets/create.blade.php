@@ -93,15 +93,22 @@
               <!-- Tab Cliente -->
               <div class="tab-pane fade show active" id="client-content" role="tabpanel" aria-labelledby="client-tab">
                 <div class="mb-3 mt-3">
-                  <label class="form-label" for="client_id">Seleccione un Cliente</label>
-                  <select id="client_id" name="client_id" class="form-select select2">
-                    <option value="">Seleccione un cliente</option>
-                    @foreach($clients as $client)
-                    <option value="{{ $client->id }}">{{ $client->name }}</option>
-                    @endforeach
-                  </select>
+                    <label class="form-label" for="client_id">Seleccione un Cliente</label>
+                    <select id="client_id" name="client_id" class="form-select select2">
+                        <option value="">Seleccione un cliente</option>
+                        @foreach($clients as $client)
+                            <option value="{{ $client->id }}">
+                                @if($client->type == 'company')
+                                    {{ $client->company_name }}
+                                @else
+                                    {{ $client->name }} {{ $client->lastname }}
+                                @endif
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
               </div>
+
 
               <!-- Tab Lead -->
               <div class="tab-pane fade" id="lead-content" role="tabpanel" aria-labelledby="lead-tab">
@@ -110,7 +117,13 @@
                   <select id="lead_id" name="lead_id" class="form-select select2">
                     <option value="">Seleccione un lead</option>
                     @foreach($leads as $lead)
-                    <option value="{{ $lead->id }}">{{ $lead->name }}</option>
+                    <option value="{{ $lead->id }}">
+                      @if($lead->type == 'company')
+                        {{ $lead->company_name }}
+                      @else
+                        {{ $lead->name }} {{ $lead->lastname }}
+                      @endif
+                    </option>
                     @endforeach
                   </select>
                 </div>
