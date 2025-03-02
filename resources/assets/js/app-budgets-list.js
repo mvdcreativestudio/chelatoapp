@@ -18,7 +18,7 @@ $(function () {
     // Función para refrescar los presupuestos
     function refreshBudgets() {
         var ajaxUrl = budgetsContainer.data('ajax-url');
-    
+
         $.ajax({
             url: ajaxUrl,
             method: 'GET',
@@ -134,13 +134,19 @@ $(function () {
 
         budgetsToDisplay.forEach(function (budget) {
             const formattedDate = new Date(budget.due_date).toLocaleDateString();
-            
+
             let cardHtml = `
                 <div class="col-md-6 col-lg-4 col-12 mb-4">
                     <div class="order-card p-3 shadow-sm rounded bg-white d-flex flex-column justify-content-between" data-budget-id="${budget.id}">
                         <div>
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h5 class="card-title mb-0">${budget.client?.name || budget.lead?.name || "Sin Cliente"}</h5>
+                                <h5 class="card-title mb-0">
+                                    ${budget.client
+                                        ? (budget.client.client_type === 'individual'
+                                            ? budget.client.name
+                                            : budget.client.company_name)
+                                        : (budget.lead?.name || "Sin Cliente")}
+                                </h5>
                                 ${getFormattedStatus(budget.current_status)}
                             </div>
                             <p class="mb-1"><i class="bx bx-calendar"></i> ${formattedDate}</p>
@@ -199,7 +205,7 @@ $(function () {
         e.preventDefault();
         const budgetId = $(this).data('id');
         const isCard = $(this).closest('.order-card').length > 0;
-        
+
         Swal.fire({
             title: '¿Estás seguro?',
             text: "Esta acción no se puede deshacer",
@@ -264,21 +270,21 @@ $(function () {
     // Agregar listener para el campo de búsqueda
     $('#searchClient').on('keyup', function() {
         const searchTerm = $(this).val().toLowerCase();
-        
+
         const filteredBudgets = budgets.filter(budget => {
             // Get all searchable fields
             const clientName = (budget.client?.name || budget.lead?.name || "Sin Cliente").toLowerCase();
             const storeName = budget.store?.name?.toLowerCase() || "";
             const status = getTranslatedStatus(budget.current_status).toLowerCase();
             const total = budget.total.toString();
-            
+
             // Check if any field matches the search term
-            return clientName.includes(searchTerm) || 
-                   storeName.includes(searchTerm) || 
-                   status.includes(searchTerm) || 
+            return clientName.includes(searchTerm) ||
+                   storeName.includes(searchTerm) ||
+                   status.includes(searchTerm) ||
                    total.includes(searchTerm);
         });
-        
+
         if (isListView) {
             displayBudgetsList(filteredBudgets);
         } else {
@@ -298,7 +304,7 @@ $(function () {
             'expired': 'Expirado',
             'cancelled': 'Cancelado'
         };
-        
+
         return statusTranslations[status] || status;
     }
 });
