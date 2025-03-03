@@ -19,7 +19,7 @@
       <div class="card-body text-center d-flex flex-column justify-content-between">
           <div>
               <h3 class="card-title mb-1">Pymo</h3>
-              <small class="d-block mb-3">Facturación Electrónica a través de Pymo <br> Emite Comprobantes Fiscales Electrónicos desde la aplicación a través de PYMO. Para esto necesitas tener una cuenta.</small>
+              <small class="d-block mb-3">Facturación Electrónica a través de Pymo</small>
           </div>
           <div class="form-check form-switch d-flex justify-content-center">
               <input type="hidden" name="invoices_enabled" value="0">

@@ -1372,7 +1372,39 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
   function postOrder(paymentMethod, paymentStatus) {
     ocultarError();
-    const selectedCurrency = $('input[name="currency"]:checked').val();
+    const selectedCurrency = $('input[name="currency"]:checked').val(); // Moneda de la venta
+
+    const orderProducts = cart.map(item => {
+      let itemPrice = parseFloat(item.price);
+      let basePrice = parseFloat(item.base_price);
+      let finalCurrency = item.currency; // Moneda original del producto
+
+      // Convertir precios si la moneda de la venta es distinta a la del producto
+      if (selectedCurrency !== item.currency) {
+          if (selectedCurrency === 'Dólar') {
+              // Convertir de Pesos a Dólares
+              itemPrice = itemPrice / exchange_price;
+              basePrice = basePrice / exchange_price;
+              finalCurrency = 'Dólar';
+          } else {
+              // Convertir de Dólares a Pesos
+              itemPrice = itemPrice * exchange_price;
+              basePrice = basePrice * exchange_price;
+              finalCurrency = 'Peso';
+          }
+      }
+
+      return {
+          id: item.id,
+          name: item.name,
+          base_price: parseFloat(basePrice.toFixed(2)), // Redondeamos a 2 decimales
+          price: parseFloat(itemPrice.toFixed(2)), // Redondeamos a 2 decimales
+          currency: finalCurrency, // Guardamos en la moneda de la venta
+          quantity: item.quantity,
+          is_composite: item.isComposite || false,
+          tax_rate: item.tax_rate?.rate || 0
+      };
+  });
 
     const shippingStatus = $('#shippingStatus').val();
     const construction_site = $('#construction_site').val();
@@ -1427,16 +1459,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
       cash_sales: cashSales,
       pos_sales: posSales,
       discount: discount,
-      products: JSON.stringify(cart.map(item => ({
-        id: item.id,
-        name: item.name,
-        base_price: item.base_price,
-        price: item.price,
-        currency: item.currency,
-        quantity: item.quantity,
-        is_composite: item.isComposite || false,
-            tax_rate: item.tax_rate?.rate || 0
-      }))),
+      products: JSON.stringify(orderProducts), // Guardamos productos en la misma moneda de la venta
       subtotal: subtotal.toFixed(2),
       tax: tax.toFixed(2),
       total: total.toFixed(2),

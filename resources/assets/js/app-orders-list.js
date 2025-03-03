@@ -134,6 +134,10 @@ $(function () {
                   ? 'bg-warning'
                   : 'bg-danger';
 
+            // Texto y clase para el estado de facturación
+            const billingStatusText = orderData.is_billed === 1 ? 'Facturada' : 'No Facturada';
+            const billingStatusClass = orderData.is_billed === 1 ? 'bg-label-success' : 'bg-label-danger';
+
             const card = `
               <div class="col-md-6 col-lg-4 col-12 mb-4">
                 <div class="order-card position-relative p-3 d-flex flex-column justify-content-between shadow-sm rounded">
@@ -141,7 +145,6 @@ $(function () {
                   <div>
                     <h5 class="order-title">#${orderData.id} - ${orderData.client_name}</h5>
                     <p class="order-date text-muted small">${moment(orderData.date).format('DD/MM/YYYY')}</p>
-                        <p class="order-construction_site">Obra: ${orderData.construction_site}</p>
                         <p class="order-construction_site">Obra: ${orderData.construction_site}</p>
                     <div class="d-flex gap-2 my-2">
                       <span class="badge ${paymentStatusClass}">${paymentStatusText}</span>

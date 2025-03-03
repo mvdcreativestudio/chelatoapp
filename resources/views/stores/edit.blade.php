@@ -130,11 +130,6 @@
     </form>
 </div>
 
-@include('_partials/_editStore/_fiservModal')
-@include('_partials/_editStore/_handyModal')
-@include('_partials/_editStore/_scanntechModal')
-
-
 
 <script>
     let autocomplete;

@@ -342,8 +342,8 @@ class OrderRepository
             $quantity = $item['quantity'] ?? 1;
 
             // 🔥 Calcular el impuesto del producto
-            $basePrice = ($productCurrency === 'Dólar' && $orderCurrency === 'Peso') ? ($item['base_price'] * $dollarRate) : 
-                        (($productCurrency === 'Peso' && $orderCurrency === 'Dólar') ? ($item['base_price'] / $dollarRate) : 
+            $basePrice = ($productCurrency === 'Dólar' && $orderCurrency === 'Peso') ? ($item['base_price'] * $dollarRate) :
+                        (($productCurrency === 'Peso' && $orderCurrency === 'Dólar') ? ($item['base_price'] / $dollarRate) :
                         $item['base_price']);
 
             $taxRate = isset($item['tax_rate']) ? floatval($item['tax_rate']) : 0;
@@ -409,7 +409,7 @@ class OrderRepository
      * @return Order
      */
     public function loadOrderRelations(Order $order)
-    {   
+    {
         // Cargar las relaciones necesarias, incluyendo 'invoices'
         return $order->load([
             'client',
@@ -540,7 +540,7 @@ class OrderRepository
                     ->orWhere('orders.id', 'like', "%{$request->input('search')}%")
                     ->orWhere('clients.name', 'like', "%{$request->input('search')}%")
                     ->orWhere('clients.lastname', 'like', "%{$request->input('search')}%")
-                    ->orWhere('orders.construction_site', 'like', "%{$request->input('search')}%"); 
+                    ->orWhere('orders.construction_site', 'like', "%{$request->input('search')}%");
                 // ->orWhere('stores.name', 'like', "%{$request->input('search')}%");
             });
         }
@@ -825,7 +825,7 @@ class OrderRepository
     private function createInternalCredit(Order $order)
     {
         $accountSettings = CurrentAccountSettings::firstOrCreate(
-            ['transaction_type' => 'Sale'],  
+            ['transaction_type' => 'Sale'],
             [
                 'late_fee' => '0.05',
                 'payment_terms' => '30',
