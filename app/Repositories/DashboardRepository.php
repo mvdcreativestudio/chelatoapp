@@ -52,10 +52,10 @@ class DashboardRepository
         foreach ($orders as $order) {
             // Get products and ensure it's an array
             $products = $order->products;
-            
+
             // If it's a string, try to decode it
             if (is_string($products)) {
-                $products = json_decode($products, true);
+              $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
             }
 
             // Skip if products is not an array
@@ -170,7 +170,7 @@ class DashboardRepository
 
         $lastOrderInfo = [];
         if ($lastOrder) {
-            $products = json_decode($lastOrder->products, true);
+          $products = is_string($lastOrder->products) ? json_decode($lastOrder->products, true) : $lastOrder->products;
 
             // Busca el producto que más se vendió en la orden.
             $maxQuantity = 0;

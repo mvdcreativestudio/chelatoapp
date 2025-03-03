@@ -557,6 +557,7 @@ $(document).ready(function () {
                   tax_rate: product.tax_rate, // Objeto completo de tasa de impuestos
                   tax: taxAmountPerUnit * quantity, // Impuesto total
                 });
+              
 
               updateCart();
               $('#flavorModal').modal('hide');
@@ -648,7 +649,7 @@ $(document).ready(function () {
 
     function updateCart() {
         var exchange_price = 0;
-    
+
         $.ajax({
             url: 'exchange-rate',
             type: 'GET',
@@ -656,23 +657,23 @@ $(document).ready(function () {
                 exchange_price = response.exchange_rate.sell;
                 let tc_value = parseFloat(exchange_price);
                 $('.exchange-rate-value').text(tc_value.toFixed(2));
-    
+
                 let cartHtml = '';
                 let subtotal = 0;
                 let totalTax = 0; // Total de impuestos
                 let totalItems = 0;  // Contador de productos
-    
+
                 cartHtml = `
                 <div class="row gy-3 overflow-auto" style="max-height: 400px;">
                 `;
-    
+
                 cart.forEach(item => {
                     const taxRate = item.tax_rate && item.tax_rate.rate ? parseFloat(item.tax_rate.rate) : 0; // Tasa de impuestos
                     const basePrice = item.base_price || 0; // Precio base sin impuestos
                     const taxAmount = (basePrice * taxRate / 100) * item.quantity; // Impuesto total por producto
                     var itemTotal = (basePrice * item.quantity) + taxAmount; // Total con impuestos por producto
-    
-                    if (item.currency == 'Dólar') {    
+
+                    if (item.currency == 'Dólar') {
                         var itemTotal = item.quantity * item.price * exchange_price;
                         totalTax += taxAmount * exchange_price;
                         subtotal += itemTotal - totalTax;
@@ -681,10 +682,10 @@ $(document).ready(function () {
                         totalTax += taxAmount;
                         subtotal += itemTotal - taxAmount; // Acumular subtotal sin impuestos
                     }
-    
+
                     totalItems += item.quantity;
                     const currencyLabel = item.currency === 'Dólar' ? 'USD' : 'UYU';
-    
+
                     cartHtml += `
                     <div class="col-12">
                         <div class="product-cart-card">
@@ -711,43 +712,43 @@ $(document).ready(function () {
                     </div>
                     `;
                 });
-    
+
                 cartHtml += `</div>`;
-    
+
                 // Actualizar el contenido del carrito
                 $('#cart-items').html(cartHtml);
-    
+
                 // Subtotal (sin impuestos)
                 $('.subtotal').text(`UYU ${subtotal.toFixed(2)}`);
-    
+
                 // Total del IVA (impuestos)
                 $('.iva-total').text(`UYU ${totalTax.toFixed(2)}`);
-    
+
                 // Total (con impuestos)
                 const total = subtotal + totalTax;
                 $('.total').text(`UYU ${total.toFixed(2)}`);
-    
+
                 // Actualizar el contador de productos
                 $('#cart-count').text(totalItems);
-    
+
                 // Botón "Finalizar Venta"
                 if (cart.length === 0) {
                     $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
                 } else {
                     $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
                 }
-    
+
                 // Guardar el carrito en el servidor
                 saveCart();
             }
         });
     }
-    
+
     // Manejar el clic en el botón "Agregar al carrito"
     $(document).on('click', '.add-to-cart', function () {
         const productId = $(this).data('id');
         const isComposite = $(this).data('composite'); // Cambiar "type" por "composite"
-    
+
         if (isComposite) {
             // Lógica para productos compuestos
             addCompositeProductToCart(productId);
@@ -755,7 +756,7 @@ $(document).ready(function () {
             addToCart(productId);
         }
     });
-    
+
     // Manejar el clic en el botón "Eliminar del carrito"
     $(document).on('click', '.product-cart-remove', function () {
         const productId = $(this).data('id');
@@ -1243,20 +1244,20 @@ $(document).ready(function () {
     function loadManualPriceListProducts(priceListId) {
         if (priceListId === "0") {
             loadNormalPrices(); // Restaurar precios originales en la vista
-    
+
             // Restaurar precios originales en el carrito
             cart = cart.map(item => {
                 const originalProduct = products.find(p => p.id === item.id);
                 item.price = originalProduct ? originalProduct.original_price : item.price;
                 return item;
             });
-    
+
             updateCart(); // Actualizar precios en el carrito
             return;
         } else if (priceListId === "") { // Si selecciona "Lista de precios manual"
             loadClientPriceList(client.price_list_id).then(updateCartPrices);
         }
-    
+
         $.ajax({
             url: `${baseUrl}admin/price-list/${priceListId}/products`,
             type: 'GET',

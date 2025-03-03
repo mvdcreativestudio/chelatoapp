@@ -79,14 +79,6 @@ use App\Http\Controllers\DriverController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\DispatchNoteController;
 use App\Http\Controllers\NoteDeliveryController;
-use App\Http\Controllers\DriverController;
-use App\Http\Controllers\VehicleController;
-use App\Http\Controllers\DispatchNoteController;
-use App\Http\Controllers\NoteDeliveryController;
-use App\Http\Controllers\LeadController;
-use App\Http\Controllers\LeadTaskController;
-use App\Http\Controllers\LeadAttachedFileController;
-use App\Http\Controllers\LeadConversationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -275,9 +267,9 @@ Route::prefix('admin')->middleware([
     Route::get('note-deliveries', [NoteDeliveryController::class, 'index']);
     Route::get('dispatch-notes/pdf/{uuid}', [DispatchNoteController::class, 'downloadMultiplePdf'])->name('dispatch-notes.pdf');
     Route::get('dispatch-notes/{id}/pdf', [DispatchNoteController::class, 'downloadSinglePdf'])->name('dispatch-notes.single.pdf');
-    Route::get('note-deliveries/export-excel', [NoteDeliveryController::class, 'exportExcel']);  
-    Route::delete('note-deliveries/{noteDeliveryId}', [NoteDeliveryController::class, 'destroy']);  
-    Route::delete('dispatch-notes/{dispatchNoteId}', [DispatchNoteController::class, 'destroy']);  
+    Route::get('note-deliveries/export-excel', [NoteDeliveryController::class, 'exportExcel']);
+    Route::delete('note-deliveries/{noteDeliveryId}', [NoteDeliveryController::class, 'destroy']);
+    Route::delete('dispatch-notes/{dispatchNoteId}', [DispatchNoteController::class, 'destroy']);
 
     // Rutas específicas modulo de dalí
     Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');

@@ -631,7 +631,7 @@ class DatacenterRepository
         $productSales = [];
 
         foreach ($orders as $order) {
-            $products = json_decode($order->products, true);
+            $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
 
             if (is_array($products) && count($products) > 0) {
                 $subtotal          = 0;
@@ -795,7 +795,7 @@ class DatacenterRepository
         $categorySales = [];
 
         foreach ($orders as $order) {
-            $products = json_decode($order->products, true);
+            $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
 
             if (! is_array($products) || empty($products)) {
                 continue;

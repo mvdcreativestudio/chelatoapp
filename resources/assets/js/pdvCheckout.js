@@ -726,7 +726,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         exchange_price = response.exchange_rate.sell;
         coupon = couponResponse;
         const selectedCurrency = $('input[name="currency"]:checked').val();
-  
+
         let subtotal = cart.reduce((sum, item) => {
           let itemPrice = item.price;
           if (selectedCurrency === 'Dólar') {
@@ -740,7 +740,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
           }
           return sum + (itemPrice * item.quantity);
         }, 0);
-  
+
         if (coupon.coupon.type === 'percentage') {
           discount = (coupon.coupon.amount / 100) * subtotal;
         } else {
@@ -750,11 +750,11 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
             discount = coupon.coupon.amount;
           }
         }
-  
+
         if (discount > subtotal) {
           discount = subtotal;
         }
-  
+
         discount = Math.round(discount * 100) / 100;
         calcularTotal();
         $('#quitarDescuento').show();
@@ -765,7 +765,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
       }
     });
   }
-  
+
   function aplicarDescuentoFijo() {
     $.ajax({
       url: 'exchange-rate',
@@ -775,12 +775,12 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         const selectedCurrency = $('input[name="currency"]:checked').val();
         const discountType = $('input[name="discount-type"]:checked').val();
         const discountValue = parseFloat($('#fixed-discount').val());
-  
+
         if (!discountValue || isNaN(discountValue) || discountValue <= 0) {
           mostrarError('Por favor, ingrese un valor de descuento válido.');
           return;
         }
-  
+
         let subtotal = cart.reduce((sum, item) => {
           let itemPrice = item.price;
           if (selectedCurrency === 'Dólar') {
@@ -794,17 +794,17 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
           }
           return sum + (itemPrice * item.quantity);
         }, 0);
-  
+
         if (discountType === 'percentage') {
           discount = (discountValue / 100) * subtotal;
         } else {
-            discount = discountValue; 
+            discount = discountValue;
         }
-  
+
         if (discount > subtotal) {
           discount = subtotal;
         }
-  
+
         discount = Math.round(discount * 100) / 100;
         calcularTotal();
         $('#quitarDescuento').show();
@@ -1376,9 +1376,6 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
     const shippingStatus = $('#shippingStatus').val();
     const construction_site = $('#construction_site').val();
-
-    const construction_site = $('#construction_site').val();
-
     let cashSales = 0;
     let posSales = 0;
 
@@ -1452,7 +1449,6 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     if (client && client.id) {
         orderData.client_id = client.id;
     }
-    
 
     // Crear la orden en pos-orders primero
     $.ajax({
@@ -1469,7 +1465,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         const ordersData = {
           ...orderData,
           origin: 'physical',
-                construction_site: construction_site,
+          construction_site: construction_site,
           payment_status: paymentStatus,
           payment_method: paymentMethod,
           shipping_method: 'standard',
@@ -1525,13 +1521,13 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         }
     });
   }
-  
+
     $('input[name="currency"]').on('change', function () {
       const selectedCurrency = $(this).val();
       const internalCreditInput = $('#internalCredit');
       const internalCreditLabel = $('label[for="internalCredit"]');
       const exchangeRateInfo = $('.exchange-rate-info');
-  
+
       if (selectedCurrency === 'Dólar') {
         exchangeRateInfo.removeClass('d-none');
         internalCreditInput.prop('disabled', true);
@@ -1542,7 +1538,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
         internalCreditInput.prop('disabled', false);
         internalCreditLabel.removeClass('opacity-50');
       }
-    
+
       $.ajax({
         url: 'exchange-rate',
         type: 'GET',
@@ -1550,13 +1546,13 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
           exchange_price = response.exchange_rate.sell;
           let tc_value = parseFloat(exchange_price);
           $('.exchange-rate-value').text(tc_value.toFixed(2));
-  
+
           if (selectedCurrency === 'Dólar') {
             discount = discount / exchange_price;
           } else {
             discount = discount * exchange_price;
           }
-    
+
           calcularTotal();
         },
         error: function(xhr) {
@@ -1872,4 +1868,3 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     }, 5000); // Intervalo de 5 segundos
   }
 });
-
