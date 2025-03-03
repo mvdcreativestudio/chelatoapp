@@ -19,6 +19,8 @@ use App\Models\OrderStatusChange;
 use App\Models\Product;
 use App\Models\CurrencyRate;
 use App\Models\CurrencyRateHistory;
+use App\Models\CurrentAccountSettings;
+use App\Models\Currency;
 use App\Repositories\AccountingRepository;
 use App\Services\MercadoPagoService;
 use Exception;
@@ -156,24 +158,34 @@ class OrderRepository
             if ($client) {
                 $order->client()->associate($client);
             }
+            Log::info('Orden creada, asociada al cliente si corresponde', ['order' => $order]);
 
             $order->save();
             Log::info('Orden guardada en la base de datos', ['order_id' => $order->id]);
 
-            // ✅ Validar y actualizar stock
-            $stockValidation = $this->validateAndUpdateStock($products, $deductStockOnCreate);
-            if (!$stockValidation['success']) {
-                if (!$deductStockOnCreate) {
-                    Log::warning("Stock insuficiente, pero se permite la creación de la orden con estado pending: {$stockValidation['error']}");
-                } else {
+            $products = json_decode($request['products'], true);
+
+            // Validar y actualizar stock según el estado de envío
+            if ($orderData['shipping_status'] === 'delivered' || $orderData['shipping_status'] === 'shipped') {
+                $stockValidation = $this->validateAndUpdateStock($products, true); // Validar y descontar stock
+                if (!$stockValidation['success']) {
                     throw new Exception($stockValidation['error']);
                 }
+            } elseif ($orderData['shipping_status'] === 'pending') {
+                $stockValidation = $this->validateAndUpdateStock($products, false); // Validar sin descontar stock
+                if (!$stockValidation['success']) {
+                    Log::warning("Stock insuficiente para el estado pending: {$stockValidation['error']}");
+                }
+            } else {
+                throw new Exception("Estado de envío no válido: {$orderData['shipping_status']}");
             }
 
-            // ✅ Asignar los productos CORRECTAMENTE con los precios ya recalculados
-            $order->products = json_encode($products);
+            // Asignar los productos a la orden
+            $order->products = $products;
+            Log::info('Productos asociados a la orden', ['products' => $products]);
+
             $order->save();
-            Log::info('Orden actualizada con los productos', ['products' => $products]);
+            Log::info('Orden actualizada con los productos');
 
             // ✅ Métodos de pago y lógica extra
             if ($request->payment_method === 'internalCredit' && $client) {
@@ -264,6 +276,7 @@ class OrderRepository
 
         return ['success' => true];
     }
+
 
 
 
@@ -365,6 +378,7 @@ class OrderRepository
             'time' => now()->format('H:i:s'),
             'origin' => 'physical',
             'store_id' => $storeId,
+            'construction_site' => $request->construction_site,
             'construction_site' => $request->construction_site,
             'subtotal' => round($subtotal, 2),
             'tax' => round($taxConDescuento, 2),
@@ -525,7 +539,8 @@ class OrderRepository
                 $query->where('orders.uuid', 'like', "%{$request->input('search')}%")
                     ->orWhere('orders.id', 'like', "%{$request->input('search')}%")
                     ->orWhere('clients.name', 'like', "%{$request->input('search')}%")
-                    ->orWhere('clients.lastname', 'like', "%{$request->input('search')}%");
+                    ->orWhere('clients.lastname', 'like', "%{$request->input('search')}%")
+                    ->orWhere('orders.construction_site', 'like', "%{$request->input('search')}%"); 
                 // ->orWhere('stores.name', 'like', "%{$request->input('search')}%");
             });
         }
@@ -809,30 +824,46 @@ class OrderRepository
 
     private function createInternalCredit(Order $order)
     {
-        // verify if exist client in current account
-        $currentAccount = CurrentAccount::where('client_id', $order->client_id)->first();
+        $accountSettings = CurrentAccountSettings::firstOrCreate(
+            ['transaction_type' => 'Sale'],  
+            [
+                'late_fee' => '0.05',
+                'payment_terms' => '30',
+            ]
+        );
 
+        $currentAccount = CurrentAccount::where('client_id', $order->client_id)->first();
         if ($currentAccount) {
             CurrentAccountInitialCredit::create([
                 'total_debit' => $order->total,
-                'description' => 'Compra Interna - <a href="' . route('orders.show', $order->uuid) . '">Pedido #' . $order->id . '</a>',
+                'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
                 'current_account_settings_id' => 1,
             ]);
         } else {
+            $currencies = Currency::firstOrCreate(
+                ['id' => 1],
+                [
+                    'code' => 'UYU',
+                    'symbol' => '$',
+                    'name' => 'Peso Uruguayo',
+                    'exchange_rate' => 1.0000,
+                ]
+            );
+
             $currentAccount = CurrentAccount::create([
                 'client_id' => $order->client_id,
                 'payment_total_debit' => $order->total,
                 'status' => StatusPaymentEnum::UNPAID,
                 'transaction_type' => TransactionTypeEnum::SALE,
-                'currency_id' => 1,
+                'currency_id' => $currencies->id,
             ]);
 
             CurrentAccountInitialCredit::create([
                 'total_debit' => $order->total,
-                'description' => 'Compra Interna - <a href="' . route('orders.show', $order->uuid) . '">Pedido #' . $order->id . '</a>',
+                'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
-                'current_account_settings_id' => 1,
+                'current_account_settings_id' => $accountSettings->id,
             ]);
         }
     }

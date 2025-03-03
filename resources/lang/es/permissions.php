@@ -142,4 +142,16 @@ return [
     'access_create-price-lists' => 'Crear Listas de Precios',
     'access_edit-price-lists' => 'Editar Listas de Precios',
     'access_delete-price-lists' => 'Eliminar Listas de Precios',
+
+    // Logística
+    'access_logistics' => 'Acceder a Logística',
+    'view_all_logistics' => 'Acceder a toda la información sobre logística',
+    'access_note_deliveries' => 'Acceder a Remitos',
+    'view_all_note_deliveries' => 'Ver todos los Remitos',
+    'access_drivers' => 'Acceder a Choferes',
+    'view_all_drivers' => 'Ver todos los Choferes',
+    'view_all_vehicles' => 'Ver todos los Vehículos',
+    'access_vehicles' => 'Acceder a Vehículos',
+    'access_edit_delivery_data' => 'Re-editar datos de entrega',
+
 ];

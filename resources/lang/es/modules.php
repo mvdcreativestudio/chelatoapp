@@ -18,4 +18,7 @@ return [
     'sales' => 'Ventas',
     'transactions' => 'Transacciones',
     'products' => 'Productos',
+    'logistics' => 'Logística',
+    'orders' => 'Pedidos',
+    'entries' => 'Asientos'
 ];

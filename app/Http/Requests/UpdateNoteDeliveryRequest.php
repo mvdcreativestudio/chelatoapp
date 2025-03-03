@@ -18,12 +18,12 @@ class UpdateNoteDeliveryRequest extends FormRequest
             'driver_id' => 'sometimes|exists:drivers,id',
             'store_id' => 'sometimes|exists:stores,id',
             'dispatch_note_id' => 'sometimes|exists:dispatch_note,id',
-            'departuring' => 'sometimes|date',
-            'arriving' => 'sometimes|date|after:departuring',
-            'unload_starting' => 'sometimes|date|after:arriving',
-            'unload_finishing' => 'sometimes|date|after:unload_starting',
-            'departure_from_site' => 'sometimes|date|after:unload_finishing',
-            'return_to_plant' => 'sometimes|date|after:departure_from_site',
+            'departuring' => 'nullable|date',
+            'arriving' => 'nullable|date',
+            'unload_starting' => 'nullable|date',
+            'unload_finishing' => 'nullable|date',
+            'departure_from_site' => 'nullable|date',
+            'return_to_plant' => 'nullable|date',
         ];
     }
 }

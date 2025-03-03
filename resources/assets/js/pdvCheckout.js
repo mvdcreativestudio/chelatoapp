@@ -1377,6 +1377,8 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
     const shippingStatus = $('#shippingStatus').val();
     const construction_site = $('#construction_site').val();
 
+    const construction_site = $('#construction_site').val();
+
     let cashSales = 0;
     let posSales = 0;
 

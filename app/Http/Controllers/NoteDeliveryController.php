@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\NoteDeliveriesExport;
+use InvalidArgumentException;
 
 class NoteDeliveryController extends Controller
 {
@@ -42,18 +43,39 @@ class NoteDeliveryController extends Controller
     */
     public function store(StoreNoteDeliveryRequest $request)
     {
-        $noteDelivery = $this->noteDeliveryRepository->create($request->validated());
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Nota de entrega creada con éxito.',
-                'noteDelivery' => $noteDelivery,
-            ]);
+        try {
+            $noteDelivery = $this->noteDeliveryRepository->create($request->validated());
+    
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Nota de entrega creada con éxito.',
+                    'noteDelivery' => $noteDelivery,
+                ]);
+            }
+    
+            return redirect()->route('note_deliveries.index')
+                ->with('success', 'Nota de entrega creada con éxito.');
+                
+        } catch (InvalidArgumentException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'error' => $e->getMessage()
+                ], 422);
+            }
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'error' => 'Error al crear la nota de entrega.'
+                ], 500);
+            }
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['error' => 'Error al crear la nota de entrega.']);
         }
-
-        return redirect()->route('note_deliveries.index')
-            ->with('success', 'Nota de entrega creada con éxito.');
     }
 
     /*
@@ -79,19 +101,53 @@ class NoteDeliveryController extends Controller
     */
     public function update(UpdateNoteDeliveryRequest $request, $id)
     {
-        $updated = $this->noteDeliveryRepository->update($id, $request->validated());
+        try {
+            $noteDelivery = $this->noteDeliveryRepository->find($id);
 
-        if ($updated) {
+            // Si el usuario no tiene permiso, solo permitimos la edición de campos sin valor
+            if (!auth()->user()->can('access_edit_delivery_data')) {
+                $editableFields = [
+                    'departuring',
+                    'arriving',
+                    'unload_starting',
+                    'unload_finishing',
+                    'departure_from_site',
+                    'return_to_plant'
+                ];
+
+                foreach ($editableFields as $field) {
+                    // Si el campo ya tiene un valor y en la request se intenta modificar
+                    if (isset($request[$field]) && $noteDelivery->$field !== null) {
+                        // Formateamos ambos valores a "Y-m-d\TH:i" para omitir segundos
+                        $dbValue = \Carbon\Carbon::parse($noteDelivery->$field)
+                                    ->format('Y-m-d\TH:i');
+                        $reqValue = \Carbon\Carbon::parse($request[$field])
+                                    ->format('Y-m-d\TH:i');
+                                    
+                        if ($reqValue != $dbValue) {
+                            return response()->json([
+                                'error' => 'No tienes permiso para re-editar este dato.'
+                            ], 403);
+                        }
+                    }
+                }
+            }
+
+            $updated = $this->noteDeliveryRepository->update($id, $request->validated());
             return response()->json([
                 'success' => true,
                 'message' => 'Nota de entrega actualizada con éxito.',
                 'noteDelivery' => $updated
             ]);
+        } catch (InvalidArgumentException $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al actualizar la nota de entrega.'
+            ], 500);
         }
-
-        return response()->json([
-            'error' => 'Error al actualizar la nota de entrega.'
-        ], 500);
     }
 
     /*

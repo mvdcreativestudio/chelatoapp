@@ -229,7 +229,7 @@ $(function () {
               api.column(3).search('Proveedor', true, false).draw();
               $('.supplier_filter').show();
               loadUniqueEntityOptions(4, '#supplierSelect', 'supplier_name'); // Cargar proveedores únicos
-
+              
               // Agregar manejador de eventos para filtrar por proveedor seleccionado
               $('#supplierSelect')
                 .off('change')

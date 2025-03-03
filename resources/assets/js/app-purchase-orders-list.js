@@ -42,6 +42,8 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Detalles:', xhr.responseText);
         }
     });
+    
+    
 
     var table = $('.datatables-purchase-orders').DataTable({
         "order": [[0, "desc"]],
