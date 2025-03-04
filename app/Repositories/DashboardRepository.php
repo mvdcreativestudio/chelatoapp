@@ -10,6 +10,8 @@ use App\Models\CurrencyRateHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Models\Expense;
+use App\Helpers\CompanySettingsHelper;
 
 class DashboardRepository
 {
@@ -46,6 +48,8 @@ class DashboardRepository
     */
     public function getTopSellingProducts($limit = 10)
     {
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+
         $orders = Order::where('payment_status', 'paid')->get();
         $productSales = [];
 
@@ -97,18 +101,20 @@ class DashboardRepository
                         'name' => $productModel->name ?? $product['name'] ?? 'Unknown',
                         'price' => $price,
                         'quantity' => $quantity,
-                        'total_sales' => $price * $quantity,
+                        'total_sales' => $productPrice * $quantity,
                     ];
+                } else {
+                    $productSales[$productId]['quantity'] += $quantity;
+                    $productSales[$productId]['total_sales'] += $productPrice * $quantity;
                 }
             }
         }
 
-        usort($productSales, function ($a, $b) {
-            return $b['quantity'] <=> $a['quantity'];
-        });
+        usort($productSales, fn($a, $b) => $b['quantity'] <=> $a['quantity']);
 
         return array_slice($productSales, 0, $limit);
     }
+
 
 
     /*
@@ -118,6 +124,9 @@ class DashboardRepository
     */
     public function getMonthlyIncomeData($month = null)
     {
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
+
         if (!$month) {
             $month = Carbon::now()->month;
         }
@@ -142,6 +151,7 @@ class DashboardRepository
         return $incomeData;
     }
 
+
     /*
     * Retorna la cantidad de ordenes pagadas, muestra en porcentaje cuantas ordenes se realizaron con respecto al mes pasado y retorna también
     * la última orden realizada.
@@ -149,6 +159,9 @@ class DashboardRepository
     */
     public function getAmountOfOrders()
     {
+        $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
+
         $currentMonth = Carbon::now()->month;
         $lastMonth = Carbon::now()->subMonth()->month;
 
@@ -169,6 +182,7 @@ class DashboardRepository
             ->first();
 
         $lastOrderInfo = [];
+
         if ($lastOrder) {
           $products = is_string($lastOrder->products) ? json_decode($lastOrder->products, true) : $lastOrder->products;
 
@@ -189,16 +203,18 @@ class DashboardRepository
 
             $lastOrderInfo = [
                 'product_name' => $topProduct ? $topProduct->name : 'N/A',
-                'other_products' => $otherProductsCount > 1 ? $otherProductsCount - 1 : 0,
-                'total' => $lastOrder->total
+                'other_products' => count($products) > 1 ? count($products) - 1 : 0,
+                'total' => $lastOrder->$sumColumn // Usa total o subtotal según configuración
             ];
         }
+
         return [
             'last_order' => $lastOrderInfo,
             'orders' => $currentMonthOrders,
             'percentage' => $percentage
         ];
     }
+
 
     /*
     * Retorna la cantidad de facturas impagas y el total de las mismas.

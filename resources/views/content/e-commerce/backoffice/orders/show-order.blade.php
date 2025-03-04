@@ -589,6 +589,15 @@ $changeTypeTranslations = [
             <small class="text-muted">Registrado el: {{ $order->client->created_at->format('d/m/Y') }}</small>
             @else
             <h5 class="mb-0">Consumidor Final</h5>
+
+              @if(!$order->is_billed && $order->client === null)
+              <div class="mt-3">
+                <!-- Botón para vincular venta a cliente -->
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#vincularClienteModal">
+                  Vincular venta a cliente
+                </button>
+              </div>
+              @endif
             @endif
           </div>
         </div>
@@ -640,6 +649,77 @@ $changeTypeTranslations = [
 
   </div>
 </div>
+
+
+<!-- Modal para seleccionar cliente -->
+<div class="modal fade" id="vincularClienteModal" tabindex="-1" aria-labelledby="vincularClienteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="vincularClienteModalLabel">Seleccionar Cliente</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <select class="form-control select2" id="clienteSelect">
+              <option value="">Seleccione un cliente</option>
+              @foreach($clients as $client)
+                  @if($client->type === 'individual')
+                      <option value="{{ $client->id }}">
+                          {{ $client->name }} {{ $client->lastname }}
+                          @if($client->email)
+                              - {{ $client->email }}
+                          @endif
+                      </option>
+                  @elseif($client->type === 'company')
+                      <option value="{{ $client->id }}">
+                          {{ $client->company_name }}
+                      </option>
+                  @endif
+              @endforeach
+            </select>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-primary" id="confirmarVinculacion">Vincular Cliente</button>
+          </div>
+      </div>
+  </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#vincularClienteModal').on('shown.bs.modal', function () {
+        $('#clienteSelect').select2({
+            dropdownParent: $('#vincularClienteModal'), // Hace que el dropdown se renderice dentro del modal
+            width: '100%'
+        });
+    });
+
+    $('#confirmarVinculacion').click(function() {
+        let clienteId = $('#clienteSelect').val();
+        if (!clienteId) {
+            alert('Seleccione un cliente válido');
+            return;
+        }
+        $.ajax({
+            url: "{{ route('orders.vincularCliente', ['order' => $order->id]) }}",
+            type: 'POST',
+            data: {
+                _token: "{{ csrf_token() }}",
+                client_id: clienteId
+            },
+            success: function(response) {
+                alert('Cliente vinculado correctamente');
+                location.reload();
+            },
+            error: function(error) {
+                alert('Error al vincular cliente');
+            }
+        });
+    });
+});
+
+</script>
 
 <!-- Modals -->
 @include('content/e-commerce/backoffice/orders/bill-order')

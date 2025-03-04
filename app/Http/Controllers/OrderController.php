@@ -137,6 +137,9 @@ class OrderController extends Controller
     {
         // Cargar las relaciones necesarias
         $order = $this->orderRepository->loadOrderRelations($order);
+
+        $clients = $this->orderRepository->getAllClients();
+
         //$products = json_decode($order->products, true); // Revisar en mergeo
         $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
         $store = $order->store;
@@ -148,8 +151,8 @@ class OrderController extends Controller
         $clientOrdersCount = $order->client_id
             ? $this->orderRepository->getClientOrdersCount($order->client_id)
             : 0; // O cualquier valor predeterminado si no hay cliente
-        Log::info($exchange_rate);
-        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled', 'exchange_rate'));
+
+        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'clients', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled'));
     }
 
     /**
@@ -343,4 +346,28 @@ class OrderController extends Controller
         $order = $this->orderRepository->refundMercadoPagoOrder($id);
         return response()->json($order);
     }
+
+    public function vincularCliente(Request $request, $orderId): JsonResponse
+    {
+        // Verifica si la orden existe manualmente
+        $order = Order::find($orderId);
+
+        if (!$order) {
+            return response()->json(['error' => 'La orden no existe en la base de datos'], 404);
+        }
+
+        if ($order->is_billed) {
+            return response()->json(['error' => 'No se puede vincular un cliente a una venta ya facturada'], 400);
+        }
+
+        $request->validate([
+            'client_id' => 'required|exists:clients,id',
+        ]);
+
+        $order->update(['client_id' => $request->client_id]);
+
+        return response()->json(['success' => 'Cliente vinculado correctamente']);
+    }
+
+
 }

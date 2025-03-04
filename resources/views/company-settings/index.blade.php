@@ -104,6 +104,14 @@
           </div>
         </div>
 
+        <!-- Datacenter -->
+        <h5 class="mt-5">Datacenter</h5>
+        <div class="form-check form-switch mb-3">
+          <input type="hidden" name="reports_include_taxes" value="0"/>
+          <input class="form-check-input" type="checkbox" value="1" id="reports_include_taxes" name="reports_include_taxes" {{ $companySettings->reports_include_taxes ? 'checked' : '' }}>
+          <label class="form-check-label" for="reports_include_taxes">Reportes con IVA Incluído </label>
+        </div>
+
         <!-- Configuración Adicional -->
         <h5 class="mt-5">Configuración Adicional</h5>
         <div class="form-check form-switch mb-3">
