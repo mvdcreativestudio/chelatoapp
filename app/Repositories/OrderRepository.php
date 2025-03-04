@@ -137,6 +137,12 @@ class OrderRepository
             // ✅ Obtener los productos del request
             $products = json_decode($request['products'], true);
 
+            // ✅ Asignar tax_rate_id a cada producto
+            foreach ($products as &$product) {
+                $productModel = Product::find($product['id']);
+                $product['tax_rate_id'] = $productModel ? $productModel->tax_rate_id : null;
+            }
+
             // ✅ Si el cliente está exento de IVA, forzar tax_rate a 0
             if ($client && $client->tax_rate_id == 1) {
                 foreach ($products as &$product) {
@@ -144,7 +150,7 @@ class OrderRepository
                 }
             }
 
-            // ✅ Recalcular los precios ANTES de asignarlos a la orden
+            // ✅ Recalcular los precios antes de asignarlos a la orden
             foreach ($products as &$item) {
                 $taxAmount = ($item['base_price'] * $item['tax_rate']) / 100;
                 $item['price'] = $item['base_price'] + $taxAmount;
@@ -163,16 +169,17 @@ class OrderRepository
             $order->save();
             Log::info('Orden guardada en la base de datos', ['order_id' => $order->id]);
 
-            $products = json_decode($request['products'], true);
+            // 🔴 ❌ Se eliminó esta línea porque sobrescribía `products`
+            // $products = json_decode($request['products'], true);
 
             // Validar y actualizar stock según el estado de envío
             if ($orderData['shipping_status'] === 'delivered' || $orderData['shipping_status'] === 'shipped') {
-                $stockValidation = $this->validateAndUpdateStock($products, true); // Validar y descontar stock
+                $stockValidation = $this->validateAndUpdateStock($products, true);
                 if (!$stockValidation['success']) {
                     throw new Exception($stockValidation['error']);
                 }
             } elseif ($orderData['shipping_status'] === 'pending') {
-                $stockValidation = $this->validateAndUpdateStock($products, false); // Validar sin descontar stock
+                $stockValidation = $this->validateAndUpdateStock($products, false);
                 if (!$stockValidation['success']) {
                     Log::warning("Stock insuficiente para el estado pending: {$stockValidation['error']}");
                 }
@@ -180,8 +187,8 @@ class OrderRepository
                 throw new Exception("Estado de envío no válido: {$orderData['shipping_status']}");
             }
 
-            // Asignar los productos a la orden
-            $order->products = $products;
+            // ✅ Guardar los productos con el tax_rate_id en la orden
+            $order->products = $products; // Laravel manejará la conversión automática a JSON
             Log::info('Productos asociados a la orden', ['products' => $products]);
 
             $order->save();
@@ -229,10 +236,6 @@ class OrderRepository
     }
 
 
-
-
-
-
     /**
      * Valida y actualiza el stock de los productos vendidos.
      *
@@ -276,7 +279,6 @@ class OrderRepository
 
         return ['success' => true];
     }
-
 
 
 
@@ -500,6 +502,7 @@ class OrderRepository
             'orders.time',
             'orders.client_id',
             DB::raw("COALESCE(orders.construction_site, 'No especificada') as construction_site"),
+
             'orders.store_id',
             'orders.subtotal',
             'orders.tax',
@@ -641,6 +644,16 @@ class OrderRepository
             return 0;
         }
         return Order::where('client_id', $clientId)->count();
+    }
+
+    /**
+     * Obtiene todos los clientes
+     *
+     *
+     */
+    public function getAllClients()
+    {
+        return Client::all();
     }
 
     /**
