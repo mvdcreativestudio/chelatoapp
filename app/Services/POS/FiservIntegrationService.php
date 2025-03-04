@@ -30,7 +30,7 @@ class FiservIntegrationService implements PosIntegrationInterface
             'Branch' => $transactionData['branch'],
             'UserId' => $transactionData['user'],
             'TransactionDateTimeyyyyMMddHHmmssSSS' => now()->format('YmdHis') . '000',
-            'Amount' => number_format($transactionData['Amount'], 0, '', ''), // Cambiar a 'Amount'
+            'Amount' => number_format($transactionData['Amount'], 0, '', ''),
             'Quotas' => isset($transactionData['Quotas']) && is_numeric($transactionData['Quotas']) ? (int) $transactionData['Quotas'] : 1, // Validar y asignar valor predeterminado
             'Plan' => $transactionData['Plan'] ?? 0,
             'Currency' => '858', // Código de moneda

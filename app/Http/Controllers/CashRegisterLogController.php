@@ -325,30 +325,46 @@ class CashRegisterLogController extends Controller
         ]);
     }
 
-    /**
-     * Guarda el carrito del PDV de la session. Si el product tiene como 'currency':'Dólar', se fija la ult. cotización y 
-     * multiplica por el valor de venta del Dólar. 
-     *
-     * @return JsonResponse
-     */
-    public function saveCart(Request $request)
-    {
-        $cart = $request->input('cart');
-        $dollar = CurrencyRate::where('name', 'Dólar')->first();
-        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
-            ->orderBy('created_at', 'desc')
-            ->first();
+   /**
+   * Guarda el carrito del PDV en la sesión. Si un producto tiene 'currency':'Dólar',
+   * se usa la última cotización y multiplica por el valor de venta del Dólar.
+   *
+   * @return JsonResponse
+   */
+  public function saveCart(Request $request)
+  {
+      $cart = $request->input('cart');
 
-        foreach ($cart as &$item) {
-            if ($item['currency'] === 'Dólar' || $item['currency'] === 'D\u00f3lar') {
-                $item['exchange_price'] = $item['price'] / $rate->sell;
-            }
-        }
+      // Validación: si el carrito es null o vacío, no lo guarda en la sesión
+      if (!is_array($cart) || empty($cart)) {
+          Log::warning('⚠️ Intento de guardar un carrito vacío en sesión. No se guardará.', ['cart' => $cart]);
+          return response()->json(['warning' => 'El carrito está vacío, no se guardará en la sesión'], 200);
+      }
 
-        Log::info('Cart: ' . json_encode($cart));
-        session(['cart' => $cart]);
-        return response()->json(['status' => 'success']);
-    }
+      try {
+          $dollar = CurrencyRate::where('name', 'Dólar')->first();
+          $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+              ->orderBy('created_at', 'desc')
+              ->first();
+
+          foreach ($cart as &$item) {
+              if (isset($item['currency']) && ($item['currency'] === 'Dólar' || $item['currency'] === 'D\u00f3lar')) {
+                  $item['exchange_price'] = $item['price'] / $rate->sell;
+              }
+          }
+
+          Log::info('✅ Carrito guardado en sesión:', ['cart' => $cart]);
+          session(['cart' => $cart]);
+
+          return response()->json(['status' => 'success']);
+
+      } catch (\Exception $e) {
+          Log::error('❌ Error al guardar el carrito en la sesión', ['error' => $e->getMessage()]);
+          return response()->json(['error' => 'Error al guardar el carrito en la sesión'], 500);
+      }
+  }
+
+
 
     /**
      * Devuelve el carrito del PDV de la session.

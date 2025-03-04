@@ -107,76 +107,79 @@ $(document).ready(function () {
   function enviarTransaccionPos(token, posOrderId, orderId, orderUuid) {
     console.log('Order ID recibido en enviarTransaccionPos:', orderId);
 
-    $.ajax({
-      url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
-      type: 'GET',
-      success: function (device) {
-        const posID = device.data.identifier;
-        const transactionDateTime = new Date().toISOString().replace(/[-:.TZ]/g, '').substring(0, 17);
-        const amount = parseFloat($('.total').text().replace('$', ''));
-        const quotasInput = $('#quotas').val();
-        const quotas = quotasInput && !isNaN(quotasInput) ? parseInt(quotasInput) : 1;
-
-        const transactionData = {
-          cash_register_id: cashRegisterId,
-          store_id: sessionStoreId,
-          pos_order_id: posOrderId,
-          order_id: orderId,
-          PosID: posID,
-          TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
-          Amount: Math.round(amount * 100).toString(),
-          Quotas: quotas,
-        };
-
-        showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
-
+    // Calcular el total antes de enviar la transacción
+    calcularTotal(function(amount) {
         $.ajax({
-          url: `${baseUrl}api/pos/process-transaction`,
-          type: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          data: JSON.stringify(transactionData),
-          success: function (response) {
-            const transactionId = response.TransactionId ?? response.response?.TransactionId;
-            const sTransactionId = response.STransactionId ?? response.response?.STransactionId;
+            url: `${baseUrl}api/pos/get-device-info/${cashRegisterId}`,
+            type: 'GET',
+            success: function (device) {
+                const posID = device.data.identifier;
+                const transactionDateTime = new Date().toISOString().replace(/[-:.TZ]/g, '').substring(0, 17);
+                const quotasInput = $('#quotas').val();
+                const quotas = quotasInput && !isNaN(quotasInput) ? parseInt(quotasInput) : 1;
 
-            if (transactionId && sTransactionId) {
-              showTransactionStatus({
-                message: 'Procesando transacción...',
-                icon: 'info',
-                showCloseButton: false,
-                transactionId,
-                sTransactionId,
-                token
-              });
+                const transactionData = {
+                    cash_register_id: cashRegisterId,
+                    store_id: sessionStoreId,
+                    pos_order_id: posOrderId,
+                    order_id: orderId,
+                    PosID: posID,
+                    TransactionDateTimeyyyyMMddHHmmssSSS: transactionDateTime,
+                    Amount: Math.round(amount * 100).toString(), // Se usa el total calculado
+                    Quotas: quotas,
+                };
 
-              consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid);
-            } else {
-              console.error('Faltan TransactionId o STransactionId.');
-              showTransactionStatus({
-                message: 'Error en la transacción POS. Intente nuevamente.',
-                icon: 'error',
-                showCloseButton: true
-              });
+                showTransactionStatus({ message: 'Procesando transacción...', icon: 'info', showCloseButton: false });
+
+                $.ajax({
+                    url: `${baseUrl}api/pos/process-transaction`,
+                    type: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    data: JSON.stringify(transactionData),
+                    success: function (response) {
+                        const transactionId = response.TransactionId ?? response.response?.TransactionId;
+                        const sTransactionId = response.STransactionId ?? response.response?.STransactionId;
+
+                        if (transactionId && sTransactionId) {
+                            showTransactionStatus({
+                                message: 'Procesando transacción...',
+                                icon: 'info',
+                                showCloseButton: false,
+                                transactionId,
+                                sTransactionId,
+                                token
+                            });
+
+                            consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid);
+                        } else {
+                            console.error('Faltan TransactionId o STransactionId.');
+                            showTransactionStatus({
+                                message: 'Error en la transacción POS. Intente nuevamente.',
+                                icon: 'error',
+                                showCloseButton: true
+                            });
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error('Error en la transacción POS:', xhr.responseText);
+                        showTransactionStatus({
+                            message: 'Error al procesar la transacción POS.',
+                            icon: 'error',
+                            showCloseButton: true
+                        });
+                    }
+                });
+            },
+            error: function (xhr) {
+                console.error('Error al obtener información del dispositivo POS:', xhr.responseText);
             }
-          },
-          error: function (xhr) {
-            console.error('Error en la transacción POS:', xhr.responseText);
-            showTransactionStatus({
-              message: 'Error al procesar la transacción POS.',
-              icon: 'error',
-              showCloseButton: true
-            });
-          }
         });
-      },
-      error: function (xhr) {
-        console.error('Error al obtener información del dispositivo POS:', xhr.responseText);
-      }
     });
-  }
+}
+
 
 
   function consultarEstadoTransaccion(transactionId, sTransactionId, token, orderId, orderUuid) {
@@ -610,7 +613,7 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
       });
   }
 
-  function calcularTotal() {
+  function calcularTotal(callback) {
     $.ajax({
         url: 'exchange-rate',
         type: 'GET',
@@ -677,12 +680,21 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
             $('.iva-total').text(`${displaySymbol} ${totalTax.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
             $('.total').text(`${displaySymbol} ${total.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
             $('.discount-amount').text(`${displaySymbol} ${discountInCurrency.toLocaleString('es-ES', { minimumFractionDigits: 2 })}`);
+
+            // ✅ Llamamos al callback con el total calculado
+            if (typeof callback === 'function') {
+                callback(total, subtotal);
+            }
         },
         error: function (xhr) {
             console.error('Error al obtener tipo de cambio:', xhr.responseText);
+            if (typeof callback === 'function') {
+                callback(0); // En caso de error, devolver 0
+            }
         }
     });
-}
+  }
+
 
 
 
@@ -1587,23 +1599,26 @@ function cancelarTransaccion(transactionId, sTransactionId, token) {
 
 
 
-  function clearCartAndClient() {
-    return new Promise((resolve, reject) => {
-      try {
-        // Limpia el carrito almacenado localmente
-        cart = [];
-        saveCartToSession();
-        // Limpia los datos del cliente localmente
-        client = null;
-        saveClientToSession(client);
+    function clearCartAndClient() {
+      return new Promise((resolve, reject) => {
+          try {
+              if (cart.length > 0) {
+                  cart = [];  // Solo borra si hay productos
+                  saveCartToSession();
+              }
 
-        // Resuelve la promesa si todo fue exitoso
-        resolve();
-      } catch (error) {
-        reject('Error al limpiar el carrito y cliente.');
-      }
-    });
+              if (client) {
+                  client = null;
+                  saveClientToSession(client);
+              }
+
+              resolve();
+          } catch (error) {
+              reject('Error al limpiar el carrito y cliente.');
+          }
+      });
   }
+
 
   // Función para manejar el cambio de método de pago y mostrar/ocultar detalles
   function togglePaymentDetails() {
