@@ -152,7 +152,7 @@ class OrderController extends Controller
             ? $this->orderRepository->getClientOrdersCount($order->client_id)
             : 0; // O cualquier valor predeterminado si no hay cliente
 
-        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'clients', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled'));
+        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'clients', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled', 'exchange_rate'));
     }
 
     /**

@@ -426,29 +426,35 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($salesByStore as $index => $store)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar avatar-sm me-2">
-                                                <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($store['store'], 0, 2) }}</span>
-                                            </div>
-                                            <span>{{ $store['store'] }}</span>
-                                        </div>
-                                    </td>
-                                    <td>{{ $settings->currency_symbol }}{{ $store['storeTotal'] }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="progress w-100 me-3" style="height: 8px;">
-                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $store['percent'] }}%" aria-valuenow="{{ $store['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                            <span class="text-muted">{{ number_format($store['percent'], 2) }}%</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
+                              @foreach ($salesByStore as $index => $store)
+                              <tr>
+                                  <td>{{ $index + 1 }}</td>
+                                  <td>
+                                      <div class="d-flex align-items-center">
+                                          <div class="avatar avatar-sm me-2">
+                                              <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($store['store'], 0, 2) }}</span>
+                                          </div>
+                                          <span>{{ $store['store'] }}</span>
+                                      </div>
+                                  </td>
+                                  <td>{{ $settings->currency_symbol }}{{ number_format($store['storeTotal'], 2, ',', '.') }}</td>
+                                  <td>
+                                      <div class="d-flex align-items-center">
+                                          <div class="progress w-100 me-3" style="height: 8px;">
+                                              <div class="progress-bar bg-primary" role="progressbar"
+                                                  style="width: {{ $store['percent'] }}%"
+                                                  aria-valuenow="{{ $store['percent'] }}"
+                                                  aria-valuemin="0"
+                                                  aria-valuemax="100">
+                                              </div>
+                                          </div>
+                                          <span class="text-muted">{{ number_format($store['percent'], 2, ',', '.') }}%</span>
+                                      </div>
+                                  </td>
+                              </tr>
+                              @endforeach
+                          </tbody>
+
                         </table>
                     </div>
                 </div>

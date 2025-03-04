@@ -135,8 +135,8 @@ $(function () {
                   : 'bg-danger';
 
             // Texto y clase para el estado de facturación
-            const billingStatusText = orderData.is_billed === 1 ? 'Facturada' : 'No Facturada';
-            const billingStatusClass = orderData.is_billed === 1 ? 'bg-label-success' : 'bg-label-danger';
+            const billingStatusText = orderData.is_billed == 1 ? 'Facturada' : 'No Facturada';
+            const billingStatusClass = orderData.is_billed == 1 ? 'bg-label-success' : 'bg-label-danger';
 
             const card = `
               <div class="col-md-6 col-lg-4 col-12 mb-4">

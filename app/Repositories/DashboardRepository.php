@@ -10,7 +10,6 @@ use App\Models\CurrencyRateHistory;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\Expense;
 use App\Helpers\CompanySettingsHelper;
 
 class DashboardRepository
@@ -49,20 +48,18 @@ class DashboardRepository
     public function getTopSellingProducts($limit = 10)
     {
         $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
-
         $orders = Order::where('payment_status', 'paid')->get();
         $productSales = [];
 
         foreach ($orders as $order) {
-            // Get products and ensure it's an array
             $products = $order->products;
 
-            // If it's a string, try to decode it
+            // Si es string, intentar decodificar JSON
             if (is_string($products)) {
-              $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
+                $products = json_decode($products, true);
             }
 
-            // Skip if products is not an array
+            // Si aún no es un array, loggear error y continuar
             if (!is_array($products)) {
                 Log::error("Invalid products data in order {$order->id}");
                 continue;
@@ -77,21 +74,21 @@ class DashboardRepository
                 $productId = $product['id'];
                 $quantity = $product['quantity'];
 
-                // Try to get the product model
+                // Obtener el modelo del producto
                 $productModel = Product::find($productId);
                 $price = $product['price'] ?? $productModel->price ?? 0;
 
                 if (!$price) {
                     Log::warning("Product with ID {$productId} has price 0 in order {$order->id}");
                 }
-                $price = $product['price'];
 
-                // Pasar producto de dólares a pesos.
+                // Convertir precio si está en dólares
                 if (isset($product['currency']) && $product['currency'] === 'Dólar') {
                     $rate = $this->getHistoricalDollarRate($order);
                     $price *= $rate['sell'];
                 }
 
+                // Agregar al array de ventas
                 if (isset($productSales[$productId])) {
                     $productSales[$productId]['quantity'] += $quantity;
                     $productSales[$productId]['total_sales'] += $price * $quantity;
@@ -101,19 +98,18 @@ class DashboardRepository
                         'name' => $productModel->name ?? $product['name'] ?? 'Unknown',
                         'price' => $price,
                         'quantity' => $quantity,
-                        'total_sales' => $productPrice * $quantity,
+                        'total_sales' => $price * $quantity, // Aquí estaba el error de `productPrice`
                     ];
-                } else {
-                    $productSales[$productId]['quantity'] += $quantity;
-                    $productSales[$productId]['total_sales'] += $productPrice * $quantity;
                 }
             }
         }
 
+        // Ordenar por cantidad vendida en orden descendente
         usort($productSales, fn($a, $b) => $b['quantity'] <=> $a['quantity']);
 
         return array_slice($productSales, 0, $limit);
     }
+
 
 
 

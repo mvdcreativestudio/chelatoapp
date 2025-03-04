@@ -18,6 +18,9 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
+use App\Helpers\CompanySettingsHelper;
+
 
 class DatacenterRepository
 {
@@ -213,7 +216,9 @@ class DatacenterRepository
     public function physicalIncomes(string $startDate, string $endDate, int $storeId = null): string
     {
         $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
 
+        // Construcción de la consulta base
         $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid')
             ->where('origin', 'physical');
@@ -222,18 +227,19 @@ class DatacenterRepository
             $query->where('store_id', $storeId);
         }
 
-        $totalPaidOrders = $query->sum($includeTaxes ? 'total' : 'subtotal');
+        // Obtener todas las órdenes
+        $orders = $query->get();
 
-        return number_format($totalPaidOrders, 0, ',', '.');
-        $orders = $orderQuery->get();
-
+        // Calcular el total con conversión de moneda
         $totalPaid = 0;
         foreach ($orders as $order) {
-            $totalPaid += $this->convertOrderAmount($order, $order->total);
+            $totalPaid += $this->convertOrderAmount($order, $order->$sumColumn);
         }
 
+        // Formatear el resultado con separadores de miles y sin decimales
         return number_format($totalPaid, 0, ',', '.');
     }
+
 
     /**
      * Calcular los ingresos totales con filtro de fecha y local.
@@ -246,7 +252,9 @@ class DatacenterRepository
     public function totalIncomes(string $startDate, string $endDate, int $storeId = null): string
     {
         $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
 
+        // Construcción de la consulta base
         $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
@@ -254,16 +262,19 @@ class DatacenterRepository
             $query->where('store_id', $storeId);
         }
 
-        $totalPaidOrders = $query->sum($includeTaxes ? 'total' : 'subtotal');
-        $orders = $orderQuery->get();
+        // Obtener las órdenes
+        $orders = $query->get();
 
+        // Calcular total convertido según la moneda de cada orden
         $totalPaid = 0;
         foreach ($orders as $order) {
-            $totalPaid += $this->convertOrderAmount($order, $order->total);
+            $totalPaid += $this->convertOrderAmount($order, $order->$sumColumn);
         }
 
+        // Formatear el resultado con separadores de miles y sin decimales
         return number_format($totalPaid, 0, ',', '.');
     }
+
 
     /**
      * Calcular la media mensual de ventas históricas.
@@ -334,44 +345,41 @@ class DatacenterRepository
      * @param string $endDate
      * @param int|null $storeId
      * @return string
-     */
+    */
     public function averageTicket(string $startDate, string $endDate, int $storeId = null): string
     {
         $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
+        $sumColumn = $includeTaxes ? 'total' : 'subtotal';
 
+        // Construcción de la consulta base
         $query = Order::whereBetween('date', [$startDate, $endDate])
-        $orderQuery = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
 
-        $totalPaidOrders = $query->sum($includeTaxes ? 'total' : 'subtotal');
-        $totalPaidOrdersCount = $query->count();
-        $orders = $orderQuery->get();
+        // Obtener las órdenes
+        $orders = $query->get();
 
+        // Calcular la suma total con conversión de moneda
         $totalPaid = 0;
         foreach ($orders as $order) {
-            $totalPaid += $this->convertOrderAmount($order, $order->total);
+            $totalPaid += $this->convertOrderAmount($order, $order->$sumColumn);
         }
 
-        $count = $orders->count();
+        // Contar la cantidad de pedidos
+        $totalPaidOrdersCount = $orders->count();
 
-        return $totalPaidOrdersCount > 0 ? number_format($totalPaidOrders / $totalPaidOrdersCount, 0, ',', '.') : 'N/A';
+        // Calcular el ticket medio correctamente convertido
+        return $totalPaidOrdersCount > 0
+            ? number_format($totalPaid / $totalPaidOrdersCount, 0, ',', '.')
+            : 'N/A';
     }
 
 
-        if ($count > 0) {
-            return number_format($totalPaid / $count, 0, ',', '.');
-        }
-
-        return 'N/A';
-    }
 
     /**
-     * Obtener datos de ingresos con filtro de fecha y local.
-     *
      * Este método obtiene los datos de ingresos agrupados por año, mes, día o hora dependiendo del período seleccionado.
      *
      * @param string $startDate La fecha de inicio del rango a consultar.
@@ -387,105 +395,81 @@ class DatacenterRepository
         $sumColumn = $includeTaxes ? 'total' : 'subtotal';
 
         // Selección y agrupación dinámica de campos según el periodo
-        // Selección y agrupación de campos según el periodo
         switch ($period) {
             case 'today':
-                $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)'), DB::raw('DAY(date)'), DB::raw('HOUR(time)')];
-                $selectFields = [$sumColumn, 'year', 'month', 'day', 'hour'];
+                $groupBy = ['year', 'month', 'day', 'hour'];
                 $select = [
                     DB::raw("SUM($sumColumn) as total"),
-                $groupBy = ['year', 'month', 'day', 'hour'];
-                $select  = [
-                    'total', 'currency',
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month'),
                     DB::raw('DAY(date) as day'),
                     DB::raw('HOUR(time) as hour'),
+                    'currency'
                 ];
                 break;
 
             case 'week':
             case 'month':
-                $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)'), DB::raw('DAY(date)')];
-                $selectFields = [$sumColumn, 'year', 'month', 'day'];
+                $groupBy = ['year', 'month', 'day'];
                 $select = [
                     DB::raw("SUM($sumColumn) as total"),
-                $groupBy = ['year', 'month', 'day'];
-                $select  = [
-                    'total', 'currency',
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month'),
                     DB::raw('DAY(date) as day'),
+                    'currency'
                 ];
                 break;
 
             case 'year':
             case 'always':
             default:
-                $groupBy = [DB::raw('YEAR(date)'), DB::raw('MONTH(date)')];
-                $selectFields = [$sumColumn, 'year', 'month'];
+                $groupBy = ['year', 'month'];
                 $select = [
                     DB::raw("SUM($sumColumn) as total"),
-                $groupBy = ['year', 'month'];
-                $select  = [
-                    'total', 'currency',
                     DB::raw('YEAR(date) as year'),
                     DB::raw('MONTH(date) as month'),
+                    'currency'
                 ];
                 break;
         }
 
-        // Consulta de ventas del módulo de e-commerce y ventas físicas
-
-        // Consulta sin GROUP_CONCAT para obtener los datos sin concatenar
+        // Construcción de la consulta
         $orderQuery = Order::select($select)
             ->where('payment_status', 'paid')
             ->whereBetween('date', [$startDate, $endDate])
-            ->groupBy($groupBy);
+            ->groupBy($groupBy)
+            ->orderBy('date');
 
         // Aplicar filtro por store_id si se proporciona
-            ->orderBy('date')
-            ->orderBy('time');
-
         if ($storeId) {
             $orderQuery->where('store_id', $storeId);
         }
 
         // Obtener los resultados de la consulta
-        $results = $orderQuery->get();
-        Log::info('Resultados de getIncomeData:', $results->toArray());
-
-        // Agregar cualquier campo faltante al resultado final
-        $filledResults = $this->fillMissingData($results, $startDate, $endDate, $selectFields);
-
-        return new EloquentCollection($filledResults);
-
-        // Obtener datos sin concatenar
         $orders = $orderQuery->get();
+        Log::info('Resultados de getIncomeData:', $orders->toArray());
 
-        // Agrupar en PHP en lugar de MySQL
+        // Agrupación manual en PHP en caso de ser necesario
         $groupedResults = [];
 
         foreach ($orders as $row) {
-            // Crear clave de agrupación dinámica
             $key = implode('-', array_map(fn($field) => $row->{$field}, $groupBy));
 
-            if (! isset($groupedResults[$key])) {
+            if (!isset($groupedResults[$key])) {
                 $groupedResults[$key] = [
                     'amounts' => [],
-                    'year'    => $row->year,
-                    'month'   => $row->month,
+                    'year' => $row->year,
+                    'month' => $row->month,
                 ];
 
-                // Agregar los campos opcionales según el periodo
                 foreach ($groupBy as $field) {
                     $groupedResults[$key][$field] = $row->{$field} ?? null;
                 }
             }
 
-            // Agregar `total|currency` en PHP sin GROUP_CONCAT
+            // Agregar valores en PHP sin GROUP_CONCAT
             $groupedResults[$key]['amounts'][] = [
-                'total'    => floatval($row->total),
+                'total' => floatval($row->total),
                 'currency' => $row->currency,
             ];
         }
@@ -493,16 +477,16 @@ class DatacenterRepository
         // Convertir totales según moneda
         foreach ($groupedResults as &$group) {
             $group['total'] = array_sum(array_map(function ($amount) {
-                $mockOrder             = new Order();
-                $mockOrder->currency   = $amount['currency'];
-                $mockOrder->created_at = now(); // Fallback con fecha actual
+                $mockOrder = new Order();
+                $mockOrder->currency = $amount['currency'];
+                $mockOrder->created_at = now();
                 return $this->convertOrderAmount($mockOrder, $amount['total']);
             }, $group['amounts']));
         }
 
-        // Convertir a EloquentCollection antes de retornar
         return new EloquentCollection(array_values($groupedResults));
     }
+
 
     /**
      * Rellenar los campos faltantes en los resultados de ingresos.
@@ -590,10 +574,10 @@ class DatacenterRepository
             })
             ->get();
 
-        // Pasar de dolar a peso uruguayo.
+        // Convertir de dólares a pesos uruguayos
         $totalPaidOrders = 0;
         foreach ($allOrders as $order) {
-            $totalPaidOrders += $this->convertOrderAmount($order, $order->total);
+            $totalPaidOrders += $this->convertOrderAmount($order, $order->$sumColumn);
         }
 
         $data = [];
@@ -601,23 +585,24 @@ class DatacenterRepository
         foreach ($stores as $store) {
             $storeOrders = $allOrders->where('store_id', $store->id);
 
-            // Pasar de dolar a peso uruguayo.
+            // Convertir de dólares a pesos uruguayos
             $storeTotalOrders = 0;
             foreach ($storeOrders as $order) {
-                $storeTotalOrders += $this->convertOrderAmount($order, $order->total);
+                $storeTotalOrders += $this->convertOrderAmount($order, $order->$sumColumn);
             }
 
-            // Calcular porcentaje.
+            // Calcular porcentaje
             $percent = $totalPaidOrders > 0 ? ($storeTotalOrders / $totalPaidOrders) * 100 : 0;
 
             $data[] = [
                 'store'   => $store->name,
-                'percent' => number_format($percent, 2, ',', '.'),
+                'percent' => number_format($percent, 2, ',', ''), // Ahora muestra solo 2 decimales
             ];
         }
 
         return $data;
     }
+
 
     /**
      * Obtener porcentaje de ventas por local para tabla con filtro de fecha y local.
@@ -935,6 +920,7 @@ class DatacenterRepository
         $includeTaxes = CompanySettingsHelper::shouldIncludeTaxes();
         $sumColumn = $includeTaxes ? 'total' : 'subtotal';
 
+        // Construcción de la consulta base
         $query = Order::whereBetween('date', [$startDate, $endDate])
             ->where('payment_status', 'paid');
 
@@ -942,8 +928,10 @@ class DatacenterRepository
             $query->where('store_id', $storeId);
         }
 
-        $orders = $orderQuery->get();
+        // Obtener las órdenes
+        $orders = $query->get();
 
+        // Inicializar estructura de métodos de pago
         $paymentMethods = [
             'Crédito'  => 0,
             'Débito'   => 0,
@@ -951,30 +939,35 @@ class DatacenterRepository
             'Otro'     => 0,
         ];
 
+        // Recorrer las órdenes y sumar montos por método de pago
         foreach ($orders as $order) {
-            $convertedAmount = $this->convertOrderAmount($order, $order->total);
+            $convertedAmount = $this->convertOrderAmount($order, $order->$sumColumn);
 
-            $method = $order->payment_method;
-            if ($method === 'credit') {
-                $paymentMethods['Crédito'] += $convertedAmount;
-            } elseif ($method === 'debit') {
-                $paymentMethods['Débito'] += $convertedAmount;
-            } elseif ($method === 'cash') {
-                $paymentMethods['Efectivo'] += $convertedAmount;
-            } else {
-                $paymentMethods['Otro'] += $convertedAmount;
+            switch ($order->payment_method) {
+                case 'credit':
+                    $paymentMethods['Crédito'] += $convertedAmount;
+                    break;
+                case 'debit':
+                    $paymentMethods['Débito'] += $convertedAmount;
+                    break;
+                case 'cash':
+                    $paymentMethods['Efectivo'] += $convertedAmount;
+                    break;
+                default:
+                    $paymentMethods['Otro'] += $convertedAmount;
+                    break;
             }
         }
 
+        // Calcular porcentaje de cada método de pago
         $total = array_sum($paymentMethods);
 
         foreach ($paymentMethods as $method => $amount) {
             $paymentMethods[$method] = [
                 'amount'  => $amount,
-                'percent' => $total > 0 ? ($amount / $total) * 100 : 0,
+                'percent' => $total > 0 ? round(($amount / $total) * 100, 2) : 0,
             ];
         }
-
 
         return $paymentMethods;
     }
