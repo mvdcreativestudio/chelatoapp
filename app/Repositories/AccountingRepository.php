@@ -592,24 +592,6 @@ class AccountingRepository
             $totalDescuento += $discountAmount * $adjustedAmount;
             $subtotalConIVA += ($productPriceConIVA - $discountAmount) * $adjustedAmount;
 
-              $cleanedProductName = $this->cleanProductName($product['name']);
-
-              Log::info('Descuentos:', ['PrecioConIVA' => $productPriceConIVA, 'Descuento %' => $discountPercentage, 'Descuento $' => $discountAmount]);
-
-              return [
-                  'NroLinDet' => $index + 1,
-                  'IndFact' => $indFact,
-                  'IndFact' => $indFact,
-                  'NomItem' => $cleanedProductName,
-                  'Cantidad' => $adjustedAmount,
-                  'UniMed' => 'N/A',
-                  'DescuentoPct' => round($discountPercentage, 2),
-                  'DescuentoMonto' => $discountAmount,
-                  'MontoItem' => round(($productPriceConIVA - $discountAmount) * $adjustedAmount, 2),
-                  'PrecioUnitario' => $productPriceConIVA,
-              ];
-          }, $products, array_keys($products));
-        }
             return [
                 'NroLinDet' => $index + 1,
                 'IndFact' => $indFact,
@@ -623,8 +605,7 @@ class AccountingRepository
             ];
         }, $products, array_keys($products));
 
-        // Redondeo final del subtotal
->>>>>>> ad2d3d90 (Configuración de Stores para seleccionar Régimen Impositivo)
+        // Redondear el subtotal final
         $subtotalConIVA = round($subtotalConIVA, 2);
 
         // Construcción del CFE

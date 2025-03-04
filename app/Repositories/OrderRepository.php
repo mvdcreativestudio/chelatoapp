@@ -315,65 +315,91 @@ class OrderRepository
      *
      * @param string $paymentMethod
      * @param Request $request
-     * @param array $products
      * @return array
      */
     private function prepareOrderData(string $paymentMethod, $request): array
     {
+        Log::info('🚀 Iniciando prepareOrderData');
+
         $products = json_decode($request['products'], true);
+        Log::info('📦 Productos recibidos', ['products' => $products]);
+
         $subtotal = 0;
         $totalTax = 0;
         $dollarRate = $this->getDollarRate();
+        Log::info('💰 Cotización del dólar obtenida', ['dollarRate' => $dollarRate]);
 
         // 🔥 Determinar la moneda de la orden
-        $orderCurrency = $request->currency; // Puede ser 'Peso' o 'Dólar'
+        $orderCurrency = $request->currency;
+        Log::info('💵 Moneda de la orden', ['orderCurrency' => $orderCurrency]);
 
         foreach ($products as $item) {
-            // 🔥 Determinar la moneda del producto
-            $productCurrency = $item['currency'] ?? 'Peso'; // Por defecto en Pesos
+            Log::info('🔍 Procesando producto', ['item' => $item]);
 
-            // 🔥 Obtener el precio correcto
+            // 🔥 Determinar la moneda del producto
+            $productCurrency = $item['currency'] ?? 'Peso';
+            Log::info('💱 Moneda del producto', ['productCurrency' => $productCurrency]);
+
+            // 🔥 Obtener el precio correcto (sin IVA)
             if ($orderCurrency === 'Peso') {
-                // Si la orden está en Pesos, convertir productos en Dólares a Pesos
-                $price = ($productCurrency === 'Dólar') ? ($item['price'] * $dollarRate) : ($item['price'] ?? $item['old_price']);
+                $basePrice = ($productCurrency === 'Dólar') ? ($item['base_price'] * $dollarRate) : $item['base_price'];
             } else {
-                // Si la orden está en Dólares, convertir productos en Pesos a Dólares
-                $price = ($productCurrency === 'Peso') ? ($item['price'] / $dollarRate) : ($item['price'] ?? $item['old_price']);
+                $basePrice = ($productCurrency === 'Peso') ? ($item['base_price'] / $dollarRate) : $item['base_price'];
             }
 
             $quantity = $item['quantity'] ?? 1;
+            Log::info('🛒 Cantidad del producto', ['quantity' => $quantity, 'basePrice' => $basePrice]);
 
             // 🔥 Calcular el impuesto del producto
-            $basePrice = ($productCurrency === 'Dólar' && $orderCurrency === 'Peso') ? ($item['base_price'] * $dollarRate) :
-                        (($productCurrency === 'Peso' && $orderCurrency === 'Dólar') ? ($item['base_price'] / $dollarRate) :
-                        $item['base_price']);
-
             $taxRate = isset($item['tax_rate']) ? floatval($item['tax_rate']) : 0;
             $taxAmount = (($basePrice * $taxRate) / 100) * $quantity;
 
-            $subtotal += ($price - $taxAmount) * $quantity;
+            Log::info('📊 Impuestos calculados', [
+                'basePrice' => $basePrice,
+                'taxRate' => $taxRate,
+                'taxAmount' => $taxAmount,
+            ]);
+
+            // ✅ CORRECCIÓN: Ahora el subtotal suma el precio SIN IVA
+            $subtotal += ($basePrice * $quantity);
             $totalTax += $taxAmount;
         }
 
-        Log::info('Request de prepareOrderData', ['request' => $request->all()]);
-        Log::info('Store_Id de prepareOrderData', ['store_id' => $request->store_id]);
+        Log::info('📈 Subtotal y Tax antes del descuento', ['subtotal' => $subtotal, 'totalTax' => $totalTax]);
 
-        // 🔥 Asegurar que store_id sea un entero válido
+        // 🔥 Validar store_id
         $storeId = is_array($request->store_id)
             ? $request->store_id['id']
             : ($request->store_id instanceof Store ? $request->store_id->id : $request->store_id);
 
-        Log::info('Store ID validado para la orden', ['store_id' => $storeId]);
+        Log::info('🏬 Store ID validado', ['store_id' => $storeId]);
 
         // 🔥 Obtener descuento y asegurar que no sea mayor que el subtotal
         $discount = $request->discount ?? 0;
-        $subtotalConDescuento = max($subtotal - $discount, 0); // Evitar negativos
+        Log::info('🎟 Descuento antes de validación', ['discount' => $discount]);
+
+        $subtotalConDescuento = max($subtotal - $discount, 0);
+        Log::info('📉 Subtotal con descuento aplicado', ['subtotalConDescuento' => $subtotalConDescuento]);
 
         // 🔥 Calcular el porcentaje de descuento aplicado
         $discountPercentage = ($subtotal > 0) ? ($subtotalConDescuento / $subtotal) : 1;
+        Log::info('📊 Porcentaje de descuento aplicado', ['discountPercentage' => $discountPercentage]);
 
         // 🔥 Ajustar TAX después del descuento
         $taxConDescuento = $totalTax * $discountPercentage;
+        Log::info('💰 Impuesto ajustado después del descuento', ['taxConDescuento' => $taxConDescuento]);
+
+        // 🔥 Calcular el total final
+        $shippingCost = session('costoEnvio', 0);
+        $total = round($subtotalConDescuento + $taxConDescuento + $shippingCost, 2);
+
+        Log::info('🛒 Total de la orden', [
+            'subtotal' => $subtotal,
+            'tax' => $taxConDescuento,
+            'shipping' => $shippingCost,
+            'discount' => $discount,
+            'total' => $total,
+        ]);
 
         return [
             'date' => now(),
@@ -381,14 +407,13 @@ class OrderRepository
             'origin' => 'physical',
             'store_id' => $storeId,
             'construction_site' => $request->construction_site,
-            'construction_site' => $request->construction_site,
-            'subtotal' => round($subtotal, 2),
+            'subtotal' => round($subtotal, 2), // ✅ Ahora está sin impuestos
             'tax' => round($taxConDescuento, 2),
-            'shipping' => session('costoEnvio', 0),
+            'shipping' => $shippingCost,
             'discount' => round($discount, 2),
             'coupon_id' => $request->coupon_id,
             'coupon_amount' => $request->coupon_amount,
-            'total' => round($subtotal + $totalTax + session('costoEnvio', 0) - $request->discount, 2),
+            'total' => $total,
             'currency' => $orderCurrency,
             'payment_status' => $request->payment_status ?? 'pending',
             'shipping_status' => $request->shipping_status ?? 'delivered',
@@ -399,6 +424,8 @@ class OrderRepository
             'cash_register_log_id' => $request->cash_register_log_id,
         ];
     }
+
+
 
 
 
