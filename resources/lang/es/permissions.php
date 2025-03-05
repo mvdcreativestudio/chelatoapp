@@ -14,19 +14,29 @@ return [
 
     // Stock y Materias Primas
     'access_raw-materials' => 'Acceder a Materias Primas',
+    'access_raw-materials-edit' => 'Editar Materias Primas',
+    'access_formulas' => 'Acceder a Fórmulas',
+    'view_all_formulas' => 'Ver todas las Fórmulas',
+    'access_batches' => 'Acceder a Lotes',
+    'view_all_batches' => 'Ver todos los Lotes',
+    'access_bulk-productions' => 'Acceder a Producciones en Masa',
+    'view_all_bulk-productions' => 'Ver todas las Producciones en Masa',
+    'access_packagings' => 'Acceder a Envasado',
     'view_all_raw-materials' => 'Ver todas las Materias Primas',
     'access_suppliers' => 'Acceder a Proveedores',
     'view_all_suppliers' => 'Ver todos los Proveedores',
     'access_supplier-orders' => 'Acceder a Órdenes de Compra',
     'view_all_supplier-orders' => 'Ver todas las Órdenes de Compra',
     'access_stock' => 'Acceder a Stock',
-
+    'access_purchase-orders' => 'Acceder a Órdenes de Compra',
+    'view_all_purchase-orders' => 'Ver todas las Órdenes de Compra',
     // Contabilidad
     'access_accounting' => 'Acceder a Contabilidad',
     'access_invoices' => 'Acceder a Facturas',
     'access_receipts' => 'Acceder a Recibos',
     'access_accounting-settings' => 'Acceder a Configuración de Contabilidad',
     'access_invoice-settings' => 'Acceder a Configuración de Facturas',
+    'view_all_accounting' => 'Ver datos globales de Contabilidad',
     'access_update_all_invoices' => 'Actualizar todos los CFE',
     'access_received-documents' => 'Acceder a Documentos Recibidos',
     'access_entries' => 'Acceder a Asientos',
@@ -35,6 +45,9 @@ return [
     'access_entry-details' => 'Acceder a Detalles de Asientos',
     'access_entry-types' => 'Acceder a Tipos de Asientos',
     'access_entry-accounts' => 'Acceder a Cuentas Contables',
+    'access_currencies' => 'Acceder a Monedas',
+    'view_all_currencies' => 'Ver todas las Monedas',
+    'access_delete_currencies' => 'Eliminar Monedas',
     'view_all_entry-types' => 'Ver todos los Tipos de Asientos',
     'access_delete_entry-types' => 'Eliminar Tipos de Asientos',
     'view_all_entry-accounts' => 'Ver todas las Cuentas Contables',
@@ -57,6 +70,8 @@ return [
     'view_all_products' => 'Ver todos los Productos',
     'view_all_product-categories' => 'Ver todas las Categorías de Productos',
     'access_sales-commerce' => 'Acceder a Ventas de E-Commerce',
+    'access_budgets' => 'Acceder a Presupuestos',
+    'view_all_budgets' => 'Ver todos los Presupuestos',
 
     // Cuentas Corrientes
     'access_current-accounts' => 'Acceder a Cuentas Corrientes',
@@ -117,6 +132,8 @@ return [
     'view_all_clients' => 'Ver todos los Clientes',
     'access_client-sensitive-data' => 'Acceder a Datos Sensibles de Clientes (RUT o CI)',
     'access_crm' => 'Acceder a CRM',
+    'access_leads' => 'Acceder a Leads',
+    'view_all_leads' => 'Ver todos los Leads',
 
     // Marketing y Omnicanalidad
     'access_marketing' => 'Acceder a Marketing',
@@ -163,6 +180,8 @@ return [
     // Turnos
     'access_appointments' => 'Acceder a Turnos',
     'view_all_appointments' => 'Ver todos los Turnos',
+    'access_event-configurations' => 'Acceder a Configuraciones de Eventos',
+    'view_all_event-configurations' => 'Ver todas las Configuraciones de Eventos',
 
     // Suscripciones
     'access_subscriptions' => 'Acceder a Suscripciones',
