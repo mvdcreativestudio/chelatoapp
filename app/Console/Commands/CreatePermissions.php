@@ -118,7 +118,7 @@ class CreatePermissions extends Command
                         'entries',
                         'invoice-settings',
                     ],
-                    'view_all' => false,
+                    'view_all' => true,
                 ],
                 [
                     'slug' => 'clients',

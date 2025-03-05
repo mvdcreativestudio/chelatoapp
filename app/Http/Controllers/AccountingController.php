@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Yajra\DataTables\DataTables;
 use App\Models\Budget;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class AccountingController extends Controller
 {
@@ -434,7 +433,7 @@ class AccountingController extends Controller
 
             $budget = Budget::with(['client', 'lead', 'store', 'items.product'])
                 ->findOrFail($request->budget_id);
-            
+
             $companySettings = \App\Models\CompanySettings::first();
 
             // Generar PDF
@@ -477,13 +476,6 @@ class AccountingController extends Controller
         }
     }
 
-
-    // Add this helper method
-    private function generateBudgetPdf($budgetId)
-            Log::error($e->getMessage());
-            return redirect()->back()->with('error', 'Error al exportar los asientos a Excel. Por favor, intente nuevamente.');
-        }
-    }
 
 
     /**
@@ -609,12 +601,6 @@ class AccountingController extends Controller
         $tempPdfPath = tempnam(sys_get_temp_dir(), 'pdf_');
         file_put_contents($tempPdfPath, $factura);
         return response()->download($tempPdfPath, 'factura.pdf');
-    }
-        $budget = Budget::findOrFail($budgetId);
-        $companySettings = \App\Models\CompanySettings::first();
-        
-        $pdf = PDF::loadView('budgets.pdf', compact('budget', 'companySettings'));
-        return $pdf->output();
     }
 
 }
