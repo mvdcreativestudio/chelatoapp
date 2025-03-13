@@ -684,6 +684,9 @@ Route::get('/checkout/pending/{order:uuid}', [CheckoutController::class, 'pendin
 Route::get('/checkout/failure/{order:uuid}', [CheckoutController::class, 'failure'])->name('checkout.failure'); // Pago Fallido
 Route::post('/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('apply.coupon'); // Aplicar Cupón
 
+Route::get('/invoices/print80mm/{id}', [AccountingController::class, 'getCfePdf80mm'])->name('invoices.print80mm');
+
+
 // Rutas de autenticación de Empresa Abierta
 Route::middleware(['check.store.open'])->group(function () {
     Route::post('/cart/add/{productId}', [CartController::class, 'addToCart'])->name('cart.add');

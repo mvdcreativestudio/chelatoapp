@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Crypt;
 use App\Models\Store;
 use App\Models\Client;
 
+
+
 class AccountingRepository
 {
     /**
@@ -1001,6 +1003,58 @@ class AccountingRepository
             throw new \Exception('Error al obtener el PDF del CFE: ' . $e->getMessage());
         }
     }
+
+    public function getCfePdf80mm($cfeId)
+{
+    $cfe = CFE::findOrFail($cfeId); // ID local
+    $store = $cfe->order->store;
+    $rut = $store->rut;
+    $branchOffice = $store->pymo_branch_office;
+    $pymoCfeId = $cfe->cfeId;
+
+    $cookies = $this->login($store);
+
+    if (!$cookies) {
+        Log::error('No se pudo iniciar sesión para obtener el CFE.');
+        throw new \Exception('No se pudo iniciar sesión para obtener el CFE.');
+    }
+
+    if (!$store || !$rut || !$branchOffice) {
+        Log::error('Datos incompletos del Store para obtener el CFE.');
+        throw new \Exception('Datos incompletos del Store para obtener el CFE.');
+    }
+
+    $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') .
+        '/companies/' . $rut . '/sentCfes/?id=' . $pymoCfeId;
+
+    try {
+        $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
+            ->asJson()
+            ->get($url);
+
+        if (!$response->successful()) {
+            Log::error('Error al obtener datos del CFE 80mm: ' . $response->body());
+            throw new \Exception('No se pudo obtener el CFE desde PyMo.');
+        }
+
+        $data = $response->json()['payload']['companySentCfes'][0] ?? null;
+
+        if (!$data) {
+            throw new \Exception("No se encontró información del CFE en PyMo.");
+        }
+
+        // Logueamos el JSON completo para inspección
+        Log::info('CFE 80mm Data:', $data);
+
+        return view('invoices.pdf.cfe_80mm', ['cfe' => $data]);
+
+    } catch (\Exception $e) {
+        Log::error('Excepción al obtener CFE 80mm: ' . $e->getMessage());
+        throw new \Exception('Error al obtener el CFE 80mm: ' . $e->getMessage());
+    }
+}
+
+
 
     /**
      * Obtiene los documentos fiscales recibidos de una empresa.

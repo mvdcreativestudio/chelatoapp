@@ -174,6 +174,21 @@ class AccountingController extends Controller
     }
 
     /**
+     * Descarga el PDF de un CFE en 80mm
+     *
+     * @param $cfeId
+     * @return mixed
+     */
+    public function getCfePdf80mm($cfeId)
+    {
+        try {
+            return $this->accountingRepository->getCfePdf80mm($cfeId);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
+
+    /**
      * Maneja la emisión de un recibo sobre una factura o eTicket existente.
      *
      * @param int $invoiceId
