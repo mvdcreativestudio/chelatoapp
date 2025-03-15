@@ -4,23 +4,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     storeCards.forEach(card => {
       const storeId = card.dataset.storeId;
+      const isEnabled = card.dataset.invoicesEnabled === 'true';
+
       const loader = card.querySelector('.pymo-loader');
       const dataDiv = card.querySelector('.pymo-data');
       const errorDiv = card.querySelector('.pymo-error');
       const tableBody = card.querySelector('.caes-table tbody');
       const caesContainer = card.querySelector('.caes-container');
 
-      loader.style.display = 'block'; // Mostrar el loader
+      if (!isEnabled) {
+        loader.style.display = 'none'; // Skip si no está habilitada
+        return;
+      }
+
+      loader.style.display = 'block';
       dataDiv.style.display = 'none';
       errorDiv.style.display = 'none';
       caesContainer.style.display = 'none';
 
-      // Llamadas a ambas funciones (datos de la tienda y CAES)
-      const storePromise = fetchStoreData(storeId, dataDiv, errorDiv);
-      const caesPromise = fetchAvailableCaes(storeId, tableBody, caesContainer);
-
-      // Ocultar el loader cuando ambas promesas se completen
-      Promise.all([storePromise, caesPromise])
+      fetchStoreData(storeId, dataDiv, errorDiv)
+        .then(success => {
+          if (success) {
+            return fetchAvailableCaes(storeId, tableBody, caesContainer);
+          } else {
+            console.warn(`❌ Tienda ${storeId} no tiene datos válidos. Se omite carga de CAEs.`);
+            return Promise.resolve(); // Saltear CAEs
+          }
+        })
+        .catch(error => {
+          console.error(`Error general en tienda ${storeId}:`, error);
+        })
         .finally(() => {
           loader.style.display = 'none';
         });
@@ -47,18 +60,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 office.number === (companyInfo.selectedBranch ? companyInfo.selectedBranch.number : ''),
             )?.fiscalAddress || 'N/A';
 
-          dataDiv.style.display = 'block'; // Mostrar la información de la tienda
+          dataDiv.style.display = 'block';
+          return true;
         } else {
-          errorDiv.textContent = data.message || 'Error desconocido';
+          errorDiv.textContent = data.message || 'Esta sucursal no está conectada a Facturacion Electrónica';
           errorDiv.style.display = 'block';
+          return false;
         }
       })
       .catch(error => {
         console.error('Error al cargar la conexión:', error);
         errorDiv.textContent = 'Error al cargar la información';
         errorDiv.style.display = 'block';
+        return false;
       });
   }
+
 
   function fetchAvailableCaes(storeId, tableBody, caesContainer) {
     const caeTypeMapping = {
@@ -148,6 +165,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
     caesContainer.style.display = 'block'; // Mostrar la tabla
   }
+
+  // Cambio de formato de impresión - print_settings
+  const selects = document.querySelectorAll(".print-setting-select");
+
+  selects.forEach(select => {
+    select.addEventListener("change", function () {
+        const storeId = this.dataset.storeId;
+        const printSetting = this.value;
+
+        fetch(`print-settings/${storeId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json", // 👈 esto es importante
+                "X-CSRF-TOKEN": window.csrfToken,
+            },
+            body: JSON.stringify({
+                print_settings: printSetting,
+            }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: "✅ Guardado",
+                        text: "El formato de impresión fue actualizado correctamente.",
+                        icon: "success",
+                        timer: 1800,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: "top-end"
+                    });
+                } else {
+                    Swal.fire({
+                        title: "❌ Error",
+                        text: data.message || "No se pudo actualizar el formato.",
+                        icon: "error",
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error al guardar configuración:", error);
+                Swal.fire({
+                    title: "❌ Error",
+                    text: "Hubo un problema al conectar con el servidor.",
+                    icon: "error",
+                });
+            });
+    });
+});
+
+
 
   loadPymoConnections();
 });

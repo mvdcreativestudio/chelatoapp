@@ -1004,55 +1004,68 @@ class AccountingRepository
         }
     }
 
-    public function getCfePdf80mm($cfeId)
-{
-    $cfe = CFE::findOrFail($cfeId); // ID local
-    $store = $cfe->order->store;
-    $rut = $store->rut;
-    $branchOffice = $store->pymo_branch_office;
-    $pymoCfeId = $cfe->cfeId;
+    public function printCfePdf($cfeId)
+    {
+        $cfe = CFE::findOrFail($cfeId);
+        $store = $cfe->order->store;
 
-    $cookies = $this->login($store);
+        // Obtener el QR del CFE
+        $qrUrl = $cfe->qrUrl ?? null;
 
-    if (!$cookies) {
-        Log::error('No se pudo iniciar sesión para obtener el CFE.');
-        throw new \Exception('No se pudo iniciar sesión para obtener el CFE.');
-    }
-
-    if (!$store || !$rut || !$branchOffice) {
-        Log::error('Datos incompletos del Store para obtener el CFE.');
-        throw new \Exception('Datos incompletos del Store para obtener el CFE.');
-    }
-
-    $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') .
-        '/companies/' . $rut . '/sentCfes/?id=' . $pymoCfeId;
-
-    try {
-        $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
-            ->asJson()
-            ->get($url);
-
-        if (!$response->successful()) {
-            Log::error('Error al obtener datos del CFE 80mm: ' . $response->body());
-            throw new \Exception('No se pudo obtener el CFE desde PyMo.');
+        // Validación base
+        if (!$store || !$store->rut || !$store->pymo_branch_office) {
+            Log::error('Datos incompletos del Store para imprimir el CFE.');
+            throw new \Exception('Datos incompletos del Store para imprimir el CFE.');
         }
 
-        $data = $response->json()['payload']['companySentCfes'][0] ?? null;
+        // Elegimos el modo según configuración
+        $format = $store->print_settings ?? '80mm';
 
-        if (!$data) {
-            throw new \Exception("No se encontró información del CFE en PyMo.");
+        if ($format === 'a4') {
+            // Redirige internamente al método getCfePdf()
+            return $this->getCfePdf($cfeId);
         }
 
-        // Logueamos el JSON completo para inspección
-        Log::info('CFE 80mm Data:', $data);
+        // === 80mm ===
+        $cookies = $this->login($store);
 
-        return view('invoices.pdf.cfe_80mm', ['cfe' => $data]);
+        if (!$cookies) {
+            Log::error('No se pudo iniciar sesión para obtener el CFE.');
+            throw new \Exception('No se pudo iniciar sesión para obtener el CFE.');
+        }
 
-    } catch (\Exception $e) {
-        Log::error('Excepción al obtener CFE 80mm: ' . $e->getMessage());
-        throw new \Exception('Error al obtener el CFE 80mm: ' . $e->getMessage());
+        $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') .
+            '/companies/' . $store->rut . '/sentCfes/?id=' . $cfe->cfeId;
+
+        try {
+            $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
+                ->asJson()
+                ->get($url);
+
+            if (!$response->successful()) {
+                Log::error('Error al obtener datos del CFE 80mm: ' . $response->body());
+                throw new \Exception('No se pudo obtener el CFE desde PyMo.');
+            }
+
+            $data = $response->json()['payload']['companySentCfes'][0] ?? null;
+
+            if (!$data) {
+                throw new \Exception("No se encontró información del CFE en PyMo.");
+            }
+
+            Log::info('CFE 80mm Data:', $data);
+
+            $logo = $this->getCompanyLogo($store->id);
+
+
+            return view('invoices.pdf.cfe_80mm', ['cfe' => $data, 'qrUrl' => $qrUrl, 'logo' => $logo]);
+
+        } catch (\Exception $e) {
+            Log::error('Excepción al obtener CFE 80mm: ' . $e->getMessage());
+            throw new \Exception('Error al obtener el CFE 80mm: ' . $e->getMessage());
+        }
     }
-}
+
 
 
 

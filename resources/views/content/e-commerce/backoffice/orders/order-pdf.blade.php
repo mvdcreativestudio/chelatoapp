@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalles del pedido</title>
+    <title>Detalles de la venta</title>
     <style>
         body {
             font-family: 'Lato', sans-serif;
@@ -72,10 +72,10 @@
             <img src="{{ $companySettings->logo_black }}" alt="{{ $companySettings->name }}">
           @endif
         </div>
-        <h1 class="title">Nuevo pedido - #{{ $order->id }}</h1>
+        <h1 class="title">Venta #{{ $order->id }}</h1>
         <div class="order-meta">
-            <p><strong>Fecha del pedido:</strong> {{ $order->date }}</p>
-            <p><strong>Hora del pedido:</strong> {{ $order->time }}</p>
+            <p><strong>Fecha:</strong> {{ $order->date }}</p>
+            <p><strong>Hora:</strong> {{ $order->time }}</p>
             <p><strong>Empresa:</strong> {{ $order->store->name }}</p>
             <p><strong>Método de pago:</strong>
               @if($order->payment_method === 'card' || $order->payment_method === 'qr_attended' || $order->payment_method === 'qr_dynamic')
@@ -120,7 +120,7 @@
             </p>
         </div>
         <div class="order-details">
-            <h2>Detalles del pedido</h2>
+            <h2>Detalles de la venta</h2>
             <table>
                 <thead>
                     <tr>
@@ -145,12 +145,14 @@
             <p><span>Envío:</span> ${{ $order->shipping }}</p>
             <p><span>Total:</span> ${{ $order->total }}</p>
         </div>
+        @if($order->client !== null)
         <div class="shipping-details">
             <h2>Datos del cliente</h2>
             <p><strong>Nombre:</strong> {{ $order->client->name }} {{ $order->client->lastname }}</p>
             <p><strong>Dirección:</strong> {{ $order->client->address }}</p>
             <p><strong>Teléfono:</strong> {{ $order->client->phone }}</p>
         </div>
+        @endif
     </div>
 </body>
 </html>

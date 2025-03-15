@@ -31,7 +31,8 @@ class Store extends Model
         'pymo_branch_office',
         'accepts_peya_envios',
         'peya_envios_key',
-        'pos_provider_id'
+        'pos_provider_id',
+        'print_settings'
     ];
 
     /**

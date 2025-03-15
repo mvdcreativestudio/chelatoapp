@@ -143,34 +143,65 @@ $changeTypeTranslations = [
     <p class="text-body mb-1">{{ date('d/m/Y', strtotime($order->date)) }} - {{ $order->time }}</p>
 
   </div>
-  <div class="d-flex align-content-center flex-wrap gap-2">
-    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=print" target="_blank"
-      onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=800,height=600').print(); return false;">
-      <button class="btn btn-sm btn-primary">Imprimir</button>
-    </a>
-    @if(!$order->is_billed && $store->invoices_enabled)
-    <button type="button" class="btn btn-sm btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
-      Emitir Factura
-    </button>
-    @endif
-    @if($order->is_billed && isset($invoice))
-    <a href="{{ route('invoices.download', ['id' => $invoice->id]) }}" class="btn btn-sm btn-label-info">
-      PDF Factura
-    </a>
-
-    {{-- send email --}}
-    <div class="d-inline-block" @if(!$isStoreConfigEmailEnabled) data-bs-toggle="tooltip" data-bs-offset="0,4"
-      data-bs-placement="left" data-bs-html="true" title="Debe asociarse a una tienda y tener configurado el envio de correos" @endif>
-      <button type="button" class="btn btn-sm d-flex align-items-center animate__animated animate__pulse
-            @if(!$isStoreConfigEmailEnabled) btn-danger @else btn-label-info @endif" data-bs-toggle="modal"
-        data-bs-target="#sendEmailModal" @if(!$isStoreConfigEmailEnabled) disabled @endif>
-        <i class="bx bx-envelope fs-5"></i>Enviar Factura por Correo
+  <div class="d-flex flex-column flex-md-row justify-content-start gap-3">
+    <!-- Grupo de descarga -->
+    <div class="btn-group">
+      <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        Descargar
       </button>
+      <ul class="dropdown-menu">
+        @if($order->is_billed && isset($invoice))
+          <li>
+            <a class="dropdown-item" href="{{ route('invoices.download', ['id' => $invoice->id]) }}">
+              Factura A4
+            </a>
+          </li>
+        @endif
+        <li>
+          <a class="dropdown-item" href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download">
+            PDF Venta
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Grupo de impresión -->
+    @if($order->is_billed && isset($invoice))
+    <div class="btn-group">
+      <button type="button" class="btn btn-sm btn-outline-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        Imprimir
+      </button>
+      <ul class="dropdown-menu">
+        @if($order->is_billed && isset($invoice))
+          <li>
+            <a class="dropdown-item" href="{{ route('invoices.printCfePdf', ['id' => $invoice->id]) }}?action=print" target="_blank"
+               onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=800,height=600').print(); return false;">
+              Factura 80mm
+            </a>
+          </li>
+        @endif
+      </ul>
     </div>
     @endif
-    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download"
-      class="btn btn-sm btn-label-primary">PDF Venta
-    </a>
+    
+    <!-- Botón Emitir Factura -->
+    @if(!$order->is_billed && $store->invoices_enabled)
+      <button type="button" class="btn btn-sm btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
+        Emitir Factura
+      </button>
+    @endif
+
+    <!-- Botón Enviar por Correo -->
+    @if($order->is_billed && isset($invoice))
+      <div class="d-inline-block" @if(!$isStoreConfigEmailEnabled) data-bs-toggle="tooltip" data-bs-offset="0,4"
+        data-bs-placement="left" data-bs-html="true" title="Debe asociarse a una tienda y tener configurado el envio de correos" @endif>
+        <button type="button" class="btn btn-sm d-flex align-items-center animate__animated animate__pulse
+          @if(!$isStoreConfigEmailEnabled) btn-danger @else btn-label-info @endif" data-bs-toggle="modal"
+          data-bs-target="#sendEmailModal" @if(!$isStoreConfigEmailEnabled) disabled @endif>
+          <i class="bx bx-envelope fs-5"></i>Enviar Factura por Correo
+        </button>
+      </div>
+    @endif
 
     <!-- Botón para reversar la transacción -->
     @if($order->payment_method === 'debit' || $order->payment_method === 'credit')

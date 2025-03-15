@@ -14,7 +14,6 @@
             margin: auto;
         }
         .container {
-            border: 1px solid #000;
             padding: 10px;
         }
         .header, .footer {
@@ -49,14 +48,13 @@
             border-collapse: collapse;
         }
         .table thead th {
-            font-size: 10px;
+            font-size: 13px;
             border-bottom: 1px solid #000;
-            text-align: center;
+            text-align: left;
         }
         .table td {
-            font-size: 10px;
-            border-bottom: 1px solid #000;
-            text-align: right;
+            font-size: 14px;
+            text-align: left;
             padding: 2px;
         }
         .table td:first-child {
@@ -69,7 +67,7 @@
         .table td:nth-child(5) { width: 21%; }
         .totals {
             text-align: right;
-            font-size: 14px;
+            font-size: 13px;
             margin-top: 5px;
         }
         .totals p {
@@ -77,6 +75,13 @@
             margin-top: 5px;
             padding: 1px 0;
         }
+
+        img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
     </style>
 </head>
 
@@ -94,6 +99,10 @@
 <body>
 <div class="container">
     <div class="header">
+        @if(isset($logo))
+        <img src="{{ $logo }}" alt="Logo Empresa" style="max-height: 80px; margin-bottom: 10px;">
+        @endif
+
         <h3>{{ $datos['Encabezado']['Emisor']['RznSoc'] ?? '' }}</h3>
         <p>{{ $datos['Encabezado']['Emisor']['DomFiscal'] ?? '' }}</p>
         <p>Tel: {{ $datos['Encabezado']['Emisor']['Telefono'] ?? '' }}</p>
@@ -207,6 +216,16 @@
             <p style="background-color: #eee; margin: 0; padding: 5px; font-weight: bold; text-align: center;">
                 DATOS DE FACTURA ELECTRÓNICA
             </p>
+            @if(isset($qrUrl))
+              <div style="text-align: center; margin-top: 15px;">
+                <img
+                  src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data={{ urlencode($qrUrl) }}"
+                  alt="QR de verificación"
+                  style="margin-top: 5px;"
+                >
+              </div>
+            @endif
+
             <p style="margin: 2px 0;">Res. Nro.: 001/2018</p>
             <p style="margin: 2px 0;">Puede verificar el comprobante en:</p>
             <p style="font-size: 11px; word-wrap: break-word;">
@@ -238,6 +257,10 @@
             <p style="margin: 0; padding: 5px; font-size: 12px; text-align: center;">
                 {{ $cfe['adenda'] ?? '—' }}
             </p>
+        </div>
+
+        <div>
+          <p>Venta generada a través de <strong>sumeria.com.uy</strong></p>
         </div>
     </div>
 </div>

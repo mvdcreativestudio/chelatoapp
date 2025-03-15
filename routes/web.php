@@ -469,6 +469,7 @@ Route::prefix('admin')->middleware([
     Route::get('invoices', [AccountingController::class, 'getSentCfes'])->name('invoices');
     Route::post('invoices/{invoice}/emit-note', [AccountingController::class, 'emitNote'])->name('invoices.emitNote');
     Route::get('invoices/download/{id}', [AccountingController::class, 'downloadCfePdf'])->name('invoices.download');
+    Route::get('/invoices/print80mm/{id}', [AccountingController::class, 'printCfePdf'])->name('invoices.printCfePdf');
     Route::post('invoices/{invoice}/emit-receipt', [AccountingController::class, 'emitReceipt'])->name('invoices.emitReceipt');
     Route::post('invoices/update-cfes', [AccountingController::class, 'updateAllCfesStatus'])->name('invoices.updateCfes');
     Route::post('invoices/update-all-cfes', [AccountingController::class, 'updateAllCfesStatusForAllStores'])->name('invoices.updateAllStoresCfes');
@@ -482,6 +483,8 @@ Route::prefix('admin')->middleware([
     Route::post('/accounting/upload-logo', [AccountingController::class, 'uploadLogo'])->name('accounting.uploadLogo');
     Route::get('/accounting/pymo-connection/{store}/caes/{type}', [AccountingController::class, 'fetchActiveCaesByType'])->name('pymo.fetchActiveCaesByType');
     Route::post('/accounting/pymo-connection/{rut}/caes/{type}/upload', [AccountingController::class, 'uploadCae']);
+    Route::post('/accounting/print-settings/{store}', [AccountingController::class, 'updatePrintSettings']);
+
 
 
 
@@ -684,7 +687,6 @@ Route::get('/checkout/pending/{order:uuid}', [CheckoutController::class, 'pendin
 Route::get('/checkout/failure/{order:uuid}', [CheckoutController::class, 'failure'])->name('checkout.failure'); // Pago Fallido
 Route::post('/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('apply.coupon'); // Aplicar Cupón
 
-Route::get('/invoices/print80mm/{id}', [AccountingController::class, 'getCfePdf80mm'])->name('invoices.print80mm');
 
 
 // Rutas de autenticación de Empresa Abierta

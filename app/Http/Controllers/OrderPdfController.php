@@ -11,9 +11,13 @@ class OrderPdfController extends Controller
 {
     public function generatePdf(Request $request, Order $order)
     {
-        $products = json_decode($order->products, true);
-        $clientOrdersCount = Order::where('client_id', $order->client->id)->count();
-        $companySettings = CompanySettings::first();
+        $products = $order->products;
+        $clientOrdersCount = $order->client
+        ? Order::where('client_id', $order->client->id)->count()
+        : 0;
+
+        $clientName = $order->client->name ?? 'Consumidor Final';
+            $companySettings = CompanySettings::first();
 
         $data = [
             'order' => $order,

@@ -58,8 +58,8 @@
   </div>
 
     <!-- Configuración de sucursales -->
-    @foreach ($stores as $store)
-        <div class="col-12 col-md-6 col-lg-4 mb-4 store-card" data-store-id="{{ $store->id }}">
+    @foreach ($stores->where('invoices_enabled', true) as $store)
+      <div class="col-12 col-md-6 col-lg-4 mb-4 store-card" data-store-id="{{ $store->id }}" data-invoices-enabled="{{ $store->invoices_enabled ? 'true' : 'false' }}">
             <div class="card border-0 shadow-sm h-100 d-flex flex-column justify-content-between">
                 <div class="card-body flex-grow-1 d-flex flex-column">
                     <h5 class="card-title text-primary fw-bold mb-3">Sucursal: {{ $store->name }}</h5>
@@ -116,10 +116,46 @@
                   Subir CAEs
                   </button>
                 </div>
-                @endif
+                <div class="col-12 text-left p-4 mb-3">
+                  <label for="print-setting-{{ $store->id }}" class="form-label fw-semibold">Formato de impresión</label>
+                  <select
+                      class="form-select form-select-sm w-auto d-inline print-setting-select"
+                      id="print-setting-{{ $store->id }}"
+                      data-store-id="{{ $store->id }}"
+                      name="print_settings"
+                  >
+                      @foreach (['80mm', 'a4'] as $format)
+                          <option value="{{ $format }}" {{ $store->print_settings === $format ? 'selected' : '' }}>
+                              {{ strtoupper($format) }}
+                          </option>
+                      @endforeach
+                  </select>
+                </div>
+              @endif
             </div>
         </div>
     @endforeach
+    @foreach ($stores->where('invoices_enabled', false) as $store)
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100 d-flex flex-column justify-content-between text-center p-4">
+            <div class="card-body flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+                <h5 class="card-title text-primary fw-bold mb-3">
+                    Sucursal: {{ $store->name }}
+                </h5>
+                <div class="text-danger mb-3">
+                    <i class="bx bx-error-circle fs-1 mb-2"></i>
+                    <p class="mb-0 fw-semibold">Esta tienda no tiene activada la Facturación Electrónica.</p>
+                </div>
+            </div>
+            <div>
+                <a href="{{ route('integrations.index') }}" class="btn btn-outline-primary btn-sm">
+                    Vincular Facturación
+                </a>
+            </div>
+        </div>
+    </div>
+    @endforeach
+
 </div>
 
 <!-- Modal para cargar CAEs -->
@@ -131,6 +167,38 @@
     border-radius: 8px;
     overflow: hidden;
 }
+
+/* Toast más visible y animado */
+.swal2-container.swal2-top-end {
+  z-index: 99999 !important;
+  padding: 1rem;
+}
+
+.swal2-toast {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 8px !important;
+  animation: slideInRight 0.4s ease forwards;
+  background-color: #ffffff;
+  color: #333;
+}
+
+/* Animación tipo push desde la derecha */
+@keyframes slideInRight {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+
 
 .card {
     transition: box-shadow 0.3s ease-in-out;

@@ -108,8 +108,33 @@ class AccountingController extends Controller
             $stores = Store::where('id', Auth::user()->store_id)->get(); // Solo la tienda asignada
         }
 
-        return view('content.accounting.settings', compact('stores'));
+        $printSettings = $stores->map(function ($store) {
+            return [
+                'store_id' => $store->id,
+                'store_name' => $store->name,
+                'print_settings' => $store->print_settings
+            ];
+        });
+
+        return view('content.accounting.settings', compact('stores', 'printSettings'));
     }
+
+    public function updatePrintSettings(int $store): JsonResponse
+    {
+        $store = Store::find($store);
+
+        if (!$store) {
+            return response()->json(['success' => false, 'message' => 'Tienda no encontrada'], 404);
+        }
+
+        $store->update([
+            'print_settings' => request('print_settings')
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+
 
 
     /**
@@ -179,10 +204,10 @@ class AccountingController extends Controller
      * @param $cfeId
      * @return mixed
      */
-    public function getCfePdf80mm($cfeId)
+    public function printCfePdf($cfeId)
     {
         try {
-            return $this->accountingRepository->getCfePdf80mm($cfeId);
+            return $this->accountingRepository->printCfePdf($cfeId);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
