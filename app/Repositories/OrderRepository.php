@@ -822,6 +822,7 @@ class OrderRepository
             'orders.payment_method',
             'orders.shipping_method',
             'orders.shipping_tracking',
+            'orders.cash_register_log_id',
             DB::raw("
                 CASE
                     WHEN clients.type = 'company' THEN COALESCE(clients.company_name, 'Empresa sin nombre')
