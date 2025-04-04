@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const supplierListContainer = $('.supplier-list-container');
 
   $('[place-id="buttonCreate"]').html(`
-    <a href="suppliers/create" class="btn btn-primary d-flex align-items-center gap-1">
+    <a href="suppliers/create" class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1 w-100">
       <i class="bx bx-plus"></i>
       <span>Nuevo Proveedor</span>
     </a>

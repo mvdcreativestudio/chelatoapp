@@ -146,7 +146,11 @@ Route::prefix('admin')->middleware([
     // Exportaciones
     Route::get('/products/export', [ProductController::class, 'exportToExcel'])->name('products.export');
     Route::get('/products/download-template', [ProductController::class, 'downloadTemplate'])->name('products.download-template');
-
+    Route::get('/clients/download-template', [ClientController::class, 'downloadTemplate'])->name('clients.download-template');
+    Route::post('/clients/import', [ClientController::class, 'import'])->name('clients.import');
+    Route::get('/suppliers/download-template', [SupplierController::class, 'downloadTemplate'])->name('suppliers.download-template');
+    Route::post('/suppliers/import', [SupplierController::class, 'import'])->name('suppliers.import');
+    
     // Importaciones Bulk
     Route::post('/admin/products/import', [ProductController::class, 'import'])->name('products.import');
 
