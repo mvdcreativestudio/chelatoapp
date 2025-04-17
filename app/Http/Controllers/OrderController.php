@@ -72,9 +72,13 @@ class OrderController extends Controller
      *
      * @return View
      */
-    public function index(): View
+    public function index(): View|JsonResponse
     {
         $orders = $this->orderRepository->getAllOrders();
+        $incomes = $this->orderRepository->getAllIncomes();
+
+
+        $orders = array_merge($orders, $incomes);
         return view('content.e-commerce.backoffice.orders.orders', $orders);
     }
 
@@ -94,7 +98,7 @@ class OrderController extends Controller
      * @param  StoreOrderRequest  $request
      * @return RedirectResponse
      */
-    public function store(StoreOrderRequest $request): JsonResponse
+    public function store(StoreOrderRequest $request)
     {
         try {
 

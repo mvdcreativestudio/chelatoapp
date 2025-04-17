@@ -165,7 +165,9 @@ Route::get('/', function () {
 
     // exportar excel
     Route::get('/incomes-export-excel', [IncomeController::class, 'exportExcel'])->name('income.export.excel');
-    Route::get('/incomes-export-pdf', [IncomeController::class, 'exportPdf'])->name('income.pdf');
+    Route::get('/incomes-export-pdf/{income?}', [IncomeController::class, 'exportPdf'])->name('income.pdf');
+    Route::get('/incomes-export-all-pdf', [IncomeController::class, 'exportPdf'])->name('income.all.pdf');    
+    Route::get('/incomes-export-cfe-pdf/{id}', [IncomeController::class, 'exportCfePdf'])->name('income.cfe.pdf');
 
 
     // exportar excel entries
@@ -232,6 +234,8 @@ Route::get('/', function () {
 
     //Freemium
     Route::get('/raw-material-freemium', [RawMaterialController::class, 'createFreemium'])->name('raw-materials.createFreemium');
+    //Cotización del dolar.
+    Route::get('/dollar-rate', [IncomeController::class, 'getDollarRate'])->name('incomes.dollar-rate');
 
     // CRM
     Route::get('crm', [LeadController::class, 'index']);

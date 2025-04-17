@@ -48,12 +48,6 @@
             color: #666;
             display: block;
         }
-
-        .currency-symbol {
-            font-size: 9px;
-            color: #666;
-            margin-right: 2px;
-        }
     </style>
 </head>
 
@@ -68,134 +62,103 @@
                 <th class="wide">Entidad</th>
                 <th class="medium">Método Pago</th>
                 <th class="wide">Categoría</th>
-                <th class="medium">Moneda</th>
-                <th class="medium">Importe sin Imp.</th>
+                <th class="wide">Producto</th>
+                <th class="narrow">Cant.</th>
+                <th class="medium">Precio Unit.</th>
+                <th class="medium">Subtotal</th>
                 <th class="medium">Impuesto</th>
-                <th class="medium">Total Original</th>
-                <th class="medium">Total Pesos</th>
-                <th class="medium">Total Dólares</th>
+                <th class="medium">Total</th>
             </tr>
-                </thead>
-                <tbody>
-                    @php 
-                        $grandSubTotal = 0;
-                        $grandTaxTotal = 0;
-                        $grandTotal = 0;
-                        $grandTotalUYU = 0;
-                        $grandTotalUSD = 0;
-                    @endphp
+        </thead>
+        <tbody>
+            @php 
+                $grandSubTotal = 0;
+                $grandTaxTotal = 0;
+                $grandTotal = 0;
+            @endphp
 
-                    @foreach($incomes as $income)
-                        @php
-                            // Cálculos de impuestos existentes
-                            $subtotal = collect($income->items)->reduce(function ($carry, $item) {
-                                return $carry + ($item['price'] * $item['quantity']);
-                            }, 0);
+            @foreach($incomes as $income)
+                @php
+                    $subtotal = collect($income->items)->reduce(function ($carry, $item) {
+                        return $carry + ($item['price'] * $item['quantity']);
+                    }, 0);
 
-                            $taxAmount = 0;
-                            $taxInfo = '';
-                            
-                            if ($income->client && $income->client->tax_rate_id) {
-                                $clientTax = \App\Models\TaxRate::find($income->client->tax_rate_id);
-                                if ($clientTax && $clientTax->rate == 0) {
-                                    $taxInfo = "Exento ({$clientTax->name})";
-                                } elseif ($income->tax_rate_id && $income->taxRate) {
-                                    $taxAmount = $subtotal * ($income->taxRate->rate / 100);
-                                    $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
-                                }
-                            } elseif ($income->tax_rate_id && $income->taxRate) {
-                                $taxAmount = $subtotal * ($income->taxRate->rate / 100);
-                                $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
-                            }
+                    $taxAmount = 0;
+                    $taxInfo = '';
+                    
+                    if ($income->client && $income->client->tax_rate_id) {
+                        $clientTax = \App\Models\TaxRate::find($income->client->tax_rate_id);
+                        if ($clientTax && $clientTax->rate == 0) {
+                            $taxInfo = "Exento ({$clientTax->name})";
+                        } elseif ($income->tax_rate_id && $income->taxRate) {
+                            $taxAmount = $subtotal * ($income->taxRate->rate / 100);
+                            $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
+                        }
+                    } elseif ($income->tax_rate_id && $income->taxRate) {
+                        $taxAmount = $subtotal * ($income->taxRate->rate / 100);
+                        $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
+                    }
 
-                            // Cálculos de moneda
-                            $total = $income->income_amount;
-                            $rate = $income->currency_rate;
-                            
-                            if ($income->currency === 'Dólar') {
-                                $usdAmount = $total;
-                                if (!$rate || $rate == 0) {
-                                    $rate = app(\App\Repositories\IncomeRepository::class)->getHistoricalDollarRate($income->income_date);
-                                }
-                                $uyuAmount = $rate > 0 ? $total * $rate : 0;
-                            } else {
-                                $uyuAmount = $total;
-                                if (!$rate || $rate == 0) {
-                                    $rate = app(\App\Repositories\IncomeRepository::class)->getHistoricalDollarRate($income->income_date);
-                                }
-                                $usdAmount = $rate > 0 ? $total / $rate : 0;
-                            }
+                    $total = $income->income_amount;
+                    $grandSubTotal += $subtotal;
+                    $grandTaxTotal += $taxAmount;
+                    $grandTotal += $total;
+                @endphp
 
-                            // Acumuladores
-                            $grandSubTotal += $subtotal;
-                            $grandTaxTotal += $taxAmount;
-                            $grandTotal += $total;
-                            $grandTotalUYU += $uyuAmount;
-                            $grandTotalUSD += $usdAmount;
-                        @endphp
-
-                        <tr>
-                        <td class="text-center">{{ $income->id }}</td>
-                        <td class="text-center">{{ $income->income_date ? $income->income_date->format('d/m/Y') : '-' }}</td>
-                        <td>{{ $income->client ? $income->client->name : ($income->supplier ? $income->supplier->name : 'Ninguno') }}</td>
-                        <td>{{ $income->paymentMethod ? $income->paymentMethod->description : '-' }}</td>
-                        <td>{{ $income->incomeCategory ? $income->incomeCategory->income_name : '-' }}</td>
-                        <td>{{ $income->currency ?: 'Sin Moneda' }}</td>
-                        <td class="text-right">
-                            <span class="currency-symbol">{{ $income->currency === 'Dólar' ? 'U$D' : '$' }}</span>
-                            {{ number_format($subtotal, 2) }}
-                        </td>
-                        <td class="text-right">
-                            @if($taxInfo)
-                                <span class="tax-info">{{ $taxInfo }}</span>
-                                <span class="currency-symbol">$</span>{{ number_format($taxAmount, 2) }}
+                @if(!empty($income->items))
+                    @foreach($income->items as $index => $item)
+                    <tr>
+                        @if($index === 0)
+                        <td rowspan="{{ count($income->items) }}" class="text-center">{{ $income->id }}</td>
+                        <td rowspan="{{ count($income->items) }}" class="text-center">{{ $income->income_date ? $income->income_date->format('d/m/Y') : '-' }}</td>
+                        <td rowspan="{{ count($income->items) }}">
+                            @if($income->client)
+                                {{ $income->client->name }}
+                                @if($income->client->tax_rate_id)
+                                    <span class="tax-info">
+                                        {{ \App\Models\TaxRate::find($income->client->tax_rate_id)->name }}
+                                    </span>
+                                @endif
+                            @elseif($income->supplier)
+                                {{ $income->supplier->name }}
                             @else
                                 -
                             @endif
                         </td>
-                        <td class="text-right">
-                            <span class="currency-symbol">{{ $income->currency === 'Dólar' ? 'U$D' : '$' }}</span>
-                            {{ number_format($total, 2) }}
+                        <td rowspan="{{ count($income->items) }}">{{ $income->paymentMethod ? $income->paymentMethod->description : '-' }}</td>
+                        <td rowspan="{{ count($income->items) }}">{{ $income->incomeCategory ? $income->incomeCategory->income_name : '-' }}</td>
+                        @endif
+                        <td>{{ $item['name'] }}</td>
+                        <td class="text-center">{{ $item['quantity'] }}</td>
+                        <td class="text-right">${{ number_format($item['price'], 2) }}</td>
+                        @if($index === 0)
+                        <td rowspan="{{ count($income->items) }}" class="text-right">${{ number_format($subtotal, 2) }}</td>
+                        <td rowspan="{{ count($income->items) }}" class="text-right">
+                            @if($taxInfo)
+                                <span class="tax-info">{{ $taxInfo }}</span>
+                                ${{ number_format($taxAmount, 2) }}
+                            @else
+                                -
+                            @endif
                         </td>
-                        <td class="text-right">
-                            <span class="currency-symbol">$</span>
-                            {{ number_format($uyuAmount, 2) }}
-                        </td>
-                        <td class="text-right">
-                            <span class="currency-symbol">U$D</span>
-                            {{ number_format($usdAmount, 2) }}
-                        </td>
+                        <td rowspan="{{ count($income->items) }}" class="text-right">${{ number_format($total, 2) }}</td>
+                        @endif
                     </tr>
-                @endforeach
+                    @endforeach
+                @endif
+            @endforeach
 
-                <tr class="total-row">
-                    <td colspan="6" class="text-right">Totales:</td>
-                    <td class="text-right">
-                        <span class="currency-symbol">$</span>
-                        {{ number_format($grandSubTotal, 2) }}
-                    </td>
-                    <td class="text-right">
-                        <span class="currency-symbol">$</span>
-                        {{ number_format($grandTaxTotal, 2) }}
-                    </td>
-                    <td class="text-right">
-                        <span class="currency-symbol">$</span>
-                        {{ number_format($grandTotal, 2) }}
-                    </td>
-                    <td class="text-right">
-                        <span class="currency-symbol">$</span>
-                        {{ number_format($grandTotalUYU, 2) }}
-                    </td>
-                    <td class="text-right">
-                        <span class="currency-symbol">U$D</span>
-                        {{ number_format($grandTotalUSD, 2) }}
-                    </td>
-                </tr>
+            <tr class="total-row">
+                <td colspan="8" class="text-right">Totales:</td>
+                <td class="text-right">${{ number_format($grandSubTotal, 2) }}</td>
+                <td class="text-right">${{ number_format($grandTaxTotal, 2) }}</td>
+                <td class="text-right">${{ number_format($grandTotal, 2) }}</td>
+            </tr>
         </tbody>
     </table>
 
     <div style="font-size: 9px; margin-top: 20px;">
-        <p><strong>Nota:</strong> Los montos incluyen impuestos según corresponda. Las conversiones de moneda se realizan según la cotización del día de la venta.</p>
+        <p><strong>Nota:</strong> Los montos de impuestos se calculan según la tasa aplicable a cada cliente o la tasa general del ingreso.</p>
     </div>
 </body>
 </html>

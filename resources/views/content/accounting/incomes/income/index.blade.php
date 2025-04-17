@@ -73,7 +73,7 @@
           <div class="card-info">
             <h5 class="card-title mb-0">Monto Total</h5>
             <h2 class="mb-2 mt-2">{{ $settings->currency_symbol }} {{ $totalIncomeAmount }}</h2>
-            <small class="text-muted">Total monto de ventas realizadas en UYU</small>
+            <small class="text-muted">Total ventas realizadas</small>
           </div>
           <div class="card-icon">
             <span class="badge bg-label-success rounded p-2">
@@ -142,19 +142,18 @@
     @if($incomes->count() > 0)
     <table class="table datatables-incomes border-top" data-symbol="{{ $settings->currency_symbol }}">
       <thead class="table-light">
-          <tr>
-            <th>N°</th>
-            <th>Fecha</th>
-            <th>Entidad</th>
-            <th>Nombre</th>
-            <th>Método de Pago</th>
-            <th>Moneda</th>
-            <th>Importe</th>
-            <th>Total en Pesos</th>
-            <th>Categoría</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+        <tr>
+          <th>N°</th>
+          <th>Fecha</th>
+          <th>Entidad</th>
+          <th>Descripción</th>
+          <th>Método de Pago</th>
+          <th>Importe</th>
+          <th>Categoría</th>
+          <th>Moneda</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
       <tbody class="table-border-bottom-0">
         <!-- Datos llenados por DataTables -->
       </tbody>

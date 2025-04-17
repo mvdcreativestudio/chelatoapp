@@ -27,12 +27,15 @@ class StoreIncomeRequest extends FormRequest
             'income_name' => ['required', 'string', 'max:255'],
             'income_description' => ['nullable', 'string', 'max:255'],
             'income_date' => ['required', 'date'],
-            'income_amount' => ['required', 'numeric'],
+            // 'income_amount' => ['required', 'numeric'],
             'payment_method_id' => ['required', 'exists:payment_methods,id'],
             'income_category_id' => ['nullable', 'exists:income_categories,id'],
-            'currency_id' => ['required', 'exists:currencies,id'],
+            'currency' => ['required', 'string'],
+            'currency_rate' => ['required', 'numeric'],
+            'tax_rate_id' => ['nullable', 'exists:tax_rates,id'],
             'client_id' => ['nullable', 'exists:clients,id'], // Es nullable ya que es opcional
             'supplier_id' => ['nullable', 'exists:suppliers,id'], // Es nullable ya que es opcional
+            'items' => ['required'],
         ];
     }
 
@@ -51,15 +54,20 @@ class StoreIncomeRequest extends FormRequest
             'income_description.max' => 'La descripción del ingreso no puede tener más de :max caracteres.',
             'income_date.required' => 'La fecha del ingreso es obligatoria.',
             'income_date.date' => 'La fecha del ingreso debe ser una fecha válida.',
-            'income_amount.required' => 'El monto del ingreso es obligatorio.',
-            'income_amount.numeric' => 'El monto del ingreso debe ser un número.',
+            // 'income_amount.required' => 'El monto del ingreso es obligatorio.',
+            // 'income_amount.numeric' => 'El monto del ingreso debe ser un número.',
             'payment_method_id.required' => 'El método de pago es obligatorio.',
             'payment_method_id.exists' => 'El método de pago seleccionado no es válido.',
+            'income_category_id.required' => 'La categoría del ingreso es obligatoria.',
             'income_category_id.exists' => 'La categoría seleccionada no es válida.',
             'currency_id.required' => 'La moneda del ingreso es obligatoria.',
             'currency_id.exists' => 'La moneda seleccionada no es válida.',
             'client_id.exists' => 'El cliente seleccionado no es válido.',
             'supplier_id.exists' => 'El proveedor seleccionado no es válido.',
+            'items.required' => 'Los productos del ingreso son obligatorios.',
+            'tax_rate_id.exists' => 'La tasa de impuesto seleccionada no es válida.',
+            'currency_rate.required' => 'La tasa de cambio es obligatoria.',
+            'currency_rate.numeric' => 'La tasa de cambio debe ser un número.',
         ];
     }
 }

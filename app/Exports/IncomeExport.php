@@ -2,11 +2,12 @@
 
 namespace App\Exports;
 
-use App\Repositories\IncomeRepository;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class IncomeExport implements FromCollection, WithHeadings
+class IncomeExport implements FromCollection, WithHeadings, WithStyles
 {
     protected $incomes;
 
@@ -21,19 +22,11 @@ class IncomeExport implements FromCollection, WithHeadings
         $grandSubTotal = 0;
         $grandTaxTotal = 0;
         $grandTotal = 0;
-        $grandTotalUYU = 0;
-        $grandTotalUSD = 0;
 
         foreach ($this->incomes as $income) {
             $entityName = $income->client ? $income->client->name : ($income->supplier ? $income->supplier->name : 'Ninguno');
-
-            // Formatear la fecha de ingreso
             $incomeDate = $income->income_date ? $income->income_date->format('d/m/Y') : 'N/A';
-
-            // Obtener el método de pago
             $paymentMethod = $income->paymentMethod ? $income->paymentMethod->description : 'N/A';
-
-            // Obtener la categoría del ingreso
             $incomeCategory = $income->incomeCategory ? $income->incomeCategory->income_name : 'N/A';
 
             // Calcular subtotal de items
@@ -58,29 +51,10 @@ class IncomeExport implements FromCollection, WithHeadings
                 $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
             }
 
-            // Calcular montos en diferentes monedas
             $total = $income->income_amount;
-            $rate = $income->currency_rate;
-            
-            if ($income->currency === 'Dólar') {
-                $usdAmount = $total;
-                if (!$rate || $rate == 0) {
-                    $rate = app(IncomeRepository::class)->getHistoricalDollarRate($income->income_date);
-                }
-                $uyuAmount = $rate > 0 ? $total * $rate : 0;
-            } else {
-                $uyuAmount = $total;
-                if (!$rate || $rate == 0) {
-                    $rate = app(IncomeRepository::class)->getHistoricalDollarRate($income->income_date);
-                }
-                $usdAmount = $rate > 0 ? $total / $rate : 0;
-            }
-
             $grandSubTotal += $subtotal;
             $grandTaxTotal += $taxAmount;
             $grandTotal += $total;
-            $grandTotalUYU += $uyuAmount;
-            $grandTotalUSD += $usdAmount;
 
             if (!empty($income->items)) {
                 foreach ($income->items as $item) {
@@ -91,7 +65,6 @@ class IncomeExport implements FromCollection, WithHeadings
                         'income_date' => $incomeDate,
                         'payment_method' => $paymentMethod,
                         'income_category' => $incomeCategory,
-                        'currency' => $income->currency ?: 'Sin Moneda',
                         'item_name' => $item['name'],
                         'item_price' => number_format($item['price'], 2),
                         'item_quantity' => $item['quantity'],
@@ -99,9 +72,7 @@ class IncomeExport implements FromCollection, WithHeadings
                         'subtotal' => number_format($subtotal, 2),
                         'tax_info' => $taxInfo,
                         'tax_amount' => number_format($taxAmount, 2),
-                        'total' => number_format($total, 2),
-                        'total_uyu' => number_format($uyuAmount, 2),
-                        'total_usd' => number_format($usdAmount, 2)
+                        'total' => number_format($total, 2)
                     ];
                 }
             }
@@ -114,7 +85,6 @@ class IncomeExport implements FromCollection, WithHeadings
             'income_date' => '',
             'payment_method' => '',
             'income_category' => '',
-            'currency' => '',
             'item_name' => '',
             'item_price' => '',
             'item_quantity' => '',
@@ -122,9 +92,7 @@ class IncomeExport implements FromCollection, WithHeadings
             'subtotal' => number_format($grandSubTotal, 2),
             'tax_info' => '',
             'tax_amount' => number_format($grandTaxTotal, 2),
-            'total' => number_format($grandTotal, 2),
-            'total_uyu' => number_format($grandTotalUYU, 2),
-            'total_usd' => number_format($grandTotalUSD, 2)
+            'total' => number_format($grandTotal, 2)
         ];
 
         return collect($rows);
@@ -135,12 +103,9 @@ class IncomeExport implements FromCollection, WithHeadings
         return [
             'Cliente/Proveedor',
             'Nombre del Ingreso',
-            'Descripción',
-            'Fecha del Ingreso',
-            'Monto',
+            'Fecha',
             'Método de Pago',
             'Categoría',
-            'Moneda',
             'Producto',
             'Precio Unit.',
             'Cantidad',
@@ -148,16 +113,14 @@ class IncomeExport implements FromCollection, WithHeadings
             'Subtotal',
             'Impuesto',
             'Monto Impuesto',
-            'Total Original',
-            'Total en Pesos',
-            'Total en Dólares'
+            'Total'
         ];
     }
 
     public function styles(Worksheet $sheet)
     {
         // Estilo para la fila de encabezados
-        $sheet->getStyle('A1:P1')->applyFromArray([
+        $sheet->getStyle('A1:M1')->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -167,11 +130,13 @@ class IncomeExport implements FromCollection, WithHeadings
 
         // Formato de moneda para columnas de montos
         $lastRow = $sheet->getHighestRow();
-        $sheet->getStyle('H2:H'.$lastRow)->getNumberFormat()->setFormatCode('#,##0.00');
-        $sheet->getStyle('J2:P'.$lastRow)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('G2:G'.$lastRow)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('I2:I'.$lastRow)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('J2:J'.$lastRow)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('L2:M'.$lastRow)->getNumberFormat()->setFormatCode('#,##0.00');
 
         // Estilo para la última fila (totales)
-        $sheet->getStyle('A'.$lastRow.':P'.$lastRow)->applyFromArray([
+        $sheet->getStyle('A'.$lastRow.':M'.$lastRow)->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -180,7 +145,7 @@ class IncomeExport implements FromCollection, WithHeadings
         ]);
 
         // Ajustar el ancho de las columnas automáticamente
-        foreach(range('A','P') as $column) {
+        foreach(range('A','M') as $column) {
             $sheet->getColumnDimension($column)->setAutoSize(true);
         }
     }

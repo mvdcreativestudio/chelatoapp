@@ -43,43 +43,6 @@
 <script>
     window.baseUrl = "{{ url('') }}/";
     window.currencySymbol = "{{ $settings->currency_symbol ?? '$' }}";
-
-    function printCurrentView() {
-    const originalContent = document.body.innerHTML;
-    const printButtons = document.querySelectorAll('.btn');
-    printButtons.forEach(button => button.style.display = 'none');
-
-    const style = document.createElement('style');
-    style.textContent = `
-        @media print {
-            body { 
-                padding: 20px;
-                font-size: 12pt;
-            }
-            .card {
-                border: none !important;
-                box-shadow: none !important;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .table th, .table td {
-                padding: 8px !important;
-            }
-            @page {
-                margin: 1cm;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-
-    // Imprimir
-    window.print();
-
-    // Restaurar contenido original
-    document.body.innerHTML = originalContent;
-    location.reload();
-}
 </script>
 @endsection
 @endif
@@ -136,10 +99,10 @@ $paymentStatusTranslations = [
             <i class="bx bx-chevron-left"></i>
             <span class="align-middle">Volver</span>
         </a>
-        <button type="button" class="btn btn-sm btn-primary" onclick="printCurrentView()">
-            <i class="bx bx-printer me-1"></i>
-            Imprimir
-        </button>
+        <a href="{{ route('income.pdf', ['income' => $income->id]) }}?action=print" target="_blank"
+            onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=800,height=600').print(); return false;">
+            <button class="btn btn-sm btn-primary">Imprimir</button>
+        </a>
         <a href="{{ route('income.pdf', ['income' => $income->id]) }}" class="btn btn-sm btn-label-primary">
             Descargar PDF
         </a>
@@ -217,7 +180,6 @@ $paymentStatusTranslations = [
                     </table>
                 </div>
             </div>
-            
             <div class="card-footer">
                 <div class="d-flex justify-content-end">
                     <div class="income-calculations" style="min-width: 250px">
@@ -228,50 +190,27 @@ $paymentStatusTranslations = [
                         @if($income->currency === 'Dólar')
                         <div class="d-flex justify-content-between mb-2">
                             <span class="fw-semibold">Cotización:</span>
-                            <span class="text-heading">{{ number_format($income->currency_rate, 2) }}</span>
+                            <span class="text-heading">{{ number_format($income->exchange_rate, 2) }}</span>
                         </div>
                         @endif
                         <div class="d-flex justify-content-between mb-2">
                             <span class="fw-semibold">Subtotal:</span>
                             <span class="text-heading">{{ $settings->currency_symbol ?? '$' }}{{ number_format($sumSubtotal ?? 0, 2) }}</span>
                         </div>
-
-                        @php
-                            $taxAmount = 0;
-                            $taxInfo = '';
-                            
-                            if ($income->client && $income->client->tax_rate_id) {
-                                $clientTax = \App\Models\TaxRate::find($income->client->tax_rate_id);
-                                if ($clientTax && $clientTax->rate == 0) {
-                                    $taxInfo = "Exento ({$clientTax->name})";
-                                } elseif ($income->tax_rate_id && $income->taxRate) {
-                                    $taxAmount = $sumSubtotal * ($income->taxRate->rate / 100);
-                                    $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
-                                }
-                            } elseif ($income->tax_rate_id && $income->taxRate) {
-                                $taxAmount = $sumSubtotal * ($income->taxRate->rate / 100);
-                                $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
-                            }
-                        @endphp
-
-                        @if($taxInfo)
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="fw-semibold">{{ $taxInfo }}:</span>
-                            <span class="text-heading">{{ $settings->currency_symbol ?? '$' }}{{ number_format($taxAmount, 2) }}</span>
-                        </div>
+                        @if($income->tax_rate_id)
+                            @php
+                                $tax = \App\Models\TaxRate::find($income->tax_rate_id);
+                                $taxAmount = $sumSubtotal * ($tax->rate / 100);
+                            @endphp
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-semibold">{{ $tax->name }} ({{ $tax->rate }}%):</span>
+                                <span class="text-heading">{{ $settings->currency_symbol ?? '$' }}{{ number_format($taxAmount, 2) }}</span>
+                            </div>
                         @endif
-
                         <div class="d-flex justify-content-between pt-2 border-top mt-2">
                             <span class="fw-bold">Total:</span>
                             <span class="text-heading fw-bold">{{ $settings->currency_symbol ?? '$' }}{{ number_format($income->income_amount, 2) }}</span>
                         </div>
-
-                        @if($income->currency === 'Dólar')
-                        <div class="d-flex justify-content-between mt-2">
-                            <span class="fw-bold">Total en UYU:</span>
-                            <span class="text-heading fw-bold">${{ number_format($income->income_amount * $income->currency_rate, 2) }}</span>
-                        </div>
-                        @endif
                     </div>
                 </div>
             </div>

@@ -21,6 +21,8 @@ use App\Models\CurrencyRate;
 use App\Models\CurrencyRateHistory;
 use App\Models\CurrentAccountSettings;
 use App\Models\Currency;
+use App\Models\Store;
+use App\Models\Income;
 use App\Repositories\AccountingRepository;
 use App\Services\MercadoPagoService;
 use Exception;
@@ -108,6 +110,46 @@ class OrderRepository
             'shippedOrders',
             'completedOrders',
             'bestClient'
+        );
+    }
+
+     /**
+     * Ventas libres
+     * Obtiene todas las ventas libres y las estadísticas necesarias para las cards.
+     * @return array
+     */
+    public function getAllIncomes(): array
+    {
+        // Buscar cash_register_log abierto del usuario actual
+        $openCashRegisterLog = CashRegisterLog::whereHas('cashRegister', function($query) {
+                $query->where('user_id', auth()->id());
+            })
+            ->whereNull('close_time')
+            ->first();
+    
+        if (!$openCashRegisterLog) {
+            throw new \Exception('No hay una caja registradora abierta.');
+        }
+    
+        // Verificar si el usuario tiene permiso para ver todas las ventas libres de la tienda
+        if (Auth::user()->can('view_all_ecommerce')) {
+            // Si tiene el permiso, obtenemos todas las ventas libres de la tienda
+            $incomesQuery = Income::whereHas('cashRegisterLog.cashRegister', function($query) use ($openCashRegisterLog) {
+                $query->where('store_id', $openCashRegisterLog->cashRegister->store_id);
+            });
+        } else {
+            // Si no tiene el permiso, solo obtenemos las ventas libres de su caja actual
+            $incomesQuery = Income::where('cash_register_log_id', $openCashRegisterLog->id);
+        }
+    
+        // Obtener las ventas libres
+        $incomes = $incomesQuery->get();
+    
+        // Calcular las estadísticas basadas en las ventas libres filtradas
+        $totalCountIncomes = $incomes->count();
+    
+        return compact(
+            'totalCountIncomes',
         );
     }
 

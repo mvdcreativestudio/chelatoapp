@@ -25,8 +25,7 @@ $(function () {
           data: function (d) {
             d.start_date = $('#startDate').val();
             d.end_date = $('#endDate').val();
-            d.entity_type = $('#entityType').val();
-            d.category = $('#category').val();
+            d.entity_type = $('#entityType').val(); // Captura el filtro de entidad (cliente, proveedor, otros)
           }
         },
         columns: [
@@ -39,6 +38,8 @@ $(function () {
                 return 'Cliente';
               } else if (full.supplier_name) {
                 return 'Proveedor';
+              } else if (full.company_name) {
+                return 'Compañía';
               } else {
                 return 'Ninguno';
               }
@@ -51,37 +52,28 @@ $(function () {
                 return full.client_name + ' ' + full.client_lastname;
               } else if (full.supplier_name) {
                 return full.supplier_name;
+              } else if (full.company_name) {
+                return full.company_name;
               } else {
                 return 'Ninguno';
               }
             }
           },
           { data: 'payment_method_name' },
+          { data: 'income_amount' },
+          { data: 'income_category_name' },
           { 
             data: 'currency',  
             render: function (data, type, full, meta) {
-              return data ? data : 'N/A';
+              return data || 'Sin Moneda';  
             }
-          },
-          { data: 'income_amount' },
-          {
-            data: null,
-            render: function (data, type, full, meta) {
-              let amount = parseFloat(full.income_amount);
-              if (full.currency === 'Dólar' && full.currency_rate > 0) {
-                amount = amount * parseFloat(full.currency_rate);
-              }
-              return '$' + amount.toFixed(2);
-            }
-          },
-          { data: 'income_category_name' },
-          { data: '' }
+          },          { data: '' }
         ],
         columnDefs: [
           {
             targets: 0,
             render: function (data, type, full, meta) {
-              return `<a href="#" class="text-body">#${data}</a>`;
+              return `<a href="${baseUrl}admin/incomes/${full['id']}">${data}</a>`;
             }
           },
           {
@@ -91,53 +83,32 @@ $(function () {
             }
           },
           {
-            targets: [2, 3, 4, 5, 6, 7, 8], 
-            render: function (data, type, full, meta) {
-              if (type === 'display') {
-                return `<div class="text-truncate" style="max-width: 60px;" title="${data}">${data}</div>`;
-              }
-              return data;
-            }
-          },
-          {
-            targets: 5, // Columna de Moneda
-            render: function (data, type, full, meta) {
-              if (type === 'display') {
-                const text = data || 'Sin Moneda';
-                return `<div class="text-truncate" style="max-width: 60px;" title="${text}">${text}</div>`;
-              }
-              return data || 'Sin Moneda';
-            }
-          },
-          {
-            targets: 6, // Columna de Importe
+            targets: 5,
             render: function (data, type, full, meta) {
               const symbol = full.currency_symbol ?? '$';
-              return symbol + parseFloat(full.income_amount).toFixed(2);
+              return symbol + parseFloat(data).toFixed(2);
             }
           },
           {
-            targets: 7, // Columna de Total en Pesos
+            targets: 6,
             render: function (data, type, full, meta) {
-              let amount = parseFloat(full.income_amount);
-              if (full.currency === 'Dólar' && full.currency_rate > 0) {
-                amount = amount * parseFloat(full.currency_rate);
-              }
-              return '$' + amount.toFixed(2);
+              return full.income_category_name
+                ? full.income_category_name
+                : 'Sin Categoría';
             }
           },
           {
-            targets: 8, // Columna de Categoría
+            targets: 7,
             render: function (data, type, full, meta) {
-              if (type === 'display') {
-                return `<div class="text-truncate" style="max-width: 60px;" title="${text}">${text}</div>`;
-              }
-              return full.income_category_name || 'Sin Categoría';
+              return full.currency_name
+                ? full.currency_name
+                : 'Sin Moneda';
             }
+
           },
           {
             targets: -1,
-            title: 'Acción',
+            title: 'Acciones',
             searchable: false,
             orderable: false,
             render: function (data, type, full, meta) {
@@ -147,6 +118,7 @@ $(function () {
                     <i class="bx bx-dots-vertical-rounded"></i>
                   </button>
                   <div class="dropdown-menu dropdown-menu-end m-0">
+                    <a href="${baseUrl}admin/incomes/${full['id']}" class="dropdown-item">Ver Detalles</a>
                     <a href="javascript:void(0);" class="dropdown-item edit-record" data-id="${full['id']}">Editar</a>
                     <a href="javascript:void(0);" class="dropdown-item delete-record" data-id="${full['id']}">Eliminar</a>
                   </div>
@@ -177,42 +149,36 @@ $(function () {
         },
         initComplete: function () {
           // Filtro dinámico para entidad (cliente, proveedor, otros)
-          var entityColumn = this.api().column(2); // Columna de tipo de entidad (índice 2)
-          var categoryColumn = this.api().column(8); // Columna de categoría (índice 8)
+          var column = this.api().column(3); // Columna que contiene el tipo de entidad
+          var select = $(
+            '<select class="form-select"><option value="">Todos</option><option value="Cliente">Clientes</option><option value="Proveedor">Proveedores</option><option value="Ninguno">Ninguno</option></select>'
+          )
+            .appendTo('.entity_type') // Rellenar el filtro
+            .on('change', function () {
+              var val = $.fn.dataTable.util.escapeRegex($(this).val());
+              column.search(val ? `^${val}$` : '', true, false).draw(); // Filtrar por entidad
+            });
 
-          // Manejador del filtro de entidad
-          $('#entityType').on('change', function() {
-            var val = $.fn.dataTable.util.escapeRegex($(this).val());
-            entityColumn.search(val ? val : '', true, false).draw();
-          });
+          // Filtro dinámico para categoría
+          this.api()
+            .columns(7)
+            .every(function () {
+              var column = this;
+              var select = $('<select class="form-select"><option value="">Todas las categorías</option></select>')
+                .appendTo('.category_filter')
+                .on('change', function () {
+                  var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                  column.search(val ? `^${val}$` : '', true, false).draw();
+                });
 
-          // Llenar y manejar el filtro de categoría
-          categoryColumn.data().unique().sort().each(function(d) {
-            if (d) { // Solo agregar si hay un valor
-              $('#category').append(`<option value="${d}">${d}</option>`);
-            }
-          });
-
-          $('#category').on('change', function() {
-            var val = $.fn.dataTable.util.escapeRegex($(this).val());
-            categoryColumn.search(val ? val : '', true, false).draw();
-          });
-
-          // Manejador de filtros de fecha
-          $('#startDate, #endDate').on('change', function() {
-            dt_incomes.ajax.reload();
-          });
-
-          // Limpiar filtros
-          $('#clear-filters').on('click', function() {
-            $('#entityType').val('');
-            $('#category').val('');
-            $('#startDate').val('');
-            $('#endDate').val('');
-            entityColumn.search('').draw();
-            categoryColumn.search('').draw();
-            dt_incomes.ajax.reload();
-          });
+              column
+                .data()
+                .unique()
+                .sort()
+                .each(function (d, j) {
+                  select.append(`<option value="${d}">${d}</option>`);
+                });
+            });
         },
         renderer: 'bootstrap'
       });
