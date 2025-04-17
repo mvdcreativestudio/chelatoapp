@@ -1,0 +1,1456 @@
+@import url('https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;700&display=swap');
+
+:root {
+        --primary-color: #004a69;
+        --secondary-color: #D1AD6E;
+        --text-color: #ffffff;
+}
+
+
+body {
+    font-family: 'Maven Pro', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
+}
+
+/* Botones */
+
+.btn-outline-primario {
+    border-color: #004a69!important;
+    color: #004a69!important;
+}
+
+.btn-outline-primario:hover {
+    background-color: #004a69!important;
+    color: white!important;
+}
+
+/* Estilos de fuentes */
+
+.font-white {
+    color: white;
+}
+
+.font-primary {
+    color: #004a69!important;
+}
+
+.font-secondary {
+    color: #D1AD6E!important;
+}
+
+
+.navbar {
+    background-color: var(--secondary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 5%;
+    min-height: 10vh;
+}
+
+.logo img {
+    height: 70px!important;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-links li {
+    margin-left: 2rem;
+}
+
+.nav-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 200;
+    transition: color 0.3s ease;
+    font-family: 'Maven Pro', sans-serif;
+    font-size: 1.2em;
+}
+
+.nav-links a:hover {
+    color: var(--text-color);
+}
+
+/* Estilos responsivos para el navbar */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+    }
+
+    .nav-links {
+        margin-top: 1rem;
+    }
+
+    .nav-links li {
+        margin: 0.5rem 0;
+    }
+}
+
+/* colchones.css */
+
+.page-header {
+    background-image: url('../images/hero_colchones.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.page-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 19, 70, 0.822); /* Ajusta el último valor (0.5) para cambiar la opacidad */
+}
+
+.page-header h1 {
+    color: white;
+    font-size: 2.5em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 1;
+}
+.categories-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    padding: 20px;
+    background-color: white;
+    margin: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.category {
+    flex-basis: calc(20% - 20px);
+    margin: 10px;
+}
+
+.category h2 {
+    color: #003366;
+    border-bottom: 2px solid #003366;
+    padding-bottom: 5px;
+}
+
+.category ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.category ul li {
+    margin-bottom: 5px;
+}
+
+.category ul li a {
+    color: #666;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.category ul li a:hover {
+    color: #003366;
+}
+
+@media (max-width: 768px) {
+    .category {
+        flex-basis: calc(50% - 20px);
+    }
+}
+
+@media (max-width: 480px) {
+    .category {
+        flex-basis: 100%;
+    }
+}
+
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.product-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: box-shadow 0.3s ease;
+}
+
+.product-item:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.product-item img {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.product-item h3 {
+    font-size: 14px;
+    color: #003366;
+    margin-bottom: 10px;
+}
+
+.saiba-mais {
+    background-color: #003366;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.saiba-mais:hover {
+    background-color: #004c99;
+}
+
+@media (max-width: 768px) {
+    .product-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+}
+
+.bottom {
+    background-image: url('../images/bottom.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+
+
+/* Footer */
+.footer {
+    background-color: var(--primary-color);
+    padding: 40px 0;
+    position: relative;
+    text-align: center;
+    font-family: 'Maven Pro', sans-serif;
+}
+
+.footer-logo img {
+    max-height: 80px;
+    margin-bottom: 20px;
+}
+
+
+.footer-info,
+.footer-social {
+    flex: 1;
+    margin: 0 40px; /* Aumentamos el margen lateral para más aire */
+    text-align: left; /* Alineamos el texto a la izquierda */
+}
+
+.footer-info h4,
+.footer-social h4 {
+    margin-bottom: 15px;
+}
+
+.footer-info p,
+.footer-social p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.footer-info i,
+.footer-social i {
+    margin-right: 10px;
+}
+
+.footer i {
+    color: #D1AD6E;
+}
+
+.footer-social a {
+    text-decoration: none;
+}
+
+.footer-social a:hover {
+    text-decoration: underline;
+}
+
+
+/** Index **/
+
+.hero-section {
+    position: relative;
+    height: 80vh;
+    overflow: hidden;
+  }
+
+  .hero-content {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    transform: translateY(-50%);
+    z-index: 2;
+  }
+
+  .hero-image {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    background-image: url('path-to-your-mattress-image.jpg');
+    background-size: cover;
+    background-position: center;
+  }
+
+  .geometric-shapes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, var(--primary-color) 25%, transparent 25%),
+                linear-gradient(-45deg, var(--secondary-color) 25%, transparent 25%);
+    opacity: 0.7;
+    z-index: 1;
+  }
+
+.carousel-container {
+    display: flex;
+    transition: transform 0.5s ease;
+    height: 100%;
+}
+
+.carousel-slide {
+    flex: 0 0 100%;
+    position: relative;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slide-content {
+    position: absolute;
+    top: 50%;
+    left: 50px;
+    transform: translateY(-50%);
+    color: var(--text-color);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.slide-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.slide-content h1 {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: var(--secondary-color);
+}
+
+.slide-content p {
+    font-size: 1.5rem;
+}
+
+.video-section-index {
+    position: relative;
+    width: 100%;
+    height: 60vh;
+    overflow: hidden;
+}
+
+#bg-video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 90, 135, 0.6); /* Ajusta la opacidad aquí */
+}
+
+.video-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: var(--text-color);
+}
+
+.video-content h2 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.video-content p {
+    font-size: 2rem;
+}
+
+.highlight {
+    color: var(--secondary-color);
+}
+
+.whatsapp-button {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    background-color: #25D366;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.btn-wpp {
+    padding: 10px 20px;
+    background-color: #25D366!important;
+    color: white!important;
+    border: 0px!important;
+}
+.catalog-section {
+    background-color: var(--secondary-color);
+    padding-top: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.catalog-content {
+    background-color: var(--primary-color);
+    padding: 40px;
+    border-radius: 15px;
+    max-width: 1100px;
+    width: 90%;
+    color: var(--text-color);
+    text-align: center;
+    position: relative;
+}
+
+.catalog-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.catalog-title {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Reducir aún más el espaciado entre la barra decorativa y el texto */
+}
+
+.catalog-guion {
+    height: 3px; /* Ajustar el tamaño para que quede más proporcionado */
+    width: auto; /* Mantener la proporción de la imagen */
+}
+
+.catalog-title h2 {
+    font-size: 1.5 rem;
+    font-weight: 500;
+    line-height: 1.1;
+    text-align: left; /* Asegurarse de que el texto esté alineado a la izquierda */
+}
+
+#catalog-form {
+    display: grid;
+    padding-left: 10%;
+    padding-right: 10%;
+    gap: 20px; /* Espaciado entre los elementos */
+    grid-template-columns: repeat(4, minmax(20px, 1fr)); /* Reducimos el tamaño mínimo de cada input a 120px */
+
+    align-items: center; /* Alineamos los elementos verticalmente al centro */
+}
+
+#catalog-form input {
+    padding: 8px; /* Mantener el padding reducido */
+    border: none;
+    border-radius: 5px;
+    font-size: 0.9rem; /* Mantener el tamaño del texto consistente */
+}
+
+#catalog-form button {
+    justify-self: center; /* Alinear el botón al centro */
+    padding-left: 12px; /* Ajustar padding para hacer el botón un poco más pequeño */
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    transition: background-color 0.3s ease;
+}
+
+#catalog-form button:hover {
+    background-color: #f5c26b;
+}
+
+#catalog-form button {
+    grid-column: span 4; /* Coloca el botón en una nueva fila que ocupa todo el ancho */
+    justify-self: center; /* Alinea el botón al centro de la fila */
+    padding: 10px 30px; /* Aumenta el padding para que el botón se vea más destacado */
+    background-color: var(--secondary-color);
+    color: var(white);
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+#catalog-form button:hover {
+    background-color: #f5c26b;
+}
+.especialista-section {
+    background-color: var(--secondary-color);
+    padding: 60px 0;
+    text-align: center;
+}
+
+.especialista-content {
+    max-width: 800px;
+    margin: 0 auto;
+    color: var(--text-color);
+}
+
+.especialista-content h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.especialista-content p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.whatsapp-button-container {
+    display: flex;
+    justify-content: center;
+}
+
+.whatsapp-button-container img {
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.whatsapp-button-container img:hover {
+    transform: scale(1.05); /* Efecto de zoom al pasar el mouse sobre el botón */
+}
+
+.produtos-section {
+    display: flex;
+    align-items: center;
+    padding: 60px 5%;
+    background-color: #003F4E;
+    color: white;
+}
+
+.produtos-carousel-container {
+    flex: 0 0 50%;
+    overflow: hidden;
+}
+
+.produtos-carousel {
+    display: flex;
+    transition: transform 1s ease-in-out;
+    width: calc(100% * 2); /* Como tienes 6 imágenes y queremos mostrar solo 3, el ancho debe ser suficiente para desplazarlas */
+}
+
+.produtos-slide {
+    padding: 0 5px;
+}
+
+.produtos-slide img {
+    width: 100%;
+    height: auto;
+}
+
+.produtos-content {
+    flex: 0 0 45%;
+    text-align: right; /* Alinear el texto y el botón a la derecha */
+}
+
+.produtos-content h2 {
+    font-size: 2.5rem;
+    line-height: 1.1;
+    font-weight: bold;
+    margin-bottom: 20px;
+    position: relative;
+    text-align: end;
+}
+
+.producto-guion {
+    height: 10%;
+    width: 20%;
+    display: relative;
+    padding-left: 2%;
+}
+
+.produtos-content p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    text-align: end;
+}
+.btn-encante {
+    display: inline-block; /* Cambiar a inline-block para permitir el alineamiento */
+    text-align: center; /* Centrar el texto dentro del botón */
+    background-color: #DAA860;
+    color: #003F4E;
+    padding: 12px 25px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    font-size: 1rem;
+}
+
+.btn-encante:hover {
+    background-color: #F5C26B;
+}
+
+/* Sección 5 */
+.excelencia-satisfacao {
+    background-image: url('/assets/img/landing/seccion5.jpg');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 80px 0;
+    position: relative;
+}
+
+
+
+.excelencia-satisfacao::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.content-wrapper-excelencia {
+    max-width: 600px;
+    margin-left: 10%;
+    position: relative;
+    z-index: 1;
+}
+
+.excelencia-satisfacao h2 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    margin-top: 20px;
+
+}
+
+.excelencia-satisfacao p {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.cta-button {
+    display: inline-block;
+    background-color: #003F4E;
+    color: white;
+    padding: 12px 25px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+    background-color: #005f75;
+}
+
+.anjos-testimonios {
+    background-color: #e6c88b;
+    padding: 40px 0;
+}
+
+.anjos-container {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.anjos-title {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 24px;
+}
+
+.anjos-carousel {
+    position: relative;
+}
+
+.anjos-card {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.anjos-user-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.anjos-user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.anjos-user-name {
+    margin: 0;
+    font-size: 18px;
+}
+
+.anjos-user-location {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.anjos-testimonial-text {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.anjos-carousel-control {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    color: #333;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.anjos-prev {
+    left: -60px;
+}
+
+.anjos-next {
+    right: -60px;
+}
+
+.anjos-cta-button {
+    display: block;
+    margin: 30px auto 0;
+    padding: 10px 20px;
+    background-color: #00a884;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .anjos-carousel-control {
+        display: none;
+    }
+}
+.footer {
+    background-color: var(--primary-color);
+    padding: 40px 0;
+    color: var(--text-color);
+    position: relative;
+    text-align: center;
+}
+
+.container {
+    display: flex;
+    justify-content: space-between; /* Cambiamos a "space-between" para repartir mejor el espacio */
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+    flex-wrap: wrap;
+}
+
+.footer-logo img {
+    max-height: 80px;
+    margin-bottom: 20px;
+}
+
+.footer-info,
+.footer-social {
+    flex: 1;
+    margin: 0 40px; /* Aumentamos el margen lateral para más aire */
+    text-align: left; /* Alineamos el texto a la izquierda */
+}
+
+.footer-info h4,
+.footer-social h4 {
+    color: var(--secondary-color);
+    margin-bottom: 15px;
+}
+
+.footer-info p,
+.footer-social p {
+    margin: 5px 0;
+    font-size: 14px;
+}
+
+.footer-info i,
+.footer-social i {
+    margin-right: 10px;
+    color: var(--secondary-color);
+}
+
+.footer-social a {
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.footer-social a:hover {
+    text-decoration: underline;
+}
+
+.whatsapp-btn {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+}
+
+.whatsapp-btn a {
+    background-color: #25D366;
+    color: var(--text-color);
+    padding: 10px 15px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.whatsapp-btn a img {
+    margin-right: 10px;
+    height: 20px;
+}
+
+.whatsapp-btn a:hover {
+    opacity: 0.8;
+}
+
+/** Página Productos */
+
+.filter-button.active-category {
+    background-color: #004a69; /* Cambia el color del botón */
+    color: white!important; /* Cambia el color del texto */
+    border-color: #004a69;
+}
+
+.spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.1); /* Fondo translúcido */
+    z-index: 10; /* Asegúrate de que esté sobre otros elementos */
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: #004a69; /* Cambia el color del spinner */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.page-header-colchones {
+    background-image: url('../images/hero_colchones.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.page-header-colchones::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 19, 70, 0.7);
+}
+
+.page-header-colchones h1 {
+    color: white;
+    font-size: 2.5em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 1;
+    font-family: 'Maven Pro', sans-serif;
+    font-weight: 300;
+}
+
+.colchones-wrapper {
+    background-color: white!important;
+}
+
+/* Tarjeta personalizada */
+.custom-card-colchones {
+    border: 1px solid #ddd!important;
+    border-radius: 5px!important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1)!important;
+    transition: transform 0.2s!important;
+    overflow: hidden!important;
+}
+
+.custom-card-colchones:hover {
+    transform: scale(1.02)!important;
+}
+
+/* Imagen personalizada */
+.custom-image-colchones {
+    max-height: 200px!important;
+    object-fit: cover!important;
+    border-bottom: 1px solid #ddd!important;
+}
+
+/* Título del producto */
+.custom-title-colchones {
+    font-size: 1.1rem!important;
+    color: #004a69!important;
+    font-weight: bold!important;
+    text-transform: uppercase!important;
+    margin-top: 10px!important;
+    margin-bottom: 15px!important;
+}
+
+/* Contenedor del botón */
+.custom-footer-colchones {
+    position: relative!important;
+    padding: 0!important;
+    display: flex!important;
+    justify-content: center!important;
+    align-items: center!important;
+    height: 60px!important;
+    border-top: 1px solid #ddd!important;
+}
+
+/* Botón personalizado */
+.custom-button-colchones {
+    color: #004a69!important;
+    font-weight: bold!important;
+    border-radius: 5px!important;
+    padding: 5px 15px!important;
+    transition: all 0.3s ease!important;
+    position: relative!important;
+    top: -10px!important; /* Mueve el botón hacia arriba para que el borde lo atraviese */
+    background-color: white!important; /* Fondo blanco para simular la división */
+}
+
+.custom-button-colchones:hover {
+    background-color: #004a69!important;
+    color: white!important;
+    text-decoration: none;
+}
+
+/* Ficha de Producto */
+
+
+.product-container {
+    width: 100%;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+}
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+.product-title {
+    position: absolute;
+    bottom: 20px;
+    left: 7%;
+    color: white;
+    font-size: 2.5em;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+.product-description {
+    background-color: #d4b474;
+    color: white;
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.content-wrapper-ficha {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.product-gallery {
+    width: 100%;
+    margin: 20px auto;
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px; /* Bordes redondeados */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Sombra elegante */
+}
+
+.gallery-container {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+}
+
+.gallery-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover!important;
+    flex-shrink: 0;
+    padding: 5px; /* Espaciado entre imágenes */
+    background: #f8f9fa; /* Fondo claro para las imágenes */
+}
+
+.gallery-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    transition: background 0.3s ease;
+}
+
+.gallery-button:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.gallery-button.prev {
+    left: 15px;
+}
+
+.gallery-button.next {
+    right: 15px;
+}
+
+@media (max-width: 768px) {
+    .gallery-image {
+        width: 100%;
+        padding: 3px;
+    }
+
+    .gallery-button {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+}
+
+
+.technical-specs {
+    background-color: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 20px;
+}
+.specs-title {
+    color: #1c4f6b;
+    font-size: 1.5em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.specs-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.spec-item {
+    background-color: #1c4f6b;
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: left;
+    font-family: 'Maven Pro', sans-serif;
+    text-align: left;
+
+}
+.spec-item img {
+    width: 25px;
+    height: 25px;
+    margin-right: 10px;
+}
+.measures-table-container {
+    width: 100%;
+    padding: 20px 0;
+}
+.measures-table {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    border-collapse: collapse;
+}
+.measures-title {
+color: white;
+padding: 10px;
+text-align: center;
+font-family: 'Maven Pro', sans-serif;
+}
+
+.measures-table th, .measures-table td {
+    border: 1px solid #fff;
+    padding: 10px;
+    text-align: left;
+    color: #fff;
+}
+
+.additional-info {
+    color: #fff;
+    padding-left: 6%;
+    padding-bottom: 20px;
+    text-align: left;
+}
+
+.landing-product-description {
+    font-size: 1.1em;
+}
+
+.ficha-producto-container {
+    background-color: #d4b474;
+}
+
+.colors-table-container {
+  text-align: center;
+  padding: 20px 10px;
+  background: transparent;
+  border-radius: 12px;
+}
+
+.colors-title {
+  color: white;
+  padding: 10px;
+  text-align: center;
+  font-family: 'Maven Pro', sans-serif;
+}
+
+.colors-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+}
+
+.color-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  width: 120px;
+  padding: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.color-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.color-sample {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid #333;
+  margin-bottom: 10px;
+}
+
+.color-name {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #555;
+  text-transform: capitalize;
+}
+
+
+/** Página About Us */
+
+.page-header-about {
+    background-size: cover;
+    background-position: center;
+    height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.page-header-about::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 19, 70, 0.7);
+}
+
+.page-header-about h1 {
+    color: white;
+    font-size: 2.5em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    position: relative;
+    z-index: 1;
+    font-family: 'Maven Pro', sans-serif;
+    font-weight: 300;
+}
+
+
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    .about-container h2 {
+        font-size: 28px;
+    }
+}
+
+.history-section {
+    background-color: var(--secondary-color);
+    color: #fff;
+    padding: 60px 20px;
+    text-align: left;
+}
+
+.history-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.history-container h3 {
+    font-size: 28px;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.history-container p {
+    margin-bottom: 15px;
+    line-height: 1.6;
+    font-size: 16px;
+    color: #fff;
+}
+
+
+.values-section {
+    background-color: #004a69;
+    padding: 50px 20px;
+    color: #fff;
+}
+
+.values-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.value-item {
+    text-align: center;
+    max-width: 300px;
+    margin: 20px;
+}
+
+.value-item i {
+    font-size: 40px;
+    color: #D1AD6E;
+    margin-bottom: 15px;
+}
+
+.value-item h3 {
+    margin-bottom: 10px;
+    color: #D1AD6E;
+}
+
+.value-item p {
+    font-size: 14px;
+}
+
+.separator {
+    max-width: 50px;
+    margin: 0 20px;
+}
+
+.video-section-about {
+    background-color: #D1AD6E;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.video-container-about {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1250px;
+    margin: 0 auto;
+}
+
+.video-text-about {
+    flex: 1;
+    text-align: left;
+    margin-right: 20px;
+}
+
+.video-text-about h3 {
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: var(--text-color);
+}
+
+.video-text-about p {
+    line-height: 1.6;
+    font-size: 16px;
+    color: var(--text-color);
+}
+
+.video-playerabout {
+    flex: 1;
+}
+
+.video-playerabout video {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    .values-container {
+        flex-direction: column;
+    }
+
+    .video-container-about {
+        flex-direction: column;
+    }
+
+    .video-text-about, .video-player-about {
+        margin: 20px 0;
+    }
+}
+
+
+/** WhatsApp Button Layout */
+
+.whatsapp-button-layout-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.whatsapp-button-layout-element {
+    display: flex;
+    align-items: center;
+    background-color: #25D366;
+    color: white;
+    padding: 20px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+}
+
+.whatsapp-button-layout-element:hover {
+  color: white!important;
+  transform: scale(1.1);
+}
+
+.whatsapp-icon-layout {
+  font-size: 3em;
+}
+
+
