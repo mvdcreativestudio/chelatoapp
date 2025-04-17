@@ -1,0 +1,164 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap');
+
+/* Estilos específicos para la ficha de producto */
+:root {
+    --main-bg-color: #000000;
+    --accent-color: #e5f744;
+    --text-color: #FFFFFF;
+    --secondary-bg-color: #111111;
+}
+
+
+body {
+    background-color: var(--main-bg-color);
+    color: var(--text-color);
+    font-family: 'Open Sans', sans-serif; /* Cambiar a Open Sans */
+}
+
+.navbar {
+    background-color: var(--main-bg-color);
+    max-height: 100px;
+    padding: 0.5rem 1rem; /* Asegura que haya suficiente espacio en la navbar */
+}
+
+.navbar-brand {
+    max-width: fit-content;
+    max-height: fit-content;
+}
+
+.navbar-brand img {
+    max-height: 80px; /* Ajusta la altura máxima del logo */
+    width: auto; /* Mantiene la relación de aspecto */
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: var(--accent-color);
+}
+
+.btn-outline-light:hover {
+    color: var(--main-bg-color);
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+/* Carrusel */
+   
+
+.carousel-control-prev-icon, .carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    padding: 10px;
+}
+
+.carousel-inner {
+    max-height: 400px; /* Ajusta la altura máxima del carrusel */
+   
+}
+
+.carousel-item {
+    display: flex; /* Usar flexbox para centrar la imagen */
+    justify-content: center; /* Centrar horizontalmente */
+    align-items: center; /* Centrar verticalmente */
+  
+}
+
+.carousel-item img {
+    max-width: 100%; /* Asegura que la imagen ocupe todo el ancho del contenedor */
+    max-height: 100%; /* Asegura que la imagen no exceda la altura del contenedor */
+    object-fit: contain; /* Ajusta la imagen dentro del contenedor sin recortarla */
+}
+
+.img-thumbnail {
+    background-color: var(--secondary-bg-color);
+    border-color: var(--accent-color);
+    max-width: 100%;
+    height: 100px; /* Ajusta la altura de las miniaturas */
+    object-fit: contain; /* Ajusta las miniaturas dentro del contenedor */
+    margin-left: 20%;
+}
+
+h1 {
+    font-size: 1.5rem;
+    color: var(--text-color);
+    font-weight: 800; /* Peso seminegrita */
+}
+
+.product-details {
+    font-size: 0.9rem;
+}
+
+.price {
+    font-size: 2rem;
+    color: var(--accent-color);
+}
+
+.subprice {
+    font-size: 1rem;
+    color: var(--accent-color);
+    text-align: left; /* Alinear a la izquierda */
+    margin-top: 0%; /* Asegura que esté pegado a la parte inferior del contenedor */
+    margin-left: 20%;
+}
+
+.row .prices {
+    display: flex; /* Usar flexbox para alinear elementos */
+    align-items:baseline; /* Alinear elementos al fondo */
+}
+
+.btn-outline-secondary {
+    color: var(--text-color);
+    border-color: var(--text-color);
+}
+
+.btn-outline-secondary:hover {
+    color: var(--main-bg-color);
+    background-color: var(--text-color);
+}
+
+.btn-dark {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: var(--main-bg-color);
+}
+
+.btn-dark:hover {
+    opacity: 0.8;
+}
+
+.btn-outline-success {
+    color: #25D366;
+    border-color: #25D366;
+}
+
+.btn-outline-success:hover {
+    color: var(--main-bg-color);
+    background-color: #25D366;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.2rem;
+    }
+
+    .price {
+        font-size: 1.5rem;
+    }
+
+    .quantity-control {
+        flex-wrap: wrap;
+    }
+
+    .quantity-control .btn-dark {
+        margin-top: 10px;
+        width: 100%;
+    }
+}
+
+/* Quita las flechas de los selectores de cantidad */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+

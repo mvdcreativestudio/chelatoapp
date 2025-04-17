@@ -25,12 +25,16 @@
 @endif
 
 <div class="video-container">
-  <video autoplay muted loop id="myVideo" class="video-background">
+  <video autoplay muted loop id="myVideo" class="video-background desktop-video">
       <source src="assets/img/videos/back-chelato.mp4" type="video/mp4">
   </video>
+  
+  <video autoplay muted loop id="myVideoMobile" class="video-background mobile-video">
+      <source src="assets/img/videos/back-chelato-mobile.mp4" type="video/mp4">
+  </video>
+  
   <div class="video-overlay">
     <h2 class="header-title">Llegaste al paraíso del helado</h2>
-    <img src="assets/img/branding/chelato-white.png" class="logo-header" alt="">
     <div class="animated-text-container">
       <a class="animated-text" href="#selectStore">Pedí Online <i class="fa fa-arrow-down arrow-animate"></i></a>
     </div>
@@ -142,7 +146,44 @@
 
 </div>
 
+<style>
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
 
+.video-background {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: translate(-50%, -50%);
+}
+
+.desktop-video {
+  display: block;
+}
+
+.mobile-video {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-video {
+    display: none;
+  }
+
+  .mobile-video {
+    display: block;
+  }
+}
+
+
+</style>
 
 
 @endsection
