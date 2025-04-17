@@ -180,6 +180,7 @@ $paymentStatusTranslations = [
                     </table>
                 </div>
             </div>
+            
             <div class="card-footer">
                 <div class="d-flex justify-content-end">
                     <div class="income-calculations" style="min-width: 250px">
@@ -197,16 +198,32 @@ $paymentStatusTranslations = [
                             <span class="fw-semibold">Subtotal:</span>
                             <span class="text-heading">{{ $settings->currency_symbol ?? '$' }}{{ number_format($sumSubtotal ?? 0, 2) }}</span>
                         </div>
-                        @if($income->tax_rate_id)
-                            @php
-                                $tax = \App\Models\TaxRate::find($income->tax_rate_id);
-                                $taxAmount = $sumSubtotal * ($tax->rate / 100);
-                            @endphp
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="fw-semibold">{{ $tax->name }} ({{ $tax->rate }}%):</span>
-                                <span class="text-heading">{{ $settings->currency_symbol ?? '$' }}{{ number_format($taxAmount, 2) }}</span>
-                            </div>
+
+                        @php
+                            $taxAmount = 0;
+                            $taxInfo = '';
+                            
+                            if ($income->client && $income->client->tax_rate_id) {
+                                $clientTax = \App\Models\TaxRate::find($income->client->tax_rate_id);
+                                if ($clientTax && $clientTax->rate == 0) {
+                                    $taxInfo = "Exento ({$clientTax->name})";
+                                } elseif ($income->tax_rate_id && $income->taxRate) {
+                                    $taxAmount = $sumSubtotal * ($income->taxRate->rate / 100);
+                                    $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
+                                }
+                            } elseif ($income->tax_rate_id && $income->taxRate) {
+                                $taxAmount = $sumSubtotal * ($income->taxRate->rate / 100);
+                                $taxInfo = "{$income->taxRate->name} ({$income->taxRate->rate}%)";
+                            }
+                        @endphp
+
+                        @if($taxInfo)
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="fw-semibold">{{ $taxInfo }}:</span>
+                            <span class="text-heading">{{ $settings->currency_symbol ?? '$' }}{{ number_format($taxAmount, 2) }}</span>
+                        </div>
                         @endif
+
                         <div class="d-flex justify-content-between pt-2 border-top mt-2">
                             <span class="fw-bold">Total:</span>
                             <span class="text-heading fw-bold">{{ $settings->currency_symbol ?? '$' }}{{ number_format($income->income_amount, 2) }}</span>
