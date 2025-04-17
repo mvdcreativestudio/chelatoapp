@@ -25,7 +25,8 @@ $(function () {
             { data: 'init_date' }, // 5️⃣ Fecha de Inicio
             { data: 'due_date' }, // 6️⃣ Fecha de Expiración
             { data: 'creator_name' }, // 7️⃣ Creado por
-            { data: null, defaultContent: '' } // 8️⃣ Acciones
+            { data: 'single_use' }, // 8️⃣ Uso único
+            { data: null, defaultContent: '' } // 9️⃣ Acciones
           ],
 
           columnDefs: [
@@ -86,7 +87,13 @@ $(function () {
                 }
             },
             {
-                targets: 8, // ✅ Acciones
+                targets: 8, // ✅ Uso único
+                render: function (data, type, full, meta) {
+                    return full.single_use === 1 ? 'Sí' : 'No';
+                }
+            },
+            {
+                targets: 9, // ✅ Acciones
                 title: 'Acciones',
                 orderable: false,
                 searchable: false,
@@ -272,6 +279,14 @@ $(function () {
             $('#editCouponModal #couponType').val(response.type);
             $('#editCouponModal #couponAmount').val(response.amount);
 
+            // ✅ Marcar o desmarcar el checkbox de uso único
+            if (response.single_use === 1 || response.single_use === '1') {
+              $('#editCouponModal #editSingleUse').prop('checked', true);
+            } else {
+              $('#editCouponModal #editSingleUse').prop('checked', false);
+            }
+
+
             // ✅ Limpiar checkboxes antes de marcar los excluidos
             $('.editExcludedProducts').prop('checked', false);
             $('.editExcludedCategories').prop('checked', false);
@@ -314,6 +329,7 @@ function submitEditCoupon(recordId) {
       'due_date': $('#editCouponModal #couponExpiry').val(),
       'excluded_products': [],
       'excluded_categories': [],
+      'single_use': $('#editCouponModal #editSingleUse').is(':checked') ? 1 : 0,
       '_token': $('meta[name="csrf-token"]').attr('content')
   };
 
@@ -477,8 +493,9 @@ function submitEditCoupon(recordId) {
         'init_date': $('#couponInit').val(),
         'due_date': $('#couponExpiry').val(),
         'excluded_products': [],
-        'excluded_categories': []
-    };
+        'excluded_categories': [],
+        'single_use': $('#singleUse').prop('checked') ? 1 : 0,
+      };
 
     // ✅ Capturar los productos excluidos marcados
     $('input[name="excluded_products[]"]:checked').each(function() {

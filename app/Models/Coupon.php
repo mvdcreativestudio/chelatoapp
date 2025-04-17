@@ -21,7 +21,8 @@ class Coupon extends Model
         'init_date',
         'due_date',
         'creator_id',
-        'status'
+        'status',
+        'single_use'
     ];
 
     public function creator()

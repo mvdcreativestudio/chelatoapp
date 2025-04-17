@@ -46,6 +46,7 @@ class CouponRepository
           'due_date' => $coupon->due_date ? Carbon::parse($coupon->due_date)->format('Y-m-d') : null,
           'excluded_products' => $coupon->excludedProducts->pluck('id')->toArray(),
           'excluded_categories' => $coupon->excludedCategories->pluck('id')->toArray(),
+          'single_use' => $coupon->single_use,
       ];
   }
 
@@ -87,6 +88,27 @@ class CouponRepository
       $dueDate = isset($data['due_date']) ? date('Y-m-d', strtotime($data['due_date'])) : null;
       $status = ($dueDate && $dueDate <= $currentDate) ? 0 : 1;
 
+      $singleUse = filter_var($data['single_use'] ?? 0, FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+
+      Log::info('Valores a guardar en el cupón:', [
+          'code' => $data['code'],
+          'type' => $data['type'],
+          'amount' => $data['amount'],
+          'init_date' => $data['init_date'] ?? null,
+          'due_date' => $data['due_date'] ?? null,
+          'creator_id' => auth()->id(),
+          'status' => $status,
+          'single_use' => $singleUse
+      ]);
+
+      Log::info('Tipo y valor de single_use:', [
+        'raw' => $data['single_use'],
+        'tipo' => gettype($data['single_use']),
+        'comparación == 1' => $data['single_use'] == '1',
+        'comparación === 1' => $data['single_use'] === '1',
+      ]);
+
+
       $coupon = Coupon::create([
           'code' => $data['code'],
           'type' => $data['type'],
@@ -95,6 +117,7 @@ class CouponRepository
           'due_date' => $data['due_date'] ?? null,
           'creator_id' => auth()->id(),
           'status' => $status,
+          'single_use' => $singleUse,
       ]);
 
       Log::info('Cupón creado con éxito:', ['coupon_id' => $coupon->id]);
@@ -157,6 +180,7 @@ class CouponRepository
               'due_date' => $dueDate,
               'creator_id' => auth()->id(),
               'status' => $status,
+              'single_use' => $data['single_use']
           ]);
 
           Log::info('Productos excluidos recibidos:', $data['excluded_products'] ?? []);

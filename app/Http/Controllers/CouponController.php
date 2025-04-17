@@ -75,6 +75,8 @@ class CouponController extends Controller
   */
   public function store(StoreCouponRequest $request): JsonResponse
   {
+    Log::info('Datos recibidos del request:', $request->all());
+
     $result = $this->couponRepository->createCoupon($request->validated());
     return response()->json($result);
   }

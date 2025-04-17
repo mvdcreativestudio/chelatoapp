@@ -197,6 +197,7 @@
             <th>Fecha de Inicio</th>
             <th>Fecha de Expiración</th>
             <th>Creado por</th>
+            <th>Uso Único</th>
             <th>Acciones</th>
           </tr>
         </thead>

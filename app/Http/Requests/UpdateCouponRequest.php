@@ -23,6 +23,7 @@ class UpdateCouponRequest extends FormRequest
             'excluded_products.*' => 'exists:products,id',
             'excluded_categories' => 'nullable|array',
             'excluded_categories.*' => 'exists:product_categories,id',
+            'single_use' => 'nullable|in:0,1',
         ];
     }
 

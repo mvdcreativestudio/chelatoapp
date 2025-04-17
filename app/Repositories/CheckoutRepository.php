@@ -126,12 +126,49 @@ class CheckoutRepository
 
             // Obtener los datos del cliente
             $clientData = $this->getClientData($request);
+            Log::info('Datos del cliente recibidos:', $clientData);
+
+            // Validar si el cupón es de un solo uso por cliente
+            $couponId = session('coupon.id');
+            Log::info('Cupón ID desde sesión:', ['coupon_id' => $couponId]);
+
+            if ($couponId && $clientData['document']) {
+                Log::info('Buscando cliente por documento:', ['document' => $clientData['document']]);
+                $client = Client::where('document', $clientData['document'])->first();
+
+                if ($client) {
+                    Log::info('Cliente encontrado:', ['client_id' => $client->id]);
+
+                    $coupon = Coupon::find($couponId);
+                    if ($coupon) {
+                        Log::info('Cupón encontrado:', ['single_use' => $coupon->single_use]);
+
+                        if ($coupon->single_use) {
+                            $alreadyUsed = Order::where('client_id', $client->id)
+                                ->where('coupon_id', $coupon->id)
+                                ->exists();
+
+                            Log::info('¿El cliente ya usó el cupón?', ['used' => $alreadyUsed]);
+
+                            if ($alreadyUsed) {
+                                Log::warning('El cliente ya utilizó el cupón, no se debería continuar.');
+                                throw new \Exception('Este cupón solo se puede usar una vez por cliente.');
+                            }
+                        }
+                    } else {
+                        Log::warning('No se encontró el cupón con ID:', ['coupon_id' => $couponId]);
+                    }
+                } else {
+                    Log::warning('No se encontró cliente con documento:', ['document' => $clientData['document']]);
+                }
+            } else {
+                Log::info('No se pudo validar el cupón por falta de datos.', ['couponId' => $couponId, 'document' => $clientData['document']]);
+            }
 
             // Obtener los datos de la orden
             $orderData = $this->getOrderData($request);
 
             $order = $this->createOrder($clientData, $orderData);
-
             $store = $order->store;
 
             if ($store->automatic_billing) {
@@ -141,76 +178,65 @@ class CheckoutRepository
                 $order->update(['is_billed' => false]);
             }
 
-            // Verificar si el método de pago es 'card' (tarjeta)
             if ($request->payment_method === 'card') {
-                // Obtener las credenciales de MercadoPago para la tienda
                 $mercadoPagoAccount = MercadoPagoAccount::where('store_id', $storeId)->first();
 
                 if (!$mercadoPagoAccount) {
                     throw new \Exception('No se encontraron las credenciales de MercadoPago para la tienda asociada al pedido.');
                 }
 
-                // Configurar el SDK de MercadoPago con las credenciales de la tienda
                 $mercadoPagoService->setCredentials($mercadoPagoAccount->public_key, $mercadoPagoAccount->access_token);
 
-                // Procesar el pago con tarjeta
                 $redirectUrl = $this->processCardPayment($request, $order, $mercadoPagoService, $storeId);
                 DB::commit();
                 session()->forget('cart');
+                session()->forget('coupon'); // limpiar después de usar
                 return Redirect::away($redirectUrl);
             } else {
                 DB::commit();
                 session()->forget('cart');
+                session()->forget('coupon'); // limpiar después de usar
 
                 Log::info('Pedido procesado correctamente.');
 
-                // Crear envío en PedidosYa si el método de envío es 'peya'
                 if ($order->shipping_method === 'peya') {
                     Log::info('Método de envío es peya. Creando envío...', ['order' => $order]);
                     $this->createPeYaShipping($order);
                 }
 
-                // Enviar correos
                 try {
                     Log::channel('emails')->info('Método de pago es efectivo. Intentando enviar correos...');
                     $variables = [
-                        'order_id' => $order->id,
-                        'client_name' => $order->client->name,
-                        'client_lastname' => $order->client->lastname,
-                        'client_email' => $order->client->email,
-                        'client_phone' => $order->client->phone,
-                        'client_address' => $order->client->address,
-                        'client_city' => $order->client->city,
-                        'client_state' => $order->client->state,
-                        'client_country' => $order->client->country,
-                        'order_subtotal' => $order->subtotal,
-                        'order_shipping' => $order->shipping,
-                        'coupon_amount' => $order->coupon_amount,
-                        'order_total' => $order->total,
-                        'order_date' => $order->date,
-                        'order_items' => $order->products,
-                        'order_shipping_method' => $order->shipping_method,
-                        'order_payment_method' => $order->payment_method,
-                        'order_payment_status' => $order->payment_status,
-                        'store_id' => $order->store->id,
-                        'store_name' => $order->store->name,
+                      'order_id' => $order->id,
+                      'client_name' => $order->client->name,
+                      'client_lastname' => $order->client->lastname,
+                      'client_email' => $order->client->email,
+                      'client_phone' => $order->client->phone,
+                      'client_address' => $order->client->address,
+                      'client_city' => $order->client->city,
+                      'client_state' => $order->client->state,
+                      'client_country' => $order->client->country,
+                      'order_total' => $order->total,
+                      'order_date' => $order->date,
+                      'order_items' => $order->products,
                     ];
 
-                    $this->emailNotificationsRepository->sendNewOrderEmail($variables);
-                    $this->emailNotificationsRepository->sendNewOrderClientEmail($variables);
+                    $this->emailService->sendNewOrderEmail($variables);
+                    $this->emailService->sendNewOrderClientEmail($variables);
                 } catch (\Exception $e) {
-                    dd($e->getMessage());
                     Log::channel('emails')->error("Error al enviar correos: {$e->getMessage()} en {$e->getFile()}:{$e->getLine()}");
                 }
-                // Redirigir al usuario a la página de éxito usando el UUID
+
                 return redirect()->route('checkout.success', $order->uuid);
             }
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Error al procesar el pedido: {$e->getMessage()} en {$e->getFile()}:{$e->getLine()}");
-            return back()->withErrors('Error al procesar el pedido. Por favor, intente nuevamente.')->withInput();
+            return back()->with('error', $e->getMessage())->withInput();
         }
     }
+
+
 
     /**
      * Crea el envío en PedidosYa si el método de envío es 'peya'.
@@ -469,8 +495,10 @@ class CheckoutRepository
      * @return array
      * @throws \Exception
      */
-    public function applyCouponToSession(string $couponCode, float $subtotal): array
+    public function applyCouponToSession(string $couponCode, float $subtotal, string $document = null): array
     {
+        Log::info('Documento recibido para validación:', ['doc' => $document]);
+
         $coupon = Coupon::with(['excludedProducts', 'excludedCategories'])->where('code', $couponCode)->first();
 
         if (!$coupon) {
@@ -478,6 +506,24 @@ class CheckoutRepository
         }
 
         $now = now();
+
+        // ✅ Verificar si el cupón es de un solo uso
+        if ($coupon->single_use) {
+          // Buscar el cliente por su documento
+          $clientDocument = $document;
+          $client = \App\Models\Client::where('document', $clientDocument)->first();
+
+          if ($client) {
+              $used = \App\Models\Order::where('client_id', $client->id)
+                  ->where('coupon_id', $coupon->id)
+                  ->exists();
+
+              if ($used) {
+                  throw new \Exception('Este cupón solo se puede usar una vez por cliente.');
+              }
+          }
+        }
+
 
         // ✅ Verificar fechas del cupón
         if ($coupon->init_date && $now < $coupon->init_date) {

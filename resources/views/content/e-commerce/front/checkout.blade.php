@@ -552,7 +552,7 @@ document.getElementById('orderConfirm').addEventListener('click', async function
             store_id: storeId,
             referenceId: `Chelato_PeYa_REF-${Date.now()}`,
             items,
-            // isTest: true,
+            isTest: true,
             notificationMail: document.getElementById('email').value || null,
             waypoints: [
                 {
@@ -606,7 +606,27 @@ document.getElementById('orderConfirm').addEventListener('click', async function
     }
 });
 
+// Pasar el doc_recep a al formulario del cupón para validar uso único
+document.addEventListener('DOMContentLoaded', function () {
+    const couponForm = document.querySelector('form[action="{{ route('apply.coupon') }}"]');
+    const docInput = document.querySelector('input[name="doc_recep"]');
 
+    if (couponForm && docInput) {
+        // Crear un input oculto para doc_recep si no existe
+        let hiddenDocInput = couponForm.querySelector('input[name="doc_recep"]');
+        if (!hiddenDocInput) {
+            hiddenDocInput = document.createElement('input');
+            hiddenDocInput.type = 'hidden';
+            hiddenDocInput.name = 'doc_recep';
+            couponForm.appendChild(hiddenDocInput);
+        }
+
+        // Al hacer submit, copiar el valor
+        couponForm.addEventListener('submit', function () {
+            hiddenDocInput.value = docInput.value;
+        });
+    }
+});
 
 </script>
 

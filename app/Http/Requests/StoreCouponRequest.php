@@ -23,6 +23,8 @@ class StoreCouponRequest extends FormRequest
             'excluded_products.*' => 'exists:products,id', // Cada elemento debe existir en la tabla products
             'excluded_categories' => 'nullable|array',
             'excluded_categories.*' => 'exists:product_categories,id', // Cada elemento debe existir en la tabla product_categories
+            'single_use' => 'nullable|in:0,1', // 👈 ¡ESTA ES LA CLAVE!
+
         ];
     }
 
@@ -32,6 +34,7 @@ class StoreCouponRequest extends FormRequest
             'excluded_products.*.exists' => 'Uno o más productos seleccionados no existen.',
             'excluded_categories.*.exists' => 'Una o más categorías seleccionadas no existen.',
             'due_date.after_or_equal' => 'La fecha de expiración no puede ser anterior a la fecha de inicio.',
+            
         ];
     }
 }

@@ -23,6 +23,12 @@
             <label for="couponAmount" class="form-label">Valor</label>
             <input type="number" class="form-control" id="couponAmount" name="couponAmount" required>
           </div>
+          <!-- Uso único -->
+          <div class="mb-3 form-check">
+            <input type="hidden" name="single_use" value="0">
+            <input type="checkbox" class="form-check-input" id="singleUse" name="single_use" value="1">
+            <label class="form-check-label" for="singleUse">Este cupón es de uso único por cliente</label>
+          </div>
           <div class="mb-3">
             <label for="couponInit" class="form-label">Fecha de Inicio</label>
             <input type="date" class="form-control" id="couponInit" name="couponInit">
