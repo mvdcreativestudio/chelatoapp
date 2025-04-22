@@ -16,6 +16,10 @@ use App\Models\Client;
 use App\Models\PriceList;
 use App\Models\Store;
 use App\Models\TaxRate;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ClientTemplateImport;
+use App\Imports\ClientImport;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
@@ -392,6 +396,76 @@ class ClientController extends Controller
         return response()->json(['success' => 'Cliente y lista de precios actualizados correctamente.']);
     }
 
+     /**
+     * Descarga una plantilla para importar clientes.
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function downloadTemplate(Request $request)
+    {
+        try {
+            return Excel::download(new ClientTemplateImport, 'plantilla_clientes.xlsx');
+        } catch (\Exception $e) {
+            Log::error('Error al descargar la plantilla: ' . $e->getMessage());
+            return back()->with('error', 'Error al descargar la plantilla');
+        }
+    }
 
+
+    /**
+     * Importa clientes desde un archivo Excel.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|mimes:xlsx,xls',
+            ]);
+
+            // Obtener store_id del usuario autenticado
+            $store_id = Auth::user()->store_id;
+
+            DB::beginTransaction();
+
+            Excel::import(new ClientImport($store_id), $request->file('file'));
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Clientes importados correctamente'
+            ]);
+
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            DB::rollBack();
+            $failures = $e->failures();
+            $errors = [];
+
+            foreach ($failures as $failure) {
+                $errors[] = "Fila {$failure->row()}: {$failure->errors()[0]}";
+            }
+
+            Log::error('Error en la validación de importación: ', $errors);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en la validación de datos',
+                'errors' => $errors
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al importar clientes: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al importar clientes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
 }

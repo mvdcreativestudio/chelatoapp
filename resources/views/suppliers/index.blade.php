@@ -7,14 +7,16 @@
   'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
-  'resources/assets/vendor/libs/select2/select2.scss'
+  'resources/assets/vendor/libs/select2/select2.scss',
+  'resources/assets/vendor/libs/toastr/toastr.scss',
 ])
 @endsection
 
 @section('vendor-script')
 @vite([
   'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
-  'resources/assets/vendor/libs/select2/select2.js'
+  'resources/assets/vendor/libs/select2/select2.js',
+  'resources/assets/vendor/libs/toastr/toastr.js',
 ])
 @endsection
 
@@ -31,9 +33,6 @@
 @endsection
 
 @section('content')
-<h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Gestión /</span> Listado de Proveedores
-</h4>
 
 @if (session('success'))
 <div class="alert alert-success mt-3 mb-3">
@@ -72,6 +71,15 @@
     </div>
   </div>
 
+  <div class="dropdown me-2">
+      <button class="btn btn-outline-primary btn-sm shadow-sm  dropdown-toggle" type="button" id="dropdownImportExport" data-bs-toggle="dropdown" aria-expanded="false">
+        <span><i class="fa-solid fa-download"></i>Importar</span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImportExport">
+        <li><a class="dropdown-item" href="#" id="openImportModal"><i class="bx bx-upload"></i> Importar desde Excel</a></li>
+      </ul>
+    </div>
+
   <div class="text-end d-flex gap-2" place-id="buttonCreate">>
   </div>
 </div>
@@ -79,4 +87,7 @@
     <div class="row supplier-list-container">
     </div>
   </div>
+
+@include('suppliers.partials.bulk-creation')
+
 @endsection
