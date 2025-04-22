@@ -23,16 +23,23 @@ class IncomeRepository
      */
     public function getAllIncomes(): mixed
     {
-        $incomes = Income::all();
-        $totalIncomes = $incomes->count();
-        $totalIncomeAmount = $incomes->sum('income_amount');
-        
-        $averageIncome = $totalIncomes > 0 ? $totalIncomeAmount / $totalIncomes : 0;
-        
-        $monthlyIncome = Income::whereMonth('income_date', now()->month)
-                            ->whereYear('income_date', now()->year)
-                            ->sum('income_amount');
-        
+        $incomes = Income::where('cash_register_log_id', $cashRegisterLogId)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $totalIncomes = Income::where('cash_register_log_id', $cashRegisterLogId)
+            ->count();
+
+        $totalIncomeAmount = Income::where('cash_register_log_id', $cashRegisterLogId)
+            ->get()
+            ->reduce(function ($carry, $income) {
+                if ($income->currency === 'Dólar' && $income->currency_rate > 0) {
+                    return $carry + ($income->income_amount * $income->currency_rate);
+                }
+                return $carry + $income->income_amount;
+            }, 0);
+
+        // Obtener todos los datos necesarios para los forms
         $paymentMethods = PaymentMethod::all();
         $incomeCategories = IncomeCategory::all();
         $clients = Client::all();
@@ -235,5 +242,61 @@ class IncomeRepository
             ->get();
 
         return $query;
+    }
+
+    public function exportCfePdf($incomeId)
+    {
+        $income = Income::findOrFail($incomeId);
+        return $this->accountingRepository->getCfePdfFree($income);
+    }
+
+
+    /**
+     * Obtiene la última cotización del dolar para realizar ventas.
+     * @return float
+     */
+    public function getDollarRate(): float
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+        
+        if (!$dollar) {
+            return 0;
+        }
+        
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+            
+        return $rate ? $rate->sell : 0;
+    }
+
+    /**
+     * Obtiene la cotización del dolar para una fecha específica.
+     * @param string $date
+     * @return float
+     */
+    public function getHistoricalDollarRate(string $date): float
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+        
+        if (!$dollar) {
+            return 0;
+        }
+        
+        // Buscar la cotización del día específico
+        $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+            ->whereDate('created_at', $date)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$rate) {
+            // Si no hay cotización para ese día, buscar la más cercana anterior
+            $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+                ->whereDate('created_at', '<=', $date)
+                ->orderBy('created_at', 'desc')
+                ->first();
+        }
+                
+        return $rate ? $rate->sell : 0;
     }
 }
