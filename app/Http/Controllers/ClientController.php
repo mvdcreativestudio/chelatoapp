@@ -22,6 +22,7 @@ use App\Imports\ClientImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use App\Exports\ClientsExport;
 
 
 class ClientController extends Controller
@@ -466,6 +467,15 @@ class ClientController extends Controller
                 'message' => 'Error al importar clientes: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Exportar los clientes a un archivo Excel.
+     *
+     */
+    public function export()
+    {
+        return Excel::download(new ClientsExport, 'clientes.xlsx');
     }
 
 }

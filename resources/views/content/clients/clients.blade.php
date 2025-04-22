@@ -56,18 +56,28 @@
   </div>
 
   <div class="dropdown me-2">
-      <button class="btn btn-outline-primary btn-sm shadow-sm  dropdown-toggle" type="button" id="dropdownImportExport" data-bs-toggle="dropdown" aria-expanded="false">
-        <span><i class="fa-solid fa-download"></i>Importar</span>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImportExport">
-        <li><a class="dropdown-item" href="#" id="openImportModal"><i class="bx bx-upload"></i> Importar desde Excel</a></li>
-      </ul>
-    </div>
+    <button class="btn btn-outline-primary btn-sm shadow-sm dropdown-toggle" type="button" id="dropdownImportExport" data-bs-toggle="dropdown" aria-expanded="false">
+      <span><i class="fa-solid fa-download"></i> Importar/Exportar</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImportExport">
+      <li>
+        <a class="dropdown-item" href="#" id="openImportModal">
+          <i class="bx bx-upload"></i> Importar desde Excel
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" href="{{ route('clients.export') }}">
+          <i class="bx bx-download"></i> Exportar a Excel
+        </a>
+      </li>
+    </ul>
+  </div>
+
 
   <div class="text-end d-flex gap-2">
-    <button type="button" class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1 w-100" data-bs-toggle="offcanvas" data-bs-target="#offcanvasEcommerceCustomerAdd">
-      <i class="bx bx-plus"></i> Nuevo Cliente
-    </button>
+      <button type="button" class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1 w-100" data-bs-toggle="offcanvas" data-bs-target="#offcanvasEcommerceCustomerAdd">
+        <i class="bx bx-plus"></i> Nuevo Cliente
+      </button>
   </div>
 </div>
 

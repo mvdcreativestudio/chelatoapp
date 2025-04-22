@@ -16,6 +16,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\SupplierImport;
 use App\Exports\SupplierTemplateImport;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Exports\SuppliersExport;
 
 class SupplierController extends Controller
 {
@@ -220,5 +221,14 @@ class SupplierController extends Controller
                 'message' => 'Error al importar proveedores: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Exportar los proveedores a un archivo Excel.
+     *
+     */
+    public function export()
+    {
+        return Excel::download(new SuppliersExport, 'proveedores.xlsx');
     }
 }

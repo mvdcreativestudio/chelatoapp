@@ -73,10 +73,15 @@
 
   <div class="dropdown me-2">
       <button class="btn btn-outline-primary btn-sm shadow-sm  dropdown-toggle" type="button" id="dropdownImportExport" data-bs-toggle="dropdown" aria-expanded="false">
-        <span><i class="fa-solid fa-download"></i>Importar</span>
+        <span><i class="fa-solid fa-download"></i>Importar/Exportar</span>
       </button>
       <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImportExport">
         <li><a class="dropdown-item" href="#" id="openImportModal"><i class="bx bx-upload"></i> Importar desde Excel</a></li>
+        <li>
+          <a class="dropdown-item" href="{{ route('suppliers.export') }}">
+            <i class="bx bx-download"></i> Exportar a Excel
+          </a>
+        </li>
       </ul>
     </div>
 

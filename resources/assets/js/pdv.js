@@ -151,18 +151,34 @@ $(document).ready(function () {
 
     // Guardar el carrito en el servidor
     function saveCart() {
-        $.ajax({
-            url: `api-cart`,
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ cart: cart.map(item => ({
-                ...item,
-                tax_rate: { ...item.tax_rate }, // Asegurar que se envía el objeto completo
-            })) }),
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-            },
-        });
+      if (!cart || cart.length === 0) {
+        console.log('Carrito vacío, no se guardará');
+        return;
+      }
+
+      console.log('Guardando carrito:', cart);
+
+      $.ajax({
+        url: `api-cart`,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+          cart: cart.map(item => ({
+            ...item,
+            tax_rate: item.tax_rate ? { ...item.tax_rate } : null,
+          }))
+        }),
+        headers: {
+          'X-CSRF-TOKEN': window.csrfToken,
+        },
+        success: function(response) {
+          console.log('Carrito guardado con éxito');
+        },
+        error: function(xhr, status, error) {
+          console.error('Error al guardar carrito:', error);
+          mostrarError('Error al guardar carrito: ' + error);
+        }
+      });
     }
 
     // Cargar las categorías y sus relaciones con los productos desde el backend
@@ -507,19 +523,19 @@ $(document).ready(function () {
     function addToCart(productId, productType) {
       const product = products.find(p => p.id === productId);
       if (!product) {
-          mostrarError('Producto no encontrado.');
-          return;
+        mostrarError('Producto no encontrado');
+        return;
       }
 
-      const basePrice = product.price || product.old_price || 0; // Precio base
-      const taxRate = product.tax_rate ? parseFloat(product.tax_rate.rate) : 0; // Tasa de impuestos
-      const taxAmountPerUnit = (basePrice * taxRate) / 100; // Impuesto por unidad
-      const priceToUse = basePrice + taxAmountPerUnit; // Precio final con impuestos
+      const basePrice = product.price || product.old_price || 0;
+      const taxRate = product.tax_rate ? parseFloat(product.tax_rate.rate) : 0;
+      const taxAmountPerUnit = (basePrice * taxRate) / 100;
+      const priceToUse = basePrice + taxAmountPerUnit;
 
       // Validar stock
       if (product.stock !== null && product.stock <= 0) {
-          mostrarError('No hay suficiente stock de este producto.');
-          return;
+        mostrarError('Este producto está agotado');
+        return;
       }
 
       // Obtener la cantidad deseada desde el input
@@ -528,79 +544,41 @@ $(document).ready(function () {
 
       // Lógica para productos configurables (compuestos)
       if (productType === 'configurable') {
-          // Mostrar el modal para seleccionar variaciones
-          $('#flavorModal').modal('show');
+        addCompositeProductToCart(productId);
+      } else {
+        // Buscar si el producto ya está en el carrito
+        const existingProductIndex = cart.findIndex(item => item.id === productId);
 
-          // Guardar el producto temporalmente hasta que se seleccionen las variaciones
-          $('#saveFlavors').off('click').on('click', function () {
-              const selectedFlavors = $('#flavorsSelect').val(); // Obtener las variaciones seleccionadas
-              if (!selectedFlavors || selectedFlavors.length === 0) {
-                  alert('Debe seleccionar al menos una variación.');
-                  return;
-              }
-
-              const category = categories.find(category => category.product_id == product.id);
-              const category_id = category ? category.category_id : null;
-
-              // Agregar el producto con variaciones como nuevo ítem en el carrito
-              cart.push({
-                  id: product.id,
-                  name: product.name,
-                  image: product.image,
-                  base_price: basePrice,      // Precio sin impuestos
-                  price: priceToUse,          // Precio con impuestos
-                  original_price: priceToUse, // Guardar el precio original con impuestos
-                  currency: product.currency,
-                  flavors: selectedFlavors,   // Variaciones seleccionadas
-                  quantity: quantity,         // Cantidad seleccionada
-                  category_id: category_id,
-                  tax_rate: product.tax_rate, // Objeto completo de tasa de impuestos
-                  tax: taxAmountPerUnit * quantity, // Impuesto total
-                });
-              
-
-              updateCart();
-              $('#flavorModal').modal('hide');
-              toastr.success(`<strong>${product.name}</strong> agregado correctamente con las variaciones seleccionadas.`);
+        if (existingProductIndex !== -1) {
+          // Si el producto ya está en el carrito, incrementar la cantidad
+          cart[existingProductIndex].quantity += quantity;
+        } else {
+          // Si el producto no está en el carrito, agregarlo
+          cart.push({
+            id: productId,
+            name: product.name,
+            // Importantes campos de precio
+            price: basePrice,
+            base_price: basePrice,
+            original_price: basePrice,
+            final_price: priceToUse,
+            currency: product.currency || 'Peso',
+            tax_rate: product.tax_rate,
+            quantity: quantity,
+            image: product.image,
+            sku: product.sku,
+            description: product.description || '',
+            isComposite: productType === 'configurable'
           });
-      }
-      // Lógica para productos simples
-      else {
-          const cartItem = cart.find(item => item.id === productId && item.flavors.length === 0); // Buscar ítem sin variaciones
-          const category = categories.find(category => category.product_id == product.id);
-          const category_id = category ? category.category_id : null;
+        }
 
-          if (cartItem) {
-              // Incrementar cantidad y recalcular impuestos
-              if (product.stock !== null && cartItem.quantity + quantity > product.stock) {
-                  mostrarError('No hay suficiente stock para agregar más unidades de este producto.');
-                  return;
-              }
-              cartItem.quantity += quantity;
-              cartItem.tax += taxAmountPerUnit * quantity; // Incrementar el impuesto total
-          } else {
-              // Agregar el producto como nuevo ítem en el carrito
-              cart.push({
-                  id: product.id,
-                  name: product.name,
-                  image: product.image,
-                  base_price: basePrice,      // Precio sin impuestos
-                  price: priceToUse,          // Precio con impuestos
-                  original_price: priceToUse, // Guardar el precio original con impuestos
-                  currency: product.currency,
-                  flavors: [],                // Sin variaciones
-                  quantity: quantity,         // Cantidad seleccionada
-                  category_id: category_id,
-                  tax_rate: product.tax_rate, // Objeto completo de tasa de impuestos
-                  tax: taxAmountPerUnit * quantity, // Impuesto total
-                });
-          }
+        // Actualizar la UI del carrito
+        updateCart();
 
-          // Restablecer el input de cantidad a 1 después de agregar al carrito
-          quantityInput.val(1);
+        // Guardar en la sesión del servidor
+        saveCart();
 
-          updateCart();
-          toastr.success(`<strong>${product.name}</strong> agregado correctamente.`);
+        toastr.success(`${product.name} agregado al carrito`);
       }
     }
 
@@ -648,100 +626,84 @@ $(document).ready(function () {
 
 
     function updateCart() {
-        var exchange_price = 0;
+      // Actualizar contador del carrito
+      $('#cart-count').text(cart.length);
 
-        $.ajax({
-            url: 'exchange-rate',
-            type: 'GET',
-            success: function (response) {
-                exchange_price = response.exchange_rate.sell;
-                let tc_value = parseFloat(exchange_price);
-                $('.exchange-rate-value').text(tc_value.toFixed(2));
+      // Habilitar/deshabilitar botón de finalizar venta
+      if (cart.length === 0) {
+        $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
+        $('#cart-items').html('<div class="text-center p-4"><i class="bx bx-cart fs-1 text-muted"></i><p class="text-muted">El carrito está vacío</p></div>');
+      } else {
+        $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
+      }
 
-                let cartHtml = '';
-                let subtotal = 0;
-                let totalTax = 0; // Total de impuestos
-                let totalItems = 0;  // Contador de productos
+      // Actualizar el HTML de los elementos del carrito
+      var cartItemsHtml = '';
+      var subtotal = 0;
+      var ivaTotal = 0;
 
-                cartHtml = `
-                <div class="row gy-3 overflow-auto" style="max-height: 400px;">
-                `;
+      cart.forEach(function(item) {
+        // Asegurarse de que todos los valores sean numéricos
+        const basePrice = parseFloat(item.base_price || item.price) || 0;
+        const itemQuantity = parseInt(item.quantity) || 0;
+        const taxRate = item.tax_rate ? parseFloat(item.tax_rate.rate) : 0;
 
-                cart.forEach(item => {
-                    const taxRate = item.tax_rate && item.tax_rate.rate ? parseFloat(item.tax_rate.rate) : 0; // Tasa de impuestos
-                    const basePrice = item.base_price || 0; // Precio base sin impuestos
-                    const taxAmount = (basePrice * taxRate / 100) * item.quantity; // Impuesto total por producto
-                    var itemTotal = (basePrice * item.quantity) + taxAmount; // Total con impuestos por producto
+        // Calcular correctamente los subtotales
+        const itemSubtotal = basePrice * itemQuantity;
+        const itemIva = (itemSubtotal * taxRate) / 100;
 
-                    if (item.currency == 'Dólar') {
-                        var itemTotal = item.quantity * item.price * exchange_price;
-                        totalTax += taxAmount * exchange_price;
-                        subtotal += itemTotal - totalTax;
-                    } else {
-                        var itemTotal = item.price * item.quantity;
-                        totalTax += taxAmount;
-                        subtotal += itemTotal - taxAmount; // Acumular subtotal sin impuestos
-                    }
+        // Acumular los totales
+        subtotal += itemSubtotal;
+        ivaTotal += itemIva;
 
-                    totalItems += item.quantity;
-                    const currencyLabel = item.currency === 'Dólar' ? 'USD' : 'UYU';
+        // Determinar el símbolo de moneda correcto
+        const itemCurrency = item.currency || 'Peso';
+        const itemCurrencySymbol = itemCurrency === 'Dólar' ? 'USD' : currencySymbol;
 
-                    cartHtml += `
-                    <div class="col-12">
-                        <div class="product-cart-card">
-                            <div class="col-4 d-flex align-items-center">
-                                <img src="${baseUrl + item.image}" class="img-fluid product-cart-card-img" alt="${item.name}">
-                            </div>
-                            <div class="col-8">
-                                <div class="product-cart-card-body">
-                                    <div class="d-flex justify-content-between">
-                                        <h5 class="product-cart-title">${item.name}</h5>
-                                        <div class="product-cart-actions">
-                                            <span class="product-cart-remove" data-id="${item.id}"><i class="bx bx-trash"></i></span>
-                                        </div>
-                                    </div>
-                                    <p class="product-cart-price">
-                                        Precio unitario: ${currencyLabel} ${basePrice.toFixed(2)}
-                                        <small class="text-muted">(Incluye ${taxRate}% de impuestos)</small>
-                                    </p>
-                                    <p class="product-cart-quantity">Cantidad: ${item.quantity}</p>
-                                    <p><strong>Total: UYU ${itemTotal.toFixed(2)}</strong></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    `;
-                });
+        cartItemsHtml += `
+          <div class="col-12 mb-2">
+            <div class="card shadow-sm">
+              <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                  <h5 class="card-title">${item.name}</h5>
+                  <p class="card-text mb-0">
+                    Cantidad: ${item.quantity} x ${itemCurrencySymbol}${basePrice.toFixed(2)}
+                    ${taxRate > 0 ? `<small class="text-muted">(+${taxRate}% IVA)</small>` : ''}
+                  </p>
+                </div>
+                <div class="text-end">
+                  <h6 class="fw-bold">${itemCurrencySymbol}${itemSubtotal.toFixed(2)}</h6>
+                  <button class="btn btn-sm btn-danger product-cart-remove" data-id="${item.id}">
+                    <i class="bx bx-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
 
-                cartHtml += `</div>`;
+      // Actualizar el contenido del carrito
+      $('#cart-items').html(cartItemsHtml);
 
-                // Actualizar el contenido del carrito
-                $('#cart-items').html(cartHtml);
+      // Actualizar los totales
+      $('.subtotal').text(`${currencySymbol}${subtotal.toFixed(2)}`);
+      $('.iva-total').text(`${currencySymbol}${ivaTotal.toFixed(2)}`);
+      $('.total').text(`${currencySymbol}${(subtotal + ivaTotal).toFixed(2)}`);
 
-                // Subtotal (sin impuestos)
-                $('.subtotal').text(`UYU ${subtotal.toFixed(2)}`);
+      // Obtener la tasa de cambio
+      $.ajax({
+        url: 'exchange-rate',
+        type: 'GET',
+        success: function(response) {
+          if (response && response.exchange_rate) {
+            $('.exchange-rate-value').text(response.exchange_rate.sell);
+          }
+        }
+      });
 
-                // Total del IVA (impuestos)
-                $('.iva-total').text(`UYU ${totalTax.toFixed(2)}`);
-
-                // Total (con impuestos)
-                const total = subtotal + totalTax;
-                $('.total').text(`UYU ${total.toFixed(2)}`);
-
-                // Actualizar el contador de productos
-                $('#cart-count').text(totalItems);
-
-                // Botón "Finalizar Venta"
-                if (cart.length === 0) {
-                    $('#finalizarVentaBtn').addClass('disabled').attr('aria-disabled', 'true');
-                } else {
-                    $('#finalizarVentaBtn').removeClass('disabled').attr('aria-disabled', 'false');
-                }
-
-                // Guardar el carrito en el servidor
-                saveCart();
-            }
-        });
+      // Importante: guardar el carrito en la sesión después de actualizar
+      saveCart();
     }
 
     // Manejar el clic en el botón "Agregar al carrito"

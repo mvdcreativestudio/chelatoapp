@@ -150,7 +150,7 @@ Route::prefix('admin')->middleware([
     Route::post('/clients/import', [ClientController::class, 'import'])->name('clients.import');
     Route::get('/suppliers/download-template', [SupplierController::class, 'downloadTemplate'])->name('suppliers.download-template');
     Route::post('/suppliers/import', [SupplierController::class, 'import'])->name('suppliers.import');
-    
+
     // Importaciones Bulk
     Route::post('/admin/products/import', [ProductController::class, 'import'])->name('products.import');
 
@@ -184,6 +184,12 @@ Route::prefix('admin')->middleware([
 
     Route::get('/products/add', [ProductController::class, 'addBulk'])->name('products.addBulk');
     Route::post('/products/add', [ProductController::class, 'storeBulk'])->name('products.storeBulk');
+
+    // Exportar Clientes
+    Route::get('/clients/export', [ClientController::class, 'export'])->name('clients.export');
+
+    // Exportar Proveedores
+    Route::get('/suppliers/export', [SupplierController::class, 'export'])->name('suppliers.export');
 
     // Recursos con acceso autenticado
     Route::resources([
@@ -511,6 +517,7 @@ Route::prefix('admin')->middleware([
     Route::post('/orders/{order}/emit-cfe', [OrderController::class, 'emitCFE'])->name('orders.emitCFE');
     Route::post('/orders/{orderId}/set-order-as-paid', [OrderController::class, 'setOrderAsPaid'])->name('orders.setOrderAsPaid');
     Route::post('/orders/{order}/vincular-cliente', [OrderController::class, 'vincularCliente'])->name('orders.vincularCliente');
+
 
 
     // Gestión de Cupones
