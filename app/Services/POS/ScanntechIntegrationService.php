@@ -208,33 +208,326 @@ class ScanntechIntegrationService implements PosIntegrationInterface
         }
     }
 
-    public function reverseTransaction(array $transactionData): array
-    {
-        // Aquí va la lógica del método.
-        // Como ejemplo, podríamos retornar un array con un mensaje de error.
+public function reverseTransaction(array $transactionData): array
+{
+    try {
+        Log::info('Iniciando proceso de reverso en Scanntech', $transactionData);
+
+        $token = $this->authService->getAccessToken(); // Autenticación obligatoria
+
+        $payload = [
+            'PosID' => $transactionData['PosID'],
+            'Empresa' => $transactionData['Empresa'] ?? '2024',
+            'Local' => $transactionData['Local'] ?? '1',
+            'Caja' => $transactionData['Caja'] ?? '7',
+            'UserId' => $transactionData['UserId'] ?? 'Usuario1',
+            'TransactionDateTimeyyyyMMddHHmmssSSS' => $transactionData['TransactionDateTimeyyyyMMddHHmmssSSS'],
+            'TransactionId' => (int) $transactionData['TransactionId'],
+            'STransactionId' => (string) $transactionData['STransactionId'],
+        ];
+
+        Log::info('Payload enviado a Scanntech (postReverse):', $payload);
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'Content-Type' => 'application/json',
+        ])->post($this->apiUrl . 'postReverse', $payload);
+
+        Log::info('Respuesta de Scanntech (postReverse):', [
+            'status_code' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        if (!$response->successful()) {
+            return [
+                'success' => false,
+                'message' => 'Error en la comunicación con Scanntech al intentar reversar.',
+                'details' => $response->body(),
+            ];
+        }
+
+        $jsonResponse = $response->json();
+        $responseCode = (int) ($jsonResponse['ResponseCode'] ?? 999);
+
+        if ($responseCode === 0) {
+            Log::info('Reverso exitoso en Scanntech', $jsonResponse);
+
+            // Actualiza estado en la base de datos
+            Transaction::where('TransactionId', $payload['TransactionId'])
+                ->update(['status' => 'reversed']);
+
+            return [
+                'success' => true,
+                'message' => 'Transacción reversada exitosamente.',
+                'details' => $jsonResponse,
+            ];
+        }
+
         return [
             'success' => false,
-            'message' => 'Reverse transaction not implemented.'
+            'message' => 'Error en el reverso: código ' . $responseCode,
+            'details' => $jsonResponse,
+        ];
+    } catch (\Exception $e) {
+        Log::error('Excepción durante reverseTransaction en Scanntech: ' . $e->getMessage());
+
+        return [
+            'success' => false,
+            'message' => 'Excepción durante reverso.',
+            'details' => $e->getMessage(),
         ];
     }
+}
+
 
     public function voidTransaction(array $transactionData): array
     {
-        // Implementación acorde a la interfaz
-        return [
-            'success' => false,
-            'message' => 'Void transaction not implemented.'
-        ];
+        try {
+            $token = $this->authService->getAccessToken();
+
+            // Buscar la transacción original
+            $originalTransaction = Transaction::where('order_id', $transactionData['order_id'])
+                ->where('type', 'sale')
+                ->latest()
+                ->first();
+
+            if (!$originalTransaction) {
+                Log::error('No se encontró la transacción original para anular', $transactionData);
+                return [
+                    'success' => false,
+                    'message' => 'No se encontró la transacción original.',
+                    'icon' => 'error',
+                    'showCloseButton' => true,
+                ];
+            }
+
+            // Decodificar formatted_data
+            $formattedData = is_array($originalTransaction->formatted_data)
+                ? $originalTransaction->formatted_data
+                : json_decode($originalTransaction->formatted_data, true);
+
+            if (!isset($formattedData['TransactionDateTimeyyyyMMddHHmmssSSS'])) {
+                Log::error('No se encontró la fecha de la transacción original.', $formattedData);
+                return [
+                    'success' => false,
+                    'message' => 'Falta la fecha de la transacción original.',
+                    'icon' => 'error',
+                    'showCloseButton' => true,
+                ];
+            }
+
+            // Armar payload para Scanntech con la fecha original
+            $payload = [
+                'PosID' => $formattedData['PosID'],
+                'Empresa' => $formattedData['Empresa'] ?? '2024',
+                'Local' => $formattedData['Local'] ?? '1',
+                'Caja' => $formattedData['Caja'] ?? '7',
+                'UserId' => $formattedData['UserId'] ?? 'Usuario1',
+                'TransactionDateTimeyyyyMMddHHmmssSSS' => $formattedData['TransactionDateTimeyyyyMMddHHmmssSSS'],
+                'TicketNumber' => $transactionData['TicketNumber'] ?? null,
+            ];
+
+            Log::info('Payload final enviado a Scanntech (voidTransaction):', $payload);
+
+            // Enviar anulación a Scanntech
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . 'postVoidPurchase', $payload);
+
+            $jsonResponse = $response->json();
+            Log::info('Respuesta de Scanntech (voidTransaction):', $jsonResponse);
+
+            $responseCode = (int)($jsonResponse['ResponseCode'] ?? 999);
+            $responseConfig = Config::get('ScanntechResponses.postPurchaseResponses')[$responseCode] ?? [
+                'message' => 'Código de respuesta desconocido.',
+                'icon' => 'warning',
+                'showCloseButton' => true,
+                'keepPolling' => false,
+                'transactionSuccess' => false,
+            ];
+
+            // Si fue exitosa, guardar nueva transacción tipo "void"
+            if ($responseCode === 0) {
+                Transaction::create([
+                    'order_id' => $transactionData['order_id'] ?? null,
+                    'TransactionId' => $jsonResponse['TransactionId'] ?? null,
+                    'STransactionId' => $jsonResponse['STransactionId'] ?? null,
+                    'type' => 'void',
+                    'status' => 'pending',
+                    'formatted_data' => $payload,
+                ]);
+            }
+
+            return array_merge([
+                'success' => $responseCode === 0,
+                'details' => $jsonResponse,
+                'TransactionId' => $jsonResponse['TransactionId'] ?? null,
+                'STransactionId' => $jsonResponse['STransactionId'] ?? null,
+            ], $responseConfig);
+
+        } catch (\Exception $e) {
+            Log::error('Excepción al anular transacción en Scanntech: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Excepción al anular la transacción.',
+                'icon' => 'error',
+                'showCloseButton' => true,
+                'keepPolling' => false,
+                'transactionSuccess' => false,
+                'details' => $e->getMessage(),
+            ];
+        }
     }
 
-    public function pollVoidStatus(array $transactionData): array
-    {
-        // Implementación acorde a la interfaz
+
+public function pollVoidStatus(array $transactionData): array
+{
+    Log::info('Iniciando pollVoidStatus en Scanntech con los datos:', $transactionData);
+
+    try {
+        $apiUrl = $this->getScanntechApiUrl();
+        $endpoint = $apiUrl . 'getTransactionState';
+
+        $payload = [
+            'PosID' => $transactionData['PosID'],
+            'Empresa' => $transactionData['Empresa'] ?? '2024',
+            'Local' => $transactionData['Local'],
+            'Caja' => $transactionData['Caja'],
+            'UserId' => $transactionData['UserId'],
+            'TransactionDateTimeyyyyMMddHHmmssSSS' => $transactionData['TransactionDateTimeyyyyMMddHHmmssSSS'],
+            'TransactionId' => (int) $transactionData['TransactionId'],
+            'STransactionId' => (string) $transactionData['STransactionId'],
+        ];
+
+        Log::info('Payload enviado a Scanntech (getTransactionState):', $payload);
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->authService->getAccessToken(),
+            'Content-Type' => 'application/json',
+        ])->post($endpoint, $payload);
+
+        Log::info('Respuesta cruda de Scanntech (pollVoidStatus):', [
+            'status_code' => $response->status(),
+            'body' => $response->body(),
+        ]);
+
+        // 🔒 Si hay error de autorización, cortamos
+        if ($response->status() === 401) {
+            Log::error('Token inválido o expirado en pollVoidStatus de Scanntech');
+            return [
+                'success' => false,
+                'keepPolling' => false,
+                'transactionSuccess' => false,
+                'message' => 'No autorizado. Token inválido o expirado.',
+                'details' => $response->body(),
+            ];
+        }
+
+        // 🔧 Otros errores HTTP
+        if (!$response->successful()) {
+            return [
+                'success' => false,
+                'keepPolling' => false,
+                'transactionSuccess' => false,
+                'message' => 'Error en la comunicación con Scanntech.',
+                'details' => $response->body(),
+            ];
+        }
+
+        $data = $response->json();
+
+        Log::info('Respuesta JSON procesada de Scanntech:', $data);
+
+        $state = trim((string) ($data['State'] ?? ''));
+        $responseCode = (int) ($data['ResponseCode'] ?? 999);
+
+        // ✅ Éxito
+        if (in_array($state, ['2', '3']) || in_array($responseCode, [0, 111])) {
+            Transaction::where('TransactionId', (string) $transactionData['TransactionId'])
+                ->update(['status' => 'completed']);
+
+            return [
+                'success' => true,
+                'transactionSuccess' => true,
+                'keepPolling' => false,
+                'message' => 'Transacción anulada correctamente.',
+                'details' => $data,
+            ];
+        }
+
+        // ❌ Cancelada
+        if (in_array($state, ['6']) || $responseCode === 14) {
+            Transaction::where('TransactionId', (string) $transactionData['TransactionId'])
+                ->update(['status' => 'canceled']);
+
+            return [
+                'success' => false,
+                'transactionSuccess' => false,
+                'keepPolling' => false,
+                'message' => 'La transacción fue cancelada.',
+                'details' => $data,
+            ];
+        }
+
+        // ⌛ Expirada
+        if (in_array($state, ['5']) || $responseCode === 11) {
+            Transaction::where('TransactionId', (string) $transactionData['TransactionId'])
+                ->update(['status' => 'expired']);
+
+            return [
+                'success' => false,
+                'transactionSuccess' => false,
+                'keepPolling' => false,
+                'message' => 'La transacción expiró.',
+                'details' => $data,
+            ];
+        }
+
+        // 🔄 Aún esperando
+        if ($responseCode === 10 || $state === '1') {
+            return [
+                'success' => false,
+                'transactionSuccess' => false,
+                'keepPolling' => true,
+                'message' => 'Esperando operación en el POS...',
+                'details' => $data,
+            ];
+        }
+
+        // 📱 PinPad procesó los datos
+        if ($responseCode === 12) {
+            return [
+                'success' => false,
+                'transactionSuccess' => false,
+                'keepPolling' => true,
+                'message' => 'Procesando anulación.',
+                'details' => $data,
+            ];
+        }
+
+        // ❓ Estado desconocido
         return [
             'success' => false,
-            'message' => 'Poll void status not implemented.'
+            'transactionSuccess' => false,
+            'keepPolling' => false,
+            'message' => 'Estado desconocido. Revisar logs.',
+            'details' => $data,
+        ];
+
+    } catch (\Exception $e) {
+        Log::error('Excepción en pollVoidStatus Scanntech: ' . $e->getMessage());
+        return [
+            'success' => false,
+            'keepPolling' => false,
+            'transactionSuccess' => false,
+            'message' => 'Excepción al consultar estado de la transacción.',
+            'details' => $e->getMessage(),
         ];
     }
+}
+
 
     public function fetchTransactionHistory(array $transactionData): array
     {

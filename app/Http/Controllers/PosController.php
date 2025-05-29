@@ -431,106 +431,86 @@ class PosController extends Controller
     }
 
 
-    public function pollVoidStatus(Request $request)
-    {
-        try {
-            // Validar los datos iniciales
-            $validated = $request->validate([
-                'TransactionId' => 'required|integer', // Validar como entero porque viene de la base de datos
-                'STransactionId' => 'required|string',
-            ]);
+public function pollVoidStatus(Request $request)
+{
+    try {
+        // Validar los datos iniciales
+        $validated = $request->validate([
+            'TransactionId' => 'required|integer',
+            'STransactionId' => 'required|string',
+        ]);
 
-            // Buscar la transacción correspondiente
-            $transaction = \App\Models\Transaction::where('TransactionId', $validated['TransactionId'])
-                ->where('STransactionId', $validated['STransactionId'])
-                ->first();
+        // Buscar la transacción correspondiente
+        $transaction = \App\Models\Transaction::where('TransactionId', $validated['TransactionId'])
+            ->where('STransactionId', $validated['STransactionId'])
+            ->first();
 
-            if (!$transaction || !$transaction->formatted_data) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se encontraron datos formateados para la transacción.',
-                ], 404);
-            }
-
-            // Obtener el order_id de la transacción
-            $orderId = $transaction->order_id;
-            if (!$orderId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se encontró el order_id relacionado con esta transacción.',
-                ], 404);
-            }
-
-            // Obtener el store_id desde la tabla orders
-            $order = \App\Models\Order::find($orderId);
-            if (!$order || !$order->store_id) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se encontró el store_id relacionado con esta transacción.',
-                ], 404);
-            }
-
-            $storeId = $order->store_id;
-
-            // Decodificar los datos formateados para el cuerpo de la solicitud
-            $pollData = $transaction->formatted_data;
-
-            // Verificar si es una cadena JSON y decodificarla si es necesario
-            if (is_string($pollData)) {
-                $pollData = json_decode($pollData, true);
-
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    Log::error('Error al decodificar formatted_data: ' . json_last_error_msg());
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Los datos formateados no están en un formato válido (JSON).',
-                    ], 500);
-                }
-            }
-
-            // Si no es un array después de la decodificación, retornar un error
-            if (!is_array($pollData)) {
-                Log::error('formatted_data no es un array después de la decodificación.');
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Los datos formateados no están en el formato esperado.',
-                ], 500);
-            }
-
-            if (!$pollData) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Los datos formateados no están en un formato válido.',
-                ], 500);
-            }
-
-            // Asegurarnos de que TransactionId siga siendo un entero y STransactionId un string
-            $pollData['TransactionId'] = (int) $pollData['TransactionId']; // Asegurar entero
-            $pollData['STransactionId'] = (string) $pollData['STransactionId']; // Asegurar string
-            $pollData['store_id'] = $storeId; // Agregar el store_id al cuerpo de la solicitud
-
-            Log::info('Iniciando pollVoidStatus desde PosController con datos formateados:', $pollData);
-
-            // Enviar la solicitud al servicio POS
-            $response = $this->posService->pollVoidStatus($pollData);
-
-            return response()->json($response);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Error de validación en pollVoidStatus: ' . json_encode($e->errors()));
+        if (!$transaction) {
             return response()->json([
                 'success' => false,
-                'message' => 'Datos inválidos: ' . $e->getMessage(),
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Error en pollVoidStatus: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al realizar la consulta.',
-                'details' => $e->getMessage(),
-            ], 500);
+                'message' => 'Transacción no encontrada.',
+            ], 404);
         }
+
+        // Obtener el order_id de la transacción
+        $orderId = $transaction->order_id;
+        if (!$orderId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró el order_id relacionado con esta transacción.',
+            ], 404);
+        }
+
+        // Obtener el store_id desde la tabla orders
+        $order = \App\Models\Order::find($orderId);
+        if (!$order || !$order->store_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró el store_id relacionado con esta transacción.',
+            ], 404);
+        }
+
+        $storeId = $order->store_id;
+
+        // Decodificar los datos formateados para el cuerpo de la solicitud
+        $pollData = $transaction->formatted_data;
+
+        if (is_string($pollData)) {
+            $pollData = json_decode($pollData, true);
+        }
+
+        if (!is_array($pollData)) {
+            $pollData = [];
+        }
+
+        // Agregar TransactionId y STransactionId desde columnas si no existen en formatted_data
+        $pollData['TransactionId'] = $pollData['TransactionId'] ?? $transaction->TransactionId;
+        $pollData['STransactionId'] = $pollData['STransactionId'] ?? $transaction->STransactionId;
+        $pollData['store_id'] = $storeId; // Necesario para PosService
+
+        Log::info('Iniciando pollVoidStatus desde PosController con datos formateados:', $pollData);
+
+        // Enviar la solicitud al servicio POS
+        $response = $this->posService->pollVoidStatus($pollData);
+
+        return response()->json($response);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        Log::error('Error de validación en pollVoidStatus: ' . json_encode($e->errors()));
+        return response()->json([
+            'success' => false,
+            'message' => 'Datos inválidos: ' . $e->getMessage(),
+            'errors' => $e->errors(),
+        ], 422);
+    } catch (\Exception $e) {
+        Log::error('Error en pollVoidStatus: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al realizar la consulta.',
+            'details' => $e->getMessage(),
+        ], 500);
     }
+}
+
 
 
 

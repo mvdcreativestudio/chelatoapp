@@ -442,13 +442,24 @@ document.addEventListener('DOMContentLoaded', function () {
     })
       .then(response => response.json())
       .then(data => {
-        if (data.success && data.details) {
-          const { TransactionId, STransactionId } = data.details;
+        console.log('Respuesta de anulación:', data);
 
-          if (TransactionId && STransactionId) {
-            pollTransactionStatus(TransactionId, STransactionId, storeId);
+        if (data.success) {
+          const transactionId = data.TransactionId || (data.details && data.details.TransactionId);
+          const sTransactionId = data.STransactionId || (data.details && data.details.STransactionId);
+
+          if (transactionId && sTransactionId) {
+            pollTransactionStatus(transactionId, sTransactionId, storeId);
           } else {
-            Swal.fire('Error', 'No se pudieron obtener los IDs de la transacción anulada.', 'error');
+            Swal.fire({
+              icon: 'success',
+              title: 'Anulación enviada',
+              text: data.message || 'La anulación fue enviada correctamente.',
+              showConfirmButton: false,
+              timer: 2000,
+            }).then(() => {
+              location.reload();
+            });
           }
         } else {
           console.error('Error al anular la transacción:', data.message);
@@ -492,7 +503,7 @@ document.addEventListener('DOMContentLoaded', function () {
     })
       .then(response => response.json())
       .then(data => {
-        if (data.success) {
+        if (data.transactionSuccess) {
           swalInstance.close();
           swalInstance = null;
 
@@ -505,19 +516,10 @@ document.addEventListener('DOMContentLoaded', function () {
           }).then(() => {
             location.reload();
           });
-        } else if (data.responseCode === 999) {
-          // Transacción cancelada desde el PINPad
-          swalInstance.close();
-          swalInstance = null;
 
-          Swal.fire({
-            icon: data.icon || 'error',
-            title: 'Operación cancelada',
-            text: data.message || 'La transacción fue cancelada desde el PINPad.',
-            showConfirmButton: true,
-          });
         } else if (data.keepPolling) {
           setTimeout(() => pollTransactionStatus(transactionId, sTransactionId, storeId), 2000);
+
         } else {
           swalInstance.close();
           swalInstance = null;
@@ -529,6 +531,7 @@ document.addEventListener('DOMContentLoaded', function () {
             showConfirmButton: true,
           });
         }
+
       })
       .catch(error => {
         swalInstance.close();
