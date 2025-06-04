@@ -10,6 +10,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use App\Exports\CurrentAccountIndividualExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CurrentAccountPaymentController extends Controller
 {
@@ -175,5 +177,24 @@ class CurrentAccountPaymentController extends Controller
     public function datatable(Request $request): mixed
     {
         return $this->currentAccountPaymentRepository->getPaymentsForDataTable($request->account_id);
+    }
+
+    /**
+     * Exporta una cuenta corriente a Excel.
+     *
+     * @param int $id
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportExcel(int $id)
+    {
+        try {
+            $data = $this->currentAccountPaymentRepository->getAllCurrentAccountPayments($id);
+
+            $fileName = 'cuenta_corriente_' . $id . '.xlsx';
+            return Excel::download(new CurrentAccountIndividualExport($data), $fileName);
+        } catch (\Exception $e) {
+            Log::error('Error al exportar a Excel: ' . $e->getMessage());
+            return back()->with('error', 'No se pudo exportar la cuenta corriente.');
+        }
     }
 }

@@ -49,6 +49,10 @@ $balance = 0;
       </h4>
       <!-- Botones para agregar crédito inicial o pago -->
       <div>
+        <a href="{{ route('current-account-individual.export.excel', $currentAccount->id) }}" class="btn btn-success">
+          Exportar a Excel
+        </a>
+
         <a href="{{ route('current-account-payments.create', $currentAccount->id) }}" class="btn btn-secondary">Agregar Pago</a>
       </div>
     </div>
@@ -131,7 +135,7 @@ $balance = 0;
 
                     if ($order && $order->is_billed && $order->invoices->isNotEmpty()) {
                       $cfe = $order->invoices->first();
-                      $invoiceSuffix = ' - ' . $cfe->serie . '-' . $cfe->nro;
+                      $invoiceSuffix = ' - <a href="' . route('invoices.download', $cfe->id) . '" target="_blank">' . $cfe->serie . '-' . $cfe->nro . '</a>';
                     }
 
                     $description = $entry['entry']->description ?? 'Crédito Inicial';

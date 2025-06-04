@@ -160,6 +160,9 @@ Route::get('/', function () {
     Route::get('/current-accounts-export-excel', [CurrentAccountController::class, 'exportExcel'])->name('current-account.export.excel');
     Route::get('/current-accounts-export-pdf', [CurrentAccountController::class, 'exportPdf'])->name('current-account.pdf');
 
+    // Exportar excel Cuenta Corriente Individual
+    Route::get('/current-account-individual/{id}/export', [CurrentAccountPaymentController::class, 'exportExcel'])->name('current-account-individual.export.excel');
+
     // exportar excel
     Route::get('/incomes-export-excel', [IncomeController::class, 'exportExcel'])->name('income.export.excel');
     Route::get('/incomes-export-pdf', [IncomeController::class, 'exportPdf'])->name('income.pdf');
