@@ -57,6 +57,7 @@ $paymentStatusTranslations = [
 'paid' => 'Pagado',
 'pending' => 'Pendiente',
 'failed' => 'Fallido',
+'partial' => 'Pago Parcial'
 ];
 
 $shippingStatusTranslations = [
@@ -88,6 +89,8 @@ $changeTypeTranslations = [
       <span class="badge bg-label-danger me-2 ms-2">Pago pendiente</span>
       @elseif($order->payment_status === 'failed')
       <span class="badge bg-label-danger me-2 ms-2">Pago fallido</span>
+      @elseif($order->payment_status === 'partial')
+      <span class="badge bg-label-warning me-2 ms-2">Pago Parcial</span>
       @elseif($order->payment_status === 'refunded')
       <span class="badge bg-label-danger">Pago Devuelto</span>
       @endif

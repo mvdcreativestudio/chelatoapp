@@ -490,7 +490,7 @@ class AccountingRepository
             ];
 
             if (empty($client->ci) && empty($client->passport) && empty($client->other_id_type)) {
-              $missingFields[] = 'Documento de identidad (CI, Pasaporte u Otro)';
+                $missingFields[] = 'Documento de identidad (CI, Pasaporte u Otro)';
             }
         } else {
             $requiredFields = [
@@ -501,6 +501,11 @@ class AccountingRepository
                 'state' => 'Departamento',
                 'country' => 'País'
             ];
+
+            // Validar que el RUT tenga exactamente 12 caracteres
+            if (!empty($client->rut) && strlen($client->rut) !== 12) {
+                $missingFields[] = 'RUT (debe tener 12 caracteres)';
+            }
         }
 
         foreach ($requiredFields as $field => $label) {
@@ -511,6 +516,7 @@ class AccountingRepository
 
         return $missingFields;
     }
+
 
     /**
      * Valida los datos del cliente antes de emitir el CFE.
@@ -1919,6 +1925,11 @@ class AccountingRepository
 
         // Determinar el cliente o entidad asociada a la operación
         $client = $entity->client ?? null;
+
+        if ($client && $client->type === 'company' && $client->rut && strlen($client->rut) !== 12) {
+            Log::error('El RUT del cliente no es correcto. Debe contener 12 caracteres numéricos.');
+            throw new CFEException('El RUT del cliente no es correcto. Debe contener 12 caracteres numéricos.');
+        }
 
         // Determinar el tipo de CFE
         $cfeType = '101'; // Por defecto, eTicket

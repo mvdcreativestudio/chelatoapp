@@ -114,12 +114,16 @@ $(function () {
                 ? 'Pagado'
                 : orderData.payment_status === 'pending'
                   ? 'Pago Pendiente'
+                : orderData.payment_status === 'partial'
+                  ? 'Pago Parcial'
                   : 'Pago Fallido';
             const paymentStatusClass =
               orderData.payment_status === 'paid'
                 ? 'bg-label-success'
                 : orderData.payment_status === 'pending'
                   ? 'bg-label-warning'
+                : orderData.payment_status === 'partial'
+                    ? 'bg-label-info'
                   : 'bg-label-danger';
             const shippingStatusText =
               orderData.shipping_status === 'delivered'

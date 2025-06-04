@@ -212,6 +212,7 @@
           <option value="paid">Pagado</option>
           <option value="pending">Pendiente</option>
           <option value="failed">Fallido</option>
+          <option value="partial">Pago Parcial</option>
         </select>
       </div>
 
