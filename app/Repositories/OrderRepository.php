@@ -200,9 +200,11 @@ class OrderRepository
             $order->save();
             Log::info('Orden actualizada con los productos');
 
+
             // ✅ Métodos de pago y lógica extra
             if ($request->payment_method === 'internalCredit' && $client) {
                 $this->createInternalCredit($order);
+                $order->payment_status = 'pending';
             }
 
             if ($request->payment_method === 'qr_attended') {
@@ -215,6 +217,10 @@ class OrderRepository
                 $order->payment_status = 'pending';
                 $order->save();
             }
+
+            // Establecer balance en función del estado de pago
+            $order->balance = $order->payment_status === 'paid' ? 0 : $order->total;
+            $order->save();
 
             DB::commit();
             Log::info('Transacción de base de datos confirmada');
@@ -874,7 +880,7 @@ class OrderRepository
         $accountSettings = CurrentAccountSettings::firstOrCreate(
             ['transaction_type' => 'Sale'],
             [
-                'late_fee' => '0.05',
+                'late_fee' => '0.00',
                 'payment_terms' => '30',
             ]
         );
@@ -882,21 +888,20 @@ class OrderRepository
         $currentAccount = CurrentAccount::where('client_id', $order->client_id)->first();
         if ($currentAccount) {
             CurrentAccountInitialCredit::create([
+                'order_id' => $order->id,
                 'total_debit' => $order->total,
                 'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
                 'current_account_settings_id' => 1,
             ]);
         } else {
-            $currencies = Currency::firstOrCreate(
-                ['id' => 1],
-                [
-                    'code' => 'UYU',
-                    'symbol' => '$',
-                    'name' => 'Peso Uruguayo',
-                    'exchange_rate' => 1.0000,
-                ]
-            );
+            $currencies = Currency::where('code', 'UYU')->firstOrCreate([
+                'code' => 'UYU',
+                'symbol' => '$',
+                'name' => 'Peso Uruguayo',
+                'exchange_rate' => 1.0000,
+            ]);
+
 
             $currentAccount = CurrentAccount::create([
                 'client_id' => $order->client_id,
@@ -911,6 +916,7 @@ class OrderRepository
                 'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
                 'current_account_settings_id' => $accountSettings->id,
+                'order_id' => $order->id,
             ]);
         }
     }

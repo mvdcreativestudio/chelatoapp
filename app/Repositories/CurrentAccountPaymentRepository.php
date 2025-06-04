@@ -23,7 +23,7 @@ class CurrentAccountPaymentRepository
     public function getAllCurrentAccountPayments(int $id): array
     {
 
-        $currentAccount = CurrentAccount::with(['client', 'supplier', 'initialCredits', 'payments'])
+        $currentAccount = CurrentAccount::with(['client', 'supplier', 'initialCredits.order.invoices', 'payments'])
             ->where('id', $id)
             ->first();
 
@@ -86,7 +86,7 @@ class CurrentAccountPaymentRepository
         DB::beginTransaction();
 
         try {
-            // Crear el pago de la cuenta corriente
+            // Crear el pago
             $currentAccountPayment = CurrentAccountPayment::create([
                 'current_account_id' => $data['current_account_id'],
                 'payment_amount' => $data['payment_amount'],
@@ -94,12 +94,47 @@ class CurrentAccountPaymentRepository
                 'payment_method_id' => $data['payment_method_id'],
             ]);
 
-            // Actualizar el estado de la cuenta corriente (pagada o parcial)
-            $currentAccount = CurrentAccount::find($data['current_account_id']);
+            $amountRemaining = $data['payment_amount'];
+
+            // Buscar la cuenta corriente con sus créditos iniciales (ventas asociadas)
+            $currentAccount = CurrentAccount::with('initialCredits')->findOrFail($data['current_account_id']);
+
+            // Obtener créditos con balance > 0 ordenados por fecha
+            $credits = $currentAccount->initialCredits()
+                ->where('total_debit', '>', 0)
+                ->orderBy('created_at')
+                ->get();
+
+            foreach ($credits as $credit) {
+                if ($amountRemaining <= 0) break;
+
+                // Obtener orden asociada
+                $orderId = $this->getOrderIdFromCredit($credit->description); // función auxiliar para extraer #id
+                if (!$orderId) continue;
+
+                $order = \App\Models\Order::find($orderId);
+                if (!$order || $order->balance <= 0) continue;
+
+                $toApply = min($order->balance, $amountRemaining);
+                $order->balance -= $toApply;
+                $amountRemaining -= $toApply;
+
+                if ($order->balance <= 0) {
+                    $order->payment_status = 'paid';
+                    $order->balance = 0;
+                } elseif ($order->balance < $order->total) {
+                    $order->payment_status = 'partial';
+                } else {
+                    $order->payment_status = 'pending';
+                }
+
+                $order->save();
+            }
+
+            // Actualizar estado de la cuenta corriente
             $this->updateCurrentAccountStatus($currentAccount);
 
             DB::commit();
-
             return $currentAccountPayment;
 
         } catch (\Exception $e) {
@@ -107,6 +142,15 @@ class CurrentAccountPaymentRepository
             throw new \Exception('Error al crear el pago de la cuenta corriente: ' . $e->getMessage());
         }
     }
+
+    private function getOrderIdFromCredit(string $description): ?int
+{
+    if (preg_match('/Venta\s+#(\d+)/', strip_tags($description), $matches)) {
+        return (int)$matches[1];
+    }
+    return null;
+}
+
 
     /**
      * Actualiza un pago de cuenta corriente específico.

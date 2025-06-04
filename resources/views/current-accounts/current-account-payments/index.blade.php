@@ -95,7 +95,7 @@ $balance = 0;
             <th class="font-white">Concepto</th>
             <th class="font-white">Ventas</th>
             <th class="font-white">Pagos</th>
-            <th class="font-white">Saldo</th> <!-- Nueva columna para el saldo -->
+            <th class="font-white">Saldo</th>
             <th class="font-white">Moneda</th>
             <th class="font-white">Fecha</th>
             <th>Acciones</th>
@@ -103,43 +103,68 @@ $balance = 0;
         </thead>
         <tbody class="text-center">
           @foreach($combinedEntries as $entry)
-          @if($entry['type'] === 'credit')
-          @php
-            // Aumentar el saldo con el valor del crédito
-            $balance += $entry['entry']->total_debit;
-          @endphp
-          <tr>
-            <th>{!! $entry['entry']->description ?? 'Crédito Inicial' !!}</th>
-            <th>{{ number_format($entry['entry']->total_debit, 2) }}</th>
-            <th class="bg-gray2"></th>
-            <th>{{ number_format($balance, 2) }}</th> <!-- Mostrar el saldo -->
-            <th>{{ $currentAccount->currency->name ?? 'N/A' }}</th>
-            <th>{{ $entry['entry']->created_at->format('d/m/y') }}</th>
-            <th></th>
-          </tr>
-          @elseif($entry['type'] === 'payment')
-          @php
-            // Disminuir el saldo con el valor del pago
-            $balance -= $entry['entry']->payment_amount;
-          @endphp
-          <tr>
-            <th>{{ $entry['entry']->paymentMethod->description ?? 'N/A' }}</th>
-            <th class="bg-gray2"></th>
-            <th>{{ number_format($entry['entry']->payment_amount, 2) }}</th>
-            <th>{{ number_format($balance, 2) }}</th> <!-- Mostrar el saldo -->
-            <th>{{ $currentAccount->currency->name ?? 'N/A' }}</th>
-            <th>{{ $entry['entry']->payment_date->format('d/m/y') }}</th>
-            <th>
-              <!-- Botones de solo iconos -->
-              <a href="{{ route('current-account-payments.edit', $entry['entry']->id) }}" class="btn btn-sm btn-warning">
-                <i class="bx bx-edit"></i>
-              </a>
-              <a class="btn btn-sm btn-danger delete-record text-white" data-id="{{ $entry['entry']->id }}">
-                <i class="bx bx-trash"></i>
-              </a>
-            </th>
-          </tr>
-          @endif
+            @php
+              $rowClass = '';
+            @endphp
+
+            @if($entry['type'] === 'credit')
+              @php
+                $order = $entry['entry']->order ?? null;
+
+                if ($order) {
+                    if ($order->balance == 0) {
+                        $rowClass = 'row-green';
+                    } elseif ($order->balance < $order->total) {
+                        $rowClass = 'row-yellow';
+                    } elseif ($order->balance == $order->total) {
+                        $rowClass = 'row-red';
+                    }
+                }
+
+                // Aumentar el saldo con el valor del crédito
+                $balance += $entry['entry']->total_debit;
+                  @endphp
+                  <tr class="{{ $rowClass }}">
+                    @php
+                    $order = $entry['entry']->order ?? null;
+                    $invoiceSuffix = '';
+
+                    if ($order && $order->is_billed && $order->invoices->isNotEmpty()) {
+                      $cfe = $order->invoices->first();
+                      $invoiceSuffix = ' - ' . $cfe->serie . '-' . $cfe->nro;
+                    }
+
+                    $description = $entry['entry']->description ?? 'Crédito Inicial';
+                  @endphp
+                <td>{!! $description . $invoiceSuffix !!}</td>
+                <td>{{ number_format($entry['entry']->total_debit, 2) }}</td>
+                <td class="bg-gray2"></td>
+                <td>{{ number_format($balance, 2) }}</td>
+                <td>{{ $currentAccount->currency->name ?? 'N/A' }}</td>
+                <td>{{ $entry['entry']->created_at->format('d/m/y') }}</td>
+                <td></td>
+              </tr>
+            @elseif($entry['type'] === 'payment')
+              @php
+                $balance -= $entry['entry']->payment_amount;
+              @endphp
+              <tr>
+                <td>{{ $entry['entry']->paymentMethod->description ?? 'N/A' }}</td>
+                <td class="bg-gray2"></td>
+                <td>{{ number_format($entry['entry']->payment_amount, 2) }}</td>
+                <td>{{ number_format($balance, 2) }}</td>
+                <td>{{ $currentAccount->currency->name ?? 'N/A' }}</td>
+                <td>{{ $entry['entry']->payment_date->format('d/m/y') }}</td>
+                <td>
+                  <a href="{{ route('current-account-payments.edit', $entry['entry']->id) }}" class="btn btn-sm btn-warning">
+                    <i class="bx bx-edit"></i>
+                  </a>
+                  <a class="btn btn-sm btn-danger delete-record text-white" data-id="{{ $entry['entry']->id }}">
+                    <i class="bx bx-trash"></i>
+                  </a>
+                </td>
+              </tr>
+            @endif
           @endforeach
         </tbody>
         <tfoot class="text-center table-dark" style="position: sticky; bottom: -18px; z-index: 1;">
@@ -147,12 +172,13 @@ $balance = 0;
             <th class="font-white">Totales</th>
             <th class="font-white">{{ number_format($totalDebit, 2) }}</th>
             <th class="font-white">{{ number_format($totalAmount, 2) }}</th>
-            <th class="font-white">{{ number_format($balance, 2) }}</th> <!-- Mostrar saldo total -->
+            <th class="font-white">{{ number_format($balance, 2) }}</th>
             <th colspan="2"></th>
             <th></th>
           </tr>
         </tfoot>
       </table>
+
     </div>
 
     <div class="d-flex justify-content-end m-2">
@@ -160,4 +186,17 @@ $balance = 0;
     </div>
   </div>
 </div>
+
+<style>
+  .row-green {
+    background-color: #e6f4ea !important;
+  }
+  .row-yellow {
+    background-color: #fff8e1 !important;
+  }
+  .row-red {
+    background-color: #fdecea !important;
+  }
+</style>
 @endsection
+

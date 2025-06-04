@@ -16,6 +16,7 @@ class CurrentAccountInitialCredit extends Model
      * @var array
      */
     protected $fillable = [
+        'order_id',
         'total_debit',
         'description',
         'due_date',
@@ -37,5 +38,13 @@ class CurrentAccountInitialCredit extends Model
     public function currentAccountSettings()
     {
         return $this->belongsTo(CurrentAccountSettings::class);
+    }
+
+    /**
+     * Get the order associated with the initial credit.
+     */
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
     }
 }
