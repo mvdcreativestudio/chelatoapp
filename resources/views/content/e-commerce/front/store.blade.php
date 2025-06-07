@@ -96,7 +96,7 @@
             <div class="row">
               @foreach ($category->products as $product)
                 <div class="col-md-2 col-6" data-bs-toggle="modal" data-bs-target="#modalCenter"
-                    data-id="{{ $product->id }}" data-name="{{ $product->name }}" data-img="{{ $product->image }}" data-price="{{ $product->price }}" data-max-flavors="{{$product->max_flavors}}" data-description="{{ $product->description }}">
+                    data-id="{{ $product->id }}" data-name="{{ $product->name }}" data-img="{{ $product->image }}" data-price="{{ $product->price }}" data-max-flavors="{{$product->max_flavors}}" data-description="{{ $product->description }}" data-flavors='@json($product->flavors)'>                    >
                   <div class="card card-product">
                     <img src="{{ asset($product->image) }}" class="shop-product-image" alt="Product">
                     <div class="product-card-text">
@@ -292,16 +292,19 @@ document.addEventListener('DOMContentLoaded', function() {
     flavorSelectorsContainer.innerHTML = '';
 
     // Genera dinámicamente los selectores de variaciones basados en maxFlavors
+    var productFlavors = JSON.parse(button.getAttribute('data-flavors'));
+
     for (let i = 0; i < maxFlavors; i++) {
       let flavorText = getFlavorText(i);
       var selectHTML = `<select name="flavors[]" class="form-select mb-2" required>
-                          <option value="" disabled selected>${flavorText}</option>
-                          @foreach ($flavors as $flavor)
-                              <option value="{{ $flavor->id }}">{{ $flavor->name }}</option>
-                          @endforeach
-                        </select>`;
+                          <option value="" disabled selected>${flavorText}</option>`;
+      productFlavors.forEach(flavor => {
+        selectHTML += `<option value="${flavor.id}">${flavor.name}</option>`;
+      });
+      selectHTML += `</select>`;
       flavorSelectorsContainer.insertAdjacentHTML('beforeend', selectHTML);
     }
+
   });
 
   function getFlavorText(index) {
@@ -363,16 +366,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var flavorSelectorsContainer = document.getElementById('flavorSelectors');
     flavorSelectorsContainer.innerHTML = '';
 
-    for (let i = 0; i < maxFlavors; i++) {
-      let flavorText = getFlavorText(i);
-      var selectHTML = `<select name="flavors[]" class="form-select mb-2" required>
-                          <option value="" disabled selected>${flavorText}</option>
-                          @foreach ($flavors as $flavor)
-                              <option value="{{ $flavor->id }}">{{ $flavor->name }}</option>
-                          @endforeach
-                        </select>`;
-      flavorSelectorsContainer.insertAdjacentHTML('beforeend', selectHTML);
-    }
   });
 
   function getFlavorText(index) {

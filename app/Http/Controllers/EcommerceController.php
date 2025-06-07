@@ -55,7 +55,6 @@ class EcommerceController extends Controller
 
     return view('content.e-commerce.front.store', [
         'categories' => $result['categories'],
-        'flavors' => $result['flavors'],
         'store' => $result['store']
     ]);
   }

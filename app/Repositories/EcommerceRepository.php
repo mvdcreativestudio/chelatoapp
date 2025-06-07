@@ -38,21 +38,19 @@ class EcommerceRepository
     }
 
     $categories = ProductCategory::whereHas('products', function ($query) use ($store) {
-        $query->where('status', '=', 1)
-              ->where('store_id', $store->id)
-              ->where('is_trash', '!=', 1);
+      $query->where('status', '=', 1)
+            ->where('store_id', $store->id)
+            ->where('is_trash', '!=', 1);
     })->with(['products' => function ($query) use ($store) {
         $query->where('status', '=', 1)
               ->where('store_id', $store->id)
-              ->where('is_trash', '!=', 1);
+              ->where('is_trash', '!=', 1)
+              ->with('flavors'); // Agregá esto
     }])->get();
-
-    $flavors = Flavor::all();
 
     return [
         'status' => 'success',
         'categories' => $categories,
-        'flavors' => $flavors,
         'store' => $store
     ];
   }
