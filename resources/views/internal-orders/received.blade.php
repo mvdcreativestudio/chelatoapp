@@ -11,7 +11,7 @@
 
 <!-- Resumen -->
 <div class="row mb-4">
-  <div class="col-md-3">
+  <div class="col-md-4">
     <div class="card shadow-sm">
       <div class="card-body text-center">
         <h6 class="text-muted">Total</h6>
@@ -19,7 +19,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-2">
     <div class="card shadow-sm">
       <div class="card-body text-center">
         <h6 class="text-warning">Pendientes</h6>
@@ -27,7 +27,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-2">
     <div class="card shadow-sm">
       <div class="card-body text-center">
         <h6 class="text-success">Aceptadas</h6>
@@ -35,11 +35,19 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3">
+  <div class="col-md-2">
     <div class="card shadow-sm">
       <div class="card-body text-center">
         <h6 class="text-info">Entregadas</h6>
         <h3>{{ $totals['delivered'] }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <h6 class="text-danger">Canceladas</h6>
+        <h3>{{ $totals['cancelled'] }}</h3>
       </div>
     </div>
   </div>
@@ -56,6 +64,7 @@
             <span class="badge bg-{{ $order->status_color }}">{{ $order->status_label }}</span>
           </div>
           <p class="mb-1"><strong>Desde:</strong> {{ $order->fromStore->name }}</p>
+          <p class="mb-1"><strong>Para:</strong> {{ $order->toStore->name }}</p>
           <p class="mb-1"><strong>Creada:</strong> {{ $order->created_at->format('d/m/Y H:i') }}</p>
           <p class="mb-2"><strong>Entrega:</strong> {{ $order->delivery_date ? $order->delivery_date->format('d/m/Y') : 'No definida' }}</p>
 

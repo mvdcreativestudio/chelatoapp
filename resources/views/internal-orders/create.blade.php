@@ -43,6 +43,26 @@
   <div class="card mb-4 shadow-sm">
     <div class="card-body">
       <h5 class="card-title">Datos de la Orden</h5>
+
+      {{-- Selector de Tienda Origen --}}
+      <div class="mb-3">
+        <label for="from_store_id" class="form-label">Tienda Origen</label>
+        @if($current_store->can_create_internal_orders_to_all_stores)
+          <select class="form-select select2" name="from_store_id" id="from_store_id" required>
+            @foreach($from_stores as $store)
+              <option value="{{ $store->id }}"
+                {{ $store->id == $current_store->id ? 'selected' : '' }}>
+                {{ $store->name }}
+              </option>
+            @endforeach
+          </select>
+        @else
+          <input type="hidden" name="from_store_id" value="{{ $current_store->id }}">
+          <input type="text" class="form-control" value="{{ $current_store->name }}" disabled readonly>
+        @endif
+      </div>
+
+      {{-- Selector de Tienda Destino --}}
       <div class="mb-3">
         <label for="to_store_id" class="form-label">Tienda Destino</label>
         <select class="form-select select2" name="to_store_id" id="to_store_id" required>
@@ -58,8 +78,17 @@
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <h5 class="card-title">Seleccionar Productos</h5>
+
+      {{-- Filtros UX --}}
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <label for="product-search" class="form-label">Buscar producto</label>
+          <input type="text" id="product-search" class="form-control" placeholder="Nombre del producto...">
+        </div>
+      </div>
+
       <div id="product-container">
-        <div class="text-muted">Seleccioná una tienda destino para ver los productos disponibles...</div>
+        <div class="text-muted">Seleccioná una tienda origen para ver los productos disponibles...</div>
       </div>
     </div>
   </div>
@@ -82,32 +111,72 @@
 
   const productRouteBase = "{{ url('/admin/internal-orders/products') }}";
 
+  function fetchProducts(storeId, search = '', category = '') {
+    const container = document.getElementById('product-container');
+
+    container.innerHTML = '<div class="text-center py-3">Cargando productos...</div>';
+
+    const params = new URLSearchParams({
+      search: search,
+      category: category
+    });
+
+    fetch(`${productRouteBase}/${storeId}?${params.toString()}`)
+      .then(res => res.text())
+      .then(html => {
+        container.innerHTML = html;
+        initializeSelect2();
+
+        // Rellenar las categorías si hay datos
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        const categoriesScript = tempDiv.querySelector('#inject-categories');
+        if (categoriesScript) {
+          eval(categoriesScript.innerText);
+        }
+      })
+      .catch(err => {
+        console.error('Error en fetch:', err);
+        container.innerHTML = '<div class="text-danger">Error al cargar productos.</div>';
+      });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
-    console.log('[DEBUG] DOM Ready');
     initializeSelect2();
 
-    $(document).on('change', '#to_store_id', function () {
-      const storeId = $(this).val();
-      const container = document.getElementById('product-container');
+    let currentStoreId = null;
 
-      if (!storeId) {
-        container.innerHTML = '<div class="text-muted">Seleccioná una tienda destino para ver los productos disponibles...</div>';
-        return;
-      }
-
-      container.innerHTML = '<div class="text-center py-3">Cargando productos...</div>';
-
-      fetch(`${productRouteBase}/${storeId}`)
-        .then(res => res.text())
-        .then(html => {
-          container.innerHTML = html;
-          initializeSelect2();
-        })
-        .catch(err => {
-          console.error('Error en fetch:', err);
-          container.innerHTML = '<div class="text-danger">Error al cargar productos.</div>';
-        });
+    $(document).on('change', '#from_store_id', function () {
+      currentStoreId = $(this).val();
+      if (currentStoreId) fetchProducts(currentStoreId);
     });
+
+    $(document).on('input', '#product-search', debounce(function () {
+      if (currentStoreId) {
+        fetchProducts(currentStoreId, this.value, $('#product-category').val());
+      }
+    }, 300));
+
+    $(document).on('change', '#product-category', function () {
+      if (currentStoreId) {
+        fetchProducts(currentStoreId, $('#product-search').val(), this.value);
+      }
+    });
+
+    // Trigger inicial si ya hay tienda preseleccionada
+    const preselected = document.getElementById('from_store_id');
+    if (preselected && preselected.value) {
+      currentStoreId = preselected.value;
+      fetchProducts(currentStoreId);
+    }
   });
+
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
 </script>
 @endsection

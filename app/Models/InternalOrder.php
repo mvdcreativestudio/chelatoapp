@@ -46,20 +46,21 @@ class InternalOrder extends Model
     public function getStatusColorAttribute()
     {
         return match ($this->status) {
-            'pending' => 'warning',
-            'accepted' => 'success',
-            'cancelled' => 'danger',
-            'delivered' => 'info',
+            \App\Enums\InternalOrders\InternalOrderStatus::PENDING   => 'warning',
+            \App\Enums\InternalOrders\InternalOrderStatus::ACCEPTED  => 'success',
+            \App\Enums\InternalOrders\InternalOrderStatus::CANCELLED => 'danger',
+            \App\Enums\InternalOrders\InternalOrderStatus::DELIVERED => 'info',
             default => 'secondary',
         };
     }
+
 
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
             \App\Enums\InternalOrders\InternalOrderStatus::PENDING => 'Pendiente',
             \App\Enums\InternalOrders\InternalOrderStatus::ACCEPTED => 'Aceptada',
-            \App\Enums\InternalOrders\InternalOrderStatus::cancelled => 'Rechazada',
+            \App\Enums\InternalOrders\InternalOrderStatus::CANCELLED => 'Rechazada',
             \App\Enums\InternalOrders\InternalOrderStatus::DELIVERED => 'Entregada',
             default => ucfirst($this->status->value),
         };

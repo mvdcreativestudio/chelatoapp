@@ -17,6 +17,7 @@ class StoreInternalOrderRequest extends FormRequest
             ->filter(fn ($item) => isset($item['quantity']) && $item['quantity'] > 0);
 
         $rules = [
+            'from_store_id' => ['required', 'exists:stores,id'],
             'to_store_id' => ['required', 'exists:stores,id'],
             'products' => ['required', 'array'],
         ];
