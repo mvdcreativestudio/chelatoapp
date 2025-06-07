@@ -82,7 +82,6 @@ use App\Http\Controllers\NoteDeliveryController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\EventStoreConfigurationController;
 use App\Http\Controllers\InternalOrderController;
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
