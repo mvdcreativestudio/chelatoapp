@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EntryExport;
 use App\Http\Requests\StoreEntryRequest;
 use App\Http\Requests\UpdateEntryRequest;
-use App\Repositories\EntryRepository;
-use App\Repositories\EntryDetailRepository;
 use App\Models\Entry;
-use Illuminate\Support\Facades\Log;
-use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
+use App\Repositories\EntryDetailRepository;
+use App\Repositories\EntryRepository;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EntryController extends Controller
 {
@@ -37,14 +39,14 @@ class EntryController extends Controller
                 'create',
                 'show',
                 'datatable',
-                'entryDetailsDatatable'
+                'entryDetailsDatatable',
             ]
         );
 
         $this->middleware(['check_permission:access_delete_entries'])->only(
             [
                 'destroy',
-                'deleteMultiple'
+                'deleteMultiple',
             ]
         );
 
@@ -109,7 +111,7 @@ class EntryController extends Controller
 
     /**
      * Devuelve datos para un asiento específico.
-     * 
+     *
      * @param int $id
      * @return JsonResponse
      */
@@ -188,5 +190,38 @@ class EntryController extends Controller
     public function datatable(Request $request): mixed
     {
         return $this->entryRepository->getEntriesForDataTable($request);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        try {
+            $entryType = $request->input('entry_type');
+            $currency = $request->input('currency');
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+
+            $entries = $this->entryRepository->getEntriesForExport($entryType, $currency, $startDate, $endDate);
+            return Excel::download(new EntryExport($entries), 'asientos-' . date('Y-m-d_H-i-s') . '.xlsx');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar los asientos a Excel. Por favor, intente nuevamente.');
+        }
+    }
+
+    public function exportPdf(Request $request)
+    {
+        try {
+            $entryType = $request->input('entry_type');
+            $currency = $request->input('currency');
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+            $entries = $this->entryRepository->getEntriesForExport($entryType, $currency, $startDate, $endDate);
+
+            $pdf = Pdf::loadView('content.accounting.entries.export-pdf', compact('entries'));
+            return $pdf->download('asientos-' . date('Y-m-d_H-i-s') . '.pdf');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar los asientos a PDF. Por favor, intente nuevamente.');
+        }
     }
 }

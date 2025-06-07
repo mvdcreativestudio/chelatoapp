@@ -1,14 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-  $('#image_upload').on('change', function () {
-    if (this.files && this.files[0]) {
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        $('#image-preview').attr('src', e.target.result).css('display', 'block');
-      };
-      reader.readAsDataURL(this.files[0]);
-    }
-  });
-
   $('#unit_of_measure').on('change', function () {
     var selectedUnit = $(this).find('option:selected').text();
     var rawMaterialName = $('#raw-material-name').val() || 'la materia prima';

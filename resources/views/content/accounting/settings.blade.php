@@ -1,140 +1,275 @@
 @extends('layouts/layoutMaster')
 
-@section('title', 'Configuración de Contabilidad')
+@section('title', 'Facturación Electrónica - Configuración')
 
 @section('vendor-style')
 @vite([
 'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
 'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
-'resources/assets/vendor/libs/flatpickr/flatpickr.scss'
+'resources/assets/vendor/libs/flatpickr/flatpickr.scss',
 ])
 @endsection
 
-@section('content')
-<div class="container">
-  <div class="row">
-      <div class="col-12">
-          <div class="card">
-              <div class="card-header">
-                  <h4 class="card-title">Configuración del RUT</h4>
-              </div>
-              <div class="card-body">
-                  <form action="{{ route('accounting.saveRut') }}" method="POST">
-                      @csrf
-                      <div class="form-group">
-                          <label for="rut">RUT de la Empresa</label>
-                          <input type="text" class="form-control my-3" id="rut" name="rut" value="{{ $pymoSetting->settingValue ?? '' }}" required>
-                      </div>
-                      <button type="submit" class="btn btn-primary">Guardar</button>
-                  </form>
-                  @if(session('success_rut'))
-                  <div class="alert alert-success mt-3">
-                      {{ session('success_rut') }}
-                  </div>
-                  @endif
-                  @if(session('error_rut'))
-                  <div class="alert alert-danger mt-3">
-                      {{ session('error_rut') }}
-                  </div>
-                  @endif
-              </div>
-          </div>
-      </div>
-
-      @if($companyInfo)
-      <div class="col-12 mt-4">
-          <div class="card">
-              <div class="card-header">
-                  <h4 class="card-title">Logo de la Empresa</h4>
-              </div>
-              <div class="card-body">
-                  @if($logoUrl)
-                      <div class="mb-3">
-                          <img src="{{ asset($logoUrl) }}" alt="Company Logo" class="img-thumbnail" style="max-width: 200px;">
-                      </div>
-                  @endif
-                  <form action="{{ route('accounting.uploadLogo') }}" method="POST" enctype="multipart/form-data">
-                      @csrf
-                      <div class="form-group">
-                          <input type="file" class="form-control-file" id="logo" name="logo" required>
-                      </div>
-                      <button type="submit" class="btn btn-primary mt-3">Actualizar Logo</button>
-                  </form>
-                  @if(session('success_logo'))
-                  <div class="alert alert-success mt-3">
-                      {{ session('success_logo') }}
-                  </div>
-                  @endif
-                  @if(session('error_logo'))
-                  <div class="alert alert-danger mt-3">
-                      {{ session('error_logo') }}
-                  </div>
-                  @endif
-              </div>
-          </div>
-      </div>
-
-      <div class="col-12 mt-4">
-          <div class="card">
-              <div class="card-header">
-                  <h4 class="card-title">Información de la Empresa</h4>
-              </div>
-              <div class="card-body">
-                <form>
-                  @if(!empty($companyInfo['name']))
-                      <div class="form-group">
-                          <label for="companyName">Nombre de la Empresa</label>
-                          <input type="text" class="form-control my-3" id="companyName" value="{{ $companyInfo['name'] }}" disabled>
-                      </div>
-                  @endif
-
-                  @if(!empty($companyInfo['rut']))
-                      <div class="form-group">
-                          <label for="companyRUT">RUT</label>
-                          <input type="text" class="form-control my-3" id="companyRUT" value="{{ $companyInfo['rut'] }}" disabled>
-                      </div>
-                  @endif
-
-                  @if(!empty($companyInfo['socialPurpose']))
-                      <div class="form-group">
-                          <label for="socialPurpose">Propósito Social</label>
-                          <input type="text" class="form-control my-3" id="socialPurpose" value="{{ $companyInfo['socialPurpose'] }}" disabled>
-                      </div>
-                  @endif
-
-                  @if(!empty($companyInfo['resolutionNumber']))
-                      <div class="form-group">
-                          <label for="resolutionNumber">Número de Resolución</label>
-                          <input type="text" class="form-control my-3" id="resolutionNumber" value="{{ $companyInfo['resolutionNumber'] }}" disabled>
-                      </div>
-                  @endif
-
-                  @if(!empty($companyInfo['email']))
-                      <div class="form-group">
-                          <label for="companyEmail">Correo Electrónico</label>
-                          <input type="email" class="form-control my-3" id="companyEmail" value="{{ $companyInfo['email'] }}" disabled>
-                      </div>
-                  @endif
-
-                  @if(!empty($companyInfo['createdAt']))
-                      <div class="form-group">
-                          <label for="createdAt">Fecha de Creación</label>
-                          <input type="text" class="form-control my-3" id="createdAt" value="{{ $companyInfo['createdAt'] }}" disabled>
-                      </div>
-                  @endif
-
-                  @if(!empty($companyInfo['updatedAt']))
-                      <div class="form-group">
-                          <label for="updatedAt">Fecha de Actualización</label>
-                          <input type="text" class="form-control my-3" id="updatedAt" value="{{ $companyInfo['updatedAt'] }}" disabled>
-                      </div>
-                  @endif
-              </form>
-
-              </div>
-          </div>
-      </div>
-      @endif
-  </div>
-</div>
+@section('vendor-script')
+@vite(['resources/assets/js/accounting/accounting-settings.js'])
+@vite(['resources/assets/js/accounting/upload-caes.js'])
+<script>
+  window.csrfToken = "{{ csrf_token() }}";
+</script>
 @endsection
+
+@section('content')
+<div class="row">
+  <!-- Mensaje principal -->
+  <div class="col-12 mb-4">
+    <div class="card border-0 shadow-sm">
+        <div class="row g-0 align-items-center">
+            <div class="col-md-8">
+                <div class="card-body">
+                    @php
+                        // Verifica si al menos una tienda tiene invoices_enabled = 1
+                        $isInvoicesEnabled = $stores->contains('invoices_enabled', 1);
+                    @endphp
+                    @if($isInvoicesEnabled)
+                        <h5 class="text-primary mb-3">
+                            La Facturación Electrónica se encuentra
+                            <strong class="text-success">activa</strong>
+                        </h5>
+                        <p class="mb-0">Ya puedes emitir comprobantes fiscales desde la aplicación.</p>
+                    @else
+                        <h5 class="text-primary mb-3">
+                            La Facturación Electrónica se encuentra
+                            <strong class="text-danger">inactiva</strong>
+                        </h5>
+                        <p class="mb-3">No puedes emitir comprobantes fiscales. Verifica la configuración de tus tiendas.</p>
+                        <a href="{{ route('integrations.index') }}" class="btn btn-primary btn-sm mb-0">Gestionar conexión</a>
+                      @endif
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <img src="{{ asset('assets/img/illustrations/man-with-laptop.png') }}"
+                    height="140"
+                    alt="View Badge User"
+                    data-app-light-img="illustrations/man-with-laptop-light.png"
+                    data-app-dark-img="illustrations/man-with-laptop-dark.png">
+            </div>
+        </div>
+    </div>
+  </div>
+
+    <!-- Configuración de sucursales -->
+    @foreach ($stores->where('invoices_enabled', true) as $store)
+      <div class="col-12 col-md-6 col-lg-4 mb-4 store-card" data-store-id="{{ $store->id }}" data-invoices-enabled="{{ $store->invoices_enabled ? 'true' : 'false' }}">
+            <div class="card border-0 shadow-sm h-100 d-flex flex-column justify-content-between">
+                <div class="card-body flex-grow-1 d-flex flex-column">
+                    <h5 class="card-title text-primary fw-bold mb-3">Sucursal: {{ $store->name }}</h5>
+
+                    <!-- Contenedor de datos o mensaje de error -->
+                    <div class="flex-grow-1">
+                        <!-- Contenedor de datos de Pymo -->
+                        <div class="pymo-data" style="display: none;">
+                            <p class="mb-1"><strong>Empresa:</strong> <span class="company-name">N/A</span></p>
+                            <p class="mb-1"><strong>RUT:</strong> <span class="company-rut">N/A</span></p>
+                            <p class="mb-1"><strong>Email:</strong> <span class="company-email">N/A</span></p>
+                            <p class="mb-1"><strong>Sucursal:</strong> <span class="company-branch">N/A</span></p>
+                        </div>
+
+                        <!-- Contenedor de errores -->
+                        <div class="pymo-error text-danger text-center" style="display: none;">
+                            <i class="bx bx-error-circle fs-4"></i>
+                            <p class="mb-0">La tienda no tiene configurada la integración</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de CAES dentro de la tarjeta -->
+                <div class="caes-container" style="display: none;">
+                    <table class="caes-table w-100">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Próximo Número</th>
+                                <th>Rango</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Aquí se llenarán los datos dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+
+                <!-- Loader mientras se cargan los datos -->
+                <div class="pymo-loader text-center">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                  <p class="mt-2 text-muted">Cargando información...</p>
+                </div>
+
+                @if($store->invoices_enabled)
+                <div class="col-12 text-center">
+                  <button
+                  class="btn btn-primary btn-sm mb-3 open-upload-caes-modal"
+                  data-store-rut="{{ $store->rut }}"
+                  data-store-id="{{ $store->id }}">
+                  Subir CAEs
+                  </button>
+                </div>
+                <div class="col-12 text-left p-4 mb-3">
+                  <label for="print-setting-{{ $store->id }}" class="form-label fw-semibold">Formato de impresión</label>
+                  <select
+                      class="form-select form-select-sm w-auto d-inline print-setting-select"
+                      id="print-setting-{{ $store->id }}"
+                      data-store-id="{{ $store->id }}"
+                      name="print_settings"
+                  >
+                      @foreach (['80mm', 'a4'] as $format)
+                          <option value="{{ $format }}" {{ $store->print_settings === $format ? 'selected' : '' }}>
+                              {{ strtoupper($format) }}
+                          </option>
+                      @endforeach
+                  </select>
+                </div>
+              @endif
+            </div>
+        </div>
+    @endforeach
+    @foreach ($stores->where('invoices_enabled', false) as $store)
+    <div class="col-12 col-md-6 col-lg-4 mb-4">
+        <div class="card border-0 shadow-sm h-100 d-flex flex-column justify-content-between text-center p-4">
+            <div class="card-body flex-grow-1 d-flex flex-column justify-content-center align-items-center">
+                <h5 class="card-title text-primary fw-bold mb-3">
+                    Sucursal: {{ $store->name }}
+                </h5>
+                <div class="text-danger mb-3">
+                    <i class="bx bx-error-circle fs-1 mb-2"></i>
+                    <p class="mb-0 fw-semibold">Esta tienda no tiene activada la Facturación Electrónica.</p>
+                </div>
+            </div>
+            <div>
+                <a href="{{ route('integrations.index') }}" class="btn btn-outline-primary btn-sm">
+                    Vincular Facturación
+                </a>
+            </div>
+        </div>
+    </div>
+    @endforeach
+
+</div>
+
+<!-- Modal para cargar CAEs -->
+@include('content.accounting._partials.upload-caes')
+<style>
+/* General */
+.store-card {
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Toast más visible y animado */
+.swal2-container.swal2-top-end {
+  z-index: 99999 !important;
+  padding: 1rem;
+}
+
+.swal2-toast {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 8px !important;
+  animation: slideInRight 0.4s ease forwards;
+  background-color: #ffffff;
+  color: #333;
+}
+
+/* Animación tipo push desde la derecha */
+@keyframes slideInRight {
+  from {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+
+
+.card {
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Tabla de CAES */
+.caes-container {
+    margin-top: 15px;
+    padding: 10px 0;
+}
+
+.caes-table {
+    width: 100%;
+    border-spacing: 0;
+}
+
+.caes-table th, .caes-table td {
+    padding: 10px;
+    text-align: left;
+}
+
+.caes-table th {
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e9ecef;
+    background-color: #f8f9fa;
+}
+
+.caes-table td {
+    font-size: 14px;
+    color: #555;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.caes-table tr:last-child td {
+    border-bottom: none;
+}
+
+.caes-table tr:hover {
+    background-color: #f5f8fa;
+}
+
+/* Loader */
+.pymo-loader .spinner-border {
+    width: 30px;
+    height: 30px;
+    margin: auto;
+}
+
+.pymo-loader p {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+/* Botón */
+.fetch-caes {
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.fetch-caes:hover {
+    background-color: #0d6efd;
+    color: white;
+}
+</style>
+@endsection
+
+
+

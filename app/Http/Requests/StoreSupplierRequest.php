@@ -25,15 +25,25 @@ class StoreSupplierRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'city' => 'required|string|max:255',
-            'state' => 'required|string|max:255',
-            'country' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:suppliers',
-            'doc_type' => 'required|in:DNI,PASSPORT,RUT,OTHER',
-            'doc_number' => 'required|numeric',
-            'default_payment_method' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255|unique:suppliers',
+            'doc_type' => 'nullable|in:CI,PASSPORT,RUT,OTHER',
+            'doc_number' => 'nullable|numeric',
+            'default_payment_method' => 'nullable|string|max:255',
+            'store_id' => 'nullable|numeric|exists:stores,id',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'El nombre del proveedor es obligatorio',
+            'email.email' => 'El email debe ser válido',
+            'email.unique' => 'Este email ya está registrado',
         ];
     }
 }

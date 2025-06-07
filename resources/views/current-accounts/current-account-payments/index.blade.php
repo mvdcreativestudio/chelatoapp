@@ -31,11 +31,14 @@
 @section('content')
 @php
 $statusClass = [
-"Paid" => "text-success", // Green color for paid
-"Unpaid" => "text-danger", // Red color for unpaid
-"Partial" => "text-warning" // Yellow color for partial
+  "Paid" => "text-success", // Green color for paid
+  "Unpaid" => "text-danger", // Red color for unpaid
+  "Partial" => "text-warning" // Yellow color for partial
 ];
 $status = $currentAccount->status->value;
+
+// Inicializamos el saldo con 0 o un valor predefinido si es necesario
+$balance = 0;
 @endphp
 
 <div class="row">
@@ -57,8 +60,18 @@ $status = $currentAccount->status->value;
           <input class="form-control" type="date" value="{{ $currentAccount->created_at->format('Y-m-d') ?? '' }}" id="formFile" disabled>
         </div>
         <div class="mb-3 col-4">
-          <label for="formFile" class="form-label">{{ $typeEntity === 'client' ? 'Cliente' : 'Proveedor' }}</label>
-          <input class="form-control" type="text" value="{{ $dataEntity->name ?? 'N/A' }}" disabled>
+          @if ($typeEntity === 'client')
+          @if ($dataEntity->name)
+          <label for="formFile" class="form-label">Cliente</label>
+          <input class="form-control" type="text" value="{{ $dataEntity->name}} {{ $dataEntity->lastname }}" disabled>
+          @else
+          <label for="formFile" class="form-label">Empresa</label>
+          <input class="form-control" type="text" value="{{ $dataEntity->company_name }}" disabled>
+          @endif
+          @else
+          <label for="formFile" class="form-label">Proveedor</label>
+          <input class="form-control" type="text" value="{{ $dataEntity->name }}" disabled>
+          @endif
         </div>
         <div class="mb-3 col-2">
           <label for="formFile" class="form-label">Moneda</label>
@@ -75,52 +88,68 @@ $status = $currentAccount->status->value;
     </div>
 
     <!-- Contenedor para hacer scroll en la tabla -->
-    <div class="card-datatable table-responsive" style="max-height: 400px; overflow-y: auto;">
+    <div class="card-datatable table-responsive" style="max-height: calc(100vh - 350px); overflow-y: auto;">
       <table class="dt-responsive table border-top datatables-current-account-payments">
         <thead class="text-center table-dark" style="position: sticky; top: 0; z-index: 1;">
           <tr>
             <th class="font-white">Concepto</th>
-            <th class="font-white">Debe</th>
-            <th class="font-white">Haber</th>
+            <th class="font-white">Ventas</th>
+            <th class="font-white">Pagos</th>
+            <th class="font-white">Saldo</th> <!-- Nueva columna para el saldo -->
             <th class="font-white">Moneda</th>
             <th class="font-white">Fecha</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody class="text-center">
-          <!-- Mostrar Créditos Iniciales -->
-          @foreach($currentAccount->initialCredits as $initialCredit)
+          @foreach($combinedEntries as $entry)
+          @if($entry['type'] === 'credit')
+          @php
+            // Aumentar el saldo con el valor del crédito
+            $balance += $entry['entry']->total_debit;
+          @endphp
           <tr>
-            <th>{{ $initialCredit->description ?? 'Credito Inicial' }}</th>
-            <th>{{ number_format($initialCredit->total_debit, 2) }}</th>
+            <th>{!! $entry['entry']->description ?? 'Crédito Inicial' !!}</th>
+            <th>{{ number_format($entry['entry']->total_debit, 2) }}</th>
             <th class="bg-gray2"></th>
+            <th>{{ number_format($balance, 2) }}</th> <!-- Mostrar el saldo -->
             <th>{{ $currentAccount->currency->name ?? 'N/A' }}</th>
-            <th>{{ $initialCredit->created_at->format('d/m/Y') }}</th>
+            <th>{{ $entry['entry']->created_at->format('d/m/y') }}</th>
             <th></th>
           </tr>
-
-          <!-- Mostrar Pagos relacionados con la cuenta corriente -->
-          @foreach($currentAccount->payments as $payment)
+          @elseif($entry['type'] === 'payment')
+          @php
+            // Disminuir el saldo con el valor del pago
+            $balance -= $entry['entry']->payment_amount;
+          @endphp
           <tr>
-            <th>{{ $payment->paymentMethod->description ?? 'N/A' }}</th>
+            <th>{{ $entry['entry']->paymentMethod->description ?? 'N/A' }}</th>
             <th class="bg-gray2"></th>
-            <th>{{ number_format($payment->payment_amount, 2) }}</th>
+            <th>{{ number_format($entry['entry']->payment_amount, 2) }}</th>
+            <th>{{ number_format($balance, 2) }}</th> <!-- Mostrar el saldo -->
             <th>{{ $currentAccount->currency->name ?? 'N/A' }}</th>
-            <th>{{ $payment->payment_date->format('d/m/Y') }}</th>
+            <th>{{ $entry['entry']->payment_date->format('d/m/y') }}</th>
             <th>
-              <a href="{{ route('current-account-payments.edit', $payment->id) }}" class="btn btn-sm btn-warning">Editar</a>
-              <a class="btn btn-sm btn-danger delete-record text-white" data-id="{{ $payment->id }}">Eliminar</a>
+              <!-- Botones de solo iconos -->
+              <a href="{{ route('current-account-payments.edit', $entry['entry']->id) }}" class="btn btn-sm btn-warning">
+                <i class="bx bx-edit"></i>
+              </a>
+              <a class="btn btn-sm btn-danger delete-record text-white" data-id="{{ $entry['entry']->id }}">
+                <i class="bx bx-trash"></i>
+              </a>
             </th>
           </tr>
-          @endforeach
+          @endif
           @endforeach
         </tbody>
-        <tfoot class="text-center table-dark" style="position: sticky; bottom: 0; z-index: 1;">
+        <tfoot class="text-center table-dark" style="position: sticky; bottom: -18px; z-index: 1;">
           <tr>
             <th class="font-white">Totales</th>
             <th class="font-white">{{ number_format($totalDebit, 2) }}</th>
             <th class="font-white">{{ number_format($totalAmount, 2) }}</th>
-            <th colspan="3"></th>
+            <th class="font-white">{{ number_format($balance, 2) }}</th> <!-- Mostrar saldo total -->
+            <th colspan="2"></th>
+            <th></th>
           </tr>
         </tfoot>
       </table>

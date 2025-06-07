@@ -5,6 +5,7 @@ namespace App\Services\Mail;
 use App\Repositories\StoresEmailConfigRepository;
 use Exception;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class EmailService
 {
@@ -19,6 +20,7 @@ class EmailService
         $this->mailer = $mailer;
         $this->storesEmailConfigRepository = $storesEmailConfigRepository;
     }
+
     public function sendMail(
         string $to,
         string $subject,
@@ -28,55 +30,51 @@ class EmailService
         array $data = [],
         int $storeId = null
     ): bool {
+        try {
+            $storeId = $storeId ?? auth()->user()->store_id;
 
-        $mailMailer = env('MAIL_MAILER');
-        $mailHost = env('MAIL_HOST');
-        $mailPort = env('MAIL_PORT');
-        $mailUsername = env('MAIL_USERNAME');
-        $mailPassword = env('MAIL_PASSWORD');
-        $mailEncryption = env('MAIL_ENCRYPTION');
-        $mailFromAddress = env('MAIL_FROM_ADDRESS');
-        $mailFromName = env('MAIL_FROM_NAME');
-        $mailReplyToAddress = env('MAIL_REPLY_TO_ADDRESS');
-
-
-        $storeId = $storeId ?? auth()->user()->store_id;
-        if ($storeId){
-            $storeConfig = $this->storesEmailConfigRepository->getConfigByStoreId($storeId);
-            if ($storeConfig){
-                $mailMailer = $storeConfig->mail_mailer;
-                $mailHost = $storeConfig->mail_host;
-                $mailPort = $storeConfig->mail_port;
-                $mailUsername = $storeConfig->mail_username;
-                $mailPassword = $storeConfig->mail_password;
-                $mailEncryption = $storeConfig->mail_encryption;
-                $mailFromAddress = $storeConfig->mail_from_address;
-                $mailFromName = $storeConfig->mail_from_name ?? env('MAIL_FROM_NAME');
-                $mailReplyToAddress = $storeConfig->mail_reply_to_address ?? env('MAIL_REPLY_TO_ADDRESS');
-                Log::info("Información de configuración de correo recuperada para la tienda {$storeId}");
+            if (is_null($storeId)) {
+                throw new Exception("Este usuario no está asociado a una tienda. Por favor, asócielo a una tienda antes de enviar correos.");
             }
+
+            // Recupera la configuración de la tienda desde la base de datos
+            $storeConfig = $this->storesEmailConfigRepository->getConfigByStoreId($storeId);
+
+            Log::info("Información de configuración de correo recuperada para la tienda {$storeId}");
+
+            // Configura el mailer dinámicamente
+            config([
+                'mail.default' => $storeConfig->mail_mailer,
+                'mail.mailers.smtp.host' => $storeConfig->mail_host,
+                'mail.mailers.smtp.port' => $storeConfig->mail_port,
+                'mail.mailers.smtp.username' => $storeConfig->mail_username,
+                'mail.mailers.smtp.password' => $storeConfig->mail_password,
+                'mail.mailers.smtp.encryption' => $storeConfig->mail_encryption,
+                'mail.from.address' => $storeConfig->mail_from_address,
+                'mail.from.name' => $storeConfig->mail_from_name,
+            ]);
+
+            $this->from = $storeConfig->mail_from_address ?? 'default@example.com';
+            $this->replyTo = $storeConfig->mail_reply_to_address ?? 'noreply@example.com';
+
+            // Enviar el correo
+            Mail::send($template, $data, function ($message) use ($to, $subject, $pdfPath, $attachmentName) {
+                $message->to($to)
+                    ->subject($subject);
+
+                if ($pdfPath && $attachmentName) {
+                    $message->attach($pdfPath, [
+                        'as' => $attachmentName
+                    ]);
+                }
+            });
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Error enviando email: ' . $e->getMessage());
+            throw $e;
         }
-
-        // Configura el mailer dinámicamente
-        config([
-            'mail.default' => $mailMailer,
-            'mail.mailers.smtp.host' => $mailHost,
-            'mail.mailers.smtp.port' => $mailPort,
-            'mail.mailers.smtp.username' => $mailUsername,
-            'mail.mailers.smtp.password' => $mailPassword,
-            'mail.mailers.smtp.encryption' => $mailEncryption,
-            'mail.from.address' => $mailFromAddress,
-            'mail.from.name' => $mailFromName,
-        ]);
-
-        $this->from = $mailFromAddress;
-        $this->replyTo = $mailReplyToAddress;
-        $data = array_merge([
-            'from' => $this->from,
-            'replyTo' => $this->replyTo,
-        ], $data);
-        $content = $this->renderTemplate($template, $data);
-        return $this->mailer->send($to, $subject, $content, $this->from, $this->replyTo, $pdfPath, $attachmentName);
     }
 
     protected function renderTemplate(string $template, array $data): string

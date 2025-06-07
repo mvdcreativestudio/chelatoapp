@@ -48,7 +48,20 @@ class CurrentAccountPaymentRepository
 
         $currentAccountStatus = $this->getCurrentAccountStatus();
 
-        return compact('currentAccount', 'totalAmount', 'totalDebit', 'countInitialCredits', 'countPayments', 'typeEntity', 'dataEntity', 'currentAccountStatus');
+        $combinedEntries = $currentAccount->initialCredits
+            ->map(function ($initialCredit) {
+                return ['type' => 'credit', 'entry' => $initialCredit];
+            })
+            ->merge(
+                $currentAccount->payments->map(function ($payment) {
+                    return ['type' => 'payment', 'entry' => $payment];
+                })
+            )
+            ->sortBy(function ($entry) {
+                return $entry['entry']->created_at; // Ordena por la fecha de creación en forma descendente
+            });
+
+        return compact('currentAccount', 'totalAmount', 'totalDebit', 'countInitialCredits', 'countPayments', 'typeEntity', 'dataEntity', 'currentAccountStatus', 'combinedEntries');
     }
 
     /**

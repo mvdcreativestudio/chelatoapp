@@ -31,6 +31,7 @@ $(document).ready(function () {
         $('#expenseCategoryIdEdit').val(data.expense_category_id);
         $('#expenseCurrencyIdEdit').val(data.currency_id);
         $('#storeIdEdit').val(data.store_id);
+        $('#conceptEdit').val(data.concept);
 
 
         // Mostrar el modal
@@ -52,6 +53,7 @@ $(document).ready(function () {
       expense_category_id: $('#expenseCategoryIdEdit').val(),
       currency_id: $('#expenseCurrencyIdEdit').val(),
       store_id: $('#storeIdEdit').val(),
+      concept: $('#conceptEdit').val(),
       '_token': $('meta[name="csrf-token"]').attr('content')
     }
     // return;

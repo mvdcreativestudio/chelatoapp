@@ -63,13 +63,13 @@
       <!-- Descripción -->
       <div class="mb-3">
         <label for="description" class="form-label">Descripción</label>
-        <input type="text" class="form-control" id="description" name="description" value="{{ $initialCredit->description }}" required disabled>
+        <input type="text" class="form-control" id="description" name="description" value="{{ $initialCredit->description ?? '' }}" required disabled>
       </div>
 
       <!-- Monto Total -->
       <div class="mb-3">
         <label for="total_debit" class="form-label">Monto Total</label>
-        <input type="number" class="form-control" id="total_debit" name="total_debit" value="{{ $initialCredit->total_debit }}" required>
+        <input type="number" class="form-control" id="total_debit" name="total_debit" value="{{ $initialCredit?->total_debit ?? '0' }}" required>
       </div>
 
       <!-- Moneda -->
@@ -89,7 +89,7 @@
         <select class="form-select" id="current_account_settings_id" name="current_account_settings_id" required>
           <option value="" selected disabled>Seleccione el tipo de crédito</option>
           @foreach($currentAccountSettings as $setting)
-          <option value="{{ $setting->id }}" {{ $setting->id == $initialCredit->current_account_settings_id ? 'selected' : '' }}>{{ $setting->payment_terms }}</option>
+          <option value="{{ $setting->id }}" {{ $setting->id == $initialCredit?->current_account_settings_id ? 'selected' : '' }}>{{ $setting->payment_terms }} Día/s</option>
           @endforeach
         </select>
       </div>

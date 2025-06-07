@@ -54,6 +54,7 @@ class StoreExpenseRequest extends FormRequest
                 'exists:payment_methods,id',
                 'required_if:is_paid,true', // Requerido solo si is_paid es true
             ],
+            'concept' => 'nullable|string',
         ];
     }
 
@@ -86,6 +87,7 @@ class StoreExpenseRequest extends FormRequest
             'payment_method_id.integer' => 'El método de pago debe ser un número entero.',
             'payment_method_id.exists' => 'El método de pago seleccionado no es válido.',
             'payment_method_id.required_if' => 'Debe seleccionar un método de pago cuando el gasto está marcado como pagado.',
+            'concept.string' => 'El concepto debe ser una cadena de texto.',
         ];
     }
 }

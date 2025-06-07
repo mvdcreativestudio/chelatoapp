@@ -14,11 +14,11 @@ class Store extends Model
 
     protected $fillable = [
         'name',
-        'description',
         'phone',
         'address',
         'email',
         'rut',
+        'tax_rate_id',
         'ecommerce',
         'status',
         'slug',
@@ -31,6 +31,8 @@ class Store extends Model
         'pymo_branch_office',
         'accepts_peya_envios',
         'peya_envios_key',
+        'pos_provider_id',
+        'print_settings'
     ];
 
     /**
@@ -80,9 +82,19 @@ class Store extends Model
      *
      * @return HasOne
     */
-    public function mercadoPagoAccount(): HasOne
+    public function mercadoPagoAccount(): HasMany
     {
-        return $this->hasOne(MercadoPagoAccount::class);
+        return $this->hasMany(MercadoPagoAccount::class);
+    }
+
+    /**
+     * Obtiene la cuenta de Mercado Pago asociada a la tienda.
+     *
+     * @return HasOne
+    */
+    public function mercadoPagoAccountStore(): HasOne
+    {
+        return $this->hasOne(MercadoPagoAccountStore::class);
     }
 
     /**
@@ -129,14 +141,55 @@ class Store extends Model
     }
 
     /**
+     * Obtiene los POS vinculados a la tienda.
+     *
+     * @return BelongsTo
+     */
+    public function posProvider()
+    {
+        return $this->belongsTo(PosProvider::class, 'pos_provider_id');
+    }
+
+    /**
+     * Obtiene la información de integración con el POS.
+     *
+     * @return HasMany
+     */
+    public function posIntegrationInfo()
+    {
+        return $this->hasMany(PosIntegrationStoreInfo::class, 'store_id');
+    }
+
+
+    /**
+     * Obtiene los dispositivos POS asociados a la tienda.
+     *
+     * @return HasMany
+     */
+    public function posDevices()
+    {
+        // Primero obtenemos la integración POS de la tienda, luego los dispositivos asociados
+        return $this->hasManyThrough(PosDevice::class, PosIntegrationStoreInfo::class, 'store_id', 'pos_provider_id', 'id', 'pos_provider_id');
+    }
+
+
+    /**
      * Obtiene la configuración de envío de correos electrónicos de la tienda.
-     * 
+     *
      * @return HasOne
      */
 
-     public function emailConfig()
-     {
-         return $this->hasOne(StoresEmailConfig::class, 'store_id');
-     }
+    public function emailConfig()
+    {
+        return $this->hasOne(StoresEmailConfig::class, 'store_id');
+    }
 
+    /**
+     * Obtiene los presupuestos generados en esta tienda.
+     *
+     * @return HasMany
+     */
+    public function budgets() {
+        return $this->hasMany(Budget::class);
+    }
 }

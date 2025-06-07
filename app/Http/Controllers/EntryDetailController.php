@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EntryDetailsExport;
 use App\Models\EntryDetail;
 use App\Repositories\EntryDetailRepository;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EntryDetailController extends Controller
 {
@@ -120,6 +123,40 @@ class EntryDetailController extends Controller
         } catch (\Exception $e) {
             Log::error("Error al obtener los detalles del asiento para DataTable con ID {$entryId}: " . $e->getMessage());
             return response()->json(['error' => 'Error al cargar los detalles del asiento para la tabla.'], 400);
+        }
+    }
+
+    public function exportExcel($entryId)
+    {
+        try {
+            // Obtener el asiento por su ID con todos sus detalles
+            $entry = $this->entryDetailRepository->getEntryWithDetails($entryId);
+
+            // Generar y descargar el archivo Excel
+            return Excel::download(new EntryDetailsExport($entry), 'detalle-asiento-' . $entryId . '-' . date('Y-m-d_H-i-s') . '.xlsx');
+        } catch (\Exception $e) {
+            // Log de errores y redirección en caso de error
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar el asiento a Excel. Por favor, intente nuevamente.');
+        }
+    }
+
+    public function exportPdf($entryId)
+    {
+        try {
+            // Obtener el asiento por su ID con todos sus detalles
+            $entry = $this->entryDetailRepository->getEntryWithDetails($entryId);
+            // dd($entry);
+            // Generar el PDF utilizando la vista correspondiente
+            $pdf = Pdf::loadView('content.accounting.entries.entry-details.export-pdf', compact('entry'));
+
+            // Descargar el archivo PDF
+            return $pdf->download('detalle-asiento-' . $entryId . '-' . date('Y-m-d_H-i-s') . '.pdf');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            // Log de errores y redirección en caso de error
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar el asiento a PDF. Por favor, intente nuevamente.');
         }
     }
 }

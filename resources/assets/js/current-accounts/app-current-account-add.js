@@ -71,7 +71,7 @@ $(document).ready(function() {
     currentAccountSettings.forEach(function(setting) {
       if ((entityType === 'client' && setting.transaction_type === 'Sale') ||
           (entityType === 'supplier' && setting.transaction_type === 'Purchase')) {
-        filteredOptions += `<option value="${setting.id}">${setting.payment_terms}</option>`;
+        filteredOptions += `<option value="${setting.id}">${setting.payment_terms} Día/s</option>`;
       }
     });
 

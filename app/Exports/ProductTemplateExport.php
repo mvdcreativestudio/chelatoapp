@@ -32,7 +32,7 @@ class ProductTemplateExport implements FromArray, WithHeadings, WithEvents
     public function headings(): array
     {
         return [
-            'Nombre', 'SKU', 'Descripción', 'Precio', 'Precio_oferta', 'Descuento',
+            'Nombre', 'SKU', 'Descripción', 'Costo', 'Precio', 'Precio_oferta', 'Descuento',
             'Imagen', 'Stock', 'Margen_seguridad', 'Categoria'
         ];
     }
@@ -77,7 +77,7 @@ class ProductTemplateExport implements FromArray, WithHeadings, WithEvents
 
             // Añadir el dropdown en la columna J (Categoría) para las primeras 1000 filas
             for ($row = 2; $row <= 1001; $row++) {
-                $validation = $event->sheet->getDelegate()->getCell("J$row")->getDataValidation();
+                $validation = $event->sheet->getDelegate()->getCell("K$row")->getDataValidation();
                 $validation->setType(DataValidation::TYPE_LIST);
                 $validation->setErrorStyle(DataValidation::STYLE_INFORMATION);
                 $validation->setAllowBlank(true);

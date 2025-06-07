@@ -61,28 +61,37 @@ $currencySymbol = $settings->currency_symbol;
 
       <!-- Botón para crear nuevo producto -->
       <a href="{{ route('products.create') }}" class="btn btn-success btn-sm shadow-sm d-flex align-items-center gap-1">
-        <i class="bx bx-plus"></i> Nuevo Producto
+        <i class="fa-solid fa-plus"></i> Nuevo Producto
       </a>
 
     <!-- Botón de filtros -->
     <button id="openFilters" class="btn btn-outline-primary btn-sm shadow-sm d-flex align-items-center gap-1">
-      <i class="bx bx-filter-alt"></i> Filtros
+      <i class="fa-solid fa-filter"></i> Filtros
     </button>
 
     <!-- Desplegable para Importar/Exportar -->
     <div class="dropdown">
-      <button class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1 dropdown-toggle" type="button" id="dropdownImportExport" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="bx bx-download"></i> Acciones
+      <button class="btn btn-outline-primary btn-sm shadow-sm  dropdown-toggle" type="button" id="dropdownImportExport" data-bs-toggle="dropdown" aria-expanded="false">
+        <span><i class="fa-solid fa-download"></i> Exportar/Importar</span> 
       </button>
       <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImportExport">
-        <li><a class="dropdown-item" href="#" id="exportExcel"><i class="bx bx-export"></i> Exportar Excel</a></li>
+        <li><a class="dropdown-item" href="#" id="exportExcel"><i class="fa-solid fa-table"></i> Exportar a Excel</a></li>
         <li><a class="dropdown-item" href="{{ route('products.download-template') }}" id="download-template"><i class="bx bx-download"></i> Descargar Plantilla</a></li>
-        <li><a class="dropdown-item" href="#" id="openImportModal"><i class="bx bx-upload"></i> Importar Productos</a></li>
+        <li><a class="dropdown-item" href="#" id="openImportModal"><i class="bx bx-upload"></i> Importar Plantilla</a></li>
       </ul>
     </div>
 
+    <!-- Desplegable para Acciones -->
+    <div class="dropdown">
+      <button class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1 dropdown-toggle" type="button" id="dropdownImportExport" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i> Acciones
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImportExport">
+        <li><a class="dropdown-item" href="{{ route('products.addBulk') }}"><i class="fa-regular fa-square-plus"></i> Crear en masa</a></li>
+        <li><a class="dropdown-item" href="{{ route('products.editBulk') }}"><i class="fa-regular fa-pen-to-square"></i> Editar en masa</a></li>
 
-
+      </ul>
+    </div>
 
   </div>
 
@@ -179,6 +188,9 @@ $currencySymbol = $settings->currency_symbol;
           <div class="mb-3">
             <label for="importFile" class="form-label">Subir archivo Excel (.xlsx)</label>
             <input class="form-control" type="file" id="importFile" name="file" accept=".xlsx" required>
+          </div>
+          <div class="mb-3">
+            <a href="{{ route('products.download-template') }}" class="text-muted text-sm" id="download-template">Haz click aquí para descargar la plantilla</a>
           </div>
           <button type="submit" class="btn btn-primary">Subir</button>
         </form>

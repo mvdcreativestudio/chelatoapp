@@ -126,11 +126,19 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
-        // Canal específico para correos
-        'emails' => [
+
+        'sqldebugger' => [
             'driver' => 'single',
-            'path' => storage_path('logs/emails.log'),
-            'level' => 'info',
+            'path' => storage_path('logs/sql_debugger.log'),
+            'level' => 'debug',
+        ],
+        'events' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/mail_events.log'),
+        ],
+        'mercadopago' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/mercadoPago.log'),
         ],
     ],
 

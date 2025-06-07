@@ -35,11 +35,11 @@
 
 <div class="video-container">
   <video autoplay muted loop id="myVideo" class="video-background">
-    <source src="./assets/img/videos/back-chelato.mp4" type="video/mp4">
+    <source src="./assets/img/videos/back-dali.mp4" type="video/mp4">
   </video>
   <div class="video-overlay-store">
     <h2 class="header-title-store">Finalizar Compra</h2>
-    <img src="./assets/img/branding/chelato-white.png" class="logo-header-store" alt="">
+    <img src="./assets/img/branding/dali-white.png" class="logo-header-store" alt="">
   </div>
 </div>
 
@@ -97,7 +97,6 @@
 
       <input type="hidden" name="shipping_cost" id="shippingCostInput" value="0">
       <input type="hidden" name="estimate_id" id="estimateIdInput" value="">
-      <input type="hidden" name="delivery_offer_id" id="deliveryOfferIdInput" value="">
       <input type="hidden" name="city" id="city" />
       <input type="hidden" name="department" id="department" />
       <input type="hidden" name="store_id" id="storeId" value="{{ $store_id }}" />
@@ -183,8 +182,8 @@
                 <div class="col-12 col-md-6 mt-3">
                   <label class="form-label" for="doc_type">Tipo de Documento</label>
                   <select id="doc_type" name="doc_type" class="form-control" required>
-                    <option value="3">CI</option>
                     <option value="2">RUC</option>
+                    <option value="3">CI</option>
                   </select>
                 </div>
                 <div class="col-12 col-md-6 mt-3">
@@ -249,59 +248,50 @@
           </div>
 
           @if(session('cart') && count(session('cart')) > 0)
-          <div>
+            <div>
               <div class="d-flex justify-content-between align-items-center mt-3">
-                  <p class="mb-0">Dirección de la tienda</p>
-                  <h6 class="mb-0">{{ session('store')['address'] }}</h6>
+                <p class="mb-0">Dirección de la tienda</p>
+                <h6 class="mb-0">{{ session('store')['address'] }}</h6>
               </div>
               <div class="d-flex justify-content-between align-items-center mt-3">
-                  <p class="mb-0">Subtotal</p>
-                  <h6 class="mb-0">{{ $settings->currency_symbol }}{{$subtotal}}</h6>
+                <p class="mb-0">Subtotal</p>
+                <h6 class="mb-0">{{ $settings->currency_symbol }}{{$subtotal}}</h6>
               </div>
               @if($discount > 0)
-                  <div class="d-flex justify-content-between align-items-center mt-3">
-                      <p class="mb-0">Cupón de descuento</p>
-                      <h6 class="mb-0">{{ $settings->currency_symbol }}{{$discount}}</h6>
-                  </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <p class="mb-0">Cupón de descuento</p>
+                  <h6 class="mb-0">{{ $settings->currency_symbol }}{{$discount}}</h6>
+                </div>
               @endif
               <div class="d-flex justify-content-between align-items-center mt-3">
-                  <p class="mb-0">Envío</p>
-                  <!-- Envio hardcodeado a $65 -->
-                  <h6 class="mb-0" id="orderShippingCost">${{ 65 }}</h6> <!-- Hardcodear el costo de envío -->
+                <p class="mb-0">Envío</p>
+                <h6 class="mb-0" id="orderShippingCost">A calcular</h6>
               </div>
               <hr>
               <div class="d-flex justify-content-between align-items-center mt-3 pb-1">
-                  <p class="mb-0">Total</p>
-                  <!-- Envio hardcodeado a $65 -->
-                  <h6 class="mb-0" id="orderTotal">
-                      {{ $settings->currency_symbol }}{{ $subtotal - $discount + 65 }} <!-- Calcular el total -->
-                  </h6>
+                <p class="mb-0">Total</p>
+                <h6 class="mb-0" id="orderTotal">A calcular</h6>
               </div>
               <div class="d-grid mt-3">
-                  @if(session('cart') && count(session('cart')) > 0)
-                      <!-- Envio hardcodeado a $65 -->
-                      {{-- <button type="button" id="validate-address" class="btn btn-primary mb-2">
-                          <span class="me-2">Calcular envío</span>
-                          <i class="bx bx-calculator scaleX-n1-rtl"></i>
-                      </button> --}}
-
-                      {{-- <button class="btn btn-success" disabled id="orderConfirm"> --}}
-                      <!-- Envio hardcodeado a $65 -->
-                      <button class="btn btn-success" id="orderConfirm">
-                          <span class="me-2">Confirmar pedido</span>
-                          <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
-                      </button>
-                  @else
-                      <button class="btn btn-primary" disabled>
-                          <span class="me-2">Confirmar pedido</span>
-                          <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
-                      </button>
-                  @endif
+                @if(session('cart') && count(session('cart')) > 0)
+                  <button type="button" id="validate-address" class="btn btn-primary mb-2" type="button">
+                    <span class="me-2">Calcular envío</span>
+                    <i class="bx bx-calculator scaleX-n1-rtl"></i>
+                  </button>
+                  <button class="btn btn-success" disabled id="orderConfirm">
+                    <span class="me-2">Confirmar pedido</span>
+                    <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
+                  </button>
+                @else
+                  <button class="btn btn-primary" disabled>
+                    <span class="me-2">Confirmar pedido</span>
+                    <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
+                  </button>
+                @endif
               </div>
+            </div>
           </div>
-        </div>
-        @endif
-
+          @endif
         </div>
       </div>
     </form>
@@ -359,26 +349,42 @@ function getAddressComponents(components) {
 document.querySelectorAll('input[name="shipping_method"]').forEach((elem) => {
     elem.addEventListener('change', function(event) {
         const addressContainer = document.getElementById('address-container');
+        const validateAddressButton = document.getElementById('validate-address');
+        const orderConfirmButton = document.getElementById('orderConfirm');
         const orderShippingCost = document.getElementById('orderShippingCost');
         const orderTotal = document.getElementById('orderTotal');
         const subtotal = parseFloat('{{ $subtotal }}');
         const discount = parseFloat('{{ $discount }}');
 
         if (this.value === 'pickup') {
-            // Retiro en el local
             addressContainer.style.display = 'none';
-            orderShippingCost.innerText = '$0'; // Cambia el costo de envío a 0
-            document.getElementById('shippingCostInput').value = 0; // Actualiza el input oculto
-            orderTotal.innerText = '{{ $settings->currency_symbol }}' + (subtotal - discount); // Actualiza el total
-        } else if (this.value === 'peya') {
-            // Pedidos Ya
+            validateAddressButton.style.display = 'none';
+            orderShippingCost.innerText = '$0';
+            orderConfirmButton.removeAttribute('disabled');
+            orderTotal.innerText = '{{ $settings->currency_symbol }}' + ('{{ $subtotal }}' - '{{ $discount }}');
+        } else {
             addressContainer.style.display = 'block';
-            orderShippingCost.innerText = '$65'; // Cambia el costo de envío a 65
-            document.getElementById('shippingCostInput').value = 65; // Actualiza el input oculto
-            orderTotal.innerText = '{{ $settings->currency_symbol }}' + (subtotal - discount + 65); // Actualiza el total
+            validateAddressButton.style.display = 'block';
+            orderShippingCost.style.display = 'block';
+            orderConfirmButton.setAttribute('disabled', 'disabled');
+            orderTotal.innerText = 'A calcular';
         }
     });
 });
+
+document.querySelectorAll('input[name="payment_method"]').forEach((elem) => {
+    elem.addEventListener('change', function(event) {
+        const orderConfirmButton = document.getElementById('orderConfirm');
+        orderConfirmButton.setAttribute('disabled', 'disabled');
+        document.getElementById('orderShippingCost').innerText = 'A calcular';
+        document.getElementById('orderTotal').innerText = 'A calcular';
+        document.getElementById('estimateIdInput').value = '';
+        document.getElementById('shippingCostInput').value = '0';
+    });
+});
+
+
+
 
 async function getPedidosYaApiKey(storeId) {
     try {
@@ -391,14 +397,145 @@ async function getPedidosYaApiKey(storeId) {
     }
 }
 
-function handleApiReturns(returnMessage, status = 400) {
-    const alertDiv = document.getElementById('alert-container-location');
-    let message = '';
+document.getElementById('validate-address').addEventListener('click', async function(event) {
+  if (document.getElementById('customRadioPedidosYa').checked) {
+    event.preventDefault();
 
-    console.log(returnMessage);
+    // Utiliza la variable JavaScript storeId directamente
+    const apiKey = await getPedidosYaApiKey(storeId)
+    if (!apiKey) {
+        alert('Error al obtener la API Key de PedidosYa.');
+        return;
+    }
 
-    if (status === 200) {
-        // Mostrar éxito
+
+    const googleMapsApiKey = '{{ $googleMapsApiKey }}';
+    const referenceId = 'Chelato_PeYa_REF-' + Date.now();
+    const userAddress = document.getElementById('address').value;
+    const storeAddress = '{{ session("store")["address"] }}';
+
+    async function getAddressDetails(address) {
+      if (!address) {
+        alertDiv = document.getElementById('alert-container-location');
+        alertDiv.classList.remove('d-none');
+        alertDiv.classList.add('d-flex');
+        document.getElementById('alert-message-location').innerText = 'Por favor, complete todos los datos.';
+        return;
+      }
+
+      const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURI(address)}&key=${googleMapsApiKey}`);
+      const data = await response.json();
+
+      if (data.status === 'ZERO_RESULTS') {
+        alertDiv = document.getElementById('alert-container-location');
+        alertDiv.classList.remove('d-none');
+        alertDiv.classList.add('d-flex');
+        document.getElementById('alert-message-location').innerText = 'No se encontraron resultados para la dirección ingresada.';
+        return;
+      }
+
+      return {
+        addressStreet: data.results[0].formatted_address,
+        city: data.results[0].address_components.find(comp => comp.types.includes("locality")).long_name,
+        latitude: data.results[0].geometry.location.lat,
+        longitude: data.results[0].geometry.location.lng
+      };
+    }
+
+    const userDetails = await getAddressDetails(userAddress);
+    const storeDetails = await getAddressDetails(storeAddress);
+
+    if (!userDetails || !storeDetails) {
+      return;
+    }
+
+    const itemsJson = '{!! json_encode(session("cart")) !!}';
+
+    const itemsParsed = JSON.parse(itemsJson);
+
+    const items = Object.values(itemsParsed).map(item => {
+      return {
+        type: "STANDARD",
+        description: item.name,
+        value: item.price,
+        sku: item.id,
+        quantity: item.quantity,
+        volume: 2500,
+        weight: 1
+      };
+    });
+
+    var requestData = {
+      store_id: storeId, // Asegúrate de incluir store_id
+      referenceId: referenceId,
+      items: items,
+      isTest: true,
+      notificationMail: document.getElementById('email').value || null,
+      waypoints: [{
+        type: "PICK_UP",
+        ...storeDetails,
+        phone: "+541234567890",
+        name: '{{ session("store")["name"] }}',
+      }, {
+        type: "DROP_OFF",
+        ...userDetails,
+        collectMoney: document.getElementById('customRadioEfectivo').checked ? parseFloat(document.getElementById('orderTotal').innerText.replace('{{ $settings->currency_symbol }}', '')) : null,
+        phone: document.getElementById('phone').value,
+        name: document.getElementById('name').value + " " + document.getElementById('lastname').value
+      }]
+    };
+
+    fetch('/api/pedidos-ya/estimate-order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestData)
+    })
+    .then(response => {
+      if (!response.ok) {
+        // Manejo del error
+        throw new Error('Network response was not ok: ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.status == 400) {
+        handleApiReturns(data.code, data.status);
+      } else {
+        if (data.estimateId) {
+          handleApiReturns('Tu envío fue calculado con éxito.', 200);
+
+          // Habilita el botón de confirmar pedido
+          document.getElementById('orderConfirm').removeAttribute('disabled');
+
+          // Actualiza el costo de envío en el input hidden
+          document.getElementById('shippingCostInput').value = data.deliveryOffers[0].pricing.total;
+
+          // Actualiza el id de la estimación
+          document.getElementById('estimateIdInput').value = data.estimateId;
+
+          // Actualiza el costo de envío
+          document.getElementById('orderShippingCost').innerText = '$' + data.deliveryOffers[0].pricing.total;
+
+          // Actualiza el total
+          document.getElementById('orderTotal').innerText = '$' + (parseFloat(data.deliveryOffers[0].pricing.total) + parseFloat('200' - '0'));
+        }
+        else {
+          handleApiReturns('Hubo un error al calcular el envío.');
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+
+
+    function handleApiReturns(returnMessage, status = 400) {
+      const alertDiv = document.getElementById('alert-container-location');
+      let message = '';
+
+      if (status === 200) {
         alertDiv.classList.remove('d-none');
         alertDiv.classList.add('d-flex');
         alertDiv.classList.remove('alert-danger');
@@ -413,221 +550,79 @@ function handleApiReturns(returnMessage, status = 400) {
         alertDiv.querySelector('h6').innerText = '¡Correcto!';
         document.getElementById('alert-message-location').innerText = returnMessage;
         return;
-    }
+      }
 
-    // Mensajes de error específicos
-    switch (returnMessage) {
+      switch (returnMessage) {
         case 'WAYPOINTS_OUT_OF_ZONE':
-            message = 'La dirección ingresada está fuera de la zona de entrega.';
-            break;
+          message = 'La dirección ingresada está fuera de la zona de entrega.';
+          break;
         case 'WAYPOINTS_NOT_FOUND':
-            message = 'No se pudo encontrar la latitud/longitud para uno o más puntos.';
-            break;
+          message = 'No se pudo encontrar la latitud/longitud para uno o más puntos.';
+          break;
         case 'MAX_DISTANCE_EXCEEDED':
-            message = 'La distancia máxima permitida fue superada.';
-            break;
+          message = 'La distancia máxima permitida fue superada.';
+          break;
         case 'MAX_WAYPOINTS_EXCEEDED':
-            message = 'Se excedió el número máximo de puntos permitidos.';
-            break;
+          message = 'Se excedió el número máximo de puntos permitidos.';
+          break;
         case 'MAX_VALUE_EXCEEDED':
-            message = 'El valor total de los artículos excede el seguro.';
-            break;
+          message = 'El valor total de los artículos excede el seguro.';
+          break;
         case 'MAX_VOLUME_EXCEEDED':
-            message = 'El límite de volumen fue excedido.';
-            break;
+          message = 'El límite de volumen fue excedido.';
+          break;
         case 'MAX_WEIGHT_EXCEEDED':
-            message = 'El límite de peso fue excedido.';
-            break;
+          message = 'El límite de peso fue excedido.';
+          break;
         case 'NOT_SUPPORTED_COLLECT_MONEY':
-            message = 'La opción de cobrar en efectivo no está disponible. Contacte a su gestor de cuenta de PedidosYa.';
-            break;
+          message = 'La opción de cobrar en efectivo no está disponible. Contacte a su gestor de cuenta de PedidosYa.';
+          break;
         case 'COLLECT_MONEY_EXCEEDED':
-            message = 'El monto especificado para cobrar en el punto de entrega supera el máximo permitido.';
-            break;
+          message = 'El monto especificado para cobrar en el punto de entrega supera el máximo permitido.';
+          break;
         case 'INVALID_DELIVERY_TIME':
-            message = 'El tiempo de entrega propuesto debe estar dentro del horario programado.';
-            break;
+          message = 'El tiempo de entrega propuesto debe estar dentro del horario programado.';
+          break;
         case 'JSON_INVALID':
-            message = 'JSON inválido.';
-            break;
+          message = 'JSON inválido.';
+          break;
         default:
-            message = 'Falta uno de los datos o existe un error en la solicitud.';
-            break;
+          message = 'Falta uno de los datos o existe un error en la solicitud.';
+          break;
+      }
+
+      alertDiv.classList.remove('d-none');
+      alertDiv.classList.add('d-flex');
+      document.getElementById('alert-message-location').innerText = message;
     }
 
-    // Mostrar error
-    alertDiv.classList.remove('d-none');
-    alertDiv.classList.add('d-flex');
-    alertDiv.classList.remove('alert-success');
-    alertDiv.classList.add('alert-danger');
+  }
+});
 
-    alertDiv.querySelector('.badge').classList.remove('bg-success');
-    alertDiv.querySelector('.badge').classList.add('bg-danger');
-
-    alertDiv.querySelector('.badge').classList.remove('border-label-success');
-    alertDiv.querySelector('.badge').classList.add('border-label-danger');
-
-    alertDiv.querySelector('h6').innerText = '¡Error!';
-    document.getElementById('alert-message-location').innerText = message;
-}
-
-// Validación del RUC/CI y confirmación del pedido con integración de PedidosYa
-document.getElementById('orderConfirm').addEventListener('click', async function (event) {
-    event.preventDefault(); // Prevenir el envío automático del formulario
-
+// Validación del RUC/CI antes de confirmar el pedido
+document.getElementById('orderConfirm').addEventListener('click', function(event) {
     const docType = document.getElementById('doc_type').value;
     const docRecep = document.getElementById('doc_recep').value;
-    const shippingMethod = document.querySelector('input[name="shipping_method"]:checked').value;
-    const address = document.getElementById('address').value;
-    const name = document.getElementById('name').value;
-    const lastname = document.getElementById('lastname').value;
-    const phone = document.getElementById('phone').value;
 
-    // Validación de RUC/CI
-    if ((docType === '2' && docRecep.length !== 12) || (docType === '3' && docRecep.length !== 8)) {
+    let isValid = true;
+    let errorMessage = '';
+
+    if (docType === '2' && docRecep.length !== 12) { // RUC
+        isValid = false;
+        errorMessage = 'El RUC debe tener 12 caracteres.';
+    } else if (docType === '3' && docRecep.length !== 8) { // CI
+        isValid = false;
+        errorMessage = 'La CI debe tener 8 caracteres.';
+    }
+
+    if (!isValid) {
+        event.preventDefault();
         const alertDiv = document.getElementById('alert-container-doc');
         alertDiv.classList.remove('d-none');
         alertDiv.classList.add('d-flex');
-        document.getElementById('alert-message-doc').innerText =
-            docType === '2' ? 'El RUC debe tener 12 caracteres.' : 'La CI debe tener 8 caracteres.';
-        return;
-    }
-
-    // Validar dirección si no es "Retiro en el local"
-    if (shippingMethod === 'peya' && !address) {
-        const alertDiv = document.getElementById('alert-container-location');
-        alertDiv.classList.remove('d-none');
-        alertDiv.classList.add('d-flex');
-        document.getElementById('alert-message-location').innerText = 'Por favor, ingrese su dirección.';
-        return;
-    }
-
-    // Si es "Retiro en el local", no calcular envío
-    if (shippingMethod === 'pickup') {
-        document.getElementById('shippingCostInput').value = 0;
-        document.getElementById('checkout-form').submit();
-        return;
-    }
-
-    // Solicitar estimación de envío a PedidosYa
-    const apiKey = await getPedidosYaApiKey(storeId);
-
-    if (!apiKey) {
-        alert('Error al obtener la API Key de PedidosYa.');
-        return;
-    }
-
-    const googleMapsApiKey = '{{ $googleMapsApiKey }}';
-    const storeAddress = '{{ session("store")["address"] }}';
-
-    async function getAddressDetails(address) {
-        const response = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleMapsApiKey}`
-        );
-        const data = await response.json();
-        if (data.status !== 'OK') throw new Error('No se pudo geolocalizar la dirección.');
-        return {
-            addressStreet: data.results[0].formatted_address,
-            city: data.results[0].address_components.find((comp) => comp.types.includes('locality')).long_name,
-            latitude: data.results[0].geometry.location.lat,
-            longitude: data.results[0].geometry.location.lng,
-        };
-    }
-
-    try {
-        const userDetails = await getAddressDetails(address);
-        const storeDetails = await getAddressDetails(storeAddress);
-
-        const items = Object.values({!! json_encode(session("cart")) !!}).map((item) => ({
-            type: 'STANDARD',
-            description: item.name,
-            value: item.price,
-            sku: item.id,
-            quantity: item.quantity,
-            volume: 2500,
-            weight: 1,
-        }));
-
-        const requestData = {
-            store_id: storeId,
-            referenceId: `Chelato_PeYa_REF-${Date.now()}`,
-            items,
-            isTest: true,
-            notificationMail: document.getElementById('email').value || null,
-            waypoints: [
-                {
-                    type: 'PICK_UP',
-                    addressStreet: storeDetails.addressStreet,
-                    city: storeDetails.city,
-                    latitude: storeDetails.latitude,
-                    longitude: storeDetails.longitude,
-                    phone: '+541234567890',
-                    name: '{{ session("store")["name"] }}',
-                    instructions: '{{ session("store")["description"] }}',
-                },
-                {
-                    type: 'DROP_OFF',
-                    addressStreet: userDetails.addressStreet,
-                    city: userDetails.city,
-                    latitude: userDetails.latitude,
-                    longitude: userDetails.longitude,
-                    collectMoney: document.getElementById('customRadioEfectivo').checked
-                        ? parseFloat(document.getElementById('orderTotal').innerText.replace('{{ $settings->currency_symbol }}', ''))
-                        : null,
-                    phone,
-                    name: `${name} ${lastname}`,
-                },
-            ],
-        };
-
-        const estimateResponse = await fetch('/api/pedidos-ya/estimate-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData),
-        });
-
-        const estimateData = await estimateResponse.json();
-
-        if (estimateResponse.ok && estimateData.estimateId) {
-            // Usar la primera estimación obtenida
-            document.getElementById('shippingCostInput').value = estimateData.cost || 65; // Fallback a $65
-            document.getElementById('estimateIdInput').value = estimateData.estimateId;
-            document.getElementById('deliveryOfferIdInput').value =
-                estimateData.deliveryOffers[0]?.deliveryOfferId || null;
-
-            // Enviar el formulario
-            document.getElementById('checkout-form').submit();
-        } else {
-            handleApiReturns(estimateData.code);
-        }
-    } catch (error) {
-        handleApiReturns('Error al procesar la dirección o calcular el envío.');
-        console.error(error);
+        document.getElementById('alert-message-doc').innerText = errorMessage;
     }
 });
-
-// Pasar el doc_recep a al formulario del cupón para validar uso único
-document.addEventListener('DOMContentLoaded', function () {
-    const couponForm = document.querySelector('form[action="{{ route('apply.coupon') }}"]');
-    const docInput = document.querySelector('input[name="doc_recep"]');
-
-    if (couponForm && docInput) {
-        // Crear un input oculto para doc_recep si no existe
-        let hiddenDocInput = couponForm.querySelector('input[name="doc_recep"]');
-        if (!hiddenDocInput) {
-            hiddenDocInput = document.createElement('input');
-            hiddenDocInput.type = 'hidden';
-            hiddenDocInput.name = 'doc_recep';
-            couponForm.appendChild(hiddenDocInput);
-        }
-
-        // Al hacer submit, copiar el valor
-        couponForm.addEventListener('submit', function () {
-            hiddenDocInput.value = docInput.value;
-        });
-    }
-});
-
 </script>
 
 @endsection

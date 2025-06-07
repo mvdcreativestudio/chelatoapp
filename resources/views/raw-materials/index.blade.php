@@ -28,6 +28,8 @@
     window.csrfToken = "{{ csrf_token() }}";
     var rawMaterials = @if (isset($rawMaterials)) @json($rawMaterials) @else [] @endif;
     window.hasViewAllRawMaterialsPermission = @json(auth()->user()->can('view_all_raw-materials'));
+    window.canEditRawMaterials = @json(auth()->user()->hasPermissionTo('access_raw-materials-edit'));
+
 </script>
 @vite(['resources/assets/js/app-raw-materials-list.js'])
 @endsection
@@ -37,7 +39,7 @@
   <span class="text-muted fw-light">Gestión /</span> Listado de Materias Primas
 </h4>
 
-<div class="card mb-4">
+{{-- <div class="card mb-4">
   <div class="card-widget-separator-wrapper">
     <div class="card-body card-widget-separator">
       <div class="row gy-4 gy-sm-1">
@@ -45,7 +47,9 @@
           <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-3 pb-sm-0">
             <div>
               <h6 class="mb-2">Materias Primas</h6>
-              {{-- <h4 class="mb-2">{{ isset($rawMaterials) ? $rawMaterials->count() : 0 }}</h4> --}}
+              @if($rawMaterials->count() > 0)
+              <h4 class="mb-2">{{ $rawMaterials->count() }}</h4> 
+              @endif
               <p class="mb-0"><span class="text-muted me-2">Total</span></p>
             </div>
             <div class="avatar me-sm-4">
@@ -60,7 +64,7 @@
           <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-3 pb-sm-0">
             <div>
               <h6 class="mb-2">Unidades de Medida</h6>
-              <h4 class="mb-2">{{ isset($quantityByUnitOfMeasure) ? $quantityByUnitOfMeasure->count() : 0 }}</h4>
+              <h4 class="mb-2">3</h4>
               <p class="mb-0"><span class="text-muted me-2">Total</span></p>
             </div>
             <div class="avatar me-lg-4">
@@ -74,8 +78,8 @@
         <div class="col-sm-12 col-lg-4">
           <div class="d-flex justify-content-between align-items-start pb-3 pb-sm-0 card-widget-3">
             <div>
-              <h6 class="mb-2">Stock Total</h6>
-              <h4 class="mb-2">{{ isset($totalStock) ? $totalStock : 0 }}</h4>
+              <h6 class="mb-2">Materias prima en stock</h6>
+              <h4 class="mb-2">{{ $inStockCount }}</h4>
               <p class="mb-0 text-muted">Total en stock</p>
             </div>
             <div class="avatar me-sm-4">
@@ -89,7 +93,7 @@
       </div>
     </div>
   </div>
-</div>
+</div> --}}
 
 
 @if (session('success'))
@@ -122,19 +126,9 @@
       </div>
       <div class="collapse" id="columnSwitches">
       <div class="mt-0 d-flex flex-wrap">
-        <div class="mx-0">
-          <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="0" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Imagen</span>
-          </label>
-        </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="1" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="0" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -144,7 +138,7 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="2" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="1" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -154,7 +148,7 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="3" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="2" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -164,7 +158,7 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="4" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="3" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
@@ -174,12 +168,13 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="5" checked>
+            <input type="checkbox" class="toggle-column switch-input" data-column="4" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
             </span>
-            <span class="switch-label">Empresa</span>
+            <!-- Selector de empresa en RawMaterials - Merge Dali -->
+            {{-- <span class="switch-label">Empresa</span>
           </label>
         </div>
         <div class="mx-3">
@@ -188,7 +183,8 @@
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
+            </span> --}}
+
             <span class="switch-label">Acciones</span>
           </label>
         </div>
@@ -206,14 +202,15 @@
     <table class="table datatables-raw-materials border-top">
       <thead>
         <tr>
-          <th>#</th>
           <th>Nombre</th>
           <th>Descripción</th>
           <th>Unidad de Medida</th>
           <th>Stock</th>
-          @if(auth()->user()->can('view_all_raw-materials'))
+          <!-- Validación de permiso para ver materias primas / empresa - Merge Dali -->
+          {{-- @if(auth()->user()->can('view_all_raw-materials'))
             <th>Empresa</th>
-          @endif
+          @endif --}}
+
           <th>Acciones</th>
         </tr>
       </thead>

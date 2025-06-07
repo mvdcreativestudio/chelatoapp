@@ -2,6 +2,7 @@ $(function () {
   // Declaración de variables
   var clientListContainer = $('.client-list-container');
   var ajaxUrl = clientListContainer.data('ajax-url');
+  const hasSensitiveDataAccess = window.hasSensitiveDataAccess;
 
   function fetchClients() {
     $.ajax({
@@ -21,128 +22,150 @@ $(function () {
           `);
         } else {
           clients.forEach(function (client) {
-            const fullName = `${client.name} ${client.lastname}`;
-            const truncatedName = fullName.length > 20 ? fullName.substring(0, 20) + '...' : fullName;
+            let displayName;
+            if (!client.name && !client.lastname) {
+              displayName = client.company_name;
+            } else {
+              displayName = client.lastname ? `${client.name} ${client.lastname}` : client.name;
+            }
 
-            // Aplica la función de capitalización a los nombres y cualquier otro campo relevante
-            const capitalizedFullName = capitalizeFirstLetter(fullName);
+            const truncatedName = displayName?.length > 20 ? displayName.substring(0, 20) + '...' : displayName;
+
+
+            // Capitalizar nombres y otros campos
+            const capitalizedFullName = capitalizeFirstLetter(displayName || '');
             const capitalizedCompanyName = client.company_name ? capitalizeFirstLetter(client.company_name) : '';
-            const capitalizedTruncatedName = capitalizeFirstLetter(truncatedName);
+            const capitalizedTruncatedName = capitalizeFirstLetter(truncatedName || '');
+
+            // Generar enlaces de contacto
+            let phoneNumber = client.phone ? client.phone.replace(/\D/g, '') : '';
+            if (phoneNumber.startsWith('0')) {
+              phoneNumber = phoneNumber.substring(1);
+            }
+            const whatsappUrl = phoneNumber ? `https://wa.me/598${phoneNumber}` : '#';
+            const telUrl = phoneNumber ? `tel:+598${phoneNumber}` : '#';
+
+            // Renderizar el documento de identidad
+            const documentInfo = client.ci
+              ? `<i class="bx bx-id-card me-2"></i>${client.ci} (Cedula de Identidad)`
+              : client.passport
+                ? `<i class="bx bx-id-card me-2"></i>${client.passport} (Pasaporte)`
+                : client.other_id_type
+                  ? `<i class="bx bx-id-card me-2"></i>${client.other_id_type} (Otro)`
+                  : client.rut
+                    ? `<i class="bx bx-id-card me-2"></i>${client.rut} (RUT)`
+                    : `<i class="bx bx-id-card me-2"></i>Documento no especificado`;
 
 
             const card = `
-            <div class="col-md-6 col-lg-4 col-12 client-card-wrapper">
-              <div class="clients-card-container">
-                <div class="clients-card position-relative">
-                  <div class="clients-card-header d-flex justify-content-between align-items-center">
-                    <h5 class="clients-name mb-0" title="${client.type === 'company' ? capitalizedCompanyName : capitalizedTruncatedName}" data-full-name="${client.type === 'company' ? capitalizedCompanyName : capitalizedFullName}" data-truncated-name="${client.type === 'company' ? capitalizedCompanyName : capitalizedTruncatedName}">
-                      ${client.type === 'company' ? capitalizedCompanyName : capitalizedTruncatedName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
-                    </h5>
-                    <div class="d-flex align-items-center">
-                      <span class="clients-type badge ${client.type === 'company' ? 'bg-primary' : 'bg-primary-op'} me-2">
-                        ${client.type === 'company' ? 'Empresa' : 'Persona'}
-                      </span>
-                      <div class="clients-card-toggle">
-                        <i class="bx bx-chevron-down fs-3"></i>
+              <div class="col-md-6 col-lg-4 col-12 client-card-wrapper">
+                <div class="clients-card-container">
+                  <div class="clients-card position-relative">
+                    <div class="clients-card-header d-flex justify-content-between align-items-center">
+                      <h5 class="clients-name mb-0" title="${client.type === 'company' ? capitalizedCompanyName : capitalizedTruncatedName}" data-full-name="${client.type === 'company' ? capitalizedCompanyName : capitalizedFullName}" data-truncated-name="${client.type === 'company' ? capitalizedCompanyName : capitalizedTruncatedName}">
+                        ${client.type === 'company' ? capitalizedCompanyName : capitalizedTruncatedName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')}
+                      </h5>
+                      <div class="d-flex align-items-center">
+                        <span class="clients-type badge ${client.type === 'company' ? 'bg-primary' : 'bg-primary-op'} me-2">
+                          ${client.type === 'company' ? 'Empresa' : 'Persona'}
+                        </span>
+                        <div class="clients-card-toggle">
+                          <i class="bx bx-chevron-down fs-3"></i>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="clients-card-body" style="display: none;">
-                    <div class="d-flex flex-column h-100">
-                      <div>
-                        <!-- Condicional para mostrar nombre y apellido si están disponibles -->
-                        ${client.type === 'company' && client.name && client.lastname ? `
-                          <p class="clients-personal-name mb-2">
-                            <strong>Representante:</strong> ${capitalizeFirstLetter(client.name)} ${capitalizeFirstLetter(client.lastname)}
-                          </p>
-                        ` : ''}
-
-                        <p class="clients-document mb-2">
-                          <strong>${client.type === 'company' ? 'RUT:' : 'CI:'}</strong>
-                          ${client.type === 'company' ? client.rut : client.ci}
-                        </p>
-                        ${client.type === 'company' ? `<p class="clients-company mb-2"><strong>Razón Social:</strong> ${capitalizedCompanyName}</p>` : ''}
-
-                        <!-- Condicional para email (siempre presente) -->
-                        <p class="clients-email mb-2"><i class="bx bx-envelope me-2"></i> ${client.email}</p>
-
-                        <!-- Condicionales para evitar mostrar campos vacíos, nulos o con valor "-" -->
-                        ${client.address && client.address !== '-' ? `<p class="clients-address mb-2"><i class="bx bx-map me-2"></i> ${capitalizeFirstLetter(client.address)}</p>` : ''}
-                        ${(client.city && client.city !== '-') || (client.state && client.state !== '-') || (client.department && client.department !== '-') ? `
-                          <p class="clients-location mb-2">
-                            <i class="bx bx-buildings me-2"></i>
-                            ${client.city && client.city !== '-' ? capitalizeFirstLetter(client.city) : ''}${client.city && client.city !== '-' && ((client.state && client.state !== '-') || (client.department && client.department !== '-')) ? ', ' : ''}${client.state && client.state !== '-' ? capitalizeFirstLetter(client.state) : ''}${client.state && client.state !== '-' && (client.department && client.department !== '-') ? ', ' : ''}${client.department && client.department !== '-' ? capitalizeFirstLetter(client.department) : ''}
-                          </p>` : ''}
-                        ${client.phone && client.phone !== '-' ? `<p class="clients-phone mb-2"><i class="bx bx-phone me-2"></i> ${client.phone}</p>` : ''}
-                        ${client.website && client.website !== '-' ? `<p class="clients-website mb-2"><i class="bx bx-globe me-2"></i> <a href="${client.website}" target="_blank">${client.website}</a></p>` : ''}
-
-                      </div>
-                      <div class="text-end mt-auto mb-2">
-                        <a href="clients/${client.id}" class="btn btn-sm btn-outline-primary view-clients">
-                          Ver Cliente <i class="bx bx-right-arrow-alt ms-1"></i>
-                        </a>
+                    <div class="clients-card-body" style="display: none;">
+                      <div class="d-flex flex-column h-100">
+                        <div>
+                          ${client.type === 'company' && client.name && client.lastname ? `
+                            <p class="clients-personal-name mb-2">
+                              <strong>Representante:</strong> ${capitalizeFirstLetter(client.name)} ${capitalizeFirstLetter(client.lastname)}
+                            </p>
+                          ` : ''}
+                          ${client.type === 'company' ? `<p class="clients-company mb-2"><strong>Razón Social:</strong> ${capitalizedCompanyName}</p>` : ''}
+                          ${client.email ? `<p class="clients-email mb-2"><i class="bx bx-envelope me-2"></i> ${client.email}</p>` : ''}
+                          <p class="clients-document">${documentInfo}</p>
+                          ${client.address && client.address !== '-' ? `<p class="clients-address mb-2"><i class="bx bx-map me-2"></i> ${capitalizeFirstLetter(client.address)}</p>` : ''}
+                          ${client.phone && client.phone !== '-' ? `<p class="clients-phone mb-2"><i class="bx bx-phone me-2"></i> ${client.phone}</p>` : ''}
+                        </div>
+                        <div class="d-inline-flex justify-content-end mt-auto mb-2 gap-1">
+                          <a href="clients/${client.id}" class="btn view-clients p-1"><i class="far fa-eye"></i></a>
+                          ${phoneNumber ? `<a href="${whatsappUrl}" class="btn view-clients p-1" target="_blank"><i class="fa-brands fa-whatsapp"></i></a>` : ''}
+                          ${phoneNumber ? `<a href="${telUrl}" class="btn view-clients p-1"><i class="bx bx-phone"></i></a>` : ''}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          `;
-
+              </div>`;
             clientListContainer.append(card);
           });
 
-          // Función para capitalizar solo la primera letra de cada palabra y convertir el resto a minúsculas
           function capitalizeFirstLetter(str) {
-            return str
-              .toLowerCase() // Convierte todo a minúsculas primero
-              .replace(/(^|\s)[a-záéíóúñ]/g, function (match) {
-                return match.toUpperCase(); // Luego capitaliza la primera letra de cada palabra
-              });
+            return str.toLowerCase().replace(/(^|\s)[a-záéíóúñ]/g, function (match) {
+              return match.toUpperCase();
+            });
           }
 
-          // Agregar evento de clic para desplegar la información
           $('.clients-card').on('click', function (e) {
-            if (!$(e.target).closest('.view-clients').length) {
-              e.preventDefault();
-              e.stopPropagation();
-              const $this = $(this);
-              const $icon = $this.find('.clients-card-toggle i');
-              const $body = $this.find('.clients-card-body');
-              const $wrapper = $this.closest('.clients-card-wrapper');
-              const $name = $this.find('.clients-name');
+            // Ignorar clics en los botones específicos
+            if ($(e.target).closest('.view-clients, .delete-clients').length) {
+              return; // No ejecutar el evento de la tarjeta
+            }
 
-              // Alternar la tarjeta seleccionada
-              $icon.toggleClass('bx-chevron-down bx-chevron-up');
-              $body.slideToggle();
+            e.preventDefault();
+            e.stopPropagation();
 
+            const $this = $(this);
+            const $icon = $this.find('.clients-card-toggle i');
+            const $body = $this.find('.clients-card-body');
+            const $wrapper = $this.closest('.clients-card-wrapper');
+            const $name = $this.find('.clients-name');
 
-              // Mostrar nombre completo o truncado según si la tarjeta está abierta o cerrada
-              if ($body.is(':visible')) {
-                $name.text(capitalizeFirstLetter($name.data('full-name').toLowerCase()));
-              } else {
-                $name.text(capitalizeFirstLetter($name.data('truncated-name').toLowerCase()));
-              }
+            $icon.toggleClass('bx-chevron-down bx-chevron-up');
+            $body.slideToggle();
 
-              // Cerrar las demás tarjetas y restaurar su tamaño
-              $('.clients-card-body').not($body).hide();
-              $('.clients-card-toggle i').not($icon).removeClass('bx-chevron-up').addClass('bx-chevron-down');
-              $('.clients-card-wrapper').not($wrapper).find('.clients-name').each(function() {
-                $(this).text(capitalizeFirstLetter($(this).data('truncated-name').toLowerCase()));
+            if ($body.is(':visible')) {
+              $name.text(capitalizeFirstLetter($name.data('full-name').toLowerCase()));
+            } else {
+              $name.text(capitalizeFirstLetter($name.data('truncated-name').toLowerCase()));
+            }
+
+            $('.clients-card-body').not($body).hide();
+            $('.clients-card-toggle i').not($icon).removeClass('bx-chevron-up').addClass('bx-chevron-down');
+            $('.clients-card-wrapper').not($wrapper).find('.clients-name').each(function () {
+              $(this).text(capitalizeFirstLetter($(this).data('truncated-name').toLowerCase()));
+            });
+          });
+
+          $('.view-clients').on('click', function (e) {
+            e.stopPropagation();
+          });
+
+          $(document).on('click', '.delete-clients', function (e) {
+            e.stopPropagation(); // Detiene la propagación hacia los eventos de la tarjeta
+            e.preventDefault(); // Evita comportamientos predeterminados
+
+            const clientId = $(this).data('id');
+            if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
+              $.ajax({
+                url: `clients/${clientId}`,
+                type: 'DELETE',
+                headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json',
+                  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                },
+                success: function () {
+                  fetchClients(); // Actualiza la lista después de eliminar
+                  toastr.success('Cliente eliminado exitosamente.');
+                },
+                error: function (xhr) {
+                  console.error('Error al eliminar el cliente:', xhr.responseText);
+                  toastr.error('Error al eliminar el cliente.');
+                },
               });
             }
-          });
-
-
-          // Prevenir el cierre de la tarjeta al hacer clic en "Ver Cliente"
-          $('.view-clients').on('click', function(e) {
-            e.stopPropagation();
-          });
-
-          // Evitar que el clic en el botón de edición propague al contenedor de la tarjeta
-          $('.edit-clients').on('click', function(e) {
-            e.stopPropagation();
-            // Aquí puedes agregar la lógica para editar el cliente
           });
         }
       },
@@ -159,206 +182,113 @@ $(function () {
     });
   }
 
-  // Fetch clients on page load
   fetchClients();
-
-  // Implementar búsqueda de clientes
   $('#searchClient').on('input', function () {
     var searchTerm = $(this).val().toLowerCase();
-    $('.client-card').each(function () {
+    $('.client-card-wrapper').each(function () {
       var clientInfo = $(this).text().toLowerCase();
-      $(this).closest('.col-md-6').toggle(clientInfo.includes(searchTerm));
+      $(this).toggle(clientInfo.includes(searchTerm));
     });
   });
 });
 
 
-// Validation & Phone mask
-(function () {
-  const phoneMaskList = document.querySelectorAll('.phone-mask'),
-    eCommerceCustomerAddForm = document.getElementById('eCommerceCustomerAddForm');
-
-  // Phone Number
-  if (phoneMaskList) {
-    phoneMaskList.forEach(function (phoneMask) {
-      new Cleave(phoneMask, {
-        phone: true,
-        phoneRegionCode: 'US'
-      });
-    });
-  }
-  // Add New customer Form Validation
-  const fv = FormValidation.formValidation(eCommerceCustomerAddForm, {
-    fields: {
-      customerName: {
-        validators: {
-          notEmpty: {
-            message: 'Please enter fullname '
-          }
-        }
-      },
-      customerEmail: {
-        validators: {
-          notEmpty: {
-            message: 'Please enter your email'
-          },
-          emailAddress: {
-            message: 'The value is not a valid email address'
-          }
-        }
-      }
-    },
-    plugins: {
-      trigger: new FormValidation.plugins.Trigger(),
-      bootstrap5: new FormValidation.plugins.Bootstrap5({
-        // Use this for enabling/changing valid/invalid class
-        eleValidClass: '',
-        rowSelector: function (field, ele) {
-          // field is the field name & ele is the field element
-          return '.mb-3';
-        }
-      }),
-      submitButton: new FormValidation.plugins.SubmitButton(),
-      // Submit the form when all fields are valid
-      defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
-      autoFocus: new FormValidation.plugins.AutoFocus()
-    }
-  });
-})();
-
-// Campo CI o RUT dependiendo si es CF o Empresa
 $(document).ready(function () {
-  // Escucha cambios en los botones de radio del tipo de cliente
   $('input[type=radio][name=type]').change(function () {
     clearErrors();
     if (this.value == 'individual') {
       $('#ciField').show();
-      $('#ci').attr('required', true);
-      $('#rutField').hide();
-      $('#company_name').removeAttr('required');
-      $('#rut').removeAttr('required');
+      $('#ci').attr('required', false);
+
+      $('#nameAsterisk, #lastnameAsterisk').show();
+      $('#name, #lastname').attr('required', true);
+
+      $('.responsible-text').hide();
+
+      $('#rutField, #razonSocialField, #taxRateField').hide();
+      $('#company_name, #rut, #tax_rate_id').val('').removeAttr('required');
+
       $('#ciudadAsterisk').hide();
       $('#departamentoAsterisk').hide();
     } else if (this.value == 'company') {
       $('#ciField').hide();
-      $('#ci').removeAttr('required');
-      $('#rutField').show();
-      $('#razonSocialField').show();
-      $('#company_name').attr('required', true);
-      $('#rut').attr('required', true);
+      $('#ci').val('').removeAttr('required');
+
+      $('#nameAsterisk, #lastnameAsterisk').hide();
+      $('#name, #lastname').removeAttr('required');
+
+      $('.responsible-text').show();
+
+      $('#rutField, #razonSocialField, #taxRateField').show();
+      $('#company_name, #rut, #tax_rate_id').attr('required', true);
+
       $('#ciudadAsterisk').show();
       $('#departamentoAsterisk').show();
     }
   });
 });
 
-
 document.getElementById('guardarCliente').addEventListener('click', function (e) {
   e.preventDefault();
-
-  // Obtener los elementos de los campos del formulario
   const nombre = document.getElementById('ecommerce-customer-add-name');
   const apellido = document.getElementById('ecommerce-customer-add-lastname');
-  const tipo = document.querySelector('input[name="type"]:checked');  // Seleccionar el tipo de cliente (individual o company)
   const email = document.getElementById('ecommerce-customer-add-email');
   const ci = document.getElementById('ci');
+  const pasaporte = document.getElementById('passport');
+  const otroId = document.getElementById('other_id_type');
   const rut = document.getElementById('rut');
   const razonSocial = document.getElementById('company_name');
+  const taxRateId = document.getElementById('tax_rate_id');
   const direccion = document.getElementById('ecommerce-customer-add-address');
   const ciudad = document.getElementById('ecommerce-customer-add-town');
   const departamento = document.getElementById('ecommerce-customer-add-state');
-
-  // Limpiar errores anteriores
   clearErrors();
-
-  // Inicializar el indicador de error
   let hasError = false;
-
-  // Validar campos obligatorios
-  if (nombre.value.trim() === '') {
-      showError(nombre, 'Este campo es obligatorio');
-      hasError = true;
-  }
-
-  if (apellido.value.trim() === '') {
-      showError(apellido, 'Este campo es obligatorio');
-      hasError = true;
-  }
-
-  if (email.value.trim() === '') {
-      showError(email, 'Este campo es obligatorio');
-      hasError = true;
-  }
-
-  if (direccion.value.trim() === '') {
-      showError(direccion, 'Este campo es obligatorio');
-      hasError = true;
-  }
+  const tipo = document.querySelector('input[name="type"]:checked');
 
   if (tipo.value === 'individual') {
-      // Validar CI para personas individuales
-      if (ci.value.trim() === '') {
-          showError(ci, 'Este campo es obligatorio');
-          hasError = true;
-      }
-      // Ocultar RUT y Razón Social si es individual
-      document.getElementById('rutField').style.display = 'none';
-      document.getElementById('ciField').style.display = 'block';
-  } else if (tipo.value === 'company') {
-      // Validar Razón Social y RUT para empresas
-    if (razonSocial.value.trim() === '') {
-      showError(razonSocial, 'Este campo es obligatorio');
+    // Validate individual fields
+    if ($('#ecommerce-customer-add-name').val().trim() === '') {
+      showError($('#ecommerce-customer-add-name')[0], 'El nombre es obligatorio');
       hasError = true;
     }
-
-    if (rut.value.trim() === '') {
-        // Validar solo una vez el RUT
-        if (!rut.parentElement.querySelector('.error-message')) {
-            showError(rut, 'Este campo es obligatorio');
-        }
-        hasError = true;
+    if ($('#ecommerce-customer-add-lastname').val().trim() === '') {
+      showError($('#ecommerce-customer-add-lastname')[0], 'El apellido es obligatorio');
+      hasError = true;
     }
-
-    if (ciudad.value.trim() === '') {
-        showError(ciudad, 'Este campo es obligatorio');
-        hasError = true;
+  } else if (tipo.value === 'company') {
+    // Validate company fields
+    if ($('#company_name').val().trim() === '') {
+      showError($('#company_name')[0], 'La razón social es obligatoria');
+      hasError = true;
     }
-
-    if (departamento.value.trim() === '') {
-        showError(departamento, 'Este campo es obligatorio');
-        hasError = true;
+    if ($('#rut').val().trim() === '') {
+      showError($('#rut')[0], 'El RUT es obligatorio');
+      hasError = true;
     }
-
-    // Mostrar campos RUT, Razón Social, Dirección, Ciudad y Departamento si es empresa
-    document.getElementById('rutField').style.display = 'block';
-    document.getElementById('razonSocialField').style.display = 'block';
-    document.getElementById('ciField').style.display = 'none';
+    if ($('#tax_rate_id').val().trim() === '') {
+      showError($('#tax_rate_id')[0], 'La Tasa de IVA es obligatoria');
+      hasError = true;
+    }
   }
-
-  if (hasError) {
-      return; // Detener la ejecución si hay errores
-  }
-
-  // Crear el objeto de datos a enviar
+  if (hasError) return;
   let data = {
-      name: nombre.value.trim(),
-      lastname: apellido.value.trim(),
-      type: tipo.value,
-      email: email.value.trim(),
-      address: direccion.value.trim(),
-      city: ciudad.value.trim(),
-      state: departamento.value.trim(),
+    name: nombre.value.trim(),
+    lastname: apellido.value.trim(),
+    type: tipo.value,
+    email: email.value.trim(),
+    address: direccion.value.trim(),
+    city: ciudad.value.trim(),
+    state: departamento.value.trim(),
   };
-
-  if (tipo.value === 'individual') {
-      data.ci = ci.value.trim();
-  } else if (tipo.value === 'company') {
-      data.rut = rut.value.trim();
-      data.company_name = razonSocial.value.trim();
+  if (tipo.value === 'individual') data.ci = ci.value.trim();
+  else if (tipo.value === 'company') {
+    data.rut = rut.value.trim();
+    data.company_name = razonSocial.value.trim();
+    data.tax_rate_id = taxRateId.value.trim();
   }
-
-  // Continuar con el envío del formulario
   document.getElementById('eCommerceCustomerAddForm').submit();
+  sessionStorage.clear();
 });
 
 function showError(input, message) {
@@ -368,8 +298,156 @@ function showError(input, message) {
   input.parentElement.appendChild(errorElement);
 }
 
+function toggleDocumentFields(selectedType) {
+  // Ocultar todos los campos inicialmente
+  $('#ciField, #passportField, #otherField').hide();
+  $('#ci, #passport, #other_id_type').val('').removeAttr('required');
+
+  // Mostrar el campo correspondiente al tipo seleccionado
+  if (selectedType === 'ci') {
+      $('#ciField').show();
+      $('#ci').attr('required', true);
+  } else if (selectedType === 'passport') {
+      $('#passportField').show();
+      $('#passport').attr('required', true);
+  } else if (selectedType === 'other_id_type') {
+      $('#otherField').show();
+      $('#other_id_type').attr('required', true);
+  }
+}
+
+// Ejecutar al cambiar el tipo de documento
+$(document).on('change', '#documentType', function () {
+  toggleDocumentFields($(this).val());
+});
+
+// Ejecutar al cargar la página (por si hay valores preseleccionados)
+$(document).ready(function () {
+  toggleDocumentFields($('#documentType').val());
+});
+
 function clearErrors() {
-  // Eliminar solo los mensajes de error previos, no los asteriscos
   const errors = document.querySelectorAll('.text-danger.error-message');
   errors.forEach(error => error.remove());
 }
+
+$(document).ready(function () {
+
+  // Función para abrir el modal de creación de lista de precios desde el modal de crear cliente
+  $('#createNewPriceListLink').on('click', function () {
+    $('#createPriceListModal').modal('show'); // Muestra el modal de creación de lista de precios
+  });
+
+  // Almacenar los datos del formulario en sessionStorage al cambiar
+  $('#eCommerceCustomerAddForm input, #eCommerceCustomerAddForm select').on('input change', function () {
+    sessionStorage.setItem($(this).attr('id'), $(this).val());
+  });
+
+  // Cargar valores guardados en sessionStorage al recargar la página
+  $('#eCommerceCustomerAddForm input, #eCommerceCustomerAddForm select').each(function () {
+    const savedValue = sessionStorage.getItem($(this).attr('id'));
+    if (savedValue) {
+      $(this).val(savedValue);
+    }
+  });
+
+  // Verificar si se debe abrir el modal de creación de cliente automáticamente
+  if (sessionStorage.getItem('openClientModalAfterReload') === 'true') {
+    $('#offcanvasEcommerceCustomerAdd').modal('show'); // Abre el modal de creación del cliente
+    sessionStorage.removeItem('openClientModalAfterReload'); // Limpia la clave para evitar reapertura
+  }
+
+  // Evento de guardar cliente
+  $('#guardarCliente').on('click', function () {
+    sessionStorage.clear(); // Limpiar sessionStorage al guardar cliente
+  });
+
+
+  const form = document.getElementById('eCommerceCustomerAddForm');
+
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const submitButton = form.querySelector('[type="submit"]');
+      submitButton.disabled = true;
+      const form = document.getElementById('eCommerceCustomerAddForm');
+      const formData = new FormData(form);
+      const clientType = document.querySelector('input[name="type"]:checked').value;
+
+      let requiredFields = {};
+
+      if (clientType === 'individual') {
+        requiredFields.name = 'Nombre';
+        requiredFields.lastname = 'Apellido';
+      } else if (clientType === 'company') {
+        requiredFields.company_name = 'Razón Social';
+        requiredFields.rut = 'RUT';
+        requiredFields.tax_rate_id = 'Tasa de IVA';
+      }
+
+      let missingFields = [];
+      for (let field in requiredFields) {
+        const value = formData.get(field);
+        if (!value || value.trim() === '') {
+          missingFields.push(requiredFields[field]);
+        }
+      }
+
+      const offcanvasInstance = bootstrap.Offcanvas.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
+      offcanvasInstance.hide();
+
+      if (missingFields.length > 0) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Campos requeridos',
+          html: `Por favor complete los siguientes campos:<br><br>${missingFields.join('<br>')}`,
+          confirmButtonText: 'Entendido'
+        });
+        return;
+      }
+
+      $.ajax({
+        url: `${window.baseUrl}admin/clients`,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function (response) {
+          if (response.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('offcanvasEcommerceCustomerAdd'));
+            modal.hide();
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Éxito',
+              text: 'Cliente creado correctamente',
+              showConfirmButton: false,
+              timer: 1500
+            });
+
+            form.reset();
+            fetchClients();
+          }
+        },
+        error: function (xhr) {
+          const errors = xhr.responseJSON?.errors || {};
+          let errorMessage = 'Ocurrieron los siguientes errores:<br><br>';
+
+          Object.keys(errors).forEach(key => {
+            errorMessage += `${errors[key][0]}<br>`;
+          });
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            html: errorMessage,
+            confirmButtonText: 'Entendido'
+          });
+        }
+      });
+    });
+  }
+});

@@ -7,12 +7,10 @@ use Illuminate\Support\Facades\Cache;
 
 class ScanntechAuthService
 {
-
     private $authUrl = 'https://sso-dev.scanntech.com/auth/realms/scannsae/protocol/openid-connect/token';
     private $clientId = 'scannsae-client';
     private $username = 'mvdstudio';
     private $password = 'Mvdstudio.2024';
-
 
     /**
      * Obtener el token de acceso desde Scanntech.
@@ -30,11 +28,9 @@ class ScanntechAuthService
 
         // Hacer la solicitud para obtener el token
         $response = Http::asForm()->post($this->authUrl, [
-
             'client_id' => $this->clientId,
             'username' => $this->username,
             'password' => $this->password,
-
             'grant_type' => 'password',
         ]);
 
@@ -53,6 +49,4 @@ class ScanntechAuthService
 
         return null;
     }
-
 }
-

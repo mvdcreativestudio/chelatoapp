@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Events\EventEnum;
 use App\Exports\OrdersExport;
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Order;
 use App\Repositories\AccountingRepository;
 use App\Repositories\OrderRepository;
+use App\Repositories\StoresEmailConfigRepository;
+use App\Repositories\CurrencyRepository;
+use App\Services\EventHandlers\EventService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,13 +35,19 @@ class OrderController extends Controller
      */
     protected $accountingRepository;
 
+    protected $storesEmailConfigRepository;
+
+    protected $currencyRepository;
+
+    protected $eventService;
+
     /**
      * Inyecta el repositorio en el controlador y los middleware.
      *
      * @param  OrderRepository  $orderRepository
      * @param  AccountingRepository  $accountingRepository
      */
-    public function __construct(OrderRepository $orderRepository, AccountingRepository $accountingRepository)
+    public function __construct(OrderRepository $orderRepository, AccountingRepository $accountingRepository, StoresEmailConfigRepository $storesEmailConfigRepository, CurrencyRepository $currencyRepository, EventService $eventService)
     {
         $this->middleware(['check_permission:access_orders', 'user_has_store'])->only(
             [
@@ -51,6 +62,9 @@ class OrderController extends Controller
 
         $this->orderRepository = $orderRepository;
         $this->accountingRepository = $accountingRepository;
+        $this->storesEmailConfigRepository = $storesEmailConfigRepository;
+        $this->currencyRepository = $currencyRepository;
+        $this->eventService = $eventService;
     }
 
     /**
@@ -83,7 +97,10 @@ class OrderController extends Controller
     public function store(StoreOrderRequest $request): JsonResponse
     {
         try {
-            $order = $this->orderRepository->store($request);
+
+            $order = $this->orderRepository->store($request, true);
+
+            $this->eventService->handleEvents(auth()->user()->store_id, [EventEnum::LOW_STOCK], ['order' => $order]);
 
             if ($request->ajax()) {
                 return response()->json([
@@ -94,19 +111,20 @@ class OrderController extends Controller
                 ]);
             }
 
+
             return redirect()->route('pdv.index')->with('success', 'Pedido realizado con éxito. ID de orden: ' . $order->id);
         } catch (\Exception $e) {
             if ($request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Error al procesar el pedido. Por favor, intente nuevamente.',
-                    'error' => $e->getMessage(),
-                ], 500);
+                    'message' => $e->getMessage(),
+                ], 400);
             }
 
-            // Manejo de errores para solicitudes normales
-            return back()->withErrors('Error al procesar el pedido. Por favor, intente nuevamente.')->withInput();
+
+            return back()->withErrors($e->getMessage())->withInput();
         }
+
     }
 
     /**
@@ -119,11 +137,22 @@ class OrderController extends Controller
     {
         // Cargar las relaciones necesarias
         $order = $this->orderRepository->loadOrderRelations($order);
-        $products = json_decode($order->products, true);
-        $store = $order->store;
-        $clientOrdersCount = $this->orderRepository->getClientOrdersCount($order->client_id);
 
-        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'store', 'products', 'clientOrdersCount'));
+        $clients = $this->orderRepository->getAllClients();
+
+        //$products = json_decode($order->products, true); // Revisar en mergeo
+        $products = is_string($order->products) ? json_decode($order->products, true) : $order->products;
+        $store = $order->store;
+        $invoice = $this->orderRepository->getSpecificInvoiceForOrder($order->id);
+        $exchange_rate = $this->currencyRepository->getExchangeRateByDate($order->created_at);
+        if($exchange_rate == null){$excange_rate = 0;}
+        $isStoreConfigEmailEnabled = $this->storesEmailConfigRepository->getConfigByStoreId(auth()->user()->store_id);
+        // Verificar si existe un client_id antes de llamar a getClientOrdersCount
+        $clientOrdersCount = $order->client_id
+            ? $this->orderRepository->getClientOrdersCount($order->client_id)
+            : 0; // O cualquier valor predeterminado si no hay cliente
+
+        return view('content.e-commerce.backoffice.orders.show-order', compact('order', 'clients', 'store', 'products', 'clientOrdersCount', 'invoice', 'isStoreConfigEmailEnabled', 'exchange_rate'));
     }
 
     /**
@@ -135,13 +164,26 @@ class OrderController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
+            $order = Order::findOrFail($id);
+
+
+            // Verificar si la orden tiene CFE's asociados
+            if ($order->invoices()->exists()) {
+                return response()->json(['success' => false, 'message' => 'No se puede eliminar la venta porque tiene CFE\'s asociados.'], 400);
+            }
+
+
+            // Proceder con la eliminación de la orden
             $this->orderRepository->destroyOrder($id);
-            return response()->json(['success' => true, 'message' => 'Pedido eliminado correctamente.']);
+
+
+            return response()->json(['success' => true, 'message' => 'Venta eliminada correctamente.']);
         } catch (\Exception $e) {
             Log::info($e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Error al eliminar el pedido.'], 400);
+            return response()->json(['success' => false, 'message' => 'Error al eliminar la venta.'], 400);
         }
     }
+
 
     /**
      * Obtiene los ventas para la DataTable.
@@ -189,6 +231,29 @@ class OrderController extends Controller
     }
 
     /**
+     * Actualiza únicamente el estado de pago de un pedido.
+     *
+     * @param Request $request
+     * @param int $orderId
+     * @return JsonResponse
+     */
+    public function setOrderAsPaid(Request $request, int $orderId): JsonResponse
+    {
+        $request->validate([
+            'payment_status' => 'required|string',
+        ]);
+
+        try {
+            $this->orderRepository->setOrderAsPaid($orderId, $request->input('payment_status'));
+            return response()->json(['success' => true, 'message' => 'Estado del pago actualizado correctamente.']);
+        } catch (\Exception $e) {
+            Log::error("Error al actualizar estado de pago para el pedido {$orderId}: {$e->getMessage()}");
+            return response()->json(['success' => false, 'message' => 'No se pudo actualizar el estado de pago. Por favor, intente nuevamente.'], 400);
+        }
+    }
+
+
+        /**
      * Maneja la emisión de la factura (CFE).
      *
      * @param Request $request
@@ -202,14 +267,46 @@ class OrderController extends Controller
             return redirect()->back()->with('success', 'Factura emitida correctamente.');
         } catch (\Exception $e) {
             Log::error("Error al emitir CFE para la orden {$orderId}: {$e->getMessage()}");
-            return redirect()->back()->with('error', 'Error al emitir la factura. Por favor, intente nuevamente.');
+            return redirect()->back()->with('error', "Error al emitir la factura. {$e->getMessage()}");
         }
     }
 
     public function exportExcel(Request $request)
     {
         try {
-            // Obtener los filtros de la solicitud
+            // Recibir los filtros desde el request
+            $search = $request->input('search');
+            $paymentStatus = $request->input('payment_status');
+            $shippingStatus = $request->input('shipping_status');
+            $client = $request->input('client');
+            $store = $request->input('store');
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+
+            // Obtener las órdenes filtradas
+            $orders = $this->orderRepository->getOrdersForExport(
+                $client,
+                $store,
+                $paymentStatus,
+                $shippingStatus,
+                $startDate,
+                $endDate,
+                $search
+            );
+
+            // Exportar las órdenes a Excel
+            return Excel::download(new OrdersExport($orders), 'orders-' . date('Y-m-d_H-i-s') . '.xlsx');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
+        }
+    }
+
+
+
+    public function exportPdf(Request $request)
+    {
+        try {
             $client = $request->input('client');
             $company = $request->input('company');
             $payment = $request->input('payment');
@@ -217,14 +314,60 @@ class OrderController extends Controller
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
 
-            // Llamar al método del repositorio que obtiene los datos filtrados
             $orders = $this->orderRepository->getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate);
-
-            // Exportar a Excel utilizando Maatwebsite\Excel
-            return Excel::download(new OrdersExport($orders), 'orders-'.date('Y-m-d_H-i-s').'.xlsx');
+            $pdf = Pdf::loadView('content.e-commerce.backoffice.orders.order-pdf', compact('orders'));
+            return $pdf->download('orders-' . date('Y-m-d_H-i-s') . '.pdf');
         } catch (\Exception $e) {
+            dd($e->getMessage());
             Log::error($e->getMessage());
             return redirect()->back()->with('error', 'Error al exportar las ventas. Por favor, intente nuevamente.');
         }
     }
+
+
+    public function getMercadoPagoQrDynamic(Request $request, int $id)
+    {
+        $qrTramma = $this->orderRepository->createMercadoPagoQrDynamic($id);
+        return response()->json([
+            'success' => true,
+            'qrTramma' => $qrTramma,
+        ]);
+    }
+
+
+    public function getMercadoPagoOrderStatus(Request $request, $id)
+    {
+        $order = $this->orderRepository->getMercadoPagoOrderStatus($id);
+        return response()->json($order);
+    }
+
+    public function refundMercadoPagoOrder(Request $request, $id)
+    {
+        $order = $this->orderRepository->refundMercadoPagoOrder($id);
+        return response()->json($order);
+    }
+
+    public function vincularCliente(Request $request, $orderId): JsonResponse
+    {
+        // Verifica si la orden existe manualmente
+        $order = Order::find($orderId);
+
+        if (!$order) {
+            return response()->json(['error' => 'La orden no existe en la base de datos'], 404);
+        }
+
+        if ($order->is_billed) {
+            return response()->json(['error' => 'No se puede vincular un cliente a una venta ya facturada'], 400);
+        }
+
+        $request->validate([
+            'client_id' => 'required|exists:clients,id',
+        ]);
+
+        $order->update(['client_id' => $request->client_id]);
+
+        return response()->json(['success' => 'Cliente vinculado correctamente']);
+    }
+
+
 }

@@ -124,16 +124,6 @@
         </div>
         <div class="mx-3">
           <label class="switch switch-square">
-            <input type="checkbox" class="toggle-column switch-input" data-column="1" checked>
-            <span class="switch-toggle-slider">
-              <span class="switch-on"><i class="bx bx-check"></i></span>
-              <span class="switch-off"><i class="bx bx-x"></i></span>
-            </span>
-            <span class="switch-label">Guard Name</span>
-          </label>
-        </div>
-        <div class="mx-3">
-          <label class="switch switch-square">
             <input type="checkbox" class="toggle-column switch-input" data-column="2" checked>
             <span class="switch-toggle-slider">
               <span class="switch-on"><i class="bx bx-check"></i></span>

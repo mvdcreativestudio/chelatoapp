@@ -13,4 +13,12 @@ enum TransactionTypeEnum: string {
             self::PURCHASE->value => 'Compra a crédito',
         ];
     }
+
+    public static function getValues(): array
+    {
+        return [
+            self::SALE->value,
+            self::PURCHASE->value,
+        ];
+    }
 }

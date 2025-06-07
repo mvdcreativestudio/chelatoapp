@@ -21,14 +21,19 @@ class FetchCurrenciesRates extends Command
                 $currencies = $response->json();
 
                 foreach ($currencies as $currency) {
-                    $buyRate = $currency['compra'] === '-' ? null : str_replace(',', '.', $currency['compra']);
-                    $sellRate = $currency['venta'] === '-' ? null : str_replace(',', '.', $currency['venta']);
-
+                    // Solo procesa la moneda si es "Dólar"
+                    if ($currency['moneda'] !== 'Dólar') {
+                        continue;
+                    }
+                
+                    $buyRate = $currency['compra'] === '-' ? null : (float) str_replace(',', '.', $currency['compra']);
+                    $sellRate = $currency['venta'] === '-' ? null : (float) str_replace(',', '.', $currency['venta']);
+                
                     // Actualiza o crea la divisa base
                     $currencyRate = CurrencyRate::firstOrCreate(
                         ['name' => $currency['moneda']]
                     );
-
+                
                     // Agrega la tasa de cambio diaria a la tabla histórica
                     CurrencyRateHistory::updateOrCreate(
                         ['currency_rate_id' => $currencyRate->id, 'date' => now()->toDateString()],
@@ -38,6 +43,8 @@ class FetchCurrenciesRates extends Command
                         ]
                     );
                 }
+                
+                
 
                 $this->info('Currency rates fetched and saved successfully.');
             } else {

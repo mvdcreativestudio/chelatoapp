@@ -24,8 +24,8 @@ class UpdateRawMaterialRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
             'unit_of_measure' => 'required|string|max:255',
+            'stock' => 'required|integer|min:0'
         ];
     }
 }

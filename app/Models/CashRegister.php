@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CashRegister extends Model
 {
@@ -69,4 +71,37 @@ class CashRegister extends Model
             ];
         }
     }
+
+    /**
+     * Obtiene los dispositivos POS asociados a la caja registradora.
+     *
+     * @return BelongsToMany
+     */
+    public function posDevices(): BelongsToMany
+    {
+        return $this->belongsToMany(PosDevice::class, 'cash_register_pos_device', 'cash_register_id', 'pos_device_id');
+    }
+
+    /**
+
+     * Obtiene el dispositivo POS vinculado más reciente (si solo se necesita uno por defecto).
+     *
+     * @return PosDevice|null
+     */
+    public function currentPosDevice()
+    {
+        return $this->posDevices()->latest('cash_register_pos_device.created_at')->first();
+    }
+
+    /**
+     * Obtiene los POS de Mercado Pago asociados a la caja registradora.
+     *
+     * @return BelongsToMany
+     */
+
+    public function mercadoPagoAccountPOS(): HasMany
+    {
+        return $this->hasMany(MercadoPagoAccountPOS::class);
+    }
+
 }

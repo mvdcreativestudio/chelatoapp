@@ -23,6 +23,7 @@ class Expense extends Model
         'expense_category_id',
         'currency_id',
         'store_id',
+        'concept',
     ];
 
     protected $casts = [

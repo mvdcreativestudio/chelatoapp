@@ -86,4 +86,21 @@ class User extends Authenticatable
         return $this->hasMany(CashRegister::class);
     }
 
+    /**
+     * Obtiene los presupuestos asociados al usuario.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function budgets() {
+        return $this->hasMany(Budget::class);
+    }
+
+    /**
+     * Obtiene los estados de presupuesto asociados al usuario.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function budgetStatuses() {
+        return $this->hasMany(BudgetStatus::class);
+    }
 }

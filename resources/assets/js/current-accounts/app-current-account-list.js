@@ -49,11 +49,36 @@ $(function () {
             // Descripción (nombre del cliente o proveedor)
             data: null,
             render: function (data, type, full, meta) {
-              return full.client_name ? full.client_name : full.supplier_name ? full.supplier_name : 'Sin nombre';
+              if (full.client_name) {
+                return full.client_name + ' ' + full.client_lastname;
+              } else if (full.company_name) {
+                return full.company_name;
+              } else if (full.supplier_name) {
+                return full.supplier_name;
+              } else {
+                return 'Sin nombre';
+              }
             }
           },
           { data: 'total_debit' }, // Total debit
           { data: 'payment_amount' }, // Cantidad pagada
+          {
+            data: null,
+            render: function (data, type, full, meta) {
+              // Calcular saldo (Debe - Haber)
+              const totalDebit = full.total_debit ?? 0;
+              const paymentAmount = full.payment_amount ?? 0;
+              const balance = totalDebit - paymentAmount;
+              const symbol = full.symbol ?? '$';
+              const formattedBalance = symbol + parseFloat(balance).toFixed(2);
+
+              // Determinar el color basado en el saldo
+              const color = balance >= 0 ? 'green' : 'red';
+
+              // Retornar el saldo con el estilo aplicado
+              return `<span style="color: ${color};">${formattedBalance}</span>`;
+            }
+          },
           { data: 'currency_code' }, // Nueva columna para moneda
           { data: 'status' }, // Estado de pago
           { data: '' } // Acciones
@@ -88,7 +113,15 @@ $(function () {
           {
             targets: 4, // Descripción (cliente o proveedor)
             render: function (data, type, full, meta) {
-              return full.client_name || full.supplier_name || 'Sin nombre';
+              if (full.client_name) {
+                return full.client_name + ' ' + full.client_last_name;
+              } else if (full.company_name) {
+                return full.company_name;
+              } else if (full.supplier_name) {
+                return full.supplier_name;
+              } else {
+                return 'Sin nombre';
+              }
             }
           },
           {
@@ -112,7 +145,7 @@ $(function () {
             }
           },
           {
-            targets: 8, // Estado de pago
+            targets: 9, // Estado de pago
             render: function (data, type, full, meta) {
               return `<span class="badge pill ${statusMap[data].class}">${statusMap[data].text}</span>`;
             }
@@ -196,7 +229,7 @@ $(function () {
               api.column(3).search('Proveedor', true, false).draw();
               $('.supplier_filter').show();
               loadUniqueEntityOptions(4, '#supplierSelect', 'supplier_name'); // Cargar proveedores únicos
-
+              
               // Agregar manejador de eventos para filtrar por proveedor seleccionado
               $('#supplierSelect')
                 .off('change')
@@ -377,37 +410,37 @@ $(function () {
       let status = $('.status_filter select').val(); // Estado de pago
       let startDate = $('#startDate').val(); // Fecha desde
       let endDate = $('#endDate').val(); // Fecha hasta
-  
+
       // Construir la URL con los parámetros válidos
       let url = '/admin/current-accounts-export-pdf?';
       let params = [];
-  
+
       // Verificar y agregar los parámetros a la URL
       if (entityType) {
-          params.push(`entity_type=${encodeURIComponent(entityType)}`);
+        params.push(`entity_type=${encodeURIComponent(entityType)}`);
       }
       if (client) {
-          params.push(`client_id=${encodeURIComponent(client)}`);
+        params.push(`client_id=${encodeURIComponent(client)}`);
       }
       if (supplier) {
-          params.push(`supplier_id=${encodeURIComponent(supplier)}`);
+        params.push(`supplier_id=${encodeURIComponent(supplier)}`);
       }
       if (status) {
-          params.push(`status=${encodeURIComponent(status)}`);
+        params.push(`status=${encodeURIComponent(status)}`);
       }
       if (startDate) {
-          params.push(`start_date=${encodeURIComponent(startDate)}`);
+        params.push(`start_date=${encodeURIComponent(startDate)}`);
       }
       if (endDate) {
-          params.push(`end_date=${encodeURIComponent(endDate)}`);
+        params.push(`end_date=${encodeURIComponent(endDate)}`);
       }
-  
+
       // Unir los parámetros a la URL
       url += params.join('&');
-  
+
       // Redirigir a la ruta para exportar a PDF, abriendo en una nueva pestaña
       window.open(url, '_blank');
-  });
+    });
   } catch (error) {
     console.error('Error al inicializar DataTable:', error);
   }

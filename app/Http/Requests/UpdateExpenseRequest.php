@@ -39,6 +39,7 @@ class UpdateExpenseRequest extends FormRequest
             'expense_category_id' => 'required|integer|exists:expense_categories,id',
             'currency_id' => 'required|integer|exists:currencies,id',
             'store_id' => 'nullable|integer|exists:stores,id',
+            'concept' => 'nullable|string',
         ];
     }
 
@@ -65,6 +66,7 @@ class UpdateExpenseRequest extends FormRequest
             'currency_id.exists' => 'La moneda seleccionada no es válida.',
             'store_id.integer' => 'El campo tienda debe ser un número entero.',
             'store_id.exists' => 'La tienda seleccionada no es válida.',
+            'concept.string' => 'El campo concepto debe ser una cadena de texto.',
         ];
     }
 }

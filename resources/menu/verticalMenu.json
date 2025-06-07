@@ -8,9 +8,23 @@
       "url": "/admin"
     },
     {
+      "id": "tour-datacenter",
+      "name": "Datacenter",
+      "icon": "menu-icon tf-icons bx bx-line-chart",
+      "slug": "datacenter",
+      "url": "/admin/datacenter-sales"
+    },
+    {
+      "id": "tour-crm",
+      "name": "CRM",
+      "icon": "menu-icon tf-icons bx bx-table",
+      "slug": "crm",
+      "url": "/admin/crm"
+    },
+    {
       "id": "tour-punto-de-venta",
       "name": "Punto de Venta",
-      "icon": "menu-icon tf-icons bx bx-home-circle",
+      "icon": "menu-icon tf-icons bx bx-desktop",
       "slug": "point-of-sale",
       "url": "/admin/points-of-sales",
       "submenu": [
@@ -26,7 +40,7 @@
           "name": "Ver Punto de Venta",
           "icon": "menu-icon tf-icons bx bx-home-circle",
           "slug": "point-of-sale",
-          "url": "/admin/pdv/front"
+          "url": "/admin/pdv/cart"
         }
       ]
     },
@@ -36,6 +50,13 @@
       "icon": "menu-icon tf-icons bx bx-cart",
       "slug": "orders",
       "url": "/admin/orders"
+    },
+    {
+      "id": "tour-transacciones",
+      "name": "Transacciones",
+      "icon": "menu-icon tf-icons bx bx-credit-card-alt",
+      "slug": "transactions",
+      "url": "/admin/transactions"
     },
     {
       "id": "tour-clientes",
@@ -58,6 +79,13 @@
           "url": "/admin/products"
         },
         {
+          "id": "tour-listas-de-precios",
+          "name": "Listas de Precios",
+          "icon": "menu-icon tf-icons bx bx-dollar",
+          "slug": "price-lists",
+          "url": "/admin/price-lists"
+        },
+        {
           "id": "stock",
           "name": "Stock",
           "icon": "menu-icon tf-icons bx bx-border-all",
@@ -66,7 +94,7 @@
         },
         {
           "id": "tour-productos-compuestos",
-          "name": "Productos Compuestos",
+          "name": "Compuestos",
           "icon": "menu-icon tf-icons bx bx-box",
           "slug": "composite-products",
           "url": "/admin/composite-products"
@@ -77,20 +105,6 @@
           "icon": "menu-icon tf-icons bx bx-list-ul",
           "slug": "product-categories",
           "url": "/admin/product-categories"
-        },
-        {
-          "id": "tour-productos-crear-en-masa",
-          "name": "Crear en Masa",
-          "icon": "menu-icon tf-icons bx bx-plus",
-          "slug": "bulk-products",
-          "url": "/admin/products/add"
-        },
-        {
-          "id": "tour-productos-editar-en-masa",
-          "name": "Editar en Masa",
-          "icon": "menu-icon tf-icons bx bx-edit",
-          "slug": "bulk-products",
-          "url": "/admin/products/edit"
         }
       ]
     },
@@ -102,31 +116,31 @@
       "url": "/admin/stores"
     },
     {
+      "id": "tour-integrations",
+      "name": "Herramientas",
+      "icon": "menu-icon tf-icons bx bx-link",
+      "slug": "integrations",
+      "url": "/admin/integrations"
+    },
+    {
+      "id": "tour-budget",
+      "name": "Presupuestos",
+      "icon": "menu-icon tf-icons bx bx-calculator",
+      "slug": "budgets",
+      "url": "/admin/budgets"
+    },
+    {
       "id": "tour-gestion-proveedores",
       "name": "Fabricación",
       "icon": "menu-icon tf-icons bx bx-briefcase",
       "slug": "manufacturing",
       "submenu": [
         {
-          "id": "tour-variaciones",
-          "name": "Variaciones",
-          "icon": "menu-icon tf-icons bx bx-lemon",
-          "slug": "product-flavors",
-          "url": "/admin/product-flavors"
-        },
-        {
           "id": "tour-materias-primas",
           "name": "Materias Primas",
           "icon": "menu-icon tf-icons bx bx-box",
           "slug": "raw-materials",
           "url": "/admin/raw-materials"
-        },
-        {
-          "id": "productions",
-          "name": "Elaboraciones",
-          "icon": "menu-icon tf-icons bx bx-bowl-rice",
-          "slug": "productions",
-          "url": "/admin/productions"
         },
         {
           "id": "tour-proveedores",
@@ -139,8 +153,65 @@
           "id": "tour-ordenes-de-compra",
           "name": "Ordenes de Compra",
           "icon": "menu-icon tf-icons bx bx-receipt",
-          "slug": "supplier-orders",
-          "url": "/admin/supplier-orders"
+          "slug": "purchase-orders",
+          "url": "/admin/purchase-orders"
+        },
+        {
+          "id": "batches",
+          "name": "Lotes",
+          "icon": "menu-icon tf-icons bx bx-package",
+          "slug": "batches",
+          "url": "/admin/batches"
+        },
+        {
+          "id": "formulas",
+          "name": "Fórmulas",
+          "icon": "menu-icon tf-icons bx bx-test-tube",
+          "slug": "formulas",
+          "url": "/admin/formulas"
+        },
+        {
+          "id": "bulk-productions",
+          "name": "Elaboraciones",
+          "icon": "menu-icon tf-icons bx bx-atom",
+          "slug": "bulk-productions",
+          "url": "/admin/bulk-productions"
+        },
+        {
+          "id": "tour-packagings",
+          "name": "Envasados",
+          "icon": "menu-icon tf-icons bx bx-droplet",
+          "slug": "packagings",
+          "url": "/admin/packagings"
+        }
+      ]
+    },
+    {
+      "id": "tour-logistica",
+      "name": "Logística",
+      "icon": "menu-icon tf-icons bx bx-send",
+      "slug": "logistics",
+      "submenu": [
+        {
+          "id": "Choferes",
+          "name": "Choferes",
+          "icon": "menu-icon tf-icons bx bx-user-circle",
+          "slug": "drivers",
+          "url": "/admin/drivers"
+        },
+        {
+          "id": "Vehiculos",
+          "name": "Vehículos",
+          "icon": "menu-icon tf-icons bx bx-car",
+          "slug": "vehicles",
+          "url": "/admin/vehicles"
+        },
+        {
+          "id": "Envios",
+          "name": "Envíos",
+          "icon": "menu-icon tf-icons bx bx-map-alt",
+          "slug": "note_deliveries",
+          "url": "/admin/note-deliveries"
         }
       ]
     },
@@ -171,6 +242,13 @@
               "icon": "menu-icon tf-icons bx bx-file",
               "slug": "received-documents",
               "url": "/admin/received-cfes"
+            },
+            {
+              "id": "tour-facturas-configuracion",
+              "name": "Configuración",
+              "icon": "menu-icon tf-icons bx bx-cog",
+              "slug": "invoice-settings",
+              "url": "/admin/accounting/settings"
             }
           ]
         },
@@ -202,7 +280,6 @@
               "slug": "entry-accounts",
               "url": "/admin/entry-accounts"
             }
-
           ]
         },
         {
@@ -217,21 +294,76 @@
           "name": "Gastos",
           "icon": "menu-icon tf-icons bx bx-dollar",
           "slug": "expenses",
-          "url": "/admin/expenses"
+          "url": "/admin/expenses",
+          "submenu": [
+            {
+              "id": "tour-gastos",
+              "name": "Gastos",
+              "icon": "menu-icon tf-icons bx bx-dollar",
+              "slug": "expenses",
+              "url": "/admin/expenses"
+            },
+            {
+              "id": "tour-gastos-categorias",
+              "name": "Categorías",
+              "icon": "menu-icon tf-icons bx bx-category",
+              "slug": "expense-categories",
+              "url": "/admin/expense-categories"
+            }
+          ]
         },
         {
           "id": "tour-ingresos",
           "name": "Ingresos",
           "icon": "menu-icon tf-icons bx bx-line-chart",
           "slug": "incomes",
-          "url": "/admin/incomes"
+          "url": "/admin/incomes",
+          "submenu": [
+            {
+              "id": "tour-ingresos",
+              "name": "Ingresos",
+              "icon": "menu-icon tf-icons bx bx-user",
+              "slug": "incomes",
+              "url": "/admin/incomes"
+            },
+            {
+              "id": "tour-ingresos-categorias",
+              "name": "Categorías",
+              "icon": "menu-icon tf-icons bx bx-category",
+              "slug": "income-categories",
+              "url": "/admin/income-categories"
+            }
+          ]
         },
         {
           "id": "tour-cuentas-corrientes",
           "name": "Cuentas Corrientes",
           "icon": "menu-icon tf-icons bx bx-dollar",
           "slug": "current-accounts",
-          "url": "/admin/current-accounts"
+          "url": "/admin/current-accounts",
+          "submenu": [
+            {
+              "id": "tour-cuentas-corrientes",
+              "name": "Cuentas Corrientes",
+              "icon": "menu-icon tf-icons bx bx-dollar",
+              "slug": "current-accounts",
+              "url": "/admin/current-accounts"
+            },
+            {
+              "id": "tour-cuentas-corrientes-configuracion",
+              "name": "Configuración",
+              "icon": "menu-icon tf-icons bx bx-cog",
+              "slug": "current-account-settings",
+              "url": "/admin/current-account-settings"
+            }
+          ]
+        },
+        {
+          "id": "tour-moneda",
+          "name": "Moneda",
+          "icon": "menu-icon tf-icons bx bx-euro",
+          "slug": "currencies",
+          "url": "/admin/currencies"
         }
       ]
     },
@@ -272,13 +404,6 @@
           ]
         }
       ]
-    },
-    {
-      "id": "tour-datacenter",
-      "name": "Datacenter",
-      "icon": "menu-icon tf-icons bx bx-line-chart",
-      "slug": "datacenter",
-      "url": "/admin/datacenter-sales"
     },
     {
       "name": "Usuarios",

@@ -6,7 +6,8 @@
 @vite([
   'resources/assets/vendor/libs/datatables-bs5/datatables.bootstrap5.scss',
   'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
-  'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss'
+  'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
+  'resources/assets/vendor/libs/toastr/toastr.scss',
 ])
 @endsection
 
@@ -15,7 +16,8 @@
 
 @section('vendor-script')
 @vite([
-  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js'
+  'resources/assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js',
+  'resources/assets/vendor/libs/toastr/toastr.js',
 ])
 @endsection
 
@@ -23,14 +25,17 @@
 @vite([
   'resources/assets/js/app-invoices-list.js'
 ])
+<script>
+  window.isStoreConfigEmailEnabled = "{{ $isStoreConfigEmailEnabled }}";
+</script>
 @endsection
 
 @section('content')
 <h4 class="py-3 mb-4">
-  <span class="text-muted fw-light">Contabilidad /</span> Facturas
+  <span class="text-muted fw-light">Facturación /</span> Facturas de Venta
 </h4>
 
-{{-- <div class="card mb-4">
+<div class="card mb-4">
   <div class="card-widget-separator-wrapper">
     <div class="card-body card-widget-separator">
       <div class="row gy-4 gy-sm-1">
@@ -81,7 +86,7 @@
       </div>
     </div>
   </div>
-</div> --}}
+</div>
 
 @if (session('success'))
 <div class="alert alert-success mt-3 mb-3">
@@ -114,14 +119,48 @@
           <a href="#" class="toggle-switches" data-bs-toggle="collapse" data-bs-target="#columnSwitches" aria-expanded="false" aria-controls="columnSwitches">Ver / Ocultar columnas de la tabla</a>
         </p>
       </div>
-      <button id="btn-update-cfes" class="btn btn-primary">
-        Actualizar estado de CFEs
-      </button>
-      @if (auth()->user()->can('access_update_all_invoices'))
-        <button id="btn-update-all-cfes" class="btn btn-primary">
-          Actualizar estado de todos los CFEs
-        </button>
-      @endif
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex gap-2">
+          <button id="btn-update-cfes" class="btn btn-primary">
+            Actualizar estado de CFEs
+          </button>
+          @if (auth()->user()->can('access_update_all_invoices'))
+            <button id="btn-update-all-cfes" class="btn btn-primary">
+              Actualizar estado de todos los CFEs
+            </button>
+          @endif
+        </div>
+        <div class="d-flex gap-2">
+          <button id="openFilters" class="btn btn-outline-primary btn-sm shadow-sm d-flex align-items-center gap-1">
+            <i class="bx bx-filter-alt"></i> Filtros
+          </button>
+          <div class="dropdown">
+            <button class="btn btn-outline-primary btn-sm shadow-sm d-flex align-items-center gap-1 dropdown-toggle" type="button"
+              id="dropdownImportExport" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bx bx-download"></i> Acciones
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownImportExport">
+              <li>
+                <a class="dropdown-item" href="#" id="exportExcel">
+                  <i class="bx bx-export"></i> Exportar Excel
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="#" id="exportPDF">
+                  <!-- Ícono para PDF (sólido) -->
+                  <i class="bx bxs-file-pdf"></i> Exportar PDF
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="#" id="exportCSV">
+                  <!-- Ícono para CSV (ej: usar export) -->
+                  <i class="bx bxs-file-export"></i> Exportar CSV
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
       <div class="collapse" id="columnSwitches">
         <div class="mt-0 d-flex flex-wrap">
           <div class="mx-3">
@@ -186,13 +225,11 @@
           <th>Orden</th>
           <th>Fecha</th>
           <th>Tipo</th>
-          <th>Razón</th>
           <th>Balance</th>
-          <th>Moneda</th>
           <th>Total</th>
           <th>Asociado a</th>
           <th>Status</th>
-          <th>Acciones</th>
+          {{-- <th>Acciones</th> --}}
         </tr>
       </thead>
       <tbody>
@@ -214,6 +251,12 @@
         <div class="modal-body">
           <p>¿Está seguro de que desea emitir un recibo sobre esta factura?</p>
           <p>No podrás emitir más notas de crédito o débito sobre esta factura.</p>
+
+          <div class="mb-3">
+            <label for="emissionDate" class="form-label">Fecha y Hora de Emisión</label>
+            <input type="datetime-local" class="form-control" id="emissionDate" name="emissionDate"
+                   value="{{ now()->format('Y-m-d\TH:i') }}" required>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -266,6 +309,11 @@
             <label for="reason" class="form-label">Razón de la Nota</label>
             <textarea class="form-control" id="reason" name="reason" required></textarea>
           </div>
+          <div class="mb-3">
+            <label for="emissionDate" class="form-label">Fecha y Hora de Emisión</label>
+            <input type="datetime-local" class="form-control" id="emissionDate" name="emissionDate"
+                   value="{{ now()->format('Y-m-d\TH:i') }}" required>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -275,4 +323,136 @@
     </div>
   </div>
 </div>
+
+<!-- Modal de Envío de Correo -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1" aria-labelledby="sendEmailModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="sendEmailModalLabel">Enviar Factura por Correo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="sendEmailForm" method="POST" action="{{ route('invoices.sendEmail') }}">
+        @csrf
+        <input type="hidden" name="invoice_id" id="invoice_id">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="email" class="form-label">Correo electrónico del cliente</label>
+            <input type="email" class="form-control" id="email" name="email" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Enviar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para mostrar las acciones con íconos -->
+<div class="modal fade" id="actionsModal" tabindex="-1" aria-labelledby="actionsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 600px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="actionsModalLabel">Acciones</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Aquí se inyecta el HTML de iconos con JavaScript -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Filtros -->
+<div id="filterModal" class="filter-modal">
+  <div class="filter-modal-content">
+    <button id="closeFilterModal" class="close-filter-modal">
+      <i class="bx bx-x"></i>
+    </button>
+
+    <h5 class="mb-4">Filtros</h5>
+
+    <!-- Filtro por Empresa -->
+    <div class="mb-3">
+      <label for="storeFilter">Empresa</label>
+      <select id="storeFilter" class="form-select">
+      </select>
+    </div>
+
+    <!-- Filtro por Cliente -->
+    <div class="mb-3">
+      <label for="clientFilter">Cliente</label>
+      <select id="clientFilter" class="form-select">
+      </select>
+    </div>
+
+    <!-- Filtro por Tipo de Factura -->
+    <div class="mb-3">
+      <label for="invoiceTypeFilter" class="form-label">Tipo de Factura</label>
+      <select id="invoiceTypeFilter" class="form-select">
+      </select>
+    </div>
+
+    <!-- Filtro por Estado de Factura -->
+    <div class="mb-3">
+      <label for="invoiceStatusFilter" class="form-label">Estado de Factura</label>
+      <select id="invoiceStatusFilter" class="form-select">
+      </select>
+    </div>
+
+    <!-- Filtro por Fechas -->
+    <div class="mb-3">
+      <label for="startDate">Desde:</label>
+      <input type="date" class="form-control date-range-filter" id="startDate" placeholder="Fecha de inicio">
+    </div>
+    <div class="mb-3">
+      <label for="endDate">Hasta:</label>
+      <input type="date" class="form-control date-range-filter" id="endDate" placeholder="Fecha de fin">
+    </div>
+
+    <!-- Botón para limpiar filtros -->
+    <div class="mb-3">
+      <button id="clearFilters" class="btn btn-outline-danger">
+        Limpiar Filtros
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+    /* Modal de Filtros */
+    .filter-modal {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 300px;
+    height: 100%;
+    background: #fff;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    transition: right 0.3s ease-in-out;
+    overflow-y: auto;
+  }
+
+  .filter-modal.open {
+    right: 0;
+  }
+
+  .filter-modal-content {
+    padding: 20px;
+  }
+
+  .close-filter-modal {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+</style>
 @endsection

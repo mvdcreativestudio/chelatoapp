@@ -22,6 +22,11 @@ class Entry extends Model
         'is_balanced',
     ];
 
+    protected $casts = [
+        'entry_date' => 'date',
+        'is_balanced' => 'boolean',
+    ];
+
     /**
      * Obtiene el total del Haber del asiento.
      *

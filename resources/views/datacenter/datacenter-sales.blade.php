@@ -231,9 +231,9 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <h4 class="ms-1 mb-0">{{ $ordersCount['completed'] }}</h4>
         </div>
         @if($ordersCount['completed'] == 1)
-          <p class="mb-1 fw-medium me-1">Pedido completado</p>
+          <p class="mb-1 fw-medium me-1">Venta completada</p>
         @else
-          <p class="mb-1 fw-medium me-1">Pedidos completados</p>
+          <p class="mb-1 fw-medium me-1">Ventas completadas</p>
         @endif
         <p class="mb-0">
           {{-- <span class="fw-medium me-1 text-success">+18.2%</span> --}}
@@ -251,9 +251,9 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <h4 class="ms-1 mb-0">{{ $ordersCount['pending'] }}</h4>
         </div>
         @if($ordersCount['pending'] == 1)
-          <p class="mb-1 fw-medium me-1">Pedido pendiente</p>
+          <p class="mb-1 fw-medium me-1">Venta pendiente</p>
         @else
-          <p class="mb-1 fw-medium me-1">Pedidos pendientes</p>
+          <p class="mb-1 fw-medium me-1">Ventas pendientes</p>
         @endif
         <p class="mb-0">
           {{-- <span class="fw-medium me-1 text-danger">-8.7%</span> --}}
@@ -271,9 +271,9 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
           <h4 class="ms-1 mb-0">{{ $ordersCount['cancelled'] }}</h4>
         </div>
         @if($ordersCount['cancelled'] == 1)
-          <p class="mb-1 fw-medium me-1">Pedido fallido</p>
+          <p class="mb-1 fw-medium me-1">Venta fallida</p>
         @else
-          <p class="mb-1">Pedidos fallidos</p>
+          <p class="mb-1">Ventas fallidas</p>
         @endif
         <p class="mb-0">
           {{-- <span class="fw-medium me-1 text-success">+4.3%</span> --}}
@@ -306,7 +306,6 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
         <div class="col-md-8">
           <div class="card-header">
             <h5 class="card-title mb-0">Ingresos totales</h5>
-            <small class="card-subtitle">Reporte anual</small>
           </div>
           <div class="card-body">
             <div id="totalIncomeChart"></div>
@@ -427,29 +426,35 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($salesByStore as $index => $store)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar avatar-sm me-2">
-                                                <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($store['store'], 0, 2) }}</span>
-                                            </div>
-                                            <span>{{ $store['store'] }}</span>
-                                        </div>
-                                    </td>
-                                    <td>{{ $settings->currency_symbol }}{{ number_format($store['storeTotal'], 2, ',', '.') }}</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <div class="progress w-100 me-3" style="height: 8px;">
-                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $store['percent'] }}%" aria-valuenow="{{ $store['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                            <span class="text-muted">{{ number_format($store['percent'], 2) }}%</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
+                              @foreach ($salesByStore as $index => $store)
+                              <tr>
+                                  <td>{{ $index + 1 }}</td>
+                                  <td>
+                                      <div class="d-flex align-items-center">
+                                          <div class="avatar avatar-sm me-2">
+                                              <span class="avatar-initial rounded-circle bg-label-primary">{{ substr($store['store'], 0, 2) }}</span>
+                                          </div>
+                                          <span>{{ $store['store'] }}</span>
+                                      </div>
+                                  </td>
+                                  <td>{{ $settings->currency_symbol }}{{ number_format($store['storeTotal'], 2, ',', '.') }}</td>
+                                  <td>
+                                      <div class="d-flex align-items-center">
+                                          <div class="progress w-100 me-3" style="height: 8px;">
+                                              <div class="progress-bar bg-primary" role="progressbar"
+                                                  style="width: {{ $store['percent'] }}%"
+                                                  aria-valuenow="{{ $store['percent'] }}"
+                                                  aria-valuemin="0"
+                                                  aria-valuemax="100">
+                                              </div>
+                                          </div>
+                                          <span class="text-muted">{{ number_format($store['percent'], 2, ',', '.') }}%</span>
+                                      </div>
+                                  </td>
+                              </tr>
+                              @endforeach
+                          </tbody>
+
                         </table>
                     </div>
                 </div>

@@ -16,9 +16,9 @@ class StoreFlavorRequest extends FormRequest
         return [
             'name' => 'required|string',
             'status' => 'sometimes|in:active,inactive',
-            'recipes' => 'sometimes|array',
-            'recipes.*.raw_material_id' => 'sometimes|exists:raw_materials,id',
-            'recipes.*.quantity' => 'sometimes|integer|min:1'
+            'recipes' => 'required|array',
+            'recipes.*.raw_material_id' => 'required|exists:raw_materials,id',
+            'recipes.*.quantity' => 'required|integer|min:1'
         ];
     }
 }

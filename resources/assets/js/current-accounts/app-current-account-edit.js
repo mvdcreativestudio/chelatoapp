@@ -96,13 +96,14 @@ $(document).ready(function () {
 
   // Filtrar tipos de crédito según el tipo de entidad
   function filterCreditTypeOptions(entityType) {
+    console.log(entityType);
     let filteredOptions = '';
 
     // Filtrar según transaction_type: 'Sale' para clientes, 'Purchase' para proveedores
     currentAccountSettings.forEach(function(setting) {
       if ((entityType === 'client' && setting.transaction_type === 'Sale') ||
           (entityType === 'supplier' && setting.transaction_type === 'Purchase')) {
-        filteredOptions += `<option value="${setting.id}">${setting.payment_terms}</option>`;
+        filteredOptions += `<option value="${setting.id}">${setting.payment_terms} Día/s</option>`;
       }
     });
 

@@ -115,6 +115,10 @@ class CurrentAccountController extends Controller
             $initialCredit = $currentAccount->initialCredits->filter(function ($initialCredit) {
                 return $initialCredit->description === 'Crédito Inicial';
             })->first();
+            // filter current settings
+            $currentAccountSettings = $currentAccountSettings->filter(function ($setting) use ($currentAccount) {
+                return $setting->transaction_type === $currentAccount->transaction_type;
+            });
             return view('current-accounts.edit-current-account', compact('currentAccount', 'currencies', 'clients', 'suppliers', 'currentAccountSettings', 'paymentMethods', 'currentAccountStatus', 'initialCredit'));
         } catch (\Exception $e) {
             Log::error($e->getMessage());

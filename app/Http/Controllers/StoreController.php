@@ -2,18 +2,26 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MercadoPago\MercadoPagoApplicationTypeEnum;
+use App\Exceptions\MercadoPagoException;
+use App\Helpers\Helpers;
+use App\Http\Middleware\EnsureUserCanAccessStore;
 use App\Http\Requests\StoreStoreRequest;
 use App\Http\Requests\UpdateStoreRequest;
 use App\Models\Store;
+use App\Models\TaxRate;
 use App\Repositories\AccountingRepository;
+use App\Repositories\MercadoPagoAccountStoreRepository;
 use App\Repositories\StoreRepository;
+use App\Services\MercadoPagoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Middleware\EnsureUserCanAccessStore;
+use Illuminate\View\View;
+
 class StoreController extends Controller
 {
     /**
@@ -31,17 +39,33 @@ class StoreController extends Controller
     protected AccountingRepository $accountingRepository;
 
     /**
+     * El servicio de MercadoPago.
+     *
+     * @var MercadoPagoService
+     */
+    protected $mpService;
+
+    /**
+     * El repositorio de Mercado Pago Account Store.
+     *
+     * @var MercadoPagoAccountStoreRepository
+     */
+    protected $mercadoPagoAccountStoreRepository;
+
+    /**
      * Constructor para inyectar el repositorio.
      *
      * @param StoreRepository $storeRepository
      * @param AccountingRepository $accountingRepository
      */
-    public function __construct(StoreRepository $storeRepository, AccountingRepository $accountingRepository, EnsureUserCanAccessStore $ensureUserCanAccessStore)
+    public function __construct(StoreRepository $storeRepository, AccountingRepository $accountingRepository, EnsureUserCanAccessStore $ensureUserCanAccessStore, MercadoPagoService $mpService, MercadoPagoAccountStoreRepository $mercadoPagoAccountStoreRepository)
     {
         $this->storeRepository = $storeRepository;
         $this->accountingRepository = $accountingRepository;
+        $this->mpService = $mpService;
+        $this->mercadoPagoAccountStoreRepository = $mercadoPagoAccountStoreRepository;
         $this->middleware('ensure_user_can_access_store')->only(['edit', 'update', 'destroy']);
-      }
+    }
 
     /**
      * Muestra una lista de todas las empresa.
@@ -61,8 +85,13 @@ class StoreController extends Controller
      */
     public function create(): View
     {
-        return view('stores.create', ['googleMapsApiKey' => config('services.google.maps_api_key')]);
+        $taxRates = TaxRate::all(); // Obtener todas las tasas de impuestos
+        return view('stores.create', [
+            'googleMapsApiKey' => config('services.google.maps_api_key'),
+            'taxRates' => $taxRates
+        ]);
     }
+
 
     /**
      * Almacena una nueva empresa en la base de datos.
@@ -99,20 +128,13 @@ class StoreController extends Controller
     public function edit(Store $store): View
     {
         $googleMapsApiKey = config('services.google.maps_api_key');
-
         $companyInfo = null;
         $logoUrl = null;
-        $branchOffices = [];
 
-        Log::info('Store: ' . $store->rut);
+        // Obtener todas las tasas de IVA disponibles
+        $taxRates = TaxRate::all();
 
-        if ($store->invoices_enabled && $store->pymo_user && $store->pymo_password) {
-            $companyInfo = $this->accountingRepository->getCompanyInfo($store);
-            $logoUrl = $this->accountingRepository->getCompanyLogo($store);
-            $branchOffices = $companyInfo['branchOffices'] ?? [];
-        }
-
-        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'branchOffices'));
+        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'taxRates'));
     }
 
 
@@ -126,161 +148,72 @@ class StoreController extends Controller
      */
     public function update(UpdateStoreRequest $request, Store $store): RedirectResponse
     {
-        $storeData = $request->validated();
+        Log::info('Datos enviados al actualizar la tienda:', $request->all());
 
-        // Actualización de la tienda excluyendo los datos de integraciones específicas
-        $this->storeRepository->update($store, Arr::except($storeData, [
-            'mercadoPagoPublicKey',
-            'mercadoPagoAccessToken',
-            'mercadoPagoSecretKey',
-            'accepts_mercadopago',
-            'pymo_user',
-            'pymo_password',
-            'pymo_branch_office',
-            'accepts_peya_envios',
-            'peya_envios_key',
-            'callbackNotificationUrl',
-            'mail_host',
-            'mail_port',
-            'mail_username',
-            'mail_password',
-            'mail_encryption',
-            'mail_from_address',
-            'mail_from_name',
-        ]));
+        try {
+            // Validar los datos enviados en la request
+            $storeData = $request->validated();
+            Log::info('Datos validados:', $storeData);
 
-        // Manejo de la integración de MercadoPago
-        $this->handleMercadoPagoIntegration($request, $store);
-
-        // Manejo de la integración de Pedidos Ya Envíos
-        $this->handlePedidosYaEnviosIntegration($request, $store);
-
-        // Manejo de la integración de configuración de correo
-        $this->handleEmailConfigIntegration($request, $store);
-
-        // Manejo de la integración de Pymo (Facturación Electrónica)
-        if ($request->boolean('invoices_enabled')) {
-          $this->accountingRepository->updateStoreWithPymo($store, $request->input('pymo_branch_office'), $request->input('callbackNotificationUrl'), $request->input('pymo_user'), $request->input('pymo_password'));
-        } else {
-            $store->update([
-                'pymo_user' => null,
-                'pymo_password' => null,
-                'pymo_branch_office' => null,
-            ]);
-        }
-
-
-        return redirect()->route('stores.index')->with('success', 'Empresa actualizada con éxito.');
-    }
-
-    /**
-     * Maneja la lógica de la integración con MercadoPago.
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     */
-    private function handleMercadoPagoIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('accepts_mercadopago')) {
-            $store->mercadoPagoAccount()->updateOrCreate(
-                ['store_id' => $store->id],
-                [
-                    'public_key' => $request->input('mercadoPagoPublicKey'),
-                    'access_token' => $request->input('mercadoPagoAccessToken'),
-                    'secret_key' => $request->input('mercadoPagoSecretKey'),
-                ]
-            );
-        } else {
-            $store->mercadoPagoAccount()->delete();
-        }
-    }
-
-    /**
-     * Maneja la lógica de la integración con Pedidos Ya Envíos.
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     */
-    private function handlePedidosYaEnviosIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('accepts_peya_envios')) {
-            $store->update([
-                'accepts_peya_envios' => true,
-                'peya_envios_key' => $request->input('peya_envios_key'),
-            ]);
-        } else {
-            $store->update([
-                'accepts_peya_envios' => false,
-                'peya_envios_key' => null,
-            ]);
-        }
-    }
-
-    /**
-     * Maneja la lógica de la integración con Pymo (Facturación Electrónica).
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     */
-    private function handlePymoIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('invoices_enabled')) {
-            $updateData = [
-                'invoices_enabled' => true,
-                'pymo_user' => $request->input('pymo_user'),
-                'pymo_branch_office' => $request->input('pymo_branch_office'),
-            ];
-
-            // Solo encriptar la nueva contraseña si es enviada
-            if ($request->filled('pymo_password')) {
-                $updateData['pymo_password'] = Crypt::encryptString($request->input('pymo_password'));
+            // Validar exclusividad entre Scanntech y Fiserv
+            if ($request->boolean('scanntech') && $request->boolean('fiserv')) {
+                return redirect()->back()->withErrors([
+                    'error' => 'Solo puede estar activo un proveedor de POS a la vez. Desactive una opción antes de activar la otra.'
+                ]);
             }
 
-            if ($request->boolean('automatic_billing')) {
-                $updateData['automatic_billing'] = true;
+            // Determinar el valor de pos_provider_id
+            if ($request->boolean('scanntech')) {
+                $storeData['pos_provider_id'] = 1; // Scanntech
+                Log::info('Scanntech activado');
+            } elseif ($request->boolean('fiserv')) {
+                $storeData['pos_provider_id'] = 2; // Fiserv
+                Log::info('Fiserv activado');
             } else {
-                $updateData['automatic_billing'] = false;
+                $storeData['pos_provider_id'] = null; // Ninguno
+                Log::info('Ningún proveedor POS activado');
             }
 
-            $store->update($updateData);
-        } else {
-            $store->update([
-                'invoices_enabled' => false,
-                'pymo_user' => null,
-                'pymo_password' => null,
-                'pymo_branch_office' => null,
-                'automatic_billing' => false,
-            ]);
+            // Actualización de la tienda excluyendo datos de integraciones específicas
+            $this->storeRepository->update($store, $storeData);
+
+            // Actualizar la tasa de IVA seleccionada
+            $store->tax_rate_id = $request->tax_rate_id;
+            $store->save();
+
+            Log::info('Estado de la tienda después de la actualización:', $store->toArray());
+
+            // Manejo de la integración de MercadoPago Online
+            $this->handleMercadoPagoIntegrationOnline($request, $store);
+
+            // Manejo de la integración de MercadoPago Presencial
+            $this->handleMercadoPagoIntegrationPresencial($request, $store);
+
+                // Manejo de la integración de Pedidos Ya Envíos
+                $this->handlePedidosYaEnviosIntegration($request, $store);
+
+                // Manejo de la integración de Scanntech
+                $this->handleScanntechIntegration($request, $store);
+
+                // Manejo de la integración de Pymo (Facturación Electrónica)
+                $this->handlePymoIntegration($request, $store);
+
+                // Manejo de la integración de configuración de correo
+                $this->handleEmailConfigIntegration($request, $store);
+
+            // Manejo de la integración de Fiserv
+            $this->handleFiservIntegration($request, $store);
+
+            return redirect()->route('stores.edit', $store->id)->with('success', 'Empresa actualizada con éxito.');
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar la empresa: ' . $e->getMessage());
+            return redirect()
+                ->route('stores.edit', $store->id)
+                ->with('error', 'Ocurrió un error durante la actualización: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Maneja la lógica de la integración de configuración de correo.
-     *
-     * @param UpdateStoreRequest $request
-     * @param Store $store
-     */
-    private function handleEmailConfigIntegration(UpdateStoreRequest $request, Store $store): void
-    {
-        if ($request->boolean('stores_email_config')) {
-            $store->emailConfig()->updateOrCreate(
-                ['store_id' => $store->id],
-                [
-                    'mail_host' => $request->input('mail_host'),
-                    'mail_port' => $request->input('mail_port'),
-                    'mail_username' => $request->input('mail_username'),
-                    'mail_password' => $request->input('mail_password'),
-                    'mail_encryption' => $request->input('mail_encryption'),
-                    'mail_from_address' => $request->input('mail_from_address'),
-                    'mail_from_name' => $request->input('mail_from_name'),
-                    'mail_reply_to_address' => $request->input('mail_reply_to_address'),
-                    'mail_reply_to_name' => $request->input('mail_reply_to_name'),
-                ]
-            );
-        } else {
-            $store->emailConfig()->delete();
-        }
-    }
+
 
     /**
      * Elimina la Empresa.

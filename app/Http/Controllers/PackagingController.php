@@ -1,0 +1,92 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StorePackagingRequest;
+use App\Http\Requests\UpdatePackagingRequest;
+use App\Repositories\PackagingRepository;
+use Illuminate\Http\Request;
+use App\Repositories\PackageRepository;
+
+class PackagingController extends Controller
+{
+    protected $packagingRepository;
+    protected $packageRepository;
+
+    public function __construct(PackagingRepository $packagingRepository, PackageRepository $packageRepository)
+    {
+        $this->packagingRepository = $packagingRepository;
+        $this->packageRepository = $packageRepository;
+    }
+
+    public function index()
+    {
+        $packagings = $this->packagingRepository->getAll();
+        $packages = $this->packageRepository->getAll();
+        return view('packaging.index', compact('packagings', 'packages'));
+    }
+
+    public function create()
+    {
+        return view('packaging.create');
+    }
+
+    public function store(StorePackagingRequest $request)
+    {
+        // Usar el repositorio para manejar la lógica de empaquetado
+        $packaging = $this->packagingRepository->createAndHandlePackaging($request->validated());
+
+        // Obtener el producto relacionado
+        $product = $this->packagingRepository->getProductByPackaging($packaging->id);
+        $finalStock = $product->stock;
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Empaque creado con éxito.',
+                'packaging' => $packaging,
+                'product_name' => $product->name,
+                'units_added' => $packaging->quantity_packaged,
+                'final_stock' => $finalStock
+            ]);
+        }
+
+        return redirect()->route('packagings.index')->with('success', 'Empaque creado con éxito.');
+    }
+
+
+    public function show($id)
+    {
+        $packaging = $this->packagingRepository->find($id);
+        return view('packaging.show', compact('packaging'));
+    }
+
+    public function edit($id)
+    {
+        $packaging = $this->packagingRepository->find($id);
+        return view('packaging.edit', compact('packaging'));
+    }
+
+    public function update(UpdatePackagingRequest $request, $id)
+    {
+        $this->packagingRepository->update($id, $request->validated());
+        return redirect()->route('packaging.index')->with('success', 'Empaque actualizado con éxito.');
+    }
+
+    public function destroy($id)
+    {
+        $deleted = $this->packagingRepository->delete($id);
+        if ($deleted) {
+            return response()->json(['message' => 'Empaque eliminado exitosamente.']);
+        } else {
+            return response()->json(['message' => 'No se pudo encontrar el empaque que se deseó eliminar.'], 404);
+        }
+    }
+
+    public function startProduction()
+    {
+        $bulkProductions = $this->packagingRepository->startProduction();
+
+        return response()->json($bulkProductions);
+    }
+}

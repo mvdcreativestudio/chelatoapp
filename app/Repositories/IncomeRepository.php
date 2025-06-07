@@ -24,14 +24,33 @@ class IncomeRepository
     public function getAllIncomes(): mixed
     {
         $incomes = Income::all();
-        $totalIncomes = Income::all()->count();
-        $totalIncomeAmount = Income::all()->sum('income_amount');
+        $totalIncomes = $incomes->count();
+        $totalIncomeAmount = $incomes->sum('income_amount');
+        
+        $averageIncome = $totalIncomes > 0 ? $totalIncomeAmount / $totalIncomes : 0;
+        
+        $monthlyIncome = Income::whereMonth('income_date', now()->month)
+                            ->whereYear('income_date', now()->year)
+                            ->sum('income_amount');
+        
         $paymentMethods = PaymentMethod::all();
         $incomeCategories = IncomeCategory::all();
         $clients = Client::all();
         $suppliers = Supplier::all();
         $currencies = Currency::all();
-        return compact('incomes', 'totalIncomes', 'totalIncomeAmount', 'paymentMethods', 'incomeCategories', 'clients', 'suppliers', 'currencies');
+        
+        return compact(
+            'incomes', 
+            'totalIncomes', 
+            'totalIncomeAmount', 
+            'averageIncome', 
+            'monthlyIncome',
+            'paymentMethods', 
+            'incomeCategories', 
+            'clients', 
+            'suppliers', 
+            'currencies'
+        );
     }
 
     /**
@@ -165,6 +184,7 @@ class IncomeRepository
             'incomes.supplier_id',
             'incomes.created_at',
             'clients.name as client_name',
+            'clients.lastname as client_lastname',
             'suppliers.name as supplier_name',
             'income_categories.income_name as income_category_name',
             'currencies.name as currency_name',

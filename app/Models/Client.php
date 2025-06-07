@@ -9,8 +9,8 @@ class Client extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['store_id', 'name', 'lastname', 'type', 'rut', 'ci', 'passport', 'doc_ext',
-    'address', 'city', 'state', 'country', 'phone', 'email', 'website', 'logo', 'doc_type', 'document', 'company_name'];
+    protected $fillable = ['store_id', 'name', 'lastname', 'branch', 'type', 'rut', 'ci', 'passport', 'doc_ext',
+    'address', 'city', 'state', 'country', 'phone', 'email', 'tax_rate_id', 'website', 'logo', 'doc_type', 'document', 'company_name'];
 
 
     /**
@@ -52,6 +52,26 @@ class Client extends Model
     public function currentAccount()
     {
         return $this->hasOne(CurrentAccount::class);
+    }
+
+    /**
+     * Obtiene las listas de precios del cliente.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function priceLists()
+    {
+        return $this->belongsToMany(PriceList::class, 'client_price_lists');
+    }
+
+    /**
+     * Obtiene el impuesto asociado al cliente.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function taxRate()
+    {
+        return $this->belongsTo(TaxRate::class);
     }
 
 }

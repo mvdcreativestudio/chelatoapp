@@ -21,7 +21,7 @@ class StorePosOrderRequest extends FormRequest
             'pos_sales' => 'required|numeric',
             'discount' => 'required|numeric',
             'client_id' => 'nullable|int',
-            'client_type' => 'required|string',
+            'client_type' => 'nullable|string',
             'products' => 'required',
             'subtotal' => 'required|numeric',
             'total' => 'required|numeric',

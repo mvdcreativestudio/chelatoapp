@@ -15,7 +15,6 @@ class CurrentAccountSettings extends Model
         'transaction_type',
         'late_fee',
         'payment_terms',
-        'current_account_initial_credit_id'
     ];
 
     protected $casts = [

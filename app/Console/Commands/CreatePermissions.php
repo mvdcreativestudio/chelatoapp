@@ -50,12 +50,57 @@ class CreatePermissions extends Command
                     'view_all' => true,
                 ],
                 [
+                    'slug' => 'raw-materials-edit',
+                    'module' => 'manufacturing',
+                    'view_all' => false,
+                ],
+                [
+                    'slug' => 'formulas',
+                    'module' => 'manufacturing',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'logistics',
+                    'module' => 'logistics',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'edit_delivery_data',
+                    'module' => 'logistics',
+                    'view_all' => false,
+                ],
+                [
+                    'slug' => 'vehicles',
+                    'module' => 'logistics',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'drivers',
+                    'module' => 'logistics',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'note_deliveries',
+                    'module' => 'logistics',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'batches',
+                    'module' => 'manufacturing',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'packagings',
+                    'module' => 'manufacturing',
+                    'view_all' => false,
+                ],
+                [
                     'slug' => 'suppliers',
                     'module' => 'stock',
                     'view_all' => true,
                 ],
                 [
-                    'slug' => 'supplier-orders',
+                    'slug' => 'purchase-orders',
                     'module' => 'stock',
                     'view_all' => true,
                 ],
@@ -69,26 +114,44 @@ class CreatePermissions extends Command
                     'module' => 'accounting',
                     'submenus' => [
                         'invoices',
-                        'update_all_invoices',
                         'receipts',
                         'entries',
-                        'accounting-settings',
-                        'received-documents',
-                        'expenses',
-                        'current-accounts',
+                        'invoice-settings',
                     ],
-                    'view_all' => false,
+                    'view_all' => true,
                 ],
                 [
                     'slug' => 'clients',
                     'module' => 'crm',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'crm',
+                    'module' => 'crm',
                     'view_all' => false,
+                ],
+                [
+                    'slug' => 'client-sensitive-data',
+                    'module' => 'crm',
+                    'view_all' => false,
+                ],
+                [
+                    'slug' => 'price-lists',
+                    'module' => 'sales',
+                    'submenus' => [
+                        'create-price-lists',
+                        'show-price-lists',
+                        'edit-price-lists',
+                        'delete-price-lists'
+                    ],
+                    'view_all' => true,
                 ],
                 [
                     'slug' => 'ecommerce',
                     'module' => 'ecommerce',
                     'submenus' => [
                         'orders',
+                        'transactions',
                         'products',
                         'settings',
                         'product-flavors',
@@ -104,7 +167,7 @@ class CreatePermissions extends Command
                     'view_all' => false,
                 ],
                 [
-                    'slug' => 'productions',
+                    'slug' => 'bulk-productions',
                     'module' => 'manufacturing',
                     'view_all' => true,
                 ],
@@ -137,13 +200,18 @@ class CreatePermissions extends Command
                     'view_all' => true,
                 ],
                 [
-                    'slug' => 'crm',
-                    'module' => 'crm',
-                    'view_all' => false,
-                ],
-                [
                     'slug' => 'stores',
                     'module' => 'management',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'integrations',
+                    'module' => 'management',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'budgets',
+                    'module' => 'ecommerce',
                     'view_all' => true,
                 ],
                 [
@@ -197,6 +265,15 @@ class CreatePermissions extends Command
                     'view_all' => true,
                     "submenus" => [
                         "delete_expenses",
+                        "expense-categories",
+                    ],
+                ],
+                [
+                    "slug" => "expense-categories",
+                    "module" => "expenses",
+                    "view_all" => true,
+                    "submenus" => [
+                        "delete_expense-categories",
                     ],
                 ],
                 [
@@ -208,8 +285,6 @@ class CreatePermissions extends Command
                         'entry-details',
                         'entry-types',
                         'entry-accounts',
-                        // 'entry-currencies',
-                        // 'entry-settings',
                     ],
                 ],
                 [
@@ -247,16 +322,7 @@ class CreatePermissions extends Command
                     'view_all' => true,
                     'submenus' => [
                         'current-accounts',
-                        'current-accounts-settings',
-                    ],
-                ],
-                [
-                    'slug' => 'current-accounts',
-                    'module' => 'current-accounts',
-                    'view_all' => true,
-                    'submenus' => [
-                        'current-account-payments',
-                        'delete_current-accounts',
+                        'current-account-settings',
                     ],
                 ],
                 [
@@ -268,11 +334,11 @@ class CreatePermissions extends Command
                     ],
                 ],
                 [
-                    'slug' => 'current-accounts-settings',
+                    'slug' => 'current-account-settings',
                     'module' => 'current-accounts',
                     'view_all' => true,
                     'submenus' => [
-                        'delete_current-accounts-settings',
+                        'delete_current-account-settings',
                     ],
                 ],
                 [
@@ -294,8 +360,21 @@ class CreatePermissions extends Command
                     ],
                 ],
                 [
+                    'slug' => 'currencies',
+                    'module' => 'accounting',
+                    'view_all' => true,
+                    'submenus' => [
+                        'delete_currencies',
+                    ],
+                ],
+                [
                     'slug' => 'event-configurations',
                     'module' => 'management',
+                    'view_all' => true,
+                ],
+                [
+                    'slug' => 'leads',
+                    'module' => 'crm',
                     'view_all' => true,
                 ],
             ],

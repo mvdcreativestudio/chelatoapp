@@ -147,7 +147,7 @@
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
             </span>
-            <span class="switch-label">Estado de envío</span>
+            <span class="switch-label">Método de pago</span>
           </label>
         </div>
         <div class="mx-3">
@@ -157,7 +157,7 @@
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
             </span>
-            <span class="switch-label">Materias primas</span>
+            <span class="switch-label">Estado de envío</span>
           </label>
         </div>
         <div class="mx-3">
@@ -167,7 +167,7 @@
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
             </span>
-            <span class="switch-label">Empresa</span>
+            <span class="switch-label">Materias primas</span>
           </label>
         </div>
         <div class="mx-3">
@@ -177,46 +177,54 @@
               <span class="switch-on"><i class="bx bx-check"></i></span>
               <span class="switch-off"><i class="bx bx-x"></i></span>
             </span>
+            <span class="switch-label">Tienda</span>
+          </label>
+        </div>
+        <div class="mx-3">
+          <label class="switch switch-square">
+            <input type="checkbox" class="toggle-column switch-input" data-column="7" checked>
+            <span class="switch-toggle-slider">
+              <span class="switch-on"><i class="bx bx-check"></i></span>
+              <span class="switch-off"><i class="bx bx-x"></i></span>
+            </span>
             <span class="switch-label">Acciones</span>
           </label>
         </div>
-</div>
-  </div>
-  <div class="card-datatable table-responsive">
-    <table class="table datatables-supplier-orders border-top">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Proveedor</th>
-          <th>Fecha de Orden</th>
-          <th>Pago</th>
-          <th>Estado de Envío</th>
-          <th>Materias Primas</th>
-          @if(auth()->user()->can('view_all_raw-materials'))
-            <th>Empresa</th>
-          @endif
-          <th>Acciones</th>
-        </tr>
-      </thead>
-    </table>
-  </div>
-</div>
-
-<div class="modal fade" id="modalRawMaterials" tabindex="-1" aria-labelledby="modalRawMaterialsLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalRawMaterialsLabel">Materias Primas</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
       </div>
-      <div class="modal-body" id="modalRawMaterialsBody">
-
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      <div class="card-datatable table-responsive">
+        <table class="table datatables-supplier-orders border-top">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Proveedor</th>
+              <th>Fecha de Orden</th>
+              <th>Pago</th>
+              <th>Estado de Envío</th>
+              <th>Materias Primas</th>
+              @if(auth()->user()->can('view_all_raw-materials'))
+                <th>Tienda</th>
+              @endif
+              <th>Acciones</th>
+            </tr>
+          </thead>
+        </table>
       </div>
     </div>
-  </div>
-</div>
 
+    <div class="modal fade" id="modalRawMaterials" tabindex="-1" aria-labelledby="modalRawMaterialsLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalRawMaterialsLabel">Materias Primas</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="modalRawMaterialsBody">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
 @endsection

@@ -128,11 +128,7 @@ class CheckoutController extends Controller
         try {
             // Obtener el subtotal del carrito de compras desde la sesión
             $subtotal = session('subtotal', 0);
-            $couponData = $this->checkoutRepository->applyCouponToSession(
-              $request->coupon_code,
-              $subtotal,
-              $request->doc_recep // ✅ mandamos el documento
-            );
+            $couponData = $this->checkoutRepository->applyCouponToSession($request->coupon_code, $subtotal);
             return back()->with('success', 'El cupón "' . $couponData['code'] . '" se ha aplicado correctamente.');
         } catch (\Exception $e) {
             Log::error('Error applying coupon', ['coupon_code' => $request->coupon_code, 'error' => $e->getMessage()]);

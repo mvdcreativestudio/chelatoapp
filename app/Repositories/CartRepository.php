@@ -13,7 +13,6 @@ use App\Http\Requests\SelectStoreRequest;
 class CartRepository
 {
 
-
   /**
    * Seleccionar una tienda y guardar la información en la sesión.
    *
@@ -25,7 +24,7 @@ class CartRepository
   //   $request->session()->forget(['store', 'cart', 'subtotal']);
 
 
-
+  
     /**
      * Seleccionar una tienda y guardar la información en la sesión.
      *
@@ -51,7 +50,6 @@ class CartRepository
         $request->session()->put('store', [
             'id' => $store->id,
             'name' => $store->name,
-            'description' => $store->description,
             'address' => $store->address,
             'slug' => $store->slug,
             // Puedes agregar cualquier otro dato necesario de la tienda aquí
@@ -82,6 +80,7 @@ class CartRepository
 
     $cartItemKey = $this->generateCartItemKey($productId, $flavorIds);
     $quantity = $request->input('quantity', 1); // Obtén la cantidad del request, por defecto 1
+
 
     $this->updateCartItem($cart, $cartItemKey, $product, $flavors, $quantity);
     session(['cart' => $cart]);
@@ -130,39 +129,44 @@ class CartRepository
   }
 
   /**
-  * Actualizar el artículo en el carrito.
-  *
-  * @param array &$cart
-  * @param string $cartItemKey
-  * @param Product $product
-  * @param array $flavors
-  * @param int $quantity
-  */
+   * Actualizar el artículo en el carrito.
+   *
+   * @param array &$cart
+   * @param string $cartItemKey
+   * @param Product $product
+   * @param array $flavors
+   * @param int $quantity
+   */
   private function updateCartItem(array &$cart, string $cartItemKey, Product $product, array $flavors, int $quantity): void
   {
-    if (isset($cart[$cartItemKey])) {
-        $cart[$cartItemKey]['quantity'] += $quantity;
-        foreach ($flavors as $id => $details) {
-            if (isset($cart[$cartItemKey]['flavors'][$id])) {
-                $cart[$cartItemKey]['flavors'][$id]['quantity'] += $details['quantity'];
-            } else {
-                $cart[$cartItemKey]['flavors'][$id] = $details;
-            }
-        }
-    } else {
-        $cart[$cartItemKey] = [
-            "id" => $product->id,
-            "name" => $product->name,
-            "sku" => $product->sku,
-            "description" => $product->description,
-            "type" => $product->type,
-            "quantity" => $quantity,
-            "old_price" => $product->old_price ?? 0,
-            "price" => $product->price ?? $product->old_price ?? 0,
-            "image" => $product->image,
-            "flavors" => $flavors
-        ];
-    }
+      $price = $product->price ?? 0;
+      if ($price == 0) {
+          $price = $product->old_price ?? 0;
+      }
+
+      if (isset($cart[$cartItemKey])) {
+          $cart[$cartItemKey]['quantity'] += $quantity;
+          foreach ($flavors as $id => $details) {
+              if (isset($cart[$cartItemKey]['flavors'][$id])) {
+                  $cart[$cartItemKey]['flavors'][$id]['quantity'] += $details['quantity'];
+              } else {
+                  $cart[$cartItemKey]['flavors'][$id] = $details;
+              }
+          }
+      } else {
+          $cart[$cartItemKey] = [
+              "id" => $product->id,
+              "name" => $product->name,
+              "sku" => $product->sku,
+              "description" => $product->description,
+              "type" => $product->type,
+              "quantity" => $quantity,
+              "old_price" => $product->old_price ?? 0,
+              "price" => $price, // Usando el price calculado
+              "image" => $product->image,
+              "flavors" => $flavors
+          ];
+      }
   }
 
   /**

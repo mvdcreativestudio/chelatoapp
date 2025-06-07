@@ -28,39 +28,12 @@ class UpdateStoreRequest extends FormRequest
 
         $rules = [
             'name' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string|max:255',
             'address' => 'sometimes|string|max:255',
-            'email' => ['sometimes', 'email', Rule::unique('stores')->ignore($store->id)],
-            'rut' => ['sometimes', 'string', Rule::unique('stores')->ignore($store->id)],
-            'ecommerce' => 'sometimes|boolean',
+            'email' => ['sometimes', 'email'],
+            'rut' => ['sometimes', 'string'],
+            'tax_rate_id' => ['sometimes', 'exists:tax_rates,id'],
             'status' => 'sometimes|boolean',
-            'accepts_mercadopago' => 'required|boolean',
-            'invoices_enabled' => 'boolean',
-            'accepts_peya_envios' => 'sometimes|boolean',
         ];
-
-        if ($this->boolean('invoices_enabled')) {
-            $rules += [
-                'pymo_user' => 'required|string|max:255',
-                'pymo_password' => 'required|string|max:255',
-                'automatic_billing' => 'boolean',
-            ];
-        }
-
-
-        if ($this->boolean('accepts_peya_envios')) {
-            $rules += [
-                'peya_envios_key' => 'required|string|max:255',
-            ];
-        }
-
-        if ($this->boolean('accepts_mercadopago')) {
-            $rules += [
-                'mercadoPagoPublicKey' => 'required|string|max:255',
-                'mercadoPagoAccessToken' => 'required|string|max:255',
-            ];
-        }
-
         return $rules;
     }
 }

@@ -33,6 +33,7 @@ $(document).ready(function() {
       is_paid: $('#is_paid').is(':checked'),
       amount_paid: $('#amount_paid').val(),
       payment_method_id: $('#payment_method_id').val(),
+      concept: $('#concept').val(),
     };
     $.ajax({
       url: route,

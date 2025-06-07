@@ -16,6 +16,7 @@ use App\Models\Supplier;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Auth;
 
 class CurrentAccountRepository
 {
@@ -255,6 +256,8 @@ class CurrentAccountRepository
             DB::raw('(SELECT MAX(initial_credits.due_date) FROM current_account_initial_credits AS initial_credits WHERE initial_credits.current_account_id = current_accounts.id AND initial_credits.deleted_at IS NULL) as due_date'),
             DB::raw('(SELECT SUM(payments.payment_amount) FROM current_account_payments AS payments WHERE payments.current_account_id = current_accounts.id AND payments.deleted_at IS NULL) as total_payment_amount'),
             'clients.name as client_name',
+            'clients.lastname as client_lastname',
+            'clients.company_name as company_name',
             'suppliers.name as supplier_name',
             'currencies.code as currency_code',
             'currencies.symbol as symbol',
@@ -262,7 +265,7 @@ class CurrentAccountRepository
             ->leftJoin('clients', 'current_accounts.client_id', '=', 'clients.id')
             ->leftJoin('suppliers', 'current_accounts.supplier_id', '=', 'suppliers.id')
             ->leftJoin('currencies', 'current_accounts.currency_id', '=', 'currencies.id')
-            ->orderBy('current_accounts.created_at', 'desc')
+            ->orderBy('current_accounts.id', 'desc')
             ->whereNull('current_accounts.deleted_at');
 
         // Filtrar por rango de fechas
@@ -319,12 +322,20 @@ class CurrentAccountRepository
 
     public function getClients(): Collection
     {
-        return Client::all();
+        if(Auth::user()->can('view_all_clients')) {
+            return Client::all();
+        } else {
+            return Client::where('store_id', Auth::user()->store_id)->get();
+        }
     }
 
-    public function getSuppliers()
+    public function getSuppliers(): Collection
     {
-        return Supplier::all();
+        if(Auth::user()->can('view_all_clients')) {
+            return Supplier::all();
+        } else {
+            return Supplier::where('store_id', Auth::user()->store_id)->get();
+        }
     }
 
     public function getCurrentAccountSettings()

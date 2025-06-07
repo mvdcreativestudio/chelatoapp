@@ -39,7 +39,6 @@ class EventStoreConfigurationController extends Controller
     public function show(int $storeId): View
     {
         $eventConfigurations = $this->eventStoreConfigurationRepository->getConfigurationsByStore($storeId);
-        // dd
         return view('stores.event-notifications.index', $eventConfigurations);
     }
 

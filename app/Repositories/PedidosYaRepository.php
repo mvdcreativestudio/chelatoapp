@@ -12,26 +12,15 @@ class PedidosYaRepository
   /**
    * Obtiene la clave de la API de PedidosYa para una tienda.
    *
-   * @param  int  $store_id
+   * @param  int  $storeId
    * @return string|null
    */
-  private function getApiKeyForStore(int $store_id): ?string
+  private function getApiKeyForStore(int $storeId): ?string
   {
-      if (!$store_id) {
-          Log::error('El store_id proporcionado es inválido o está vacío.');
-          return null;
-      }
+      $store = Store::find($storeId);
 
-      $store = Store::find($store_id);
-
-      if (!$store) {
-          Log::error("No se encontró una tienda asociada al store_id {$store_id}.");
-          return null;
-      }
-
-      return $store->peya_envios_key;
+      return $store ? $store->peya_envios_key : null;
   }
-
 
 
   /**
@@ -42,7 +31,6 @@ class PedidosYaRepository
   */
   public function estimateOrderRequest(Request $request): array {
     $url = 'https://courier-api.pedidosya.com/v3/shippings/estimates';
-    Log::info('Request recibida en estimateOrderRequest', $request->all());
     $apiKey = $this->getApiKeyForStore($request->store_id);
 
     Log::info('Estimating order for store ' . $request->store_id);
@@ -65,77 +53,53 @@ class PedidosYaRepository
 }
 
 
-/**
- * Confirma una estimación de pedido y lo envía a la API de PedidosYa.
- *
- * @param  Request  $request
- * @return array
- */
-public function confirmOrderRequest(Request $request): array
-{
-    Log::info('Contenido de Request en confirmOrderRequest:', $request->all());
+  /**
+   * Confirma una estimación de pedido y lo envía a la API de PedidosYa.
+   *
+   * @param  Request  $request
+   * @return array
+   */
+  public function confirmOrderRequest(Request $request): array
+    {
+        $url = 'https://courier-api.pedidosya.com/v3/shippings/estimates/' . $request->estimate_id . '/confirm';
+        $apiKey = $this->getApiKeyForStore($request->store_id);
 
-    $url = 'https://courier-api.pedidosya.com/v3/shippings/estimates/' . $request->estimate_id . '/confirm';
+        if (!$apiKey) {
+            return ['error' => 'API key not found for the store'];
+        }
 
-    // Convertir store_id a entero
-    $storeId = (int) $request->store_id;
-    Log::info('Confirming order for store ' . $storeId);
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type' => 'application/json',
+                'User-Agent' => 'PedidosYa MVD Studio Client'
+            ])->post($url);
 
-    $apiKey = $this->getApiKeyForStore($storeId);
-    Log::info('API key: ' . $apiKey);
-
-    if (!$apiKey) {
-        return ['error' => 'API key not found for the store'];
-    }
-
-    // Construir el cuerpo del request
-    $body = [
-        'deliveryOfferId' => $request->delivery_offer_id,
-    ];
-
-    // Encabezados de la solicitud
-    $headers = [
-        'Authorization' => $apiKey,
-        'Content-Type' => 'application/json',
-        'User-Agent' => 'PedidosYa MVD Studio Client'
-    ];
-
-    // Log para capturar los headers
-    Log::info('Headers de la solicitud a PedidosYa:', $headers);
-
-    try {
-        $response = Http::withHeaders($headers)
-            ->post($url, $body); // Enviar el cuerpo con delivery_offer_id
-
-        if ($response->successful()) {
-            Log::info('Respuesta exitosa de PedidosYa:', $response->json());
-            return $response->json();
-        } else {
-            Log::error('PedidosYa API error', [
+            if ($response->successful()) {
+                return $response->json();
+            } else {
+                Log::error('PedidosYa API error', [
+                    'url' => $url,
+                    'response' => $response->body(),
+                    'status' => $response->status()
+                ]);
+                return [
+                    'error' => 'API request failed',
+                    'status' => $response->status(),
+                    'body' => $response->body()
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('PedidosYa API exception', [
                 'url' => $url,
-                'response' => $response->body(),
-                'status' => $response->status()
+                'message' => $e->getMessage()
             ]);
             return [
-                'error' => 'API request failed',
-                'status' => $response->status(),
-                'body' => $response->body()
+                'error' => 'Exception occurred',
+                'message' => $e->getMessage()
             ];
         }
-    } catch (\Exception $e) {
-        Log::error('PedidosYa API exception', [
-            'url' => $url,
-            'message' => $e->getMessage()
-        ]);
-        return [
-            'error' => 'Exception occurred',
-            'message' => $e->getMessage()
-        ];
-    }
-}
-
-
-
+  }
 
 
 }

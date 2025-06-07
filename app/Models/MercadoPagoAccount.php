@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MercadoPago\MercadoPagoApplicationTypeEnum;
 use Illuminate\Database\Eloquent\Model;
 
 class MercadoPagoAccount extends Model
@@ -13,7 +14,24 @@ class MercadoPagoAccount extends Model
         'public_key',
         'access_token',
         'secret_key',
+        'type',
+        'user_id_mp'
     ];
+
+    protected $casts = [
+        'type' => MercadoPagoApplicationTypeEnum::class,
+    ];
+
+    // get type
+    public function getTypeDescription(): string
+    {
+        return $this->type->getDescription();
+    }
+
+    public function mercadopagoAccountStore()
+    {
+        return $this->hasMany(MercadoPagoAccountStore::class);
+    }
 
     public function store()
     {

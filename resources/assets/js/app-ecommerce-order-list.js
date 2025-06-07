@@ -217,20 +217,23 @@ $(function () {
           orderable: false,
           render: function (data, type, full, meta) {
             return (
-              '<div class="d-flex justify-content-sm-center align-items-sm-center">' +
-              '<button class="btn btn-sm btn-icon dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="bx bx-dots-vertical-rounded"></i></button>' +
-              '<div class="dropdown-menu dropdown-menu-end m-0">' +
-              '<a href=" ' +
+              '<div class="d-flex justify-content-between align-items-center gap-2">' +
+              // Precio
+              '<span class="fw-bold order-total">' +
+              currencySymbol + full['price'] + // Asegúrate de usar el campo correcto de JSON
+              '</span>' +
+              // Íconos
+              '<div class="d-flex gap-1">' +
+              '<a href="' +
               baseUrl +
-              'app/ecommerce/order/details" class="dropdown-item">View</a>' +
-              '<a href="javascript:0;" class="dropdown-item delete-record">' +
-              'Delete' +
-              '</a>' +
+              'app/ecommerce/order/details" class="btn btn-sm btn-icon text-primary"><i class="bx bx-show"></i></a>' +
+              '<a href="javascript:0;" class="btn btn-sm btn-icon text-danger delete-record"><i class="bx bx-trash"></i></a>' +
               '</div>' +
               '</div>'
             );
           }
         }
+
       ],
       order: [3, 'asc'], //set any columns order asc/desc
       dom:

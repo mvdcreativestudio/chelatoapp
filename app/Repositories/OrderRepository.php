@@ -4,15 +4,25 @@ namespace App\Repositories;
 
 use App\Enums\CurrentAccounts\StatusPaymentEnum;
 use App\Enums\CurrentAccounts\TransactionTypeEnum;
+use App\Enums\MercadoPago\MercadoPagoApplicationTypeEnum;
 use App\Helpers\Helpers;
+use App\Models\CashRegisterLog;
+use App\Models\CFE;
 use App\Models\Client;
 use App\Models\CurrentAccount;
 use App\Models\CurrentAccountInitialCredit;
+use App\Models\MercadoPagoAccount;
+use App\Models\MercadoPagoAccountOrder;
 use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\OrderStatusChange;
 use App\Models\Product;
+use App\Models\CurrencyRate;
+use App\Models\CurrencyRateHistory;
+use App\Models\CurrentAccountSettings;
+use App\Models\Currency;
 use App\Repositories\AccountingRepository;
+use App\Services\MercadoPagoService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,14 +39,24 @@ class OrderRepository
      */
     protected $accountingRepository;
 
+
+    /**
+     * Inyecta el servicio de Mercado Pago
+     *
+     * @param MercadoPagoService $mercadoPagoService
+     */
+
+    protected $mercadoPagoService;
+
     /**
      * Inyecta el repositorio de contabilidad.
      *
      * @param AccountingRepository $accountingRepository
      */
-    public function __construct(AccountingRepository $accountingRepository)
+    public function __construct(AccountingRepository $accountingRepository, MercadoPagoService $mercadoPagoService)
     {
         $this->accountingRepository = $accountingRepository;
+        $this->mercadoPagoService = $mercadoPagoService;
     }
 
     /**
@@ -49,62 +69,151 @@ class OrderRepository
         // Verificar si el usuario tiene permiso para ver todos los pedidos de la tienda
         if (Auth::user()->can('view_all_ecommerce')) {
             // Si tiene el permiso, obtenemos todos los pedidos
-            $orders = Order::all();
+            $ordersQuery = Order::query();
         } else {
             // Si no tiene el permiso, solo obtenemos los pedidos de su store_id
-            $orders = Order::where('store_id', Auth::user()->store_id)->get();
+            $ordersQuery = Order::where('store_id', Auth::user()->store_id);
         }
+
+        // Obtener los pedidos
+        $orders = $ordersQuery->get();
 
         // Calcular las estadísticas basadas en los pedidos filtrados
         $totalOrders = $orders->count();
         $totalIncome = $orders->where('payment_status', 'paid')->sum('total');
+        $paidOrders = $orders->where('payment_status', 'paid')->count();
+        $unpaidOrders = $orders->where('payment_status', 'pending')->count();
+        $failedOrders = $orders->where('payment_status', 'failed')->count();
         $pendingOrders = $orders->where('shipping_status', 'pending')->count();
         $shippedOrders = $orders->where('shipping_status', 'shipped')->count();
         $completedOrders = $orders->where('shipping_status', 'completed')->count();
 
-        return compact('orders', 'totalOrders', 'totalIncome', 'pendingOrders', 'shippedOrders', 'completedOrders');
+        // Calcular el mejor cliente (mayor suma de ventas pagas)
+        $bestClient = $ordersQuery->where('payment_status', 'paid')
+            ->whereNotNull('client_id')
+            ->with('client')
+            ->selectRaw('client_id, COUNT(*) as purchase_count, SUM(total) as total_spent')
+            ->groupBy('client_id')
+            ->orderBy('total_spent', 'desc')
+            ->first();
+
+        return compact(
+            'orders',
+            'totalOrders',
+            'totalIncome',
+            'paidOrders',
+            'unpaidOrders',
+            'failedOrders',
+            'pendingOrders',
+            'shippedOrders',
+            'completedOrders',
+            'bestClient'
+        );
     }
 
-    /**
-     * Almacena un nuevo pedido en la base de datos.
-     *
-     * @param  StoreOrderRequest  $request
-     * @return Order
-     */
-    public function store($request)
+
+    public function store($request, bool $deductStockOnCreate = true)
     {
         Log::info('Iniciando el proceso de creación de orden', ['request' => $request->all()]);
 
-        $clientData = $this->extractClientData($request->validated());
+        $clientData = $request->client_id ? $this->extractClientData($request->validated()) : [];
+
         $orderData = $this->prepareOrderData($request->payment_method, $request);
 
         DB::beginTransaction();
 
         try {
-            // Depurar la información del cliente y los datos de la orden antes de guardar
-            Log::info('Datos del cliente extraídos', ['clientData' => $clientData]);
-            Log::info('Datos de la orden preparados', ['orderData' => $orderData]);
+            $client = null;
+            if ($request->client_id) {
+                $client = Client::find($request->client_id);
+                if (!$client) {
+                    Log::warning('Client ID proporcionado no encontrado en la base de datos', ['client_id' => $request->client_id]);
+                }
+            } elseif (!empty($clientData)) {
+                $client = Client::firstOrCreate(['email' => $clientData['email']], $clientData);
+                Log::info('Cliente creado o encontrado', ['client_id' => $client->id]);
+            }
 
-            $client = Client::firstOrCreate(['email' => $clientData['email']], $clientData);
-            Log::info('Cliente creado o encontrado', ['client_id' => $client->id]);
+            // ✅ Obtener los productos del request
+            $products = json_decode($request['products'], true);
+
+            // ✅ Asignar tax_rate_id a cada producto
+            foreach ($products as &$product) {
+                $productModel = Product::find($product['id']);
+                $product['tax_rate_id'] = $productModel ? $productModel->tax_rate_id : null;
+            }
+
+            // ✅ Si el cliente está exento de IVA, forzar tax_rate a 0
+            if ($client && $client->tax_rate_id == 1) {
+                foreach ($products as &$product) {
+                    $product['tax_rate'] = 0;
+                }
+            }
+
+            // ✅ Asegurar que cada producto tenga tax_rate_id asignado
+            foreach ($products as &$product) {
+              $productModel = Product::find($product['id']);
+              $product['tax_rate_id'] = $productModel ? $productModel->tax_rate_id : null; // Obtener el tax_rate_id del modelo si existe
+            }
+
+            // ✅ Recalcular los precios antes de asignarlos a la orden
+            foreach ($products as &$item) {
+                $taxAmount = ($item['base_price'] * $item['tax_rate']) / 100;
+                $item['price'] = $item['base_price'] + $taxAmount;
+            }
+
+            // ✅ Ahora pasamos los productos con los precios corregidos a `prepareOrderData()`
+            $orderData = $this->prepareOrderData($request->payment_method, $request, $products);
+            Log::info('Datos preparados para la orden', ['orderData' => $orderData]);
 
             $order = new Order($orderData);
-            $order->client()->associate($client);
-            Log::info('Orden creada, asociada al cliente', ['order' => $order]);
+            if ($client) {
+                $order->client()->associate($client);
+            }
+            Log::info('Orden creada, asociada al cliente si corresponde', ['order' => $order]);
 
             $order->save();
             Log::info('Orden guardada en la base de datos', ['order_id' => $order->id]);
 
-            $products = json_decode($request['products'], true);
-            $order->products = $products;
+            // 🔴 ❌ Se eliminó esta línea porque sobrescribía `products`
+            // $products = json_decode($request['products'], true);
+
+            // Validar y actualizar stock según el estado de envío
+            if ($orderData['shipping_status'] === 'delivered' || $orderData['shipping_status'] === 'shipped') {
+                $stockValidation = $this->validateAndUpdateStock($products, true);
+                if (!$stockValidation['success']) {
+                    throw new Exception($stockValidation['error']);
+                }
+            } elseif ($orderData['shipping_status'] === 'pending') {
+                $stockValidation = $this->validateAndUpdateStock($products, false);
+                if (!$stockValidation['success']) {
+                    Log::warning("Stock insuficiente para el estado pending: {$stockValidation['error']}");
+                }
+            } else {
+                throw new Exception("Estado de envío no válido: {$orderData['shipping_status']}");
+            }
+
+            // ✅ Guardar los productos con el tax_rate_id en la orden
+            $order->products = $products; // Laravel manejará la conversión automática a JSON
             Log::info('Productos asociados a la orden', ['products' => $products]);
 
             $order->save();
             Log::info('Orden actualizada con los productos');
 
-            // if payment_method is internalCredit
-            if ($request->payment_method === 'internalCredit') {
+            // ✅ Métodos de pago y lógica extra
+            if ($request->payment_method === 'internalCredit' && $client) {
                 $this->createInternalCredit($order);
+            }
+
+            if ($request->payment_method === 'qr_attended') {
+                $this->createMercadoPagoQrAttend($order);
+                $order->payment_status = 'pending';
+                $order->save();
+            }
+
+            if ($request->payment_method === 'qr_dynamic') {
+                $order->payment_status = 'pending';
+                $order->save();
             }
 
             DB::commit();
@@ -115,8 +224,7 @@ class OrderRepository
             $store = $order->store;
             Log::info('Información de la tienda recuperada', ['store' => $store]);
 
-            // Verificar si se debe emitir una factura electrónica (CFE)
-            if ($store->automatic_billing) {
+            if ($store->automatic_billing && $client) {
                 $this->accountingRepository->emitCFE($order);
                 Log::info('Factura electrónica emitida', ['order_id' => $order->id]);
                 $order->update(['is_billed' => true]);
@@ -124,6 +232,7 @@ class OrderRepository
                 Log::info('No se emite factura electrónica para esta orden');
                 $order->update(['is_billed' => false]);
             }
+
             return $order;
         } catch (\Exception $e) {
             Log::error('Error durante la creación de la orden', ['exception' => $e->getMessage()]);
@@ -131,6 +240,54 @@ class OrderRepository
             throw $e;
         }
     }
+
+
+    /**
+     * Valida y actualiza el stock de los productos vendidos.
+     *
+     * @param array $products
+     * @param bool $deductStock
+     * @return array
+     */
+    public function validateAndUpdateStock(array $products, bool $deductStock = true): array
+    {
+        foreach ($products as $productData) {
+            // Buscar el producto en la base de datos
+            $product = Product::find($productData['id']);
+
+            // Verificar que el producto exista
+            if (!$product) {
+                return [
+                    'success' => false,
+                    'error' => "Producto no encontrado con ID: {$productData['id']}"
+                ];
+            }
+
+            // Si el stock es null, permite la operación sin validación
+            if ($product->stock === null) {
+                continue;
+            }
+
+            // Validar si el stock es suficiente
+            if ($product->stock < $productData['quantity']) {
+                return [
+                    'success' => false,
+                    'error' => "Stock insuficiente para el producto: {$product->name}. Stock disponible: {$product->stock}, cantidad solicitada: {$productData['quantity']}"
+                ];
+            }
+
+            // Descontar stock si es necesario
+            if ($deductStock) {
+                $product->stock -= $productData['quantity'];
+                $product->save();
+            }
+        }
+
+        return ['success' => true];
+    }
+
+
+
 
     /**
      * Prepar los datos del cliente para ser almacenados en la base de datos.
@@ -142,20 +299,21 @@ class OrderRepository
     {
         Log::info('Extrayendo datos del cliente', ['validatedData' => $validatedData]);
 
-        $clientData = [
-            'name' => $validatedData['name'],
-            'lastname' => $validatedData['lastname'],
-            'type' => 'individual',
-            'state' => 'Montevideo',
-            'country' => 'Uruguay',
-            'address' => $validatedData['address'],
-            'phone' => $validatedData['phone'],
-            'email' => $validatedData['email'],
-        ];
+        if (isset($validatedData['name'], $validatedData['lastname'], $validatedData['email'])) {
+            return [
+                'name' => $validatedData['name'],
+                'lastname' => $validatedData['lastname'],
+                'type' => $validatedData['type'] ?? 'individual',
+                'state' => 'Montevideo',
+                'country' => 'Uruguay',
+                'address' => $validatedData['address'] ?? '-',
+                'phone' => $validatedData['phone'] ?? '123456789',
+                'email' => $validatedData['email'],
+            ];
+        }
 
-        Log::info('Datos del cliente procesados', ['clientData' => $clientData]);
-
-        return $clientData;
+        Log::info('No se encontró información completa para el cliente; omitiendo los datos de cliente');
+        return [];
     }
 
     /**
@@ -167,25 +325,103 @@ class OrderRepository
      */
     private function prepareOrderData(string $paymentMethod, $request): array
     {
-        $subtotal = array_reduce(session('cart', []), function ($carry, $item) {
-            return $carry + ($item['price'] ?? $item['old_price']) * $item['quantity'];
-        }, 0);
+        Log::info('🚀 Iniciando prepareOrderData');
 
-        Log::info('Request de prepareOrderData', ['request' => $request->all()]);
+        $products = json_decode($request['products'], true);
+        Log::info('📦 Productos recibidos', ['products' => $products]);
+
+        $subtotal = 0;
+        $totalTax = 0;
+        $dollarRate = $this->getDollarRate();
+        Log::info('💰 Cotización del dólar obtenida', ['dollarRate' => $dollarRate]);
+
+        // 🔥 Determinar la moneda de la orden
+        $orderCurrency = $request->currency;
+        Log::info('💵 Moneda de la orden', ['orderCurrency' => $orderCurrency]);
+
+        foreach ($products as $item) {
+            Log::info('🔍 Procesando producto', ['item' => $item]);
+
+            // 🔥 Determinar la moneda del producto
+            $productCurrency = $item['currency'] ?? 'Peso';
+            Log::info('💱 Moneda del producto', ['productCurrency' => $productCurrency]);
+
+            // 🔥 Obtener el precio correcto (sin IVA)
+            if ($orderCurrency === 'Peso') {
+                $basePrice = ($productCurrency === 'Dólar') ? ($item['base_price'] * $dollarRate) : $item['base_price'];
+            } else {
+                $basePrice = ($productCurrency === 'Peso') ? ($item['base_price'] / $dollarRate) : $item['base_price'];
+            }
+
+            $quantity = $item['quantity'] ?? 1;
+            Log::info('🛒 Cantidad del producto', ['quantity' => $quantity, 'basePrice' => $basePrice]);
+
+            // 🔥 Calcular el impuesto del producto
+            $taxRate = isset($item['tax_rate']) ? floatval($item['tax_rate']) : 0;
+            $taxAmount = (($basePrice * $taxRate) / 100) * $quantity;
+
+            Log::info('📊 Impuestos calculados', [
+                'basePrice' => $basePrice,
+                'taxRate' => $taxRate,
+                'taxAmount' => $taxAmount,
+            ]);
+
+            // ✅ CORRECCIÓN: Ahora el subtotal suma el precio SIN IVA
+            $subtotal += ($basePrice * $quantity);
+            $totalTax += $taxAmount;
+        }
+
+        Log::info('📈 Subtotal y Tax antes del descuento', ['subtotal' => $subtotal, 'totalTax' => $totalTax]);
+
+        // 🔥 Validar store_id
+        $storeId = is_array($request->store_id)
+            ? $request->store_id['id']
+            : ($request->store_id instanceof Store ? $request->store_id->id : $request->store_id);
+
+        Log::info('🏬 Store ID validado', ['store_id' => $storeId]);
+
+        // 🔥 Obtener descuento y asegurar que no sea mayor que el subtotal
+        $discount = $request->discount ?? 0;
+        Log::info('🎟 Descuento antes de validación', ['discount' => $discount]);
+
+        $subtotalConDescuento = max($subtotal - $discount, 0);
+        Log::info('📉 Subtotal con descuento aplicado', ['subtotalConDescuento' => $subtotalConDescuento]);
+
+        // 🔥 Calcular el porcentaje de descuento aplicado
+        $discountPercentage = ($subtotal > 0) ? ($subtotalConDescuento / $subtotal) : 1;
+        Log::info('📊 Porcentaje de descuento aplicado', ['discountPercentage' => $discountPercentage]);
+
+        // 🔥 Ajustar TAX después del descuento
+        $taxConDescuento = $totalTax * $discountPercentage;
+        Log::info('💰 Impuesto ajustado después del descuento', ['taxConDescuento' => $taxConDescuento]);
+
+        // 🔥 Calcular el total final
+        $shippingCost = session('costoEnvio', 0);
+        $total = round($subtotalConDescuento + $taxConDescuento + $shippingCost, 2);
+
+        Log::info('🛒 Total de la orden', [
+            'subtotal' => $subtotal,
+            'tax' => $taxConDescuento,
+            'shipping' => $shippingCost,
+            'discount' => $discount,
+            'total' => $total,
+        ]);
 
         return [
             'date' => now(),
             'time' => now()->format('H:i:s'),
             'origin' => 'physical',
-            'store_id' => $request->store_id,
-            'subtotal' => $subtotal,
-            'tax' => 0,
-            'shipping' => session('costoEnvio', 0),
-            'discount' => $request->discount,
+            'store_id' => $storeId,
+            'construction_site' => $request->construction_site,
+            'subtotal' => round($subtotal, 2), // ✅ Ahora está sin impuestos
+            'tax' => round($taxConDescuento, 2),
+            'shipping' => $shippingCost,
+            'discount' => round($discount, 2),
             'coupon_id' => $request->coupon_id,
             'coupon_amount' => $request->coupon_amount,
-            'total' => $subtotal + session('costoEnvio', 0) - $request->discount,
-            'payment_status' => 'paid',
+            'total' => $total,
+            'currency' => $orderCurrency,
+            'payment_status' => $request->payment_status ?? 'pending',
             'shipping_status' => $request->shipping_status ?? 'delivered',
             'payment_method' => $paymentMethod,
             'shipping_method' => 'peya',
@@ -195,6 +431,12 @@ class OrderRepository
         ];
     }
 
+
+
+
+
+
+
     /**
      * Carga las relaciones de un pedido.
      *
@@ -203,14 +445,30 @@ class OrderRepository
      */
     public function loadOrderRelations(Order $order)
     {
-        // Cargar las relaciones necesarias
+        // Cargar las relaciones necesarias, incluyendo 'invoices'
         return $order->load([
             'client',
             'statusChanges.user',
             'store',
             'coupon',
             'cashRegisterLog.cashRegister.user',
+            'invoices',
+            'transaction'
         ]);
+    }
+
+    /**
+     * Obtiene la factura específica asociada a un pedido.
+     *
+     * @param int $orderId
+     * @return CFE|null
+     */
+    public function getSpecificInvoiceForOrder($orderId)
+    {
+        // Buscar la factura asociada al order_id con type 101 o 111
+        return CFE::where('order_id', $orderId)
+            ->whereIn('type', [101, 111])
+            ->first(); // Solo obtendrá la primera que coincida con el criterio
     }
 
     /**
@@ -225,8 +483,14 @@ class OrderRepository
         DB::beginTransaction();
         try {
             $order = Order::findOrFail($orderId);
+
+            // Verificar si hay CFEs asociados
+            if ($order->invoices()->exists()) {
+                throw new Exception("La orden no se puede eliminar porque tiene CFEs asociados.");
+            }
+
+            // Procede con la eliminación si no hay CFEs
             if ($order->payment_status === 'paid' && $order->shipping_status === 'delivered') {
-                // Reintegrar el stock de los productos
                 $products = json_decode($order->products, true);
                 foreach ($products as $product) {
                     $productModel = Product::find($product['id']);
@@ -236,6 +500,7 @@ class OrderRepository
                     }
                 }
             }
+
             // Eliminar la orden
             $order->delete();
 
@@ -243,14 +508,22 @@ class OrderRepository
             Log::info("Orden {$orderId} eliminada y stock reintegrado correctamente.");
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al eliminar la orden {$orderId}: " . $e->getMessage());
-            throw $e;
+
+            // Log detallado del error
+            Log::error("Error al eliminar la orden {$orderId}: " . $e->getMessage(), [
+                'order_id' => $orderId,
+                'trace' => $e->getTraceAsString(), // Añadir la traza del error para más detalles
+            ]);
+
+            // Lanza la excepción con un mensaje personalizado
+            throw new Exception("No se pudo eliminar la orden debido a un error. Detalles: " . $e->getMessage());
         }
     }
 
     /**
      * Obtiene los pedidos para la DataTable.
      *
+     * @param Request $request
      * @return mixed
      */
     public function getOrdersForDataTable(Request $request): mixed
@@ -261,6 +534,8 @@ class OrderRepository
             'orders.date',
             'orders.time',
             'orders.client_id',
+            DB::raw("COALESCE(orders.construction_site, 'No especificada') as construction_site"),
+
             'orders.store_id',
             'orders.subtotal',
             'orders.tax',
@@ -270,22 +545,75 @@ class OrderRepository
             'orders.coupon_amount',
             'orders.discount',
             'orders.total',
+            'orders.currency',
             'orders.products',
             'orders.payment_status',
             'orders.shipping_status',
             'orders.payment_method',
             'orders.shipping_method',
             'orders.shipping_tracking',
+            DB::raw("
+                    CASE
+                        WHEN clients.type = 'company' THEN COALESCE(clients.company_name, 'Empresa sin nombre')
+                        ELSE COALESCE(CONCAT(clients.name, ' ', clients.lastname), 'Consumidor Final')
+                    END as client_name
+                "),
             'clients.email as client_email',
             'stores.name as store_name',
-            DB::raw("CONCAT(clients.name, ' ', clients.lastname) as client_name"),
         ])
-        ->join('clients', 'orders.client_id', '=', 'clients.id')
-        ->join('stores', 'orders.store_id', '=', 'stores.id');
+            ->leftJoin('clients', 'orders.client_id', '=', 'clients.id') // Usar leftJoin para permitir client_id null
+            ->join('stores', 'orders.store_id', '=', 'stores.id');
 
         // Verificar permisos del usuario
         if (!Auth::user()->can('view_all_ecommerce')) {
             $query->where('orders.store_id', Auth::user()->store_id);
+        }
+
+        // search
+        if ($request->input('search')) {
+            $query->where(function ($query) use ($request) {
+                $query->where('orders.uuid', 'like', "%{$request->input('search')}%")
+                    ->orWhere('orders.id', 'like', "%{$request->input('search')}%")
+                    ->orWhere('clients.name', 'like', "%{$request->input('search')}%")
+                    ->orWhere('clients.lastname', 'like', "%{$request->input('search')}%")
+                    ->orWhere('orders.construction_site', 'like', "%{$request->input('search')}%");
+                // ->orWhere('stores.name', 'like', "%{$request->input('search')}%");
+            });
+        }
+
+        // filtrar por cliente
+        if ($request->input('client')) {
+            $client = $request->input('client');
+            $clientParts = explode(' ', $client, 2); // Dividir en nombre y apellido
+
+            $query->where(function ($query) use ($clientParts) {
+                if (count($clientParts) == 2) {
+                    $query->where(function ($query) use ($clientParts) {
+                        $query->where('clients.name', 'like', "%{$clientParts[0]}%")
+                            ->where('clients.lastname', 'like', "%{$clientParts[1]}%")
+                            ->orWhere('clients.company_name', 'like', "%{$clientParts[0]}%");
+                    });
+                } else {
+                    $query->where('clients.name', 'like', "%{$clientParts[0]}%")
+                        ->orWhere('clients.lastname', 'like', "%{$clientParts[0]}%")
+                        ->orWhere('clients.company_name', 'like', "%{$clientParts[0]}%");
+                }
+            });
+        }
+
+        // Filtrar por store
+        if ($request->input('store')) {
+            $query->where('stores.name', 'like', "%{$request->input('store')}%");
+        }
+
+        // Filtrar por estado de pago
+        if ($request->input('payment_status')) {
+            $query->where('orders.payment_status', $request->input('payment_status'));
+        }
+
+        // shipping_status
+        if ($request->input('shipping_status')) {
+            $query->where('orders.shipping_status', $request->input('shipping_status'));
         }
 
         // Filtrar por rango de fechas
@@ -295,15 +623,12 @@ class OrderRepository
             $query->whereBetween('orders.date', [$startDate, $endDate]);
         }
 
-        // Aplicar siempre el orden descendente por fecha y hora
+        // Orden descendente por fecha y hora
         $query->orderBy('orders.date', 'desc')
-              ->orderBy('orders.time', 'desc'); // Orden adicional por hora si las fechas son iguales
+            ->orderBy('orders.time', 'desc');
 
-        $dataTable = DataTables::of($query)->make(true);
-
-        return $dataTable;
+        return DataTables::of($query)->make(true);
     }
-
 
     /**
      * Obtiene los productos de un pedido para la DataTable.
@@ -343,12 +668,25 @@ class OrderRepository
     /**
      * Obtiene el conteo de ordenes del cliente.
      *
-     * @param int $clientId
+     * @param int|null $clientId
      * @return int
      */
-    public function getClientOrdersCount(int $clientId): int
+    public function getClientOrdersCount(?int $clientId): int
     {
+        if (is_null($clientId)) {
+            return 0;
+        }
         return Order::where('client_id', $clientId)->count();
+    }
+
+    /**
+     * Obtiene todos los clientes
+     *
+     *
+     */
+    public function getAllClients()
+    {
+        return Client::all();
     }
 
     /**
@@ -381,6 +719,31 @@ class OrderRepository
     }
 
     /**
+     * Actualiza el estado del pago de un pedido.
+     *
+     * @param int $orderId
+     * @param string $paymentStatus
+     * @return Order
+     */
+    public function setOrderAsPaid(int $orderId, string $paymentStatus): Order
+    {
+      Log::info('Entrando en setOrderAsPaid');
+      $order = Order::findOrFail($orderId);
+      Log::info('Orden encontrada: ' . $order->id);
+      $oldStatus = $order->payment_status;
+      Log::info('Estado de pago anterior: ' . $oldStatus);
+      // Verificar si hay un cambio en el estado de pago
+      if ($oldStatus !== $paymentStatus) {
+          $order->payment_status = $paymentStatus;
+          Log::info('Estado de pago actualizado a: ' . $paymentStatus);
+          $order->save();
+          Log::info('Orden guardada');
+      }
+      return $order;
+    }
+
+
+    /**
      * Actualiza el estado del envío de un pedido.
      *
      * @param int $orderId
@@ -392,22 +755,24 @@ class OrderRepository
         $order = Order::findOrFail($orderId);
         $oldStatus = $order->shipping_status;
 
-        // Verificar si hay un cambio en el estado de envío
         if ($oldStatus !== $shippingStatus) {
+            // Validar stock al intentar marcar como delivered
+            if ($shippingStatus === 'delivered') {
+                $products = json_decode($order->products, true);
+                $stockValidation = $this->validateAndUpdateStock($products, true); // Validar y descontar stock
+                if (!$stockValidation['success']) {
+                    throw new Exception($stockValidation['error']);
+                }
+            }
+
             $order->shipping_status = $shippingStatus;
             $order->save();
-            // Registrar el cambio de estado
-            OrderStatusChange::create([
-                'order_id' => $orderId,
-                'user_id' => Auth::id(),
-                'change_type' => 'shipping',
-                'old_status' => $oldStatus,
-                'new_status' => $shippingStatus,
-            ]);
         }
 
         return $order;
     }
+
+
 
     /**
      * Emite un CFE para una orden.
@@ -434,7 +799,7 @@ class OrderRepository
         $order->update(['is_billed' => true]);
     }
 
-    public function getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate)
+    public function getOrdersForExport($client, $store, $paymentStatus, $shippingStatus, $startDate, $endDate, $search = null)
     {
         $query = Order::select([
             'orders.id',
@@ -457,60 +822,261 @@ class OrderRepository
             'orders.payment_method',
             'orders.shipping_method',
             'orders.shipping_tracking',
+            'orders.cash_register_log_id',
+            DB::raw("
+                CASE
+                    WHEN clients.type = 'company' THEN COALESCE(clients.company_name, 'Empresa sin nombre')
+                    ELSE COALESCE(CONCAT(clients.name, ' ', clients.lastname), 'Consumidor Final')
+                END as client_name
+            "),
             'clients.email as client_email',
             'stores.name as store_name',
-            DB::raw("CONCAT(clients.name, ' ', clients.lastname) as client_name"),
         ])
-            ->join('clients', 'orders.client_id', '=', 'clients.id')
+            ->leftJoin('clients', 'orders.client_id', '=', 'clients.id')
             ->join('stores', 'orders.store_id', '=', 'stores.id');
 
-        // Aplicar los filtros
+        // Aplicar filtros
+        if ($search) {
+            $query->where(function ($query) use ($search) {
+                $query->where('orders.uuid', 'like', "%$search%")
+                    ->orWhere('orders.id', 'like', "%$search%")
+                    ->orWhere('clients.name', 'like', "%$search%")
+                    ->orWhere('clients.lastname', 'like', "%$search%")
+                    ->orWhere('stores.name', 'like', "%$search%");
+            });
+        }
+
         if ($client) {
             $query->where(DB::raw("CONCAT(clients.name, ' ', clients.lastname)"), 'like', "%$client%");
         }
-        if ($company) {
-            $query->where('stores.name', 'like', "%$company%");
+
+        if ($store) {
+            $query->where('stores.name', 'like', "%$store%");
         }
-        if ($payment) {
-            $query->where('orders.payment_status', $payment);
+
+        if ($paymentStatus) {
+            $query->where('orders.payment_status', $paymentStatus);
         }
-        if ($billed !== null) {
-            $query->where('orders.is_billed', $billed == 'Facturado' ? 1 : 0);
+
+        if ($shippingStatus) {
+            $query->where('orders.shipping_status', $shippingStatus);
         }
+
         if ($startDate && $endDate) {
             $query->whereBetween('orders.date', [$startDate, $endDate]);
         }
 
-        return $query->get(); // Retornar los resultados
+        return $query->get();
     }
 
     private function createInternalCredit(Order $order)
     {
-        // verify if exist client in current account
-        $currentAccount = CurrentAccount::where('client_id', $order->client_id)->first();
+        $accountSettings = CurrentAccountSettings::firstOrCreate(
+            ['transaction_type' => 'Sale'],
+            [
+                'late_fee' => '0.05',
+                'payment_terms' => '30',
+            ]
+        );
 
+        $currentAccount = CurrentAccount::where('client_id', $order->client_id)->first();
         if ($currentAccount) {
             CurrentAccountInitialCredit::create([
                 'total_debit' => $order->total,
-                'description' => 'Compra Interna',
+                'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
                 'current_account_settings_id' => 1,
             ]);
         } else {
+            $currencies = Currency::firstOrCreate(
+                ['id' => 1],
+                [
+                    'code' => 'UYU',
+                    'symbol' => '$',
+                    'name' => 'Peso Uruguayo',
+                    'exchange_rate' => 1.0000,
+                ]
+            );
+
             $currentAccount = CurrentAccount::create([
                 'client_id' => $order->client_id,
                 'payment_total_debit' => $order->total,
                 'status' => StatusPaymentEnum::UNPAID,
                 'transaction_type' => TransactionTypeEnum::SALE,
-                'currency_id' => 1,
+                'currency_id' => $currencies->id,
             ]);
 
             CurrentAccountInitialCredit::create([
                 'total_debit' => $order->total,
-                'description' => 'Compra Interna',
+                'description' => '<a href="' . route('orders.show', $order->uuid) . '">Venta #' . $order->id . '</a>',
                 'current_account_id' => $currentAccount->id,
-                'current_account_settings_id' => 1,
+                'current_account_settings_id' => $accountSettings->id,
             ]);
         }
+    }
+
+    private function createMercadoPagoQrAttend(Order $order)
+    {
+        // Preparar el cuerpo de la solicitud
+        $data = [
+            "external_reference" => strval($order->id), // Identificador único de la orden
+            "title" => "Orden de Compra", // Título general de la orden
+            "description" => "Orden de compra.", // Descripción de la compra
+            "notification_url" => app()->environment('local') ? env('MERCADO_PAGO_WEBHOOK') : route('mpagohook'), // URL para notificaciones según entorno
+            "total_amount" => $order->total, // Total de la orden
+            "items" => [], // Ítems del pedido
+            "cash_out" => [
+                "amount" => 0, // Sin retiro de efectivo
+            ],
+        ];
+
+        // Agregar los productos al arreglo de ítems
+        foreach ($order->products as $product) {
+            $data['items'][] = [
+                "sku_number" => strval($product['id']), // SKU o identificador del producto
+                "category" => "marketplace", // Categoría del producto
+                "title" => $product['name'], // Nombre del producto
+                "description" => "Compra de {$product['name']}", // Descripción
+                "unit_price" => $product['price'], // Precio unitario
+                "quantity" => $product['quantity'], // Cantidad
+                "unit_measure" => "unit", // Unidad de medida
+                "total_amount" => $product['price'] * $product['quantity'], // Monto total del ítem
+            ];
+        }
+
+        // Invocar el método para crear la orden QR en Mercado Pago
+        $cashRegister = CashRegisterLog::with('cashRegister')->findOrFail($order->cash_register_log_id)->cashRegister;
+        $cashRegisterId = $cashRegister->id;
+        $storeId = $cashRegister->store_id;
+
+        $mercadoPagoAccountStore = MercadoPagoAccount::where('store_id', $storeId)
+            ->where('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL)
+            ->with([
+                'mercadopagoAccountStore.mercadopagoAccountPOS' => function ($query) use ($cashRegisterId) {
+                    $query->where('cash_register_id', $cashRegisterId);
+                }
+            ])
+            ->first();
+
+        $userIdMercadPago = $mercadoPagoAccountStore->user_id_mp;
+        $storeIdMercadoPago = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->external_id;
+        $posId = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->mercadopagoAccountPOS[0]->external_id;
+        try {
+            $this->mercadoPagoService->setCredentials($storeId, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+            $this->mercadoPagoService->createOrder($userIdMercadPago, $storeIdMercadoPago, $posId, $data);
+        } catch (\Exception $e) {
+            // Manejar el error
+            Log::error("Error al generar el QR para Mercado Pago: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function createMercadoPagoQrDynamic(int $id)
+    {
+
+        $order = Order::with('client')->findOrFail($id);
+        $order->products = json_decode($order->products, true);
+        // Preparar el cuerpo de la solicitud
+        $data = [
+            "external_reference" => strval($order->id), // Identificador único de la orden
+            "title" => "Orden de Compra", // Título general de la orden
+            "description" => "Orden de compra.", // Descripción de la compra
+            "notification_url" => app()->environment('local') ? env('MERCADO_PAGO_WEBHOOK') : route('mpagohook'), // URL para notificaciones según entorno
+            "total_amount" => $order->total, // Total de la orden
+            "items" => [], // Ítems del pedido
+            "cash_out" => [
+                "amount" => 0, // Sin retiro de efectivo
+            ],
+        ];
+
+        // Agregar los productos al arreglo de ítems
+        foreach ($order->products as $product) {
+            $data['items'][] = [
+                "sku_number" => strval($product['id']), // SKU o identificador del producto
+                "category" => "marketplace", // Categoría del producto
+                "title" => $product['name'], // Nombre del producto
+                "description" => "Compra de {$product['name']}", // Descripción
+                "unit_price" => $product['price'], // Precio unitario
+                "quantity" => $product['quantity'], // Cantidad
+                "unit_measure" => "unit", // Unidad de medida
+                "total_amount" => $product['price'] * $product['quantity'], // Monto total del ítem
+            ];
+        }
+
+        // Invocar el método para crear la orden QR en Mercado Pago
+        $cashRegister = CashRegisterLog::with('cashRegister')->findOrFail($order->cash_register_log_id)->cashRegister;
+        $cashRegisterId = $cashRegister->id;
+        $storeId = $cashRegister->store_id;
+
+        $mercadoPagoAccountStore = MercadoPagoAccount::where('store_id', $storeId)
+            ->where('type', MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL)
+            ->with([
+                'mercadopagoAccountStore.mercadopagoAccountPOS' => function ($query) use ($cashRegisterId) {
+                    $query->where('cash_register_id', $cashRegisterId);
+                }])
+            ->first();
+
+        $userIdMercadPago = $mercadoPagoAccountStore->user_id_mp;
+        $storeIdMercadoPago = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->external_id;
+        $posId = $mercadoPagoAccountStore->mercadopagoAccountStore[0]->mercadopagoAccountPOS[0]->external_id;
+        try {
+            $this->mercadoPagoService->setCredentials($storeId, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+            $qrTramma = $this->mercadoPagoService->createOrderTramma($userIdMercadPago, $posId, $data);
+            return $qrTramma['qr_data'];
+        } catch (\Exception $e) {
+            // Manejar el error
+            Log::error("Error al generar el QR para Mercado Pago: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function getMercadoPagoOrderStatus($orderId)
+    {
+        try {
+            $order = Order::findOrFail($orderId);
+            return [
+                'order_id' => $order->id,
+                'order_uuid' => $order->uuid,
+                'status' => $order->payment_status,
+            ];
+        } catch (\Exception $e) {
+            Log::error("Error al obtener el estado de la orden en Mercado Pago: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function refundMercadoPagoOrder($orderId)
+    {
+        try {
+            $order = Order::findOrFail($orderId);
+            $cashRegister = CashRegisterLog::with('cashRegister')->findOrFail($order->cash_register_log_id)->cashRegister;
+            $storeId = $cashRegister->store_id;
+
+            $paymentId = MercadoPagoAccountOrder::where('order_id', $orderId)->where('status', 'paid')->first();
+            if (!$paymentId) {
+                throw new Exception("No se encontró el ID de pago en Mercado Pago para la orden.");
+            }
+            $this->mercadoPagoService->setCredentials($storeId, MercadoPagoApplicationTypeEnum::PAID_PRESENCIAL->value);
+            $this->mercadoPagoService->refundOrder($paymentId->payment_id, [
+                "amount" => $order->total,
+            ]);
+            $paymentId->update(['status' => 'refunded']);
+        } catch (\Exception $e) {
+            Log::error("Error al realizar el reembolso de la orden en Mercado Pago: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /*
+    * Obtiene la ultima cotización del dolar para realizar ventas.
+    * @return float
+    */
+    public function getDollarRate()
+    {
+        $dollar = CurrencyRate::where('name', 'Dólar')->first();
+            $rate = CurrencyRateHistory::where('currency_rate_id', $dollar->id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            return $rate->sell;
     }
 }

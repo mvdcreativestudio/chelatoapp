@@ -2,7 +2,7 @@
 
 (function () {
   let cardColor, headingColor, labelColor, shadeColor, borderColor, legendColor;
-
+  let totalIncomeChart = null;
   if (isDarkStyle) {
     cardColor = config.colors_dark.cardColor;
     headingColor = config.colors_dark.headingColor;
@@ -21,60 +21,93 @@
 
   const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
 
+  function updateReportSubtitle(timeRange) {
+    const subtitleElement = document.querySelector('.card-subtitle');
+
+    if (!subtitleElement) return;
+
+    const reportTitles = {
+      always: 'Historial completo',
+      year: 'Reporte anual',
+      month: 'Reporte mensual',
+      week: 'Reporte semanal',
+      today: 'Reporte diario'
+    };
+
+    subtitleElement.textContent = reportTitles[timeRange] || 'Reporte personalizado';
+  }
+
   function loadTotalIncomeData() {
     const timeRange = document.querySelector('select[name="period"]').value;
     const storeId = document.querySelector('select[name="store_id"]').value;
 
     fetch(`/admin/api/monthly-income?time_range=${timeRange}&store_id=${storeId}`)
-        .then(response => response.json())
-        .then(data => {
+      .then(response => response.json())
+      .then(data => {
         let labels = [];
         let totalIncomes = [];
-
         if (timeRange === 'always') {
-            labels = data.map(item => `${monthNames[item.month - 1]} ${item.year}`);
-            totalIncomes = data.map(item => parseInt(item.total));
+          // Ordenar los datos por año y mes
+          updateReportSubtitle('always');
+          data.sort((a, b) => a.year - b.year || a.month - b.month);
+          labels = data.map(item => `${monthNames[item.month - 1]} ${item.year}`);
+          totalIncomes = data.map(item => parseFloat(item.total));
         } else if (timeRange === 'year') {
-            labels = monthNames; // Asegúrate de que solo se representen los meses
-            totalIncomes = Array(12).fill(0);
-            data.forEach(item => {
-                const monthIndex = item.month - 1;
-                totalIncomes[monthIndex] = parseInt(item.total);
-            });
+          updateReportSubtitle('year');
+          labels = monthNames; // Asegúrate de que solo se representen los meses
+          totalIncomes = Array(12).fill(0);
+          data.forEach(item => {
+            const monthIndex = item.month - 1;
+            totalIncomes[monthIndex] += parseFloat(item.total) || 0;
+          });
         } else if (timeRange === 'month') {
-            // Configuración para "Este Mes"
-            const today = new Date();
-            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-            labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}/${today.getMonth() + 1}`);
-            totalIncomes = Array(daysInMonth).fill(0);
-            data.forEach(item => {
-                const dayIndex = item.day - 1;
-                totalIncomes[dayIndex] = parseInt(item.total);
-            });
+          // Configuración para "Este Mes"
+          updateReportSubtitle('month');
+          const today = new Date();
+          const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+          labels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}/${today.getMonth() + 1}`);
+          totalIncomes = Array(daysInMonth).fill(0);
+          data.forEach(item => {
+            const dayIndex = item.day - 1;
+            totalIncomes[dayIndex] += parseFloat(item.total) || 0;
+          });
         } else if (timeRange === 'week') {
-            // Configuración para "Esta Semana"
-            const today = new Date();
-            labels = Array.from({ length: 7 }, (_, i) => {
-                const date = new Date(today);
-                date.setDate(today.getDate() - (6 - i));
-                return `${date.getDate()}/${date.getMonth() + 1}`;
-            });
-            totalIncomes = Array(7).fill(0);
-            data.forEach(item => {
-                const dateLabel = `${item.day}/${item.month}`;
-                const labelIndex = labels.indexOf(dateLabel);
-                if (labelIndex > -1) {
-                    totalIncomes[labelIndex] = parseInt(item.total);
-                }
-            });
+          // Configuración para "Esta Semana"
+          updateReportSubtitle('week');
+          const today = new Date();
+          labels = Array.from({ length: 7 }, (_, i) => {
+            const date = new Date(today);
+            date.setDate(today.getDate() - (6 - i));
+            return `${date.getDate()}/${date.getMonth() + 1}`;
+          });
+          totalIncomes = Array(7).fill(0);
+          data.forEach(item => {
+            const dateLabel = `${item.day}/${item.month}`;
+            const labelIndex = labels.indexOf(dateLabel);
+            if (labelIndex > -1) {
+              totalIncomes[labelIndex] += parseFloat(item.total) || 0;
+            }
+          });
         } else if (timeRange === 'today') {
-            // Configuración para "Hoy"
-            labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
-            totalIncomes = Array(24).fill(0);
-            data.forEach(item => {
-                const hourIndex = item.hour;
-                totalIncomes[hourIndex] = parseInt(item.total);
-            });
+          // Configuración para "Hoy"
+          updateReportSubtitle('today');
+          // Crear etiquetas de 24 horas
+          labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+          totalIncomes = Array(24).fill(0);
+          data.forEach(item => {
+            const hourIndex = item.hour;
+            totalIncomes[hourIndex] += parseFloat(item.total) || 0;
+          });
+        }
+
+        // Verificar la alineación de labels y datos
+        if (labels.length !== totalIncomes.length) {
+          console.error('Mismatch entre labels y totalIncomes');
+        }
+
+        // Reiniciar la gráfica antes de renderizar una nueva
+        if (totalIncomeChart) {
+          totalIncomeChart.destroy(); // Elimina la instancia anterior
         }
 
         const totalIncomeConfig = {
@@ -91,10 +124,12 @@
               opacity: 0.15
             }
           },
-          series: [{
-            name: "Ingresos",
-            data: totalIncomes
-          }],
+          series: [
+            {
+              name: 'Ingresos',
+              data: totalIncomes
+            }
+          ],
           labels: labels,
           dataLabels: {
             enabled: false
@@ -127,14 +162,14 @@
           xaxis: {
             categories: labels,
             labels: {
-                offsetX: 0,
-                rotate: -45, // Mantener los labels rotados si hay muchos días
-                style: {
-                    colors: '#757575',
-                    fontSize: '13px'
-                }
+              offsetX: 0,
+              rotate: labels.length > 10 ? -45 : 0, // Rotar si hay muchas etiquetas
+              style: {
+                colors: '#757575',
+                fontSize: '13px'
+              }
             },
-            tickAmount: labels.length, // Asegura que se muestre un tick por cada label
+            tickAmount: Math.min(labels.length, 20) // Limitar la cantidad de ticks
           },
           yaxis: {
             labels: {
@@ -149,12 +184,11 @@
             },
             min: 0,
             tickAmount: 10,
-            forceNiceScale: true,
+            forceNiceScale: true
           },
           tooltip: {
             x: {
               show: true,
-              format: 'MMM yyyy',
               formatter: function (value, { series, seriesIndex, dataPointIndex, w }) {
                 return labels[dataPointIndex];
               }
@@ -167,16 +201,16 @@
           }
         };
 
-        const totalIncome = new ApexCharts(document.querySelector('#totalIncomeChart'), totalIncomeConfig);
-        totalIncome.render();
+        // Crear una nueva instancia de la gráfica
+        totalIncomeChart = new ApexCharts(document.querySelector('#totalIncomeChart'), totalIncomeConfig);
+        totalIncomeChart.render();
       })
       .catch(error => console.error('Error loading the data: ', error));
   }
 
   loadTotalIncomeData();
 
-  document.querySelector('select[name="period"]').addEventListener('change', function() {
+  document.querySelector('select[name="period"]').addEventListener('change', function () {
     loadTotalIncomeData();
   });
-
 })();

@@ -16,6 +16,7 @@ class CompositeProduct extends Model
         'store_id',
         'name',
         'description',
+        'currency',
         'price',
         'recommended_price',
         'image',

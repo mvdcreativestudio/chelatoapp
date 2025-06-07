@@ -43,10 +43,10 @@ $(function () {
           }
         },
         columns: [
-          { data: 'switch', orderable: false, searchable: false },
           { data: 'id', type: 'num' },
           { data: 'due_date' },
           { data: 'supplier_name' },
+          { data: 'concept' },
           { data: 'store_name' },
           { data: 'amount' },
           { data: 'total_payments' },
@@ -60,17 +60,11 @@ $(function () {
           {
             targets: 0,
             render: function (data, type, full, meta) {
-              return `<input type="checkbox" class="form-check-input" data-id="${full['id']}">`;
-            }
-          },
-          {
-            targets: 1,
-            render: function (data, type, full, meta) {
               return `<a href="${baseUrl}admin/expenses/${data}/show" class="text-body">#${data}</a>`;
             }
           },
           {
-            targets: 2,
+            targets: 1,
             render: function (data, type, full, meta) {
               return moment(data).locale('es').format('DD/MM/YY');
             }
@@ -171,7 +165,7 @@ $(function () {
             });
 
           this.api()
-            .columns(4)
+            .columns(5)
             .every(function () {
               var column = this;
               var select = $('<select class="form-select"><option value="">Todos los locales</option></select>')
@@ -196,7 +190,7 @@ $(function () {
                 });
             });
           this.api()
-            .columns(7)
+            .columns(8)
             .every(function () {
               var column = this;
               var select = $('<select class="form-select"><option value="">Todos las categorias</option></select>')
@@ -215,7 +209,7 @@ $(function () {
                 });
             });
           this.api()
-            .columns(8)
+            .columns(10)
             .every(function () {
               var column = this;
               var select = $('<select class="form-select"><option value="">Todos los estados</option></select>')
@@ -237,7 +231,7 @@ $(function () {
         renderer: 'bootstrap'
       });
 
-      $('.toggle-column').on('change', function() {
+      $('.toggle-column').on('change', function () {
         var column = dt_expenses.column($(this).attr('data-column'));
         column.visible(!column.visible());
       });
@@ -261,7 +255,6 @@ $(function () {
           $('.datatables-expenses tbody input[type="checkbox"]:checked').length;
         $('#checkAll').prop('checked', allChecked);
       });
-
 
       // Eliminar filtros de búsqueda
       $(document).on('click', '#clear-filters', function () {
@@ -292,6 +285,85 @@ $(function () {
         }
       }
 
+      $('#export-excel').on('click', function () {
+        // Capturar los valores de los filtros
+        let supplier = $('.supplier_filter select').val(); // Proveedor
+        let store = $('.store_filter select').val(); // Local
+        let category = $('.category_filter select').val(); // Categoría
+        let status = $('.status_filter select').val(); // Estado Pago
+        let startDate = $('#startDate').val(); // Fecha desde
+        let endDate = $('#endDate').val(); // Fecha hasta
+
+        // Construir la URL con los parámetros válidos
+        let url = '/admin/expenses-export-excel?';
+        let params = [];
+
+        // Verificar y agregar los parámetros a la URL
+        if (supplier) {
+          params.push(`supplier=${encodeURIComponent(supplier)}`);
+        }
+        if (store) {
+          params.push(`store=${encodeURIComponent(store)}`);
+        }
+        if (category) {
+          params.push(`category=${encodeURIComponent(category)}`);
+        }
+        if (status) {
+          params.push(`status=${encodeURIComponent(status)}`);
+        }
+        if (startDate) {
+          params.push(`start_date=${encodeURIComponent(startDate)}`);
+        }
+        if (endDate) {
+          params.push(`end_date=${encodeURIComponent(endDate)}`);
+        }
+
+        // Unir los parámetros a la URL
+        url += params.join('&');
+
+        // Redirigir a la ruta para exportar, abriendo en una nueva pestaña
+        window.open(url, '_blank');
+      });
+
+      $('#export-pdf').on('click', function () {
+        // Capturar los valores de los filtros
+        let supplier = $('.supplier_filter select').val(); // Proveedor
+        let store = $('.store_filter select').val(); // Local
+        let category = $('.category_filter select').val(); // Categoría
+        let status = $('.status_filter select').val(); // Estado Pago
+        let startDate = $('#startDate').val(); // Fecha desde
+        let endDate = $('#endDate').val(); // Fecha hasta
+
+        // Construir la URL con los parámetros válidos
+        let url = '/admin/expenses-export-pdf?';
+        let params = [];
+
+        // Verificar y agregar los parámetros a la URL
+        if (supplier) {
+          params.push(`supplier=${encodeURIComponent(supplier)}`);
+        }
+        if (store) {
+          params.push(`store=${encodeURIComponent(store)}`);
+        }
+        if (category) {
+          params.push(`category=${encodeURIComponent(category)}`);
+        }
+        if (status) {
+          params.push(`status=${encodeURIComponent(status)}`);
+        }
+        if (startDate) {
+          params.push(`start_date=${encodeURIComponent(startDate)}`);
+        }
+        if (endDate) {
+          params.push(`end_date=${encodeURIComponent(endDate)}`);
+        }
+
+        // Unir los parámetros a la URL
+        url += params.join('&');
+
+        // Redirigir a la ruta para exportar, abriendo en una nueva pestaña
+        window.open(url, '_blank');
+      });
     }
   } catch (error) {
     console.error('Error al inicializar DataTable:', error);

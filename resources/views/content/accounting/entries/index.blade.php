@@ -212,7 +212,13 @@
                 {{-- button for clear filters --}}
                 <div class="col-md-2 mt-2">
                     <button class="btn btn-outline-danger btn-sm clear-filters" id="clear-filters">
-                        <i class="fas fa-eraser"></i> Limpiar Filtros
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                    <button class="btn btn-outline-success btn-sm export-excel" id="export-excel">
+                        <i class="fas fa-file-excel"></i>
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm export-pdf" id="export-pdf">
+                        <i class="fas fa-file-pdf"></i>
                     </button>
                 </div>
             </div>

@@ -318,11 +318,11 @@ $(function () {
 
   function initRepeater() {
     $('[data-repeater-create]')
-      .off('click') // Desactiva cualquier evento previo para evitar duplicados
+      .off('click')
       .on('click', function () {
         const repeaterList = $(this).closest('.card-body').find('[data-repeater-list]');
         const index = repeaterList.children().length;
-  
+
         const row = `
         <div data-repeater-item class="row mb-3">
           <div class="col-4">
@@ -343,13 +343,11 @@ $(function () {
             <button type="button" class="btn btn-danger" data-repeater-delete>Eliminar</button>
           </div>
         </div>
-        `;
-  
-        repeaterList.append(row); // Agrega la fila al listado
+      `;
+
+        repeaterList.append(row);
         updateRawMaterialOptions();
       });
-
-  
 
     $(document).on('click', '[data-repeater-delete]', function () {
       $(this).closest('[data-repeater-item]').remove();
@@ -364,10 +362,8 @@ $(function () {
   }
 
   $('#addFlavorModal').on('shown.bs.modal', function () {
-    $('#addNewFlavorForm [data-repeater-list]').empty(); // Limpia el listado de recetas
-    initRepeater(); // Inicializa el manejador del botón "Agregar Ingrediente"
+    initRepeater();
   });
-  
 
   $('#editFlavorModal').on('shown.bs.modal', function () {
     initRepeater();

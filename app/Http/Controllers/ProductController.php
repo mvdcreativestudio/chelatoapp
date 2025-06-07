@@ -17,6 +17,7 @@ use App\Models\Store;
 use Illuminate\Http\Request;
 use App\Services\ExportService;
 use App\Models\Product;
+use App\Models\TaxRate;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\GenericExport;
 use App\Imports\ProductsImport;
@@ -26,8 +27,6 @@ use App\Exports\ProductTemplateExport;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Validators\ValidationException;
 use App\Models\CompanySettings;
-
-
 
 
 class ProductController extends Controller
@@ -86,6 +85,7 @@ class ProductController extends Controller
     return view('content.e-commerce.backoffice.products.products', compact('stores', 'categories'));
   }
 
+
   /**
    * Muestra un producto específico.
    *
@@ -94,9 +94,11 @@ class ProductController extends Controller
    */
   public function show(int $id): View
   {
-    $product = $this->productRepo->show($id);
-    return view('content.e-commerce.backoffice.products.show-product', $product);
+      $productData = $this->productRepo->show($id); // Esto ya contiene 'product'
+      $taxRates = TaxRate::all();
+      return view('content.e-commerce.backoffice.products.show-product', array_merge($productData, compact('taxRates')));
   }
+
 
     /**
    * Muestra una lista de todos los productos para Stock.
@@ -122,24 +124,33 @@ class ProductController extends Controller
   */
   public function create(): View
   {
-    $product = $this->productRepo->create();
-    return view('content.e-commerce.backoffice.products.add-product', $product);
+      $product = $this->productRepo->create();
+      $taxRates = TaxRate::all();
+      return view('content.e-commerce.backoffice.products.add-product', array_merge($product, compact('taxRates')));
   }
 
-  /**
-   * Almacena un nuevo producto en la base de datos.
-   *
-   * @param StoreProductRequest $request
-   * @return RedirectResponse
-  */
-  public function store(StoreProductRequest $request): RedirectResponse
-  {
-    $validated = $request->validated();
 
-    $this->productRepo->createProduct($request);
+    /**
+     * Almacena un nuevo producto en la base de datos.
+     *
+     * @param StoreProductRequest $request
+     * @return RedirectResponse
+     */
+    public function store(StoreProductRequest $request): RedirectResponse
+    {
+        \Log::info('Intentando crear un nuevo producto:', [
+            'request' => $request->all(),
+        ]);
 
-    return redirect()->route('products.index')->with('success', 'Producto creado correctamente.');
-  }
+        try {
+            $this->productRepo->createProduct($request);
+            return redirect()->route('products.index')->with('success', 'Producto creado correctamente.');
+        } catch (\Exception $e) {
+            \Log::error('Error al crear producto:', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Error al crear el producto: ' . $e->getMessage());
+        }
+    }
+
 
   /**
    * Obtiene los datos de los productos para DataTables.
@@ -160,9 +171,18 @@ class ProductController extends Controller
   */
   public function edit(int $id): View
   {
-    $product = $this->productRepo->edit($id);
-    return view('content.e-commerce.backoffice.products.edit-product', $product) ;
+      try {
+          $data = $this->productRepo->edit($id);
+          $taxRates = TaxRate::all();
+          \Log::info('Vista de edición cargada correctamente:', ['product_id' => $id]);
+          return view('content.e-commerce.backoffice.products.edit-product', array_merge($data, compact('taxRates')));
+        } catch (\Exception $e) {
+          \Log::error('Error al cargar la vista de edición:', ['product_id' => $id, 'error' => $e->getMessage()]);
+          return redirect()->route('products.index')->with('error', 'No se pudo cargar el producto para editar.');
+      }
   }
+
+
 
   /**
    * Actualiza un producto específico en la base de datos.
@@ -171,11 +191,67 @@ class ProductController extends Controller
    * @param int $id
    * @return RedirectResponse
   */
-  public function update(UpdateProductRequest $request, $id)
+  public function update(UpdateProductRequest $request, int $id)
   {
-    $this->productRepo->update($id, $request);
-    return redirect()->route('products.index')->with('success', 'Producto actualizado correctamente.');
+      try {
+          // Llamar al repositorio para manejar la actualización
+          $product = $this->productRepo->update($id, $request);
+
+          return redirect()->route('products.show', $product->id)
+                           ->with('success', 'Producto actualizado correctamente.');
+      } catch (\Exception $e) {
+          \Log::error('Error en la actualización desde el controlador:', [
+              'product_id' => $id,
+              'error' => $e->getMessage(),
+          ]);
+          return redirect()->back()->with('error', 'Error al actualizar el producto: ' . $e->getMessage());
+      }
   }
+
+
+
+  /**
+   * Sube imágenes de la galería de un producto.
+   *
+   * @param Request $request
+   * @param int $id
+   * @return RedirectResponse
+   */
+  public function uploadGalleryImages(Request $request, $id)
+  {
+      $request->validate([
+          'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+      ]);
+
+      $this->productRepo->addGalleryImages($id, $request->file('images'));
+
+      return redirect()->route('products.edit', $id)->with('success', 'Imágenes subidas correctamente.');
+  }
+
+  /**
+   * Elimina una imagen de la galería de un producto.
+   *
+   * @param int $imageId
+   * @return JsonResponse
+   */
+  public function deleteGalleryImage(int $imageId): JsonResponse
+  {
+      $deleted = $this->productRepo->deleteGalleryImage($imageId);
+
+      if ($deleted) {
+          return response()->json([
+              'success' => true,
+              'message' => 'Imagen eliminada correctamente.',
+          ]);
+      }
+
+      return response()->json([
+          'success' => false,
+          'message' => 'No se pudo eliminar la imagen.',
+      ], 404);
+  }
+
+
 
   /**
     * Cambia el estado de un producto.
@@ -446,7 +522,6 @@ class ProductController extends Controller
 
       return Excel::download(new ProductTemplateExport($categories, $storeId, $settings), 'plantilla_productos.xlsx');
   }
-
 
 
 }

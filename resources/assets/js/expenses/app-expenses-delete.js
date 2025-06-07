@@ -48,7 +48,8 @@ $(document).ready(function () {
           success: function (result) {
             if (result.success) {
               Swal.fire('Eliminado!', 'El cupón ha sido eliminado.', 'success');
-              $('.datatables-expenses').DataTable().ajax.reload();
+              // $('.datatables-expenses').DataTable().ajax.reload();
+              location.reload();
             } else {
               Swal.fire('Error!', 'No se pudo eliminar el cupón. Intente de nuevo.', 'error');
             }
@@ -91,7 +92,8 @@ $(document).ready(function () {
             if (result.success) {
               Swal.fire('Eliminado!', 'Los gastos seleccionados han sido eliminados.', 'success');
               // dt_expenses.ajax.reload(null, false);
-              $('.datatables-expenses').DataTable().ajax.reload();
+              // $('.datatables-expenses').DataTable().ajax.reload();
+              location.reload();
             } else {
               Swal.fire('Error!', 'No se pudieron eliminar los gastos seleccionados. Intente de nuevo.', 'error');
             }

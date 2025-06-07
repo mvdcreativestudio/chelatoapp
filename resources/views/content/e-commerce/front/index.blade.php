@@ -1,6 +1,7 @@
 @extends('content.e-commerce.front.layouts.ecommerce-layout')
 
-@section('title', 'Chelato Helados')
+@section('title', 'Teralo')
+
 
 @section('content')
 
@@ -25,16 +26,12 @@
 @endif
 
 <div class="video-container">
-  <video autoplay muted loop id="myVideo" class="video-background desktop-video">
-      <source src="assets/img/videos/back-chelato.mp4" type="video/mp4">
+  <video autoplay muted loop id="myVideo" class="video-background">
+      <source src="assets/img/videos/back-dali.mp4" type="video/mp4">
   </video>
-  
-  <video autoplay muted loop id="myVideoMobile" class="video-background mobile-video">
-      <source src="assets/img/videos/back-chelato-mobile.mp4" type="video/mp4">
-  </video>
-  
   <div class="video-overlay">
-    <h2 class="header-title">Llegaste al paraíso del helado</h2>
+    <h2 class="header-title">Llegaste al laboratorio indicado</h2>
+    <img src="assets/img/branding/dali-white.png" class="logo-header" alt="">
     <div class="animated-text-container">
       <a class="animated-text" href="#selectStore">Pedí Online <i class="fa fa-arrow-down arrow-animate"></i></a>
     </div>
@@ -69,7 +66,7 @@
                       <span class="custom-option-body">
                         <i class="fa-solid fa-store"></i>
                         <span class="custom-option-title">{{$store->name}}</span>
-                        <small class="text-success">Tienda abierta</small>
+                        <small class="text-success">Empresa abierta</small>
                       </span>
                       <input name="slug" class="form-check-input" type="radio" value="{{ $store->slug }}" id="store{{ $store->id }}" {{ $loop->first ? 'checked' : '' }} />
                     </label>
@@ -82,7 +79,7 @@
                       <span class="custom-option-body">
                         <i class="fa-solid fa-store"></i>
                         <span class="custom-option-title">{{$store->name}}</span>
-                        <small class="text-danger">Tienda cerrada</small>
+                        <small class="text-danger">Empresa cerrada</small>
                       </span>
                     </label>
                   </div>
@@ -106,7 +103,7 @@
   </div>
   @endif
 
-  {{-- <div class="container-fluid mt-3">
+  <div class="container-fluid mt-3">
     <div class="row align-items-center">
       <div class="col-lg-6 col-md-12 text-center quienes-somos-container mb-3 mb-lg-0">
         <h2>¿Quiénes somos?</h2>
@@ -140,50 +137,13 @@
         <img class="img-fluid homepage-quienes-somos-img" src="{{ asset('assets/img/front-pages/homepage/locales-1.jpg') }}" alt="">
       </div>
     </div>
-  </div> --}}
+  </div>
 
 
 
 </div>
 
-<style>
-.video-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-}
 
-.video-background {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transform: translate(-50%, -50%);
-}
-
-.desktop-video {
-  display: block;
-}
-
-.mobile-video {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .desktop-video {
-    display: none;
-  }
-
-  .mobile-video {
-    display: block;
-  }
-}
-
-
-</style>
 
 
 @endsection

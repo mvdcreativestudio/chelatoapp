@@ -14,15 +14,19 @@ class StoreProductRequest extends FormRequest
             'description' => 'nullable|string|max:1000',
             'type' => 'required|in:simple,configurable',
             'max_flavors' => 'nullable|integer|min:1',
+            'currency' => 'required|in:Peso,Dólar',
             'old_price' => 'required|numeric',
             'price' => 'nullable|numeric|lt:old_price',
+            'tax_rate_id' => 'required|exists:tax_rates,id',
             'discount' => 'nullable|numeric',
             'store_id' => 'required|exists:stores,id',
             'status' => 'required|boolean',
+            'show_in_catalogue' => 'required|boolean',
             'stock' => 'nullable|integer',
             'safety_margin' => 'nullable|numeric',
             'bar_code' => 'nullable|string|max:255',
-            'categories' => 'required|array',
+            /** Si hay problema con productos, agregar |array a categories */
+            'categories' => 'required',
             'categories.*' => 'exists:product_categories,id',
             'flavors' => 'nullable|array',
             'flavors.*' => 'exists:flavors,id',
@@ -31,6 +35,19 @@ class StoreProductRequest extends FormRequest
             'recipes.*.used_flavor_id' => 'required_without:recipes.*.raw_material_id|exists:flavors,id',
             'recipes.*.quantity' => 'required_with:recipes|numeric|min:0.01',
             'build_price' => 'nullable|numeric',
+
+            'features' => 'array',
+            'features.*.name' => 'nullable|string|max:255',
+
+            'sizes' => 'array',
+            'sizes.*.size' => 'nullable|string|max:255',
+            'sizes.*.width' => 'nullable|numeric|min:0',
+            'sizes.*.height' => 'nullable|numeric|min:0',
+            'sizes.*.length' => 'nullable|numeric|min:0',
+
+            'colors' => 'array',
+            'colors.*.color_name' => 'nullable|string|max:255',
+            'colors.*.hex_code' => 'nullable|string|max:255',
         ];
     }
 
@@ -39,10 +56,13 @@ class StoreProductRequest extends FormRequest
         return [
             'price.lt' => 'El precio rebajado no puede ser mayor o igual al precio normal.',
             'recipes' => 'nullable|array',
-            'categories' => 'Faltó completar el campo "CATEGORÍA"',
+            'categories' => 'Faltó completar el campo "Categoría"',
             'recipes.*.raw_material_id' => 'required_with:recipes|exists:raw_materials,id',
             'recipes.*.quantity' => 'required_with:recipes|numeric|min:0.01',
             'build_price.numeric' => 'El precio de costo debe ser un número.',
+            'categories.required' => 'Faltó completar el campo "Categoría"',
+            'categories.*.exists' => 'La categoría seleccionada no es válida.',
+            'tax_rate_id.exists' => 'El impuesto seleccionado no es válido.',
         ];
     }
 

@@ -27,10 +27,10 @@ class StoreStoreRequest extends FormRequest
     {
         $rules = [
             'name' => 'required|string|max:255',
-            'description' => 'string|max:255',
             'address' => 'string|max:255',
             'email' => 'required|email',
             'rut' => 'required|string|max:255',
+            'tax_rate_id' => 'required|exists:tax_rates,id',
             'status' => 'required|boolean',
         ];
 

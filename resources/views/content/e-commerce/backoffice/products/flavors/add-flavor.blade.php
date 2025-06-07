@@ -20,18 +20,38 @@
             </select>
           </div>
           <!-- Materias Primas -->
-          <!-- <div class="card mb-4 addRawMaterials">
+          <div class="card mb-4 addRawMaterials">
             <div class="card-header">
               <h5 class="card-title mb-0">Receta</h5>
             </div>
             <div class="card-body">
               <div data-repeater-list="recipes">
-                
+                <div data-repeater-item class="row mb-3">
+                  <div class="col-4">
+                    <label class="form-label" for="raw-material">Materia Prima</label>
+                    <select class="form-select raw-material-select" name="recipes[0][raw_material_id]">
+                      <option value="" disabled selected>Selecciona materia prima</option>
+                      @foreach ($rawMaterials as $rawMaterial)
+                        <option value="{{ $rawMaterial->id }}" data-unit="{{ $rawMaterial->unit_of_measure }}">{{ $rawMaterial->name }}</option>
+                      @endforeach
+                    </select>
+                  </div>
+                  <div class="col-3">
+                    <label class="form-label" for="quantity">Cantidad</label>
+                    <input type="number" class="form-control" name="recipes[0][quantity]" placeholder="Cantidad" aria-label="Cantidad">
+                  </div>
+                  <div class="col-3 d-flex align-items-end">
+                    <input type="text" class="form-control unit-of-measure" placeholder="Unidad de medida" readonly>
+                  </div>
+                  <div class="col-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger" data-repeater-delete>Eliminar</button>
+                  </div>
+                </div>
                 <p class="text-muted">Cantidad para elaborar 1 (un) balde de {{ config('services.flavorUnit.unit') }} litros</p>
               </div>
               <button type="button" class="btn btn-primary" data-repeater-create>Agregar Ingrediente</button>
             </div>
-          </div> -->
+          </div>
         </form>
       </div>
       <div class="modal-footer">

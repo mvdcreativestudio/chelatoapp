@@ -9,6 +9,8 @@ use App\Http\Requests\UpdateRawMaterialRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
+use App\Repositories\ProductRepository;
 
 class RawMaterialController extends Controller
 {
@@ -49,9 +51,19 @@ class RawMaterialController extends Controller
     public function index(): View
     {
         $rawMaterials = $this->rawMaterialRepository->getAll();
-        return view('raw-materials.index', ['rawMaterials' => $rawMaterials]);
+        
+        $inStockCount = 0;
+        foreach ($rawMaterials as $material) {
+            if ($material->stock > 0) {
+                $inStockCount++;
+            }
+        }
+        
+        return view('raw-materials.index', [
+            'rawMaterials' => $rawMaterials,
+            'inStockCount' => $inStockCount
+        ]);
     }
-
 
 
     /**
@@ -65,6 +77,16 @@ class RawMaterialController extends Controller
     }
 
     /**
+     * Muestra el formulario para crear una nueva materia prima (planes freemium).
+     *
+     * @return View
+     */
+    public function createFreemium(): View
+    {
+        return view('raw-materials.createFreemium');
+    }
+
+    /**
      * Almacena una nueva materia prima en la base de datos.
      *
      * Aquí es donde se utiliza StoreRawMaterialRequest para validar la solicitud antes de proceder.
@@ -72,11 +94,20 @@ class RawMaterialController extends Controller
      * @param  StoreRawMaterialRequest  $request
      * @return RedirectResponse
      */
-    public function store(StoreRawMaterialRequest $request): RedirectResponse
+    public function store(StoreRawMaterialRequest $request): mixed
     {
         try {
-            $this->rawMaterialRepository->create($request->validated());
-            return redirect()->route('raw-materials.index')->with('success', 'Materia prima creada correctamente.');
+            $rawMaterial = $this->rawMaterialRepository->create($request->validated());
+            
+            if ($request->header('X-Freemium-Request') === 'true') {
+                return response()->json([
+                    'message' => 'Materia prima creada correctamente.'
+                ]);
+            }
+            
+            return redirect()->route('raw-materials.index')
+                ->with('success', 'Materia prima creada correctamente.');
+                
         } catch (ModelNotFoundException $e) {
             return back()->with('error', $e->getMessage())->withInput();
         }
@@ -115,8 +146,13 @@ class RawMaterialController extends Controller
      */
     public function update(UpdateRawMaterialRequest $request, RawMaterial $rawMaterial): RedirectResponse
     {
-        $this->rawMaterialRepository->update($rawMaterial, $request->validated());
-        return redirect()->route('raw-materials.index')->with('success', 'Materia prima actualizada correctamente.');
+        if (Auth::user()->hasPermissionTo('access_raw-materials-edit')) 
+        {
+            $this->rawMaterialRepository->update($rawMaterial, $request->validated());
+            return redirect()->route('raw-materials.index')->with('success', 'Materia prima actualizada correctamente.');
+        }
+        return redirect()->route('raw-materials.index')->with('error', 'No tienes permiso para editar.');
+
     }
 
     /**

@@ -40,7 +40,7 @@
         <select id="client_id" class="form-control">
           <option value="" selected disabled>Seleccionar Cliente</option>
           @foreach($clients as $client)
-          <option value="{{ $client->id }}">{{ $client->name }}</option>
+          <option value="{{ $client->id }}">{{ $client->name }} {{ $client->lastname }}</option>
           @endforeach
         </select>
       </div>

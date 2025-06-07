@@ -136,7 +136,7 @@
       productsSelect.find('option').prop('selected', true).trigger('change');
     });
 
-    // Calcular el precio recomendado basado en los productos seleccionados y cantidades
+    // Calcular el  basado en los productos seleccionados y cantidades
     const selectedProductsTable = $('#selectedProductsTable tbody');
     const priceAlert = $('#priceAlert');
     const recommendedPriceInput = $('#recommended_price');
@@ -158,16 +158,15 @@
       selectedProductsTable.find('tr').each(function () {
         const quantity = $(this).find('.product-quantity').val();
         const buildPrice = $(this).find('.product-quantity').data('build-price');
-        // Verificar si algún producto no tiene precio
-        if (buildPrice === 0) {
-          return (hasMissingPrices = true);
-        }
-        const subtotal = parseFloat(buildPrice) * parseFloat(quantity);
 
-        $(this)
-          .find('.subtotal')
-          .text('$' + subtotal.toFixed(2));
-        totalRecommendedPrice += subtotal;
+        // Si el precio del producto es 0, el subtotal también será 0, pero no bloqueamos el proceso
+        if (buildPrice === 0) {
+          $(this).find('.subtotal').text('N/A'); // Mostrar "N/A" si no tiene precio
+        } else {
+          const subtotal = parseFloat(buildPrice) * parseFloat(quantity); // Cálculo del subtotal correcto
+          $(this).find('.subtotal').text('$' + subtotal.toFixed(2)); // Mostrar subtotal
+          totalRecommendedPrice += subtotal; // Sumar subtotal al total
+        }
       });
 
       recommendedPriceInput.val(totalRecommendedPrice.toFixed(2));
@@ -181,25 +180,32 @@
       }
     }
 
+
     function addProductToTable(product) {
       const buildPrice = parseFloat(product.build_price) || 0;
       let rowClass = '';
-      const disabled = buildPrice === 0 ? 'disabled' : ''; // Disable input if no build_price
+      const disabled = buildPrice === 0 ? 'disabled' : '';
 
       if (buildPrice === 0) {
-        rowClass = 'table-danger'; // Fila con borde rojo si no tiene build_price
+        rowClass = 'table-danger';
       }
 
-      // Comprobar si el producto ya está en la tabla
       if (!selectedProductsTable.find(`tr[data-product-id="${product.id}"]`).length) {
         const row = `
           <tr data-product-id="${product.id}" class="${rowClass}">
             <td>${product.name}</td>
             <td>
-              <input type="number" class="form-control product-quantity" value="1" min="1" data-product-id="${product.id}" data-build-price="${buildPrice}" ${disabled}>
+              <input type="number" 
+                     class="form-control product-quantity" 
+                     value="1" 
+                     min="1" 
+                     data-product-id="${product.id}" 
+                     data-build-price="${buildPrice}"
+                     data-currency="${product.currency}"
+                     ${disabled}>
             </td>
-            <td>${buildPrice > 0 ? '$' + buildPrice.toFixed(2) : 'N/A'}</td>
-            <td class="subtotal">${buildPrice > 0 ? '$' + buildPrice.toFixed(2) : 'N/A'}</td>
+            <td class="unit-price">${buildPrice > 0 ? `${product.currency === 'Dólar' ? 'USD' : 'UYU'} ${buildPrice.toFixed(2)}` : 'N/A'}</td>
+            <td class="subtotal">${buildPrice > 0 ? `${product.currency === 'Dólar' ? 'USD' : 'UYU'} ${buildPrice.toFixed(2)}` : 'N/A'}</td>
             <td><button type="button" class="btn btn-danger remove-product" data-product-id="${product.id}">Eliminar</button></td>
           </tr>
         `;
@@ -218,10 +224,10 @@
         }
       });
 
-      calculateTotalRecommendedPrice(); // Calcular precio recomendado al seleccionar productos
+      calculateTotalRecommendedPrice(); // Calcular costo total al seleccionar productos
     });
 
-    // Recalcular precio recomendado al cambiar la cantidad
+    // Recalcular costo total al cambiar la cantidad
     selectedProductsTable.on('input', '.product-quantity', function (event) {
       const input = $(this);
       if (input.val() <= 0) {
@@ -241,7 +247,7 @@
       const option = productsSelect.find(`option[value="${productId}"]`);
       option.prop('selected', false).trigger('change'); // Desmarca y dispara el evento change
 
-      calculateTotalRecommendedPrice(); // Recalcular precio recomendado después de eliminar
+      calculateTotalRecommendedPrice(); // Recalcular costo total después de eliminar
     });
 
     // Capturar los datos y enviarlos por AJAX
@@ -263,8 +269,10 @@
       const formData = {
         name: $('#composite-product-name').val(),
         description: $('#description').val(),
+        currency: $('#currency').val(),
         price: $('#price').val(),
         recommended_price: $('#recommended_price').val(),
+        stock: $('#stock').val(),
         store_id: $('#store_id').val(),
         products: []
       };
@@ -315,5 +323,152 @@
       e.preventDefault();
       submitNewCompositeProduct(); // Llamar a la función al hacer clic en el botón
     });
+
+    // Función para mostrar u ocultar la tabla de productos seleccionados
+    function toggleSelectedProductsTable() {
+      const selectedProductsContainer = $('#selectedProductsContainer');
+      const selectedProducts = $('#product_ids').val() || [];
+
+      if (selectedProducts.length > 0) {
+        selectedProductsContainer.removeClass('d-none'); // Muestra la tabla
+      } else {
+        selectedProductsContainer.addClass('d-none'); // Oculta la tabla
+      }
+    }
+
+    // Llama a la función toggleSelectedProductsTable al cambiar los productos seleccionados
+    $('#product_ids').on('change', function () {
+      toggleSelectedProductsTable(); // Controlar visibilidad de la tabla
+
+      const selectedProductIds = $(this).val() || [];
+      const productsData = JSON.parse($('.app-ecommerce').attr('data-products'));
+
+      selectedProductIds.forEach(productId => {
+        const product = productsData.find(p => p.id == productId);
+        if (product) {
+          addProductToTable(product);
+        }
+      });
+
+      calculateTotalRecommendedPrice(); // Calcular costo total al seleccionar productos
+    });
+
+    // Llama a la función al cargar la página para inicializar el estado de la tabla
+    $(document).ready(function () {
+      toggleSelectedProductsTable(); // Al inicio, por si ya hay productos seleccionados
+    });
+
+    function calculateTotalRecommendedPrice() {
+      $.ajax({
+        url: `${baseUrl}admin/exchange-rate-dollar`,
+        type: 'GET',
+        success: function (response) {
+          const exchangeRate = response.exchange_rate.sell;      
+          updateExchangeRateDisplay(exchangeRate);
+
+          let totalRecommendedPrice = 0;
+          let hasMissingPrices = false;
+          const selectedCurrency = $('#currency').val();
+
+          // Actualizar precios unitarios y subtotales
+          updatePricesBasedOnCurrency(exchangeRate);
+
+          selectedProductsTable.find('tr').each(function () {
+            const quantity = $(this).find('.product-quantity').val();
+            const buildPrice = $(this).find('.product-quantity').data('build-price');
+            const productCurrency = $(this).find('.product-quantity').data('currency');
+
+            if (buildPrice === 0) {
+              hasMissingPrices = true;
+              return;
+            }
+
+            let adjustedBuildPrice = buildPrice;
+
+            if (selectedCurrency === 'Dólar') {
+              if (productCurrency === 'Peso') {
+                adjustedBuildPrice = buildPrice / exchangeRate;
+              }
+            } else {
+              if (productCurrency === 'Dólar') {
+                adjustedBuildPrice = buildPrice * exchangeRate;
+              }
+            }
+
+            totalRecommendedPrice += adjustedBuildPrice * quantity;
+          });
+
+          recommendedPriceInput.val(totalRecommendedPrice.toFixed(2));
+
+          if (hasMissingPrices) {
+            toggleSaveButton(true);
+            priceAlert.removeClass('d-none');
+          } else {
+            toggleSaveButton(false);
+            priceAlert.addClass('d-none');
+          }
+        },
+        error: function (xhr) {
+          console.error('Error al obtener la tasa de cambio:', xhr);
+        }
+      });
+    }
+
+    function updatePricesBasedOnCurrency(exchangeRate) {
+      const selectedCurrency = $('#currency').val();
+
+      selectedProductsTable.find('tr').each(function () {
+        const buildPrice = $(this).find('.product-quantity').data('build-price');
+        const productCurrency = $(this).find('.product-quantity').data('currency');
+        const quantity = $(this).find('.product-quantity').val();
+
+        if (buildPrice === 0) {
+          return;
+        }
+
+        let adjustedBuildPrice = buildPrice;
+
+        // Convertir el precio unitario según la moneda seleccionada
+        if (selectedCurrency === 'Dólar') {
+          if (productCurrency === 'Peso') {
+            adjustedBuildPrice = buildPrice / exchangeRate;
+          }
+        } else {
+          if (productCurrency === 'Dólar') {
+            adjustedBuildPrice = buildPrice * exchangeRate;
+          }
+        }
+
+        const subtotal = adjustedBuildPrice * quantity;
+        const currencySymbol = selectedCurrency === 'Dólar' ? 'USD' : 'UYU';
+
+        // Actualizar precio unitario y subtotal
+        $(this).find('.unit-price').text(`${currencySymbol} ${adjustedBuildPrice.toFixed(2)}`);
+        $(this).find('.subtotal').text(`${currencySymbol} ${subtotal.toFixed(2)}`);
+      });
+    }
+
+
+    // Recalcular cuando se cambie la moneda
+    $('#currency').on('change', function () {
+      calculateTotalRecommendedPrice();
+    });
+    
+    function updateExchangeRateDisplay(exchangeRate) {
+      const currencySelect = $('#currency');
+      const exchangeRateDisplay = $('#exchangeRateDisplay');
+      const exchangeRateValue = $('#exchangeRateValue');
+      
+      if (currencySelect.val() === 'Dólar') {
+        exchangeRate = parseFloat(exchangeRate);
+        exchangeRateValue.text(exchangeRate.toFixed(2));
+        exchangeRateDisplay.removeClass('d-none');
+      } else {
+        exchangeRateDisplay.addClass('d-none');
+      }
+    }
+    
+
+    calculateTotalRecommendedPrice()
   });
 })();

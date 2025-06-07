@@ -13,11 +13,17 @@ use Ramsey\Uuid\Uuid;
 class Order extends Model
 {
     use HasFactory;
-
-    protected $fillable = ['date', 'time', 'origin', 'client_id',
+    
+    
+    protected $fillable = ['date', 'time', 'origin', 'client_id', 'construction_site',
       'store_id', 'products', 'subtotal', 'tax', 'shipping', 'coupon_id',
-      'coupon_amount', 'discount', 'total', 'payment_status', 'shipping_status',
-      'payment_method', 'shipping_method', 'estimate_id', 'shipping_id', 'delivery_offer_id', 'uuid', 'is_billed', 'doc_type', 'document', 'cash_register_log_id'];
+      'coupon_amount', 'discount', 'total', 'currency', 'payment_status', 'shipping_status', 'notes',
+      'payment_method', 'shipping_method', 'estimate_id', 'shipping_id', 'uuid', 'is_billed', 'doc_type', 'document', 'cash_register_log_id'];
+
+    protected $casts = [
+        'products' => 'array',
+        'is_billed' => 'boolean'
+    ];
 
     /**
      * The "booted" method of the model.
@@ -55,7 +61,7 @@ class Order extends Model
     */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(Product::class, 'order_products')
+        return $this->belongsToMany(Product::class, 'order_product')
                     ->withPivot('quantity', 'price')
                     ->withTimestamps();
     }
@@ -168,5 +174,19 @@ class Order extends Model
     public function setDiscountAttribute($value)
     {
         $this->attributes['discount'] = round($value, 2);
+    }
+
+    public function transaction()
+    {
+        return $this->hasOne(Transaction::class, 'order_id', 'id');
+    }
+
+    /**
+     * Obtiene los presupuestos que han generado esta orden.
+     *
+     * @return HasMany
+     */
+    public function budgets() {
+        return $this->hasMany(Budget::class);
     }
 }

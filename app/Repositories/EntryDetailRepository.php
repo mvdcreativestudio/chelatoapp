@@ -121,4 +121,10 @@ class EntryDetailRepository
             })
             ->make(true);
     }
+
+    public function getEntryWithDetails($entryId)
+    {
+        return Entry::with(['details', 'details.entryAccount', 'entryType', 'currency'])
+            ->findOrFail($entryId);
+    }
 }

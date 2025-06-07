@@ -18,8 +18,10 @@ class Product extends Model
         'description',
         'type',
         'max_flavors',
+        'currency',
         'old_price',
         'price',
+        'tax_rate_id',
         'discount',
         'categories',
         'tags',
@@ -28,10 +30,12 @@ class Product extends Model
         'image',
         'store_id',
         'status',
+        'show_in_catalogue',
         'stock',
         'safety_margin',
         'bar_code',
-        'build_price'
+        'build_price',
+        'bulk_production_id'
       ];
 
 
@@ -53,6 +57,23 @@ class Product extends Model
     public function categories(): BelongsToMany
     {
         return $this->belongsToMany(ProductCategory::class, 'category_product', 'product_id', 'category_id');
+    }
+
+
+
+    public function productPrices(): HasMany
+    {
+        return $this->hasMany(ProductPrice::class);
+    }
+
+    public function packaging(): HasMany
+    {
+        return $this->hasMany(Packaging::class, 'final_product_id');
+    }
+
+    public function BulkProduction(): HasMany
+    {
+        return $this->hasMany(BulkProduction::class, 'bulk_production_id');
     }
 
     /**
@@ -151,4 +172,77 @@ class Product extends Model
     {
         $this->attributes['discount'] = round($value, 2);
     }
+
+    /**
+     * Obtiene el precio del producto.
+     * @param float|null $value
+     * @return float
+    */
+    public function priceLists()
+    {
+        return $this->belongsToMany(PriceList::class, 'price_list_products')
+                    ->withPivot('price')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Obtiene los lotes del producto
+     *
+     * @return HasMany
+     */
+    public function batch(): HasMany
+    {
+        return $this->hasMany(Batch::class);
+    }
+
+    /**
+     * Obtiene las características del producto
+     *
+     * @return HasMany
+     */
+    public function features()
+    {
+        return $this->hasMany(ProductFeature::class);
+    }
+
+    /**
+     * Obtiene los tamaños del producto
+     *
+     * @return HasMany
+     */
+    public function sizes()
+    {
+        return $this->hasMany(ProductSize::class);
+    }
+
+    /**
+     * Obtiene los colores del producto
+     *
+     * @return HasMany
+     */
+    public function colors()
+    {
+        return $this->hasMany(ProductColor::class);
+    }
+
+    /**
+     * Obtiene las imagenes de la galeria del producto
+     *
+     * @return HasMany
+     */
+    public function gallery()
+    {
+        return $this->hasMany(ProductGallery::class);
+    }
+
+    /**
+     * Obtiene el impuesto asociado al producto
+     *
+     * @return BelongsTo
+     */
+    public function taxRate()
+    {
+        return $this->belongsTo(TaxRate::class);
+    }
+
 }

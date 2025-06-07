@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Expense\ExpenseStatusEnum;
+use App\Exports\ExpenseExport;
 use App\Http\Requests\StoreExpenseRequest;
 use App\Http\Requests\UpdateExpenseRequest;
-use App\Repositories\ExpenseRepository;
 use App\Models\Expense;
 use App\Repositories\ExpensePaymentMethodRepository;
+use App\Repositories\ExpenseRepository;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ExpenseController extends Controller
 {
@@ -39,14 +41,14 @@ class ExpenseController extends Controller
                 // 'destroy',
                 // 'deleteMultiple',
                 'datatable',
-                'expensePaymentsDatatable'
+                'expensePaymentsDatatable',
             ]
         );
 
         $this->middleware(['check_permission:access_delete_expenses'])->only(
             [
                 'destroy',
-                'deleteMultiple'
+                'deleteMultiple',
             ]
         );
 
@@ -67,8 +69,8 @@ class ExpenseController extends Controller
         $expenseCategories = $this->expenseRepository->getAllExpenseCategories();
         $paymentMethods = $this->expensePaymentMethodRepository->getPaymentsMethods();
         $currencies = $this->expenseRepository->getAllCurrencies();
-         // Combinar todos los datos en un solo array
-        $mergeData = array_merge($expenses, compact('suppliers', 'stores', 'expenseCategories','paymentMethods', 'currencies'));
+        // Combinar todos los datos en un solo array
+        $mergeData = array_merge($expenses, compact('suppliers', 'stores', 'expenseCategories', 'paymentMethods', 'currencies'));
         return view('content.accounting.expenses.index', $mergeData);
     }
 
@@ -116,21 +118,21 @@ class ExpenseController extends Controller
 
     /**
      * Devuelve datos para un gasto específico.
-     * 
+     *
      * @param int $id
      * @return JsonResponse
      */
 
-     public function edit(int $id): JsonResponse
-     {
-         try {
-             $expense = $this->expenseRepository->getExpenseById($id);
-             return response()->json($expense);
-         } catch (\Exception $e) {
-             Log::error($e->getMessage());
-             return response()->json(['error' => 'Error al obtener los datos del gasto.'], 400);
-         }
-     }
+    public function edit(int $id): JsonResponse
+    {
+        try {
+            $expense = $this->expenseRepository->getExpenseById($id);
+            return response()->json($expense);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return response()->json(['error' => 'Error al obtener los datos del gasto.'], 400);
+        }
+    }
 
     /**
      * Actualiza un gasto específico.
@@ -224,6 +226,58 @@ class ExpenseController extends Controller
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return redirect()->back()->with('error', 'No se pudo actualizar. Por favor, intente nuevamente');
+        }
+    }
+
+    /**
+     * Exportar gastos a Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        try {
+            // Obtener los parámetros de los filtros
+            $supplier = $request->input('supplier');
+            $store = $request->input('store');
+            $category = $request->input('category');
+            $status = $request->input('status');
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+
+            // Obtener los gastos filtrados desde el repositorio
+            $expenses = $this->expenseRepository->getExpensesForExport($supplier, $store, $category, $status, $startDate, $endDate);
+
+            // Generar y descargar el archivo Excel
+            return Excel::download(new ExpenseExport($expenses), 'gastos-' . date('Y-m-d_H-i-s') . '.xlsx');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar los gastos a Excel. Por favor, intente nuevamente.');
+        }
+    }
+
+    /**
+     * Exportar gastos a PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        try {
+            // Obtener los parámetros de los filtros
+            $supplier = $request->input('supplier');
+            $store = $request->input('store');
+            $category = $request->input('category');
+            $status = $request->input('status');
+            $startDate = $request->input('start_date');
+            $endDate = $request->input('end_date');
+
+            // Obtener los gastos filtrados desde el repositorio
+            $expenses = $this->expenseRepository->getExpensesForExport($supplier, $store, $category, $status, $startDate, $endDate);
+            // Generar el PDF utilizando la vista correspondiente
+            $pdf = Pdf::loadView('content.accounting.expenses.export-pdf', compact('expenses'));
+
+            // Descargar el archivo PDF
+            return $pdf->download('gastos-' . date('Y-m-d_H-i-s') . '.pdf');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar los gastos a PDF. Por favor, intente nuevamente.');
         }
     }
 }

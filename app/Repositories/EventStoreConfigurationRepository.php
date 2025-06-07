@@ -2,8 +2,6 @@
 
 namespace App\Repositories;
 
-use App\Enums\Events\EventEnum;
-use App\Enums\Events\EventTypeEnum;
 use App\Models\Event;
 use App\Models\EventStoreConfiguration;
 use App\Models\Store;
@@ -23,10 +21,8 @@ class EventStoreConfigurationRepository
         $store = Store::findOrFail($storeId);
 
         // Obtener todos los eventos con sus tipos de eventos
-        $events = Event::whereIn('event_name', EventEnum::activeValues())
-                   ->whereHas('eventType', function ($query) {
-                       $query->whereIn('event_type_name', EventTypeEnum::activeValues());
-                   })->with('eventType')->get();
+        $events = Event::with('eventType')->get();
+
         // Obtener las configuraciones de eventos activas de la tienda
         $activeConfigurations = EventStoreConfiguration::where('store_id', $storeId)->get()->keyBy('event_id');
 

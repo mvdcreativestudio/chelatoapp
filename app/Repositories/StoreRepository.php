@@ -6,137 +6,138 @@ use App\Models\Store;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class StoreRepository
 {
-    /**
-     * Devuelve todas las tiendas.
-     *
-     * @return Collection
-     */
-    public function getAll(): Collection
-    {
-        if (auth()->user()->can('view_all_stores')) {
-            return Store::withCount('users')->with('phoneNumber')->get();
-        } else {
-            return Store::where('id', auth()->user()->store_id)->withCount('users')->with('phoneNumber')->get();
-        }
+
+  /**
+   * Devuelve todas las tiendas.
+   *
+   * @return Collection
+  */
+  public function getAll(): Collection
+  {
+      if (auth()->user()->can('view_all_stores')) {
+        return Store::withCount('users')->with('phoneNumber')->get();
+      } else {
+        return Store::where('id', auth()->user()->store_id)->withCount('users')->with('phoneNumber')->get();
+      }
+  }
+
+  /**
+   * Crea una nueva tienda con los datos proporcionados.
+   *
+   * @param array $data
+   * @return Store
+  */
+  public function create(array $data): Store
+  {
+      return Store::create($data);
+  }
+
+
+  public function update(Store $store, array $data)
+  {
+      $result = $store->update($data);
+      \Log::info('Resultado de la actualización:', ['success' => $result, 'data' => $data, 'store' => $store->toArray()]);
+      return $result;
+  }
+
+  /**
+   * Cambia el estado de la tienda.
+   *
+   * @param Store $store
+   * @return RedirectResponse
+  */
+  public function toggleStoreStatus(Store $store): ?bool
+  {
+    try {
+
+        $store->status = !$store->status;
+        $store->save();
+        return true;
+
+    } catch (\Exception $e) {
+        return false;
     }
+  }
 
-    /**
-     * Crea una nueva tienda con los datos proporcionados.
-     *
-     * @param array $data
-     * @return Store
-     */
-    public function create(array $data): Store
-    {
-        return Store::create($data);
-    }
 
-    /**
-     * Actualiza una tienda existente con los datos proporcionados.
-     *
-     * @param Store $store
-     * @param array $data
-     * @return Store
-     */
-    public function update(Store $store, array $data): Store
-    {
-        $store->update($data);
-        return $store;
-    }
+  /**
+   * Cambia el abierto/cerrado de la tienda.
+   *
+   * @param $id
+   * @return bool
+  */
+  public function toggleStoreStatusClosed($id): ?bool
+  {
+      try {
+          $store = Store::findOrFail($id);
+          $store->closed = !$store->closed;
+          $store->manual_override_at = now();
+          $store->save();
+          return true;
+      } catch (\Exception $e) {
+          return false;
+      }
+  }
 
-    /**
-     * Cambia el estado de la tienda.
-     *
-     * @param Store $store
-     * @return RedirectResponse
-     */
-    public function toggleStoreStatus(Store $store): ?bool
-    {
-        try {
 
-            $store->status = !$store->status;
-            $store->save();
-            return true;
 
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
+  /**
+   * Elimina una tienda de la base de datos.
+   *
+   * @param Store $store
+   * @return bool|null
+  */
+  public function delete(Store $store): ?bool
+  {
+      return $store->delete();
+  }
 
-    /**
-     * Cambia el abierto/cerrado de la tienda.
-     *
-     * @param $id
-     * @return bool
-     */
-    public function toggleStoreStatusClosed($id): ?bool
-    {
-        try {
-            $store = Store::findOrFail($id);
-            $store->closed = !$store->closed;
-            $store->manual_override_at = now();
-            $store->save();
-            return true;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
+  /**
+   * Devuelve usuarios que no están asociados a ninguna tienda.
+   *
+   * @return Collection|User[]
+  */
+  public function getUnassociatedUsers(): Collection
+  {
+      return User::whereNull('store_id')->get();
+  }
 
-    /**
-     * Elimina una tienda de la base de datos.
-     *
-     * @param Store $store
-     * @return bool|null
-     */
-    public function delete(Store $store): ?bool
-    {
-        return $store->delete();
-    }
+  /**
+   * Asocia un usuario a una tienda.
+   *
+   * @param Store $store
+   * @param int $userId
+   * @return Store
+  */
+  public function associateUser(Store $store, int $userId): Store
+  {
+      $user = User::findOrFail($userId);
+      $user->store_id = $store->id;
+      $user->save();
 
-    /**
-     * Devuelve usuarios que no están asociados a ninguna tienda.
-     *
-     * @return Collection|User[]
-     */
-    public function getUnassociatedUsers(): Collection
-    {
-        return User::whereNull('store_id')->get();
-    }
+      return $store;
+  }
 
-    /**
-     * Asocia un usuario a una tienda.
-     *
-     * @param Store $store
-     * @param int $userId
-     * @return Store
-     */
-    public function associateUser(Store $store, int $userId): Store
-    {
-        $user = User::findOrFail($userId);
-        $user->store_id = $store->id;
-        $user->save();
+  /**
+   * Desasocia un usuario de una tienda.
+   *
+   * @param Store $store
+   * @param int $userId
+   * @return Store
+  */
+  public function disassociateUser(Store $store, int $userId): Store
+  {
+      $user = User::findOrFail($userId);
+      $user->store_id = null;
+      $user->save();
 
-        return $store;
-    }
+      return $store;
+  }
 
-    /**
-     * Desasocia un usuario de una tienda.
-     *
-     * @param Store $store
-     * @param int $userId
-     * @return Store
-     */
-    public function disassociateUser(Store $store, int $userId): Store
-    {
-        $user = User::findOrFail($userId);
-        $user->store_id = null;
-        $user->save();
-
-        return $store;
-    }
 
     /**
      * Guarda los horarios de la tienda.
@@ -165,13 +166,15 @@ class StoreRepository
                 [
                     'open' => $open,
                     'close' => $close,
-                    'open_all_day' => isset($data['open_all_day']) && $data['open_all_day'],
+                    'open_all_day' => isset($data['open_all_day']) && $data['open_all_day']
                 ]
             );
         }
 
         return $store;
     }
+
+
 
     /**
      * Formatea el tiempo para asegurar que el formato sea HH:MM:SS.
@@ -264,19 +267,20 @@ class StoreRepository
      * @return Store
      */
 
+
     public function getStoreByUserId($userId)
     {
         return User::find($userId)->store;
     }
 
     /**
-     * Obtiene la tienda segun el id de la tienda.
-     * 
-     * @param int $storeId
+     * Obtiene una tienda dado un id.
+     *
+     * @param int $id
      * @return Store
      */
-    public function getStoreById(int $storeId): Store
+    public function find($id)
     {
-        return Store::findOrFail($storeId);
+        return Store::findOrFail($id);
     }
 }

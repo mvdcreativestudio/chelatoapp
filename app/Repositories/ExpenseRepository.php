@@ -173,6 +173,7 @@ class ExpenseRepository
             'currencies.name as currency_name',
             'currencies.symbol as currency_symbol',
             'stores.name as store_name',
+            'expenses.concept',
         ])
             ->join('suppliers', 'expenses.supplier_id', '=', 'suppliers.id')
             ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
@@ -298,5 +299,33 @@ class ExpenseRepository
     public function getAllCurrencies(): mixed
     {
         return Currency::all();
+    }
+
+    public function getExpensesForExport($supplier = null, $store = null, $category = null, $status = null, $startDate = null, $endDate = null)
+    {
+        // Filtrar por nombre de proveedor, tienda y categoría
+        $supplier = Supplier::where('name', $supplier)->first();
+        $store = Store::where('name', $store)->first();
+        $category = ExpenseCategory::where('name', $category)->first();
+
+        $query = Expense::with(['supplier', 'expenseCategory', 'currency', 'store', 'payments'])
+            ->when($supplier, function ($q) use ($supplier) {
+                return $q->where('supplier_id', $supplier->id);
+            })
+            ->when($store, function ($q) use ($store) {
+                return $q->where('store_id', $store->id);
+            })
+            ->when($category, function ($q) use ($category) {
+                return $q->where('expense_category_id', $category->id);
+            })
+            ->when($status, function ($q) use ($status) {
+                return $q->where('status', $status);
+            })
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                return $q->whereBetween('due_date', [$startDate, $endDate]);
+            })
+            ->get();
+
+        return $query;
     }
 }

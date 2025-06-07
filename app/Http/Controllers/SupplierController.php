@@ -8,7 +8,15 @@ use App\Http\Requests\StoreSupplierRequest;
 use App\Http\Requests\UpdateSupplierRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\SupplierImport;
+use App\Exports\SupplierTemplateImport;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Exports\SuppliersExport;
 
 class SupplierController extends Controller
 {
@@ -42,14 +50,25 @@ class SupplierController extends Controller
     }
 
     /**
-     * Muestra una lista de todos los proveedores.
+     * Muestra una lista de todos los proveedores y ordenes.
      *
      * @return View
      */
     public function index(): View
     {
-        $suppliers = $this->supplierRepository->getAll();
+        $suppliers = $this->supplierRepository->getAllWithOrders();
         return view('suppliers.index', $suppliers);
+    }
+
+
+    /**
+     * Devuelve a todos los proveedores.
+     *
+     */
+    public function getAll()
+    {
+        $suppliers = $this->supplierRepository->getAll();
+        return response()->json($suppliers);
     }
 
     /**
@@ -70,8 +89,20 @@ class SupplierController extends Controller
      */
     public function store(StoreSupplierRequest $request): RedirectResponse
     {
-        $this->supplierRepository->create($request->validated());
-        return redirect()->route('suppliers.index')->with('success', 'Proveedor creado correctamente.');
+        try {
+            $data = $request->validated();
+            $data['store_id'] = auth()->user()->store_id;
+
+            $this->supplierRepository->create($data);
+            return redirect()
+                ->route('suppliers.index')
+                ->with('success', 'Proveedor creado correctamente.');
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Error al crear el proveedor: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -119,5 +150,85 @@ class SupplierController extends Controller
     {
         $this->supplierRepository->delete($supplier);
         return redirect()->route('suppliers.index')->with('success', 'Proveedor eliminado correctamente.');
+    }
+
+    /**
+     * Descarga una plantilla para importar proveedores.
+     *
+     * @param Request $request
+     * @return mixed
+     */
+    public function downloadTemplate(Request $request)
+    {
+        try {
+            return Excel::download(new SupplierTemplateImport, 'plantilla_proveedores.xlsx');
+        } catch (\Exception $e) {
+            Log::error('Error al descargar la plantilla: ' . $e->getMessage());
+            return back()->with('error', 'Error al descargar la plantilla');
+        }
+    }
+
+
+    /**
+     * Importa proveedores desde un archivo Excel.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function import(Request $request)
+    {
+        try {
+            $request->validate([
+                'file' => 'required|mimes:xlsx,xls',
+            ]);
+
+            $store_id = Auth::user()->store_id;
+
+            DB::beginTransaction();
+
+            Excel::import(new SupplierImport($store_id), $request->file('file'));
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proveedores importados correctamente'
+            ]);
+
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            DB::rollBack();
+            $failures = $e->failures();
+            $errors = [];
+
+            foreach ($failures as $failure) {
+                $errors[] = "Fila {$failure->row()}: {$failure->errors()[0]}";
+            }
+
+            Log::error('Error en la validación de importación: ', $errors);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en la validación de datos',
+                'errors' => $errors
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al importar proveedores: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al importar proveedores: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Exportar los proveedores a un archivo Excel.
+     *
+     */
+    public function export()
+    {
+        return Excel::download(new SuppliersExport, 'proveedores.xlsx');
     }
 }

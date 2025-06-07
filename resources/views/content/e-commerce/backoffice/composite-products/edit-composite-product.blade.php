@@ -33,9 +33,6 @@
 @endsection
 
 @section('content')
-<h4 class="py-3 mb-4">
-  <span class="text-muted fw-light"></span><span> Editar Producto Compuesto</span>
-</h4>
 
 @if ($errors->any())
 <div class="alert alert-danger">
@@ -89,7 +86,6 @@
           </div>
         </div>
       </div>
-
       <!-- Segunda columna (Precios) -->
       <div class="col-lg-4">
         <div class="card h-100">
@@ -97,17 +93,25 @@
             <h5 class="card-title mb-0">Precios</h5>
           </div>
           <div class="card-body">
+            <!-- Campo para la moneda del producto compuesto -->
+            <div class="mb-3">
+              <label class="form-label" for="currency">Moneda</label>
+              <select class="form-select" id="currency" name="currency" required>
+                <option value="Peso" {{ old('currency', $compositeProduct->currency) == 'Peso' ? 'selected' : '' }}>Peso</option>
+                <option value="Dólar" {{ old('currency', $compositeProduct->currency) == 'Dólar' ? 'selected' : '' }}>Dólar</option>
+              </select>
+            </div>
             <!-- Campo para el precio final -->
             <div class="mb-3">
               <label class="form-label" for="price">Precio Final</label>
               <input type="number" class="form-control" id="price" placeholder="Precio del producto compuesto"
                 name="price" value="{{ $compositeProduct->price }}">
             </div>
-            <!-- Campo para el precio recomendado -->
+            <!-- Campo para el costo total -->
             <div class="mb-3">
-              <label class="form-label" for="recommended_price">Precio Recomendado</label>
+              <label class="form-label" for="recommended_price">Costo Total</label>
               <input type="number" class="form-control" id="recommended_price"
-                placeholder="Precio recomendado (calculado automáticamente)" name="recommended_price"
+                placeholder="Costo total (Calculado automáticamente)" name="recommended_price"
                 value="{{ $compositeProduct->recommended_price }}" disabled>
             </div>
           </div>
@@ -142,8 +146,8 @@
                 <tr>
                   <th>Producto</th>
                   <th>Cantidad</th>
-                  <th>Precio Unitario</th>
-                  <th>Subtotal</th>
+                  <th>Costo Unitario</th>
+                  <th>Costo Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,7 +168,7 @@
 
             <!-- Alerta si algún producto no tiene build_price -->
             <div class="alert alert-danger d-none" id="priceAlert">
-              Uno o más productos no tienen un precio asociado, no se puede calcular el precio recomendado.
+              Uno o más productos no tienen un precio asociado, no se puede calcular el costo total.
             </div>
           </div>
         </div>

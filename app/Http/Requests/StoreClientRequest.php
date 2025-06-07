@@ -59,7 +59,7 @@ class StoreClientRequest extends FormRequest
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) {
-                    if ($this->type === 'individual' && is_null($value)) {
+                    if ($this->type === 'individual' && empty($value)) {
                         $fail('El nombre es obligatorio para clientes individuales.');
                     }
                 },
@@ -69,40 +69,49 @@ class StoreClientRequest extends FormRequest
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) {
-                    if ($this->type === 'individual' && is_null($value)) {
+                    if ($this->type === 'individual' && empty($value)) {
                         $fail('El apellido es obligatorio para clientes individuales.');
                     }
                 },
             ],
-            'ci' => [
-              'nullable',
-              'string',
-              'max:255',
-              function ($attribute, $value, $fail) {
-                  if ($this->type === 'individual' && is_null($value)) {
-                      $fail('La CI es obligatoria para clientes individuales.');
-                  }
-              },
-            ],
-            'type' => 'required|string|max:255',
+            'type' => 'required|string|in:individual,company',
             'rut' => [
-              'nullable',
-              'string',
-              'max:255',
-              function ($attribute, $value, $fail) {
-                if ($this->type === 'company' && is_null($value)) {
-                  $fail('El RUT de la empresa es obligatorio en este tipo de cliente');
-                }
-              },
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if ($this->type === 'company' && empty($value)) {
+                        $fail('El RUT de la empresa es obligatorio en este tipo de cliente');
+                    }
+                },
+            ],
+            'ci' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if ($this->type === 'company' && empty($value)) {
+                        $fail('La CI es obligatoria en este tipo de cliente');
+                    }
+                },
             ],
             'company_name' => [
+                'nullable',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if ($this->type === 'company' && empty($value)) {
+                        $fail('La Razón Social de la empresa es obligatorio en este tipo de cliente');
+                    }
+                },
+            ],
+            'tax_rate_id' => [
               'nullable',
-              'string',
-              'max:255',
+              'integer',
               function ($attribute, $value, $fail) {
-                if ($this->type === 'company' && is_null($value)) {
-                  $fail('La Razón Social de la empresa es obligatorio en este tipo de cliente');
-                }
+                  if ($this->type === 'company' && empty($value)) {
+                      $fail('La Tasa de IVA es obligatoria en este tipo de cliente');
+                  }
               },
             ],
             'address' => 'nullable|string|max:255',
@@ -110,10 +119,11 @@ class StoreClientRequest extends FormRequest
             'state' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:255',
-            'email' => 'required|string|email|max:255',
+            'email' => 'nullable|string|email|max:255',
             'website' => 'nullable|string|max:255',
             'logo' => 'nullable|string|max:255',
             'store_id' => 'nullable|integer',
+            'price_list_id' => 'nullable|integer|exists:price_lists,id',
         ];
     }
 
@@ -121,7 +131,7 @@ class StoreClientRequest extends FormRequest
      * Obtiene los mensajes de error personalizados para la validación.
      *
      * @return array
-    */
+     */
     public function messages(): array
     {
         return [
@@ -129,9 +139,10 @@ class StoreClientRequest extends FormRequest
             'lastname.required_if' => 'El apellido es obligatorio para clientes individuales.',
             'rut.required_if' => 'El RUT es obligatorio para clientes de tipo Empresa',
             'company_name.required_if' => 'La Razón Social es obligatoria para clientes de tipo Empresa',
-            'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico debe ser una dirección válida.',
             'email.unique' => 'El correo electrónico ya está en uso.',
+            'ci.required_if' => 'La CI es obligatoria para clientes de tipo Persona',
+            'tax_rate_id.required_if' => 'La Tasa de IVA es obligatoria para clientes de tipo Empresa',
         ];
     }
 }
