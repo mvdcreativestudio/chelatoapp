@@ -44,6 +44,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EventStoreConfigurationController;
+use App\Http\Controllers\InternalOrderController;
 
 // Ruta raíz redirige a la tienda (Shop)
 Route::get('/', [EcommerceController::class, 'index'])->name('shop');
@@ -367,6 +368,15 @@ Route::middleware([
     Route::group(['prefix' => 'incomes'], function () {
         Route::post('/delete-multiple', [IncomeController::class, 'deleteMultiple'])->name('income-clients.deleteMultiple');
     });
+
+    // Compras Internas
+    Route::get('/internal-orders/create', [InternalOrderController::class, 'create'])->name('internal-orders.create');
+    Route::post('/internal-orders', [InternalOrderController::class, 'store'])->name('internal-orders.store');
+    Route::get('/internal-orders/products/{store}', [InternalOrderController::class, 'getStoreProducts']);
+    Route::get('/internal-orders/received', [InternalOrderController::class, 'received'])->name('internal-orders.received');
+    Route::get('/internal-orders/{order}', [InternalOrderController::class, 'show'])->name('internal-orders.show');
+    Route::put('/internal-orders/{order}', [InternalOrderController::class, 'update'])->name('internal-orders.update');
+    Route::get('/internal-orders/{order}/pdf', [InternalOrderController::class, 'generatePdf'])->name('internal-orders.pdf');
 });
 
 // Recursos con acceso público

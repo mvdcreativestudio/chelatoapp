@@ -120,10 +120,11 @@
               <div class="row">
                 <div class="mb-3 col-4">
                   <label class="form-label" for="form-repeater-1-1">Tipo de producto</label>
-                  <select id="productType" class="select2 form-select" data-placeholder="type" name="type">
-                    <option value="simple">Simple</option>
+                  <select id="productType" class="select2 form-select" name="type">
+                    <option value="simple" selected>Simple</option>
                     <option value="configurable">Variable</option>
                   </select>
+
                 </div>
                 <div id="flavorsQuantityContainer" class="mb-3 col-4">
                   <label class="form-label" for="max-flavors">Variaciones</label>
