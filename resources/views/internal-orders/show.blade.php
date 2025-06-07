@@ -38,11 +38,12 @@
         <div class="col-md-4">
           <label class="form-label">Estado</label>
           <select name="status" class="form-select" required>
-            @php $selected = old('status', $order->status); @endphp
-            <option value="pending" @selected($selected === 'pending')>Pendiente</option>
-            <option value="accepted" @selected($selected === 'accepted')>Aceptada</option>
-            <option value="rejected" @selected($selected === 'rejected')>Rechazada</option>
+            @php $selected = old('status', $order->status->value); @endphp
+            <option value="pending"   @selected($selected === 'pending')>Pendiente</option>
+            <option value="accepted"  @selected($selected === 'accepted')>Aceptada</option>
+            <option value="rejected"  @selected($selected === 'rejected')>Rechazada</option>
             <option value="delivered" @selected($selected === 'delivered')>Entregada</option>
+            <option value="cancelled" @selected($selected === 'cancelled')>Cancelada</option>
           </select>
         </div>
 

@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\Store;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Enums\InternalOrders\InternalOrderStatus;
+
 
 class InternalOrderRepository
 {
@@ -21,18 +23,36 @@ class InternalOrderRepository
         $user = Auth::user();
         $storeId = $user->store_id;
 
+        $currentStore = Store::find($storeId);
+
+        // Si puede crear órdenes para todas las tiendas
+        $fromStores = $currentStore->can_create_internal_orders_to_all_stores
+            ? Store::all()
+            : Store::where('id', $storeId)->get();
+
+        // Tiendas destino siguen igual
+        $toStores = $currentStore->can_create_internal_orders_to_all_stores
+            ? Store::where('id', '!=', $storeId)->get()
+            : Store::where('can_receive_internal_orders', true)
+                    ->where('id', '!=', $storeId)
+                    ->get();
+
         return [
-            'stores' => Store::where('can_receive_internal_orders', true)
-                             ->where('id', '!=', $storeId)
-                             ->get(),
+            'from_stores'   => $fromStores,
+            'stores'        => $toStores, // esto sigue alimentando el `to_store_id`
+            'current_store' => $currentStore,
         ];
     }
+
+
+
+
 
     public function create(array $data)
     {
         return DB::transaction(function () use ($data) {
             $user = Auth::user();
-            $fromStoreId = $user->store_id;
+            $fromStoreId = $data['from_store_id'];
 
             // 1. Crear la orden
             $order = InternalOrder::create([
@@ -60,28 +80,46 @@ class InternalOrderRepository
         });
     }
 
+
     public function getReceivedOrders()
     {
         $storeId = auth()->user()->store_id;
+        $store = Store::find($storeId);
 
-        $orders = InternalOrder::with('fromStore')
-            ->where('to_store_id', $storeId)
-            ->latest()
-            ->get();
+        // Si es una tienda normal, solo muestra órdenes que recibe
+        if (!$store->can_create_internal_orders_to_all_stores) {
+            $orders = InternalOrder::with('fromStore')
+                ->where('to_store_id', $storeId)
+                ->latest()
+                ->get();
+        } else {
+            // Si es fábrica (o quien tiene el permiso), ve todas las órdenes que creó
+            $orders = InternalOrder::with('toStore')
+                ->where('from_store_id', $storeId)
+                ->latest()
+                ->get();
+        }
 
         return [
             'orders' => $orders,
             'totals' => [
                 'all' => $orders->count(),
-                'pending' => $orders->where('status', 'pending')->count(),
-                'accepted' => $orders->where('status', 'accepted')->count(),
-                'delivered' => $orders->where('status', 'delivered')->count(),
+                'pending' => $orders->where('status', InternalOrderStatus::PENDING)->count(),
+                'accepted' => $orders->where('status', InternalOrderStatus::ACCEPTED)->count(),
+                'delivered' => $orders->where('status', InternalOrderStatus::DELIVERED)->count(),
+                'cancelled' => $orders->where('status', InternalOrderStatus::CANCELLED)->count(),
             ]
         ];
     }
 
+
     public function updateReceivedOrder(InternalOrder $order, array $data): void
     {
+        // Forzar fecha de entrega si está marcada como entregada pero no se definió
+        if (($data['status'] ?? null) === 'delivered' && empty($data['delivery_date'])) {
+            $data['delivery_date'] = now()->toDateString(); // YYYY-MM-DD
+        }
+
         // 1. Actualizar estado y fecha
         $order->update([
             'status' => $data['status'] ?? $order->status,
@@ -99,5 +137,6 @@ class InternalOrderRepository
             }
         }
     }
+
 
 }
