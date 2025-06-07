@@ -216,6 +216,29 @@
       ]
     },
     {
+      "id": "tour-ordenes-internas",
+      "name": "Órdenes Internas",
+      "icon": "menu-icon tf-icons bx bx-transfer",
+      "slug": "internal-orders",
+      "url": "/admin/internal-orders",
+      "submenu": [
+        {
+          "id": "tour-crear-orden",
+          "name": "Crear Orden",
+          "icon": "menu-icon tf-icons bx bx-plus",
+          "slug": "internal-orders",
+          "url": "/admin/internal-orders/create"
+        },
+        {
+          "id": "tour-recibidas",
+          "name": "Recibidas",
+          "icon": "menu-icon tf-icons bx bx-download",
+          "slug": "internal-orders",
+          "url": "/admin/internal-orders/received"
+        }
+      ]
+    },
+    {
       "id": "tour-contabilidad",
       "name": "Contabilidad",
       "icon": "menu-icon tf-icons bx bx-dollar",

@@ -3,7 +3,7 @@
   return [
     "creatorName" => "MDV Studio",
     "creatorUrl" => "#",
-    "templateName" => "Hormigonera",
+    "templateName" => "Chelato",
     "templateSuffix" => "",
     "templateVersion" => "2.2.0",
     "templateFree" => false,

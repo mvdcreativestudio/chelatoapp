@@ -77,7 +77,7 @@ class EmailTemplateController extends Controller
         $coupon_amount = 0;
         $order_total = 200;
         $store_name = 'Pocitos';
-        $ecommerce_name = 'Hormigonera';
+        $ecommerce_name = 'Chelato';
 
 
         return view('emails.ecommerce.customer.new-order-client', compact(

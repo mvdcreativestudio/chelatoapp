@@ -82,6 +82,8 @@ use App\Http\Controllers\NoteDeliveryController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EventStoreConfigurationController;
+use App\Http\Controllers\InternalOrderController;
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
 
@@ -661,6 +663,14 @@ Route::prefix('admin')->middleware([
 
     // Transacciones
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+    // Compras Internas
+    Route::get('/internal-orders/create', [InternalOrderController::class, 'create'])->name('internal-orders.create');
+    Route::post('/internal-orders', [InternalOrderController::class, 'store'])->name('internal-orders.store');
+    Route::get('/internal-orders/products/{store}', [InternalOrderController::class, 'getStoreProducts']);
+    Route::get('/internal-orders/received', [InternalOrderController::class, 'received'])->name('internal-orders.received');
+    Route::get('/internal-orders/{order}', [InternalOrderController::class, 'show'])->name('internal-orders.show');
+    Route::put('/internal-orders/{order}', [InternalOrderController::class, 'update'])->name('internal-orders.update');
+    Route::get('/internal-orders/{order}/pdf', [InternalOrderController::class, 'generatePdf'])->name('internal-orders.pdf');
 });
 
 // Recursos con acceso público

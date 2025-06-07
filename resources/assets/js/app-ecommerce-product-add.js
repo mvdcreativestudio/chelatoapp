@@ -77,6 +77,9 @@
       }
     }
 
+    toggleFields();
+
+
     productTypeSelect.addEventListener('change', () => {
       toggleFields();
     });
