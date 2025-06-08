@@ -16,8 +16,8 @@
           <div class="mb-3">
             <label for="payType" class="form-label">Forma de Pago</label>
             <select class="form-control" id="payType" name="payType">
-              <option value="1">Contado</option>
-              <option value="2">Crédito</option>
+              <option value="1" {{ $order->payment_method !== 'internalCredit' ? 'selected' : '' }}>Contado</option>
+              <option value="2" {{ $order->payment_method === 'internalCredit' ? 'selected' : '' }}>Crédito</option>
             </select>
           </div>
         </div>
