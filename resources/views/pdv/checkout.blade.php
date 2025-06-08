@@ -101,18 +101,6 @@
               </div>
             </div>
           </div>
-          <div id="construction-site-info" class="card shadow-sm p-4 mb-3 rounded-lg border-0 construction-site-info-card" style="display: block;">
-          <div class="col-md-12 mb-3">
-        <div class="form-group">
-            <label for="construction_site" class="form-label">Nombre de la obra</label>
-            <input type="text" 
-                   class="form-control" 
-                   id="construction_site" 
-                   name="construction_site" 
-                   placeholder="Ingrese el nombre de la obra">
-        </div>
-    </div>
-    </div>
           <div class="card shadow-sm p-4 border-0">
             <h5 class="mb-3">Productos de la venta</h5>
             <!-- Listado de items seleccionados -->
@@ -134,7 +122,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="col-md-4">
 
     <div class="currency-section mb-3">
@@ -145,11 +133,11 @@
             <div class="card-body p-2">
                 <div class="btn-group btn-group-sm w-100" data-toggle="buttons">
                     <label class="btn btn-outline-secondary btn-sm">
-                        <input type="radio" name="currency" value="Peso" checked> 
+                        <input type="radio" name="currency" value="Peso" checked>
                           Pesos (UYU)
                     </label>
                     <label class="btn btn-outline-secondary btn-sm">
-                        <input type="radio" name="currency" value="Dólar"> 
+                        <input type="radio" name="currency" value="Dólar">
                           Dólares (USD)
                     </label>
                 </div>
@@ -396,7 +384,7 @@
           @endforeach
         </select>
       </div>
-      
+
       <div class="mb-3 animate__animated animate__fadeInLeft" id="razonSocialField" style="display: none;">
         <label for="razonSocialCliente" class="form-label">
           Razón Social *<span class="text-danger">*</span>

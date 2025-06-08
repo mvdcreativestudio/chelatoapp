@@ -312,8 +312,6 @@ $(document).ready(function () {
                       // Asignar el taxRate al producto
                       product.tax_rate = taxRate || { rate: 0, name: 'Sin impuesto' };
 
-                      console.log('Producto:', product.name, 'Tax Rate:', product.tax_rate);
-
                       // Calcular el precio final con impuestos
                       product.final_price = calculateFinalPrice(
                           product.price || product.old_price,
@@ -345,7 +343,6 @@ $(document).ready(function () {
     function calculateFinalPrice(basePrice, taxRate) {
       if (!basePrice || basePrice <= 0) return 0; // Validar precio base
       if (!taxRate || taxRate < 0) taxRate = 0;  // Validar tasa de impuesto
-      console.log('Calculando precio final:', { basePrice, taxRate });
       return basePrice * (1 + (taxRate / 100));
     }
 
@@ -814,20 +811,18 @@ $(document).ready(function () {
 
     // Cargar la lista de precios del cliente si está asignada
     function loadClientPriceList(priceListId) {
-        // Solo carga la lista de precios del cliente si no hay una lista de precios manual seleccionada
-        if (!$('#manual_price_list_id').val()) {
-            return $.ajax({
-                url: `${baseUrl}admin/price-list/${priceListId}/products`,
-                type: 'GET',
-                success: function (response) {
-                    priceListProducts = response.products;
-                    updateProductPrices(); // Llamamos a la función para actualizar los precios en la vista
-                },
-                error: function (xhr) {
-                    console.error('Error al cargar los precios de la lista:', xhr.responseText);
-                }
-            });
-        }
+        return $.ajax({
+            url: `${baseUrl}admin/price-list/${priceListId}/products`,
+            type: 'GET',
+            success: function (response) {
+                priceListProducts = response.products;
+                updateProductPrices(); // Llamamos a la función para actualizar los precios en la vista
+                updateCartPrices();   // <--- ¡NUEVO! Actualizar también los precios en el carrito
+            },
+            error: function (xhr) {
+                console.error('Error al cargar los precios de la lista:', xhr.responseText);
+            }
+        });
     }
 
 
@@ -1158,6 +1153,7 @@ $(document).ready(function () {
 
     // Función para deseleccionar al cliente
     function deselectClient() {
+        console.log('Ejecutando deselectClient');
         client = [];  // Limpiar los datos del cliente
         priceListProducts = []; // Vaciar lista de precios para usar precios originales
 
@@ -1195,9 +1191,14 @@ $(document).ready(function () {
     // Función para actualizar los precios de los productos en el carrito según la lista de precios del cliente seleccionado
     function updateCartPrices() {
         cart = cart.map(item => {
-            // Usar el precio de lista si existe en `priceListProducts`, o el precio original
             const productInPriceList = priceListProducts.find(p => p.id === item.id);
-            item.price = productInPriceList ? productInPriceList.price : item.original_price;
+            if (productInPriceList) {
+                item.price = productInPriceList.price;
+                item.base_price = productInPriceList.price;
+            } else {
+                item.price = item.original_price;
+                item.base_price = item.original_price;
+            }
             return item;
         });
         updateCart();

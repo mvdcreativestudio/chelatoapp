@@ -136,10 +136,29 @@
                                 </option>
                             </select>
                         </div>
+
+                        <!-- Cliente Asociado -->
+                        <div class="mb-3">
+                          <label class="form-lablel" for="store-client">Cliente Asociado</label>
+                          <select class="form-select" id="store-client" name="client_id">
+                              <option value="">Seleccione un cliente</option>
+                              @foreach($clients as $client)
+                                  <option value="{{ $client->id }}" {{ $store->client_id == $client->id ? 'selected' : '' }}>
+                                      @if($client->type === 'company')
+                                          {{ $client->company_name }} ({{ $client->email }})
+                                      @else
+                                          {{ $client->name }} {{ $client->lastname }}
+                                      @endif
+                                  </option>
+                              @endforeach
+                          </select>
+                        </div>
+
                         <!-- Botones -->
                         <div class="d-flex justify-content-end mt-5">
                             <button type="submit" class="btn btn-primary">Actualizar Tienda</button>
                         </div>
+                    </div>
     </form>
 </div>
 
@@ -160,21 +179,6 @@
         autocomplete.setFields(['address_component']);
     }
 
-    function geolocate() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                const geolocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                const circle = new google.maps.Circle({
-                    center: geolocation,
-                    radius: position.coords.accuracy
-                });
-                autocomplete.setBounds(circle.getBounds());
-            });
-        }
-    }
     function geolocate() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function(position) {

@@ -66,7 +66,7 @@ class InternalOrderController extends Controller
 
     public function show(InternalOrder $order)
     {
-        $order->load('fromStore', 'items.product');
+        $order->load('fromStore', 'toStore.client', 'items.product');
         return view('internal-orders.show', compact('order'));
     }
 

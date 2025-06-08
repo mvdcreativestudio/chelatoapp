@@ -10,6 +10,7 @@ use App\Http\Requests\StoreStoreRequest;
 use App\Http\Requests\UpdateStoreRequest;
 use App\Models\Store;
 use App\Models\TaxRate;
+use App\Models\Client;
 use App\Repositories\AccountingRepository;
 use App\Repositories\MercadoPagoAccountStoreRepository;
 use App\Repositories\StoreRepository;
@@ -134,7 +135,9 @@ class StoreController extends Controller
         // Obtener todas las tasas de IVA disponibles
         $taxRates = TaxRate::all();
 
-        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'taxRates'));
+        $clients = Client::all();
+
+        return view('stores.edit', compact('store', 'googleMapsApiKey', 'companyInfo', 'logoUrl', 'taxRates', 'clients'));
     }
 
 

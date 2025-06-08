@@ -6,6 +6,7 @@ use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class SupplierRepository
 {
@@ -75,6 +76,7 @@ class SupplierRepository
     public function create(array $data): Supplier
     {
         // $data['store_id'] = auth()->user()->store_id ?? throw new ModelNotFoundException('No se puede crear un proveedor sin una tienda asignada.');
+        Log::info('Creando proveedor con datos: ', $data);
 
         return Supplier::create($data);
     }

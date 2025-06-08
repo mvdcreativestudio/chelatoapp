@@ -12,16 +12,17 @@ class Supplier extends Model
     use HasFactory;
 
     protected $fillable = [
-      'name', 
-      'phone', 
-      'address', 
-      'city', 
-      'state', 
-      'country', 
-      'email', 
-      'doc_type', 
-      'doc_number', 
-      'default_payment_method'
+      'name',
+      'phone',
+      'address',
+      'city',
+      'state',
+      'country',
+      'email',
+      'doc_type',
+      'doc_number',
+      'default_payment_method',
+      'store_id'
     ];
 
     /**
@@ -46,7 +47,7 @@ class Supplier extends Model
 
     /**
      * Obtiene las ordenes de compra asociadas al proveedor.
-     * 
+     *
      * @return HasMany
      */
     public function purchaseOrder(): HasMany
@@ -57,7 +58,7 @@ class Supplier extends Model
 
     /**
      * Obtiene la tienda a la que pertenece el proveedor.
-     * 
+     *
      * @return BelongsTo
      */
     public function store(): BelongsTo

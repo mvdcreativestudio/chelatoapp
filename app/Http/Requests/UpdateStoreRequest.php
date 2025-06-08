@@ -33,6 +33,7 @@ class UpdateStoreRequest extends FormRequest
             'rut' => ['sometimes', 'string'],
             'tax_rate_id' => ['sometimes', 'exists:tax_rates,id'],
             'status' => 'sometimes|boolean',
+            'client_id' => ['sometimes', 'exists:clients,id'],
         ];
         return $rules;
     }

@@ -32,7 +32,8 @@ class Store extends Model
         'accepts_peya_envios',
         'peya_envios_key',
         'pos_provider_id',
-        'print_settings'
+        'print_settings',
+        'client_id'
     ];
 
     /**
@@ -191,5 +192,15 @@ class Store extends Model
      */
     public function budgets() {
         return $this->hasMany(Budget::class);
+    }
+
+    /**
+     * Obtiene el cliente asociado a la tienda.
+     *
+     * @return HasOne
+     */
+    public function client(): HasOne
+    {
+        return $this->hasOne(Client::class, 'id', 'client_id');
     }
 }

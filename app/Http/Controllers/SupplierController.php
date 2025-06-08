@@ -92,6 +92,7 @@ class SupplierController extends Controller
         try {
             $data = $request->validated();
             $data['store_id'] = auth()->user()->store_id;
+            Log::info('Creando proveedor con datos: ', $data);
 
             $this->supplierRepository->create($data);
             return redirect()
