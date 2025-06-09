@@ -84,24 +84,22 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InternalOrderController;
 
-Route::get('/', [LandingController::class, 'index'])->name('home');
 
+Route::get('/', function () {
+  if (Auth::check()) {
+      return redirect()->route('dashboard');
+  } else {
+      // Si el usuario no está autenticado, redirigir al login
+      return redirect()->route('login');
+  }
+  })->name('home');
 
-// Middleware de autenticación y verificación de email
-Route::prefix('admin')->middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function () {
-    // Redirección de `/admin` al dashboard
-    Route::get('/', function () {
-        // Si el usuario está autenticado, redirigir al dashboard
-        if (Auth::check()) {
-            return redirect()->route('dashboard');
-        }
-        // Si no está autenticado, redirigir a /landing
-        return redirect()->route('landing-page');
-    })->name('admin.home');
+  // Middleware de autenticación y verificación de email
+  Route::middleware([
+      'auth:sanctum',
+      config('jetstream.auth_session'),
+      'verified',
+  ])->prefix('admin')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
