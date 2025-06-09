@@ -213,6 +213,19 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentStep = 0;
     const completedSteps = new Set();
 
+    function convertUnitOfMeasure(unit) {
+        switch(unit.toLowerCase()) {
+            case 'units':
+                return 'Unidades';
+            case 'l':
+                return 'Litros';
+            case 'ml':
+                return 'Mililitros';
+            default:
+                return unit;
+        }
+    }
+
     function renderStep(index) {
       const stepData = stepBatchUsage[index];
       const isCompleted = completedSteps.has(index);
@@ -230,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (stepData.batches_used && stepData.batches_used.length > 0) {
         stepHtml += '<p><strong>Lotes utilizados:</strong></p><ul>';
         stepData.batches_used.forEach(function (batch) {
-          stepHtml += `<li>Lote ${batch.name}: ${batch.quantity_used} ${batch.unit_of_measure}</li>`;
+          stepHtml += `<li>Materia Prima: ${batch.raw_material_name} - Lote ${batch.name}: ${batch.quantity_used} ${convertUnitOfMeasure(batch.unit_of_measure)}</li>`;
         });
         stepHtml += '</ul>';
       }
@@ -257,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (event.target.classList.contains('complete-step')) {
         const stepIndex = event.target.getAttribute('data-step');
     }
-    
+
     if (event.target.classList.contains('finalize-step')) {
         location.reload();
     }

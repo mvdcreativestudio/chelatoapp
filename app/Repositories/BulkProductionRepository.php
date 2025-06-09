@@ -185,7 +185,10 @@ class BulkProductionRepository
                     'batch_id' => $batch->id,
                     'name' => $batch->batch_number,
                     'quantity_used' => $quantityToUse,
-                    'unit_of_measure' => $rawMaterial->unit_of_measure
+                    'unit_of_measure' => $rawMaterial->unit_of_measure,
+                    'raw_material_name' => DB::table('raw_materials')
+                        ->where('id', $material['raw_material_id'])
+                        ->value('name')
                 ];
             } catch (\Exception $e) {
                 Log::error("Error procesando el batch {$batch->id}: " . $e->getMessage());
@@ -255,7 +258,7 @@ class BulkProductionRepository
 
     /*
     *
-    * Método utilizado en el "Ver Lotes" que despliega un QR. 
+    * Método utilizado en el "Ver Lotes" que despliega un QR.
     *
     */
     public function getBatchInfoByIdentifier($identifier)
@@ -268,7 +271,7 @@ class BulkProductionRepository
 
     /*
     *
-    * Devuelve nombre de lote, cantidades y unidad de medida. 
+    * Devuelve nombre de lote, cantidades y unidad de medida.
     *
     */
     private function getBatchInformation($id)

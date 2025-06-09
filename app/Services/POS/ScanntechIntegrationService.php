@@ -556,5 +556,14 @@ public function pollVoidStatus(array $transactionData): array
         ];
     }
 
+    public function cancelTransaction(array $transactionData): array
+    {
+        // Implementación acorde a la interfaz
+        return [
+            'success' => false,
+            'message' => 'Cancel transaction not implemented.'
+        ];
+    }
+
 
 }

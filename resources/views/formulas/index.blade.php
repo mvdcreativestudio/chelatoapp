@@ -165,6 +165,7 @@
         <select class="form-control" id="unit_of_measure" name="unit_of_measure" required>
           <option value="L">Litro (L)</option>
           <option value="ml">Mililitro (ml)</option>
+          <option value="units">Unidades</option>
         </select>
       </div>
 

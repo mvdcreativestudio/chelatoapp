@@ -214,7 +214,7 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header justify-content-center">
-        <h5 class="modal-title" id="modalBatchesLabel">Batches Utilizados</h5>
+        <h5 class="modal-title" id="modalBatchesLabel">Lotes Utilizados</h5>
       </div>
 
       <div class="modal-body d-flex align-items-stretch">

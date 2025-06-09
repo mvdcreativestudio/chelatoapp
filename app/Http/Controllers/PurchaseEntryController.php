@@ -37,11 +37,11 @@ class PurchaseEntryController extends Controller
             ->mapWithKeys(function ($entries, $itemId) {
                 return [$itemId => $entries->sum('quantity')];
             });
-        
+
         return view('purchase-entries.index', compact('purchaseOrderItems','purchaseEntries', 'purchaseEntriesSum'));
     }
 
-    
+
 
     public function create()
     {
@@ -96,8 +96,17 @@ class PurchaseEntryController extends Controller
             if ($entry['received_quantity'] > $remainingQuantity) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La cantidad recibida no puede ser mayor a la cantidad restante para el item con ID: ' . $purchaseOrderItem->id 
+                    'message' => 'La cantidad recibida no puede ser mayor a la cantidad restante para el item con ID: ' . $purchaseOrderItem->id
                 ]);
+            } else {
+                // Sumar al stock del producto o material crudo según sea el caso
+                if (!is_null($purchaseOrderItem->raw_material_id)) {
+                    $rawMaterial = $purchaseOrderItem->rawMaterial;
+                    $rawMaterial->increment('stock', $entry['received_quantity']);
+                } elseif (!is_null($purchaseOrderItem->product_id)) {
+                    $product = $purchaseOrderItem->product;
+                    $product->increment('stock', $entry['received_quantity']);
+                }
             }
 
             // Crear la nueva entrada de compra

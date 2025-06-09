@@ -17,13 +17,13 @@ class ModifyUnitOfMeasureToEnum extends Migration
         // Cambiar la columna unit_of_measure a enum en la tabla formulas
         Schema::table('formulas', function (Blueprint $table) {
             // Eliminar la columna actual y luego agregarla como enum
-            DB::statement("ALTER TABLE formulas MODIFY unit_of_measure ENUM('L', 'ml') AFTER final_product_id");
+            DB::statement("ALTER TABLE formulas MODIFY unit_of_measure ENUM('L', 'ml', 'units') AFTER final_product_id");
         });
 
         // Cambiar la columna unit_of_measure a enum en la tabla packages
         Schema::table('packages', function (Blueprint $table) {
             // Eliminar la columna actual y luego agregarla como enum
-            DB::statement("ALTER TABLE packages MODIFY unit_of_measure ENUM('L', 'ml') AFTER price");
+            DB::statement("ALTER TABLE packages MODIFY unit_of_measure ENUM('L', 'ml', 'units') AFTER price");
         });
     }
 

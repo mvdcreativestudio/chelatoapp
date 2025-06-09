@@ -96,20 +96,30 @@ class PosController extends Controller
 
     public function getProviderByStoreId($storeId)
     {
-      try {
-        // Obtener el proveedor POS asociado a la tienda
-        $posProvider = $this->posService->getProviderByStoreId($storeId);
+        try {
+            $store = \App\Models\Store::findOrFail($storeId);
 
-        if (!$posProvider) {
-          return response()->json(['error' => 'No se pudo encontrar el proveedor POS para la tienda'], 404);
+            $provider = PosProvider::find($store->pos_provider_id);
+
+            if (!$provider) {
+                return response()->json(['error' => 'Proveedor POS no encontrado'], 404);
+            }
+
+            return response()->json([
+                'provider' => [
+                    'id' => $provider->id,
+                    'name' => $provider->name,
+                    'system_id' => $provider->name === 'Scanntech' ? 'NOT_REQUIRED' : $provider->system_id,
+                    'branch' => $provider->name === 'Scanntech' ? 'NOT_REQUIRED' : $provider->branch,
+                    'api_url' => $provider->api_url,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener el proveedor POS: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al obtener el proveedor POS'], 500);
         }
-
-        return response()->json(['provider' => $posProvider]);
-      } catch (\Exception $e) {
-        Log::error('Error al obtener el proveedor POS para el store ID: ' . $storeId . ' - Error: ' . $e->getMessage());
-        return response()->json(['error' => 'Error al obtener el proveedor POS'], 500);
-      }
     }
+
 
     public function getPosToken(Request $request)
     {
@@ -386,7 +396,7 @@ class PosController extends Controller
             }
 
             $originalTransaction = \App\Models\Transaction::where('formatted_data->order_id', $validated['order_id'])
-                ->where('status', 'completed') // Solo buscar en transacciones completadas
+                ->where('status', 'pending') // Solo buscar en transacciones completadas
                 ->first();
 
             if (!$originalTransaction) {
@@ -398,8 +408,6 @@ class PosController extends Controller
             if (is_string($formattedData)) {
                 $formattedData = json_decode($formattedData, true); // Decodificar si es una cadena JSON
             }
-
-
 
             $acquirer = $formattedData['Acquirer'] ?? null;
 
