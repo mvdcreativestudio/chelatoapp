@@ -111,14 +111,13 @@
 
   const productRouteBase = "{{ url('/admin/internal-orders/products') }}";
 
-  function fetchProducts(storeId, search = '', category = '') {
+  function fetchProducts(storeId, search = '') {
     const container = document.getElementById('product-container');
 
     container.innerHTML = '<div class="text-center py-3">Cargando productos...</div>';
 
     const params = new URLSearchParams({
-      search: search,
-      category: category
+      search: search
     });
 
     fetch(`${productRouteBase}/${storeId}?${params.toString()}`)
@@ -126,14 +125,6 @@
       .then(html => {
         container.innerHTML = html;
         initializeSelect2();
-
-        // Rellenar las categorías si hay datos
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
-        const categoriesScript = tempDiv.querySelector('#inject-categories');
-        if (categoriesScript) {
-          eval(categoriesScript.innerText);
-        }
       })
       .catch(err => {
         console.error('Error en fetch:', err);
@@ -153,15 +144,9 @@
 
     $(document).on('input', '#product-search', debounce(function () {
       if (currentStoreId) {
-        fetchProducts(currentStoreId, this.value, $('#product-category').val());
+        fetchProducts(currentStoreId, this.value);
       }
     }, 300));
-
-    $(document).on('change', '#product-category', function () {
-      if (currentStoreId) {
-        fetchProducts(currentStoreId, $('#product-search').val(), this.value);
-      }
-    });
 
     // Trigger inicial si ya hay tienda preseleccionada
     const preselected = document.getElementById('from_store_id');

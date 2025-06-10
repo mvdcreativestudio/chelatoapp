@@ -33,18 +33,18 @@ class InternalOrderController extends Controller
         return view('internal-orders.create', $data);
     }
 
-    public function getStoreProducts(Store $store)
+    public function getStoreProducts(Store $store, Request $request)
     {
-        $products = Product::with('categories')
-            ->where('store_id', $store->id)
+        $search = $request->input('search', '');
+
+        $products = Product::where('store_id', $store->id)
             ->where('allow_internal_order', true)
+            ->when($search, function($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
             ->get();
 
-        $grouped = $products->groupBy(function ($product) {
-            return $product->categories->first()->name ?? 'Sin categoría';
-        });
-
-        return view('internal-orders.partials.products-by-category', compact('grouped'));
+        return view('internal-orders.partials.products', compact('products'));
     }
 
 

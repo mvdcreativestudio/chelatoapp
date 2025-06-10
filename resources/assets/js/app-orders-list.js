@@ -149,7 +149,6 @@ $(function () {
                   <div>
                     <h5 class="order-title">#${orderData.id} - ${orderData.client_name}</h5>
                     <p class="order-date text-muted small">${moment(orderData.date).format('DD/MM/YYYY')}</p>
-                        <p class="order-construction_site">Obra: ${orderData.construction_site}</p>
                     <div class="d-flex gap-2 my-2">
                       <span class="badge ${paymentStatusClass}">${paymentStatusText}</span>
                       <span class="badge ${shippingStatusClass}">${shippingStatusText}</span>
