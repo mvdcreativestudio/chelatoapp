@@ -446,6 +446,13 @@
           "icon": "menu-icon tf-icons bx bx-world",
           "slug": "roles",
           "url": "/admin/roles"
+        },
+        {
+          "id": "tour-vendors",
+          "name": "Vendedores",
+          "icon": "menu-icon tf-icons bx bx-user-check",
+          "slug": "vendors",
+          "url": "/admin/vendors"
         }
       ]
     },

@@ -176,6 +176,7 @@
           </select>
         </div>
 
+
         <!-- Campo para CI -->
         <div id="ciField" class="mb-3" style="display: none;">
           <label for="ci" class="form-label">Cédula de Identidad</label>
@@ -243,6 +244,17 @@
             @endforeach
         </select>
         <small class="text-primary mt-2" id="createNewPriceListLink" style="cursor: pointer;">Crear nueva lista de precios</small>
+      </div>
+
+      <!-- Selector de Vendedor por defecto -->
+      <div class="mb-3">
+        <label for="vendor_id" class="form-label">Vendedor</label>
+        <select class="form-select" id="vendor_id" name="vendor_id">
+          <option value="" selected>Seleccionar Vendedor</option>
+          @foreach($vendors as $vendor)
+            <option value="{{ $vendor->id }}">{{ $vendor->name }} {{$vendor->lastname}}</option>
+          @endforeach
+        </select>
       </div>
 
       <div class="pt-3">

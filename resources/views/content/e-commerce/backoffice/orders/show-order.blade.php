@@ -186,7 +186,7 @@ $changeTypeTranslations = [
       </ul>
     </div>
     @endif
-    
+
     <!-- Botón Emitir Factura -->
     @if(!$order->is_billed && $store->invoices_enabled)
       <button type="button" class="btn btn-sm btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
@@ -662,6 +662,14 @@ $changeTypeTranslations = [
             ucwords($order->client->city) }}, {{ ucwords($order->client->state) }}, {{ $order->client->country }}</p>
         </div>
         @endif
+
+        @if($order->client->vendor_id !== null)
+          <div class="mb-3">
+            <h6 class="card-title mt-4">Vendedor Asignado:</h6>
+            <p class="mb-1">{{ ucwords($order->client->vendor->name) }} {{ ucwords($order->client->vendor->lastname) }}</p>
+          </div>
+        @endif
+
 
         @if($order->client !== null)
         <div class="mb-3">

@@ -124,6 +124,7 @@ class StoreClientRequest extends FormRequest
             'logo' => 'nullable|string|max:255',
             'store_id' => 'nullable|integer',
             'price_list_id' => 'nullable|integer|exists:price_lists,id',
+            'vendor_id' => 'nullable|integer|exists:vendors,id',
         ];
     }
 
@@ -143,6 +144,7 @@ class StoreClientRequest extends FormRequest
             'email.unique' => 'El correo electrónico ya está en uso.',
             'ci.required_if' => 'La CI es obligatoria para clientes de tipo Persona',
             'tax_rate_id.required_if' => 'La Tasa de IVA es obligatoria para clientes de tipo Empresa',
+            'vendor_id.exists' => 'El vendedor seleccionado no existe.',
         ];
     }
 }

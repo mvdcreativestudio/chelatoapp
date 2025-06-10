@@ -73,6 +73,7 @@ class UpdateClientRequest extends FormRequest
             'logo' => 'nullable|string|max:255',
             'price_list_id' => 'nullable|exists:price_lists,id',
             'branch' => 'nullable|string|max:255',
+            'vendor_id' => 'nullable|exists:vendors,id',
         ];
     }
 

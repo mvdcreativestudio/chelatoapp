@@ -10,7 +10,7 @@ class Client extends Model
     use HasFactory;
 
     protected $fillable = ['store_id', 'name', 'lastname', 'branch', 'type', 'rut', 'ci', 'passport', 'doc_ext',
-    'address', 'city', 'state', 'country', 'phone', 'email', 'tax_rate_id', 'website', 'logo', 'doc_type', 'document', 'company_name'];
+    'address', 'city', 'state', 'country', 'phone', 'email', 'tax_rate_id', 'website', 'logo', 'doc_type', 'document', 'company_name', 'vendor_id'];
 
 
     /**
@@ -72,6 +72,16 @@ class Client extends Model
     public function taxRate()
     {
         return $this->belongsTo(TaxRate::class);
+    }
+
+    /**
+     * Obtiene el vendedor asociado al cliente.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
     }
 
 }

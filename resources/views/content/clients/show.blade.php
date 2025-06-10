@@ -253,7 +253,10 @@
               <span class="fw-medium me-2">Listas de Precios:</span>
               <span>{{ $priceListName }}</span>
             </li>
-
+            <li class="mb-3">
+              <span class="fw-medium me-2">Vendedor:</span>
+              <span>{{ $client->vendor ? $client->vendor->name . ' ' . $client->vendor->lastname : 'No asignado' }}</span>
+            </li>
           </ul>
         </div>
       </div>
@@ -354,6 +357,7 @@
               <input type="text" id="modalEditUserCountry" name="country" class="form-control" value="{{ $client->country }}" />
             </div>
 
+
             <div class="col-12">
               <label class="form-label" for="modalEditUserPriceList">Lista de Precios</label>
               <select id="modalEditUserPriceList" name="price_list_id" class="form-control">
@@ -366,6 +370,18 @@
                 <option value="{{ $priceList->id }}" {{ $client->priceLists->contains($priceList->id) ? 'selected' : '' }}>
                   {{ $priceList->name }}
                 </option>
+                @endforeach
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label" for="modalEditUserVendor">Vendedor</label>
+              <select id="modalEditUserVendor" name="vendor_id" class="form-control">
+                <option value="">Seleccione un vendedor</option>
+                @foreach($vendors as $vendor)
+                  <option value="{{ $vendor->id }}" {{ $client->vendor_id == $vendor->id ? 'selected' : '' }}>
+                    {{ $vendor->name }} {{ $vendor->lastname }}
+                  </option>
                 @endforeach
               </select>
             </div>

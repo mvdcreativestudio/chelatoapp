@@ -382,6 +382,11 @@ class CreatePermissions extends Command
                     'module' => 'crm',
                     'view_all' => true,
                 ],
+                [
+                    'slug' => 'vendors',
+                    'module' => 'sales',
+                    'view_all' => true,
+                ],
             ],
         ];
 

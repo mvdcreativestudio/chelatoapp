@@ -170,6 +170,13 @@ class OrderRepository
             if ($client) {
                 $order->client()->associate($client);
             }
+
+            if ($client->vendor_id) {
+                $order->vendor_id = $client->vendor_id;
+            } else {
+                Log::warning('Cliente no tiene vendor_id asociado, no se asignará a la orden', ['client_id' => $client->id]);
+            }
+            
             Log::info('Orden creada, asociada al cliente si corresponde', ['order' => $order]);
 
             $order->save();

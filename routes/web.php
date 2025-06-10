@@ -74,7 +74,7 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\BudgetItemController;
 use App\Http\Controllers\BudgetStatusController;
-
+use App\Http\Controllers\VendorController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\DispatchNoteController;
@@ -225,6 +225,7 @@ Route::get('/', function () {
         'income-categories' => IncomeCategoryController::class,
         'currencies' => CurrencyController::class,
         'budgets' => BudgetController::class,
+        'vendors' => VendorController::class,
     ]);
 
     Route::get('exchange-rate-dollar', [CurrencyController::class, 'getCurrentRateDollar']);

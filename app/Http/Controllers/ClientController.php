@@ -16,6 +16,7 @@ use App\Models\Client;
 use App\Models\PriceList;
 use App\Models\Store;
 use App\Models\TaxRate;
+use App\Models\Vendor;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ClientTemplateImport;
 use App\Imports\ClientImport;
@@ -65,11 +66,14 @@ class ClientController extends Controller
         // Obtener todas las listas de precios disponibles
         $priceLists = PriceList::all();
 
+        // Obtener los vendedores disponibles
+        $vendors = Vendor::select('id', 'name', 'lastname')->get();
+
         // Obtener Tasas de IVA disponibles (No se crean clientes con IVA Tasa Minima 10%)
         $taxRates = TaxRate::where('rate', '!=', 10.00)->get();
 
 
-        return view('content.clients.clients', compact('companySettings', 'store', 'priceLists', 'stores', 'taxRates'));
+        return view('content.clients.clients', compact('companySettings', 'store', 'priceLists', 'stores', 'taxRates', 'vendors'));
     }
 
 
@@ -173,12 +177,15 @@ class ClientController extends Controller
             $priceLists = PriceList::where('store_id', Auth::user()->store_id)->get();
         }
 
+        // Obtener los vendedores disponibles
+        $vendors = Vendor::select('id', 'name', 'lastname')->get();
+
         // Obtener la primera lista de precios asignada al cliente, o mostrar un mensaje si no hay lista asignada
         $priceListName = $client->priceLists->isNotEmpty()
             ? $client->priceLists->first()->name
             : 'Sin lista de precios';
 
-        return view('content.clients.show', compact('client', 'priceLists', 'priceListName', 'taxRates'));
+        return view('content.clients.show', compact('client', 'priceLists', 'priceListName', 'taxRates', 'vendors'));
     }
 
 
@@ -204,7 +211,7 @@ class ClientController extends Controller
      * @param int $id
      * @return JsonResponse
      */
-    public function update(UpdateClientRequest $request, $id)
+    public function update(UpdateClientRequest $request, int $id): JsonResponse
     {
         try {
             Log::info('Iniciando actualización del cliente', ['client_id' => $id]);
@@ -235,6 +242,13 @@ class ClientController extends Controller
                 }
             } else {
                 Log::info('No se ha recibido price_list_id');
+            }
+
+            // Verificar si se ha proporcionado un `vendor_id`
+            if ($request->has('vendor_id')) {
+                $vendorId = $request->input('vendor_id');
+                $client->vendor_id = $vendorId;
+                $client->save();
             }
 
             return response()->json(['success' => true, 'message' => 'Cliente y lista de precios actualizados correctamente.']);
