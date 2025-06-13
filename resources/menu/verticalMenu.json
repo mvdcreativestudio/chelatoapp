@@ -176,13 +176,6 @@
           "icon": "menu-icon tf-icons bx bx-atom",
           "slug": "bulk-productions",
           "url": "/admin/bulk-productions"
-        },
-        {
-          "id": "tour-packagings",
-          "name": "Envasados",
-          "icon": "menu-icon tf-icons bx bx-droplet",
-          "slug": "packagings",
-          "url": "/admin/packagings"
         }
       ]
     },
