@@ -349,7 +349,7 @@ class CheckoutRepository
         }
 
         // Configurar el SDK de MercadoPago con las credenciales de la tienda
-        $mercadoPagoService->setCredentials($mercadoPagoAccount->public_key, $mercadoPagoAccount->access_token);
+        $mercadoPagoService->setCredentials($mercadoPagoAccount->public_key, $mercadoPagoAccount->access_token, $mercadoPagoAccount->secret_key);
 
         $preferenceData = [
           'items' => $items,

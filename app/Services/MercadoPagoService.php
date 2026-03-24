@@ -31,8 +31,8 @@ class MercadoPagoService
     */
     public function __construct()
     {
-      // Cargar la secret key desde la configuración
-      $this->secretKey = '80cd3dd7852a56bd241b7e2ec7db21ca09a92927ddc6eb928a05da4d5f2d0731';
+      // La secret key se configurará dinámicamente según la tienda
+      $this->secretKey = config('services.mercadopago.secret_key', '80cd3dd7852a56bd241b7e2ec7db21ca09a92927ddc6eb928a05da4d5f2d0731');
       $this->client = new Client();
 
       // Configurar el acceso a la API de MercadoPago
@@ -59,7 +59,8 @@ class MercadoPagoService
 
       // Configurar el campo metadata
       $preference->metadata = [
-          'order_id' => $order->id
+          'order_id' => $order->id,
+          'store_id' => $order->store_id
       ];
 
       // Configurar los ítems
@@ -108,7 +109,35 @@ class MercadoPagoService
       $preference->save();
       Log::info('Preference created:', $preference->toArray());
 
+      // Guardar el preference_id en la orden para referencia
+      $order->preference_id = $preference->id;
+      $order->save();
+      Log::info('Preference ID guardado en la orden:', [
+          'order_id' => $order->id,
+          'preference_id' => $preference->id
+      ]);
+
       return $preference;
+    }
+
+    /**
+     * Obtiene el merchant_order_id desde una preferencia creada.
+     * NOTA: Este método ya no se usa porque el merchant_order_id real
+     * solo se obtiene cuando llega el webhook de MercadoPago.
+     *
+     * @param string $preferenceId
+     * @return string|null
+    */
+    private function getMerchantOrderIdFromPreference(string $preferenceId): ?string
+    {
+        // Este método ya no se usa porque el merchant_order_id real
+        // solo se obtiene cuando llega el webhook de MercadoPago
+        Log::info('Método getMerchantOrderIdFromPreference llamado pero no se usa:', [
+            'preference_id' => $preferenceId,
+            'reason' => 'merchant_order_id solo se obtiene en webhooks'
+        ]);
+
+        return null;
     }
 
     /**
@@ -125,6 +154,13 @@ class MercadoPagoService
       $message = "id:$id;request-id:$requestId;ts:$timestamp;";
       $generatedHash = hash_hmac('sha256', $message, $this->secretKey);
 
+      Log::info('Verificación HMAC:', [
+          'message' => $message,
+          'generated_hash' => $generatedHash,
+          'received_hash' => $receivedHash,
+          'secret_key_length' => strlen($this->secretKey)
+      ]);
+
       return hash_equals($generatedHash, $receivedHash);
     }
 
@@ -139,7 +175,7 @@ class MercadoPagoService
       try {
           $response = $this->client->request('GET', "https://api.mercadopago.com/v1/payments/{$id}", [
               'headers' => [
-                  'Authorization' => 'Bearer ' . config('services.mercadopago.access_token'),
+                  'Authorization' => 'Bearer ' . SDK::getAccessToken(),
               ],
           ]);
 
@@ -151,20 +187,57 @@ class MercadoPagoService
     }
 
     /**
+     * Obtiene la información de una orden de comerciante desde la API de MercadoPago.
+     *
+     * @param string $id
+     * @return array|null
+    */
+    public function getMerchantOrderInfo(string $id): ?array
+    {
+      try {
+          $response = $this->client->request('GET', "https://api.mercadopago.com/merchant_orders/{$id}", [
+              'headers' => [
+                  'Authorization' => 'Bearer ' . SDK::getAccessToken(),
+              ],
+          ]);
+
+          $orderInfo = json_decode($response->getBody(), true);
+
+          // Log completo de la respuesta de MercadoPago
+          Log::info('Respuesta completa de MercadoPago para merchant_order:', [
+              'merchant_order_id' => $id,
+              'response_data' => $orderInfo,
+              'response_keys' => array_keys($orderInfo)
+          ]);
+
+          return $orderInfo;
+      } catch (\Exception $e) {
+          Log::error("Error al obtener la información de la orden: " . $e->getMessage());
+          return null;
+      }
+    }
+
+    /**
      * Configura las credenciales de la tienda para acceder a la API de MercadoPago.
      *
      * @param string $publicKey
      * @param string $accessToken
+     * @param string|null $secretKey
      * @return void
     */
-    public function setCredentials(string $publicKey, string $accessToken): void
+    public function setCredentials(string $publicKey, string $accessToken, ?string $secretKey = null): void
     {
         SDK::setPublicKey($publicKey);
         SDK::setAccessToken($accessToken);
 
+        if ($secretKey) {
+            $this->secretKey = $secretKey;
+        }
+
         Log::info('Credenciales de MercadoPago configuradas:', [
             'public_key' => $publicKey,
-            'access_token' => $accessToken
+            'access_token' => $accessToken,
+            'secret_key_length' => strlen($this->secretKey)
         ]);
     }
 
