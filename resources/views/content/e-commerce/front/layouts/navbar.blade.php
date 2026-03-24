@@ -1,5 +1,5 @@
 @php
-  $stores = App\Models\Store::all();
+  $stores = App\Models\Store::where('ecommerce', 1)->get();
   $selectedStoreId = session('store')['id'] ?? null;
 @endphp
 

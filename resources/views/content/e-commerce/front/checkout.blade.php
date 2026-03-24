@@ -288,8 +288,9 @@
                       {{-- <button class="btn btn-success" disabled id="orderConfirm"> --}}
                       <!-- Envio hardcodeado a $65 -->
                       <button class="btn btn-success" id="orderConfirm">
-                          <span class="me-2">Confirmar pedido</span>
-                          <i class="bx bx-right-arrow-alt scaleX-n1-rtl"></i>
+                          <span class="me-2" id="orderConfirmText">Confirmar pedido</span>
+                          <i class="bx bx-right-arrow-alt scaleX-n1-rtl" id="orderConfirmIcon"></i>
+                          <span class="spinner-border spinner-border-sm d-none" id="orderConfirmSpinner" role="status" aria-hidden="true"></span>
                       </button>
                   @else
                       <button class="btn btn-primary" disabled>
@@ -471,9 +472,40 @@ function handleApiReturns(returnMessage, status = 400) {
     document.getElementById('alert-message-location').innerText = message;
 }
 
+// Función para bloquear el botón de confirmación
+function blockConfirmButton() {
+    const button = document.getElementById('orderConfirm');
+    const text = document.getElementById('orderConfirmText');
+    const icon = document.getElementById('orderConfirmIcon');
+    const spinner = document.getElementById('orderConfirmSpinner');
+    
+    button.disabled = true;
+    button.classList.add('disabled');
+    text.textContent = 'Confirmando pedido...';
+    icon.classList.add('d-none');
+    spinner.classList.remove('d-none');
+}
+
+// Función para desbloquear el botón de confirmación
+function unblockConfirmButton() {
+    const button = document.getElementById('orderConfirm');
+    const text = document.getElementById('orderConfirmText');
+    const icon = document.getElementById('orderConfirmIcon');
+    const spinner = document.getElementById('orderConfirmSpinner');
+    
+    button.disabled = false;
+    button.classList.remove('disabled');
+    text.textContent = 'Confirmar pedido';
+    icon.classList.remove('d-none');
+    spinner.classList.add('d-none');
+}
+
 // Validación del RUC/CI y confirmación del pedido con integración de PedidosYa
 document.getElementById('orderConfirm').addEventListener('click', async function (event) {
     event.preventDefault(); // Prevenir el envío automático del formulario
+    
+    // Bloquear el botón inmediatamente
+    blockConfirmButton();
 
     const docType = document.getElementById('doc_type').value;
     const docRecep = document.getElementById('doc_recep').value;
@@ -490,6 +522,7 @@ document.getElementById('orderConfirm').addEventListener('click', async function
         alertDiv.classList.add('d-flex');
         document.getElementById('alert-message-doc').innerText =
             docType === '2' ? 'El RUC debe tener 12 caracteres.' : 'La CI debe tener 8 caracteres.';
+        unblockConfirmButton(); // Desbloquear el botón en caso de error
         return;
     }
 
@@ -499,6 +532,7 @@ document.getElementById('orderConfirm').addEventListener('click', async function
         alertDiv.classList.remove('d-none');
         alertDiv.classList.add('d-flex');
         document.getElementById('alert-message-location').innerText = 'Por favor, ingrese su dirección.';
+        unblockConfirmButton(); // Desbloquear el botón en caso de error
         return;
     }
 
@@ -514,6 +548,7 @@ document.getElementById('orderConfirm').addEventListener('click', async function
 
     if (!apiKey) {
         alert('Error al obtener la API Key de PedidosYa.');
+        unblockConfirmButton(); // Desbloquear el botón en caso de error
         return;
     }
 
@@ -599,9 +634,11 @@ document.getElementById('orderConfirm').addEventListener('click', async function
             document.getElementById('checkout-form').submit();
         } else {
             handleApiReturns(estimateData.code);
+            unblockConfirmButton(); // Desbloquear el botón en caso de error
         }
     } catch (error) {
         handleApiReturns('Error al procesar la dirección o calcular el envío.');
+        unblockConfirmButton(); // Desbloquear el botón en caso de error
         console.error(error);
     }
 });

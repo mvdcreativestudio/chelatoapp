@@ -96,7 +96,7 @@
             <div class="row">
               @foreach ($category->products as $product)
                 <div class="col-md-2 col-6" data-bs-toggle="modal" data-bs-target="#modalCenter"
-                    data-id="{{ $product->id }}" data-name="{{ $product->name }}" data-img="{{ $product->image }}" data-price="{{ $product->price }}" data-max-flavors="{{$product->max_flavors}}" data-description="{{ $product->description }}" data-flavors='@json($product->flavors)'>                    >
+                    data-id="{{ $product->id }}" data-name="{{ $product->name }}" data-img="{{ $product->image }}" data-price="{{ $product->price }}" data-max-flavors="{{$product->max_flavors}}" data-description="{{ $product->description }}" data-flavors='@json($product->flavors)'>
                   <div class="card card-product">
                     <img src="{{ asset($product->image) }}" class="shop-product-image" alt="Product">
                     <div class="product-card-text">

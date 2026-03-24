@@ -50,6 +50,14 @@ class MercadoPagoController extends Controller
       ]);
 
       $result = $this->mercadopagorepo->handleWebhook($request, $this->mpService);
+
+      // ⚠️ Solo logueamos como exitoso si realmente fue exitoso
+      if ($result['status'] >= 200 && $result['status'] < 300) {
+          Log::info('✅ Webhook procesado correctamente', $result);
+      } else {
+          Log::warning('⚠️ Webhook rechazado o con error', $result);
+      }
+      
       return response()->json($result['message'], $result['status']);
     }
 }

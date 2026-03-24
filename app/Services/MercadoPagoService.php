@@ -13,13 +13,6 @@ use App\Models\Order;
 class MercadoPagoService
 {
     /**
-     * La clave secreta de la tienda en MercadoPago.
-     *
-     * @var string
-    */
-    private string $secretKey;
-
-    /**
      * Instancia del cliente.
      *
      * @var Client
@@ -147,12 +140,24 @@ class MercadoPagoService
      * @param string $requestId
      * @param string $timestamp
      * @param string $receivedHash
+     * @param string $secretKey Secret key de la base de datos (requerido)
      * @return bool
-    */
-    public function verifyHMAC(string $id, string $requestId, string $timestamp, string $receivedHash): bool
+     */
+    public function verifyHMAC(string $id, string $requestId, string $timestamp, string $receivedHash, string $secretKey): bool
     {
       $message = "id:$id;request-id:$requestId;ts:$timestamp;";
-      $generatedHash = hash_hmac('sha256', $message, $this->secretKey);
+      $generatedHash = hash_hmac('sha256', $message, $secretKey);
+
+      // ⚠️ LOGGING DETALLADO para debugging (sin exponer el hash completo por seguridad)
+      Log::info('🔐 Calculando HMAC:', [
+          'message' => $message,
+          'generated_hash' => substr($generatedHash, 0, 20) . '...' . substr($generatedHash, -10),
+          'received_hash' => substr($receivedHash, 0, 20) . '...' . substr($receivedHash, -10),
+          'hash_length_generated' => strlen($generatedHash),
+          'hash_length_received' => strlen($receivedHash),
+          'match' => hash_equals($generatedHash, $receivedHash),
+          'secret_key_source' => 'database'
+      ]);
 
       Log::info('Verificación HMAC:', [
           'message' => $message,
@@ -168,20 +173,122 @@ class MercadoPagoService
      * Obtiene la información de un pago desde la API de MercadoPago.
      *
      * @param string $id
+     * @param string|null $accessToken Access token específico de la tienda (opcional)
+     * @param int $retries Número de reintentos si el pago no está disponible
      * @return array|null
     */
-    public function getPaymentInfo(string $id): ?array
+    public function getPaymentInfo(string $id, ?string $accessToken = null, int $retries = 3): ?array
     {
+      $token = $accessToken ?? config('services.mercadopago.access_token');
+
+      for ($attempt = 0; $attempt <= $retries; $attempt++) {
+          try {
+              $response = $this->client->request('GET', "https://api.mercadopago.com/v1/payments/{$id}", [
+                  'headers' => [
+                      'Authorization' => 'Bearer ' . $token,
+                  ],
+              ]);
+
+              return json_decode($response->getBody(), true);
+          } catch (\GuzzleHttp\Exception\ClientException $e) {
+              $statusCode = $e->getResponse()->getStatusCode();
+
+              // Si es 404 y aún tenemos reintentos, esperar un poco más en cada intento
+              if ($statusCode === 404 && $attempt < $retries) {
+                  $waitTime = min(3 + ($attempt * 2), 10); // 3s, 5s, 7s, máximo 10s
+                  Log::warning("Pago no disponible (404), reintentando en {$waitTime} segundos...", [
+                      'payment_id' => $id,
+                      'attempt' => $attempt + 1,
+                      'max_retries' => $retries,
+                      'wait_time' => $waitTime
+                  ]);
+                  sleep($waitTime);
+                  continue;
+              }
+
+              // Si es 401, no reintentar (es un problema de autenticación)
+              if ($statusCode === 401) {
+                  Log::error("Error de autenticación (401) al obtener el pago", [
+                      'payment_id' => $id,
+                      'status_code' => $statusCode
+                  ]);
+                  return null;
+              }
+
+              Log::error("Error al obtener la información del pago: " . $e->getMessage(), [
+                  'payment_id' => $id,
+                  'status_code' => $statusCode,
+                  'attempt' => $attempt + 1
+              ]);
+              return null;
+          } catch (\Exception $e) {
+              Log::error("Error al obtener la información del pago: " . $e->getMessage(), [
+                  'payment_id' => $id,
+                  'attempt' => $attempt + 1
+              ]);
+              return null;
+          }
+      }
+
+      return null;
+    }
+
+    /**
+     * Obtiene la información de una merchant_order desde la API de MercadoPago.
+     *
+     * @param string $id ID de la merchant_order
+     * @param string|null $accessToken Access token específico de la tienda (opcional)
+     * @return array|null
+    */
+    public function getMerchantOrderInfo(string $id, ?string $accessToken = null): ?array
+    {
+      $token = $accessToken ?? config('services.mercadopago.access_token');
+
       try {
-          $response = $this->client->request('GET', "https://api.mercadopago.com/v1/payments/{$id}", [
+          $response = $this->client->request('GET', "https://api.mercadolibre.com/merchant_orders/{$id}", [
               'headers' => [
-                  'Authorization' => 'Bearer ' . SDK::getAccessToken(),
+                  'Authorization' => 'Bearer ' . $token,
               ],
           ]);
 
           return json_decode($response->getBody(), true);
       } catch (\Exception $e) {
-          Log::error("Error al obtener la información del pago: " . $e->getMessage());
+          Log::error("Error al obtener la información de merchant_order: " . $e->getMessage(), [
+              'merchant_order_id' => $id
+          ]);
+          return null;
+      }
+    }
+
+    /**
+     * Obtiene el order_id desde el external_reference de una preferencia.
+     *
+     * @param string $preferenceId ID de la preferencia
+     * @param string|null $accessToken Access token específico de la tienda (opcional)
+     * @return int|null
+    */
+    public function getOrderIdFromPreference(string $preferenceId, ?string $accessToken = null): ?int
+    {
+      $token = $accessToken ?? config('services.mercadopago.access_token');
+
+      try {
+          $response = $this->client->request('GET', "https://api.mercadopago.com/checkout/preferences/{$preferenceId}", [
+              'headers' => [
+                  'Authorization' => 'Bearer ' . $token,
+              ],
+          ]);
+
+          $preference = json_decode($response->getBody(), true);
+
+          if (isset($preference['external_reference'])) {
+              return (int) $preference['external_reference'];
+          }
+
+          return null;
+      } catch (\Exception $e) {
+          Log::error("Error al obtener la preferencia: " . $e->getMessage(), [
+              'preference_id' => $preferenceId
+          ]);
           return null;
       }
     }
