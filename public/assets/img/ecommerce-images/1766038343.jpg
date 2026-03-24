@@ -1,0 +1,338 @@
+<link rel="preload" as="style" href="https://chelato.com.uy/build/assets/spinkit-CVv99DfT.css" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/spinkit-CVv99DfT.css" data-navigate-track="reload" class="" />
+
+
+
+
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '249833776197041');
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=249833776197041&ev=PageView&noscript=1"
+/></noscript>
+<!-- End Meta Pixel Code -->
+
+
+
+<!DOCTYPE html>
+
+<html lang="es" class="light-style        " dir="ltr" data-theme="theme-default" data-assets-path="https://chelato.com.uy/assets/" data-base-url="https://chelato.com.uy" data-framework="laravel" data-template="vertical-menu-theme-default-light">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+
+  <title>Chelato Helados |
+    E-Commerce
+  </title>
+  <meta name="description" content="" />
+  <meta name="keywords" content="">
+  <!-- laravel CRUD token -->
+  <meta name="csrf-token" content="4TAxi2d3KXiwzCs0ak2oWtR1TLC6lMSXP8MsDq23">
+  <!-- Canonical SEO -->
+  <link rel="canonical" href="https://themeselection.com/item/sneat-bootstrap-laravel-admin-template/">
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="https://chelato.com.uy/assets/img/favicon/favicon.ico" />
+
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+
+  <!-- Include Styles -->
+  <!-- $isFront is used to append the front layout styles only on the front layout otherwise the variable will be blank -->
+  <!-- BEGIN: Theme CSS-->
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+
+<link rel="preload" as="style" href="https://chelato.com.uy/build/assets/boxicons-C4LI84Cc.css" /><link rel="preload" as="style" href="https://chelato.com.uy/build/assets/fontawesome-BLLrrJAk.css" /><link rel="preload" as="style" href="https://chelato.com.uy/build/assets/flag-icons-2QKiQDtI.css" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/boxicons-C4LI84Cc.css" data-navigate-track="reload" class="" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/fontawesome-BLLrrJAk.css" data-navigate-track="reload" class="" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/flag-icons-2QKiQDtI.css" data-navigate-track="reload" class="" /><!-- Core CSS -->
+<link rel="preload" as="style" href="https://chelato.com.uy/build/assets/core-BzTeSATk.css" /><link rel="preload" as="style" href="https://chelato.com.uy/build/assets/theme-default-B1K1hynU.css" /><link rel="preload" as="style" href="https://chelato.com.uy/build/assets/demo-CNEHUOb3.css" /><link rel="preload" as="style" href="https://chelato.com.uy/build/assets/custom-B8Xy0a2T.css" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/core-BzTeSATk.css" data-navigate-track="reload" class="template-customizer-core-css" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/theme-default-B1K1hynU.css" data-navigate-track="reload" class="template-customizer-theme-css" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/demo-CNEHUOb3.css" data-navigate-track="reload" class="" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/custom-B8Xy0a2T.css" data-navigate-track="reload" class="" />
+<link rel="preload" as="style" href="https://chelato.com.uy/build/assets/perfect-scrollbar-BVDgAGoU.css" /><link rel="preload" as="style" href="https://chelato.com.uy/build/assets/typeahead-ht9TpH0V.css" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/perfect-scrollbar-BVDgAGoU.css" data-navigate-track="reload" class="" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/typeahead-ht9TpH0V.css" data-navigate-track="reload" class="" />
+
+<!-- Vendor Styles -->
+
+
+<!-- Page Styles -->
+
+<!-- Livewire Styles --><style >[wire\:loading][wire\:loading], [wire\:loading\.delay][wire\:loading\.delay], [wire\:loading\.inline-block][wire\:loading\.inline-block], [wire\:loading\.inline][wire\:loading\.inline], [wire\:loading\.block][wire\:loading\.block], [wire\:loading\.flex][wire\:loading\.flex], [wire\:loading\.table][wire\:loading\.table], [wire\:loading\.grid][wire\:loading\.grid], [wire\:loading\.inline-flex][wire\:loading\.inline-flex] {display: none;}[wire\:loading\.delay\.none][wire\:loading\.delay\.none], [wire\:loading\.delay\.shortest][wire\:loading\.delay\.shortest], [wire\:loading\.delay\.shorter][wire\:loading\.delay\.shorter], [wire\:loading\.delay\.short][wire\:loading\.delay\.short], [wire\:loading\.delay\.default][wire\:loading\.delay\.default], [wire\:loading\.delay\.long][wire\:loading\.delay\.long], [wire\:loading\.delay\.longer][wire\:loading\.delay\.longer], [wire\:loading\.delay\.longest][wire\:loading\.delay\.longest] {display: none;}[wire\:offline][wire\:offline] {display: none;}[wire\:dirty]:not(textarea):not(input):not(select) {display: none;}:root {--livewire-progress-bar-color: #2299dd;}[x-cloak] {display: none !important;}</style>
+
+  <!-- Include Scripts for customizer, helper, analytics, config -->
+  <!-- $isFront is used to append the front layout scriptsIncludes only on the front layout otherwise the variable will be blank -->
+  <!-- laravel style -->
+<link rel="modulepreload" href="https://chelato.com.uy/build/assets/helpers-vQTkHFGf.js" /><script type="module" src="https://chelato.com.uy/build/assets/helpers-vQTkHFGf.js" data-navigate-track="reload"></script><!-- beautify ignore:start -->
+  <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->
+  <!--? Template customizer: To hide customizer set displayCustomizer value false in config.js.  -->
+  <link rel="preload" as="style" href="https://chelato.com.uy/build/assets/template-customizer-eAeiNRuc.css" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/template-customizer-CuO0j2e-.js" /><link rel="stylesheet" href="https://chelato.com.uy/build/assets/template-customizer-eAeiNRuc.css" data-navigate-track="reload" /><script type="module" src="https://chelato.com.uy/build/assets/template-customizer-CuO0j2e-.js" data-navigate-track="reload"></script>
+  <!--? Config:  Mandatory theme config file contain global vars & default theme options, Set your preferred theme option in this file.  -->
+  <link rel="modulepreload" href="https://chelato.com.uy/build/assets/config-BSuhN5bn.js" /><script type="module" src="https://chelato.com.uy/build/assets/config-BSuhN5bn.js" data-navigate-track="reload"></script>
+<script type="module">
+  window.templateCustomizer = new TemplateCustomizer({
+    cssPath: '',
+    themesPath: '',
+    defaultStyle: "light",
+    defaultShowDropdownOnHover: "1", // true/false (for horizontal layout only)
+    displayCustomizer: "1",
+    lang: 'es',
+    pathResolver: function(path) {
+      var resolvedPaths = {
+        // Core stylesheets
+                  'core.scss': 'https://chelato.com.uy/build/assets/core-BzTeSATk.css',
+          'core-dark.scss': 'https://chelato.com.uy/build/assets/core-dark-PqBMCL91.css',
+        
+        // Themes
+                  'theme-default.scss': 'https://chelato.com.uy/build/assets/theme-default-B1K1hynU.css',
+          'theme-default-dark.scss': 'https://chelato.com.uy/build/assets/theme-default-dark-DmosKlw6.css',
+                  'theme-bordered.scss': 'https://chelato.com.uy/build/assets/theme-bordered-D8zCpbym.css',
+          'theme-bordered-dark.scss': 'https://chelato.com.uy/build/assets/theme-bordered-dark-_GaPjWGT.css',
+                  'theme-semi-dark.scss': 'https://chelato.com.uy/build/assets/theme-semi-dark-J7gIBrEQ.css',
+          'theme-semi-dark-dark.scss': 'https://chelato.com.uy/build/assets/theme-semi-dark-dark-C2lsPpzq.css',
+              }
+      return resolvedPaths[path] || path;
+    },
+    'controls': ["rtl","style","headerType","contentLayout","layoutCollapsed","layoutNavbarOptions","themes"],
+  });
+</script>
+
+  <!-- Hotjar Tracking Code for https://chelato.com.uy -->
+  <script>
+      (function(h,o,t,j,a,r){
+          h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+          h._hjSettings={hjid:5263629,hjsv:6};
+          a=o.getElementsByTagName('head')[0];
+          r=o.createElement('script');r.async=1;
+          r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+          a.appendChild(r);
+      })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+  </script>
+</head>
+
+<body>
+
+
+  <!-- Layout Content -->
+  
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container-fluid">
+    <img src="https://chelato.com.uy/assets/img/branding/chelato-white.png" alt="" class="navbar-logo">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarScroll">
+      <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
+              </ul>
+      
+    </div>
+  </div>
+</nav>
+
+<!-- Modal -->
+<div class="modal fade" id="selectStoreModal" tabindex="-1" aria-labelledby="selectStoreModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="selectStoreModalLabel">Cambiar de tienda</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+                <form id="changeStoreForm" action="https://chelato.com.uy/cart/select-store" method="POST">
+          <input type="hidden" name="_token" value="4TAxi2d3KXiwzCs0ak2oWtR1TLC6lMSXP8MsDq23" autocomplete="off">          <div class="mb-3">
+            <label for="storeId" class="form-label">Seleccionar tienda:</label>
+            <select class="form-select" name="slug" id="storeId">
+                              <option value="chelato-tres-cruces" >Chelato Tres Cruces</option>
+                              <option value="chelato-pinar" >Chelato Pinar</option>
+                              <option value="chelato-mercado-del-prado" >Chelato Mercado del Prado</option>
+                          </select>
+          </div>
+                      <button type="submit" class="btn btn-primary">Seleccionar tienda</button>
+                  </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    function confirmChangeStore() {
+      $('#selectStoreModal').modal('show');
+    }
+
+    // Reinicializar el formulario de cambio de tienda cada vez que se muestre el modal
+    $('#selectStoreModal').on('show.bs.modal', function () {
+      $('#changeStoreForm')[0].reset(); // Reiniciar el formulario
+    });
+  });
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('spinner').style.display = 'none';
+  });
+</script>
+
+<div id="spinner" class="spinner-container">
+  <div class="sk-chase sk-primary">
+    <div class="sk-chase-dot"></div>
+    <div class="sk-chase-dot"></div>
+    <div class="sk-chase-dot"></div>
+    <div class="sk-chase-dot"></div>
+    <div class="sk-chase-dot"></div>
+    <div class="sk-chase-dot"></div>
+  </div>
+</div>
+
+<!-- Content -->
+
+
+
+<div class="video-container">
+  <video autoplay muted loop id="myVideo" class="video-background desktop-video">
+      <source src="assets/img/videos/back-chelato.mp4" type="video/mp4">
+  </video>
+  
+  <video autoplay muted loop id="myVideoMobile" class="video-background mobile-video">
+      <source src="assets/img/videos/back-chelato-mobile.mp4" type="video/mp4">
+  </video>
+  
+  <div class="video-overlay">
+    <h2 class="header-title">Llegaste al paraíso del helado</h2>
+    <div class="animated-text-container">
+      <a class="animated-text" href="#selectStore">Pedí Online <i class="fa fa-arrow-down arrow-animate"></i></a>
+    </div>
+  </div>
+</div>
+
+
+
+<div class="ecommerce-background vh-100"  id="selectStore">
+      <div class="vendors-container container mt-5">
+    <div class="row text-center justify-content-center">
+      <h4>Selecciona tu local más cercano</h4>
+      <form action="https://chelato.com.uy/cart/select-store" method="POST" id="selectStoreForm">
+      <input type="hidden" name="_token" value="4TAxi2d3KXiwzCs0ak2oWtR1TLC6lMSXP8MsDq23" autocomplete="off">      <div class="d-flex justify-content-center">
+        <div class="row gy-3 mt-0 col-12 col-md-8 justify-content-center">
+                                                                                    <div class="col-xl-3 col-md-5 col-sm-6 col-6">
+                  <div class="form-check custom-option custom-option-icon">
+                    <label class="form-check-label custom-option-content" for="store7">
+                      <span class="custom-option-body">
+                        <i class="fa-solid fa-store"></i>
+                        <span class="custom-option-title">Chelato Tres Cruces</span>
+                        <small class="text-success">Tienda abierta</small>
+                      </span>
+                      <input name="slug" class="form-check-input" type="radio" value="chelato-tres-cruces" id="store7"  />
+                    </label>
+                  </div>
+                </div>
+                                                                                        <div class="col-xl-3 col-md-5 col-sm-6 col-6">
+                  <div class="form-check custom-option custom-option-icon">
+                    <label class="form-check-label custom-option-content" for="store8">
+                      <span class="custom-option-body">
+                        <i class="fa-solid fa-store"></i>
+                        <span class="custom-option-title">Chelato Pinar</span>
+                        <small class="text-danger">Tienda cerrada</small>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                                                                                        <div class="col-xl-3 col-md-5 col-sm-6 col-6">
+                  <div class="form-check custom-option custom-option-icon">
+                    <label class="form-check-label custom-option-content" for="store9">
+                      <span class="custom-option-body">
+                        <i class="fa-solid fa-store"></i>
+                        <span class="custom-option-title">Chelato Mercado del Prado</span>
+                        <small class="text-danger">Tienda cerrada</small>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+                                                                                                      </div>
+      </div>
+      <button class="btn btn-primary col-md-3 col-6 mt-5">Continuar</button>
+      </form>
+    </div>
+  </div>
+  
+  
+
+
+
+</div>
+
+<style>
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.video-background {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: translate(-50%, -50%);
+}
+
+.desktop-video {
+  display: block;
+}
+
+.mobile-video {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-video {
+    display: none;
+  }
+
+  .mobile-video {
+    display: block;
+  }
+}
+
+
+</style>
+
+
+
+<!--/ Content -->
+
+
+
+  <!--/ Layout Content -->
+
+
+
+  <!-- Include Scripts -->
+  <!-- $isFront is used to append the front layout scripts only on the front layout otherwise the variable will be blank -->
+  <!-- BEGIN: Vendor JS-->
+
+<link rel="modulepreload" href="https://chelato.com.uy/build/assets/jquery-CbdDuLi-.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/jquery-CED9k22g.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/_commonjsHelpers-BosuxZz1.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/jquery-Czc5UB_B.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/popper-DNZnuk_L.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/bootstrap-GdKxPxfJ.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/perfect-scrollbar-CLUWhEAQ.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/hammer-DbFOON0O.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/typeahead-BKwBoP4T.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/menu-CY9lYqyY.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/datatables-bootstrap5-CCREYXYt.js" /><link rel="modulepreload" href="https://chelato.com.uy/build/assets/_commonjs-dynamic-modules-TDtrdbi3.js" /><script type="module" src="https://chelato.com.uy/build/assets/jquery-CbdDuLi-.js" data-navigate-track="reload"></script><script type="module" src="https://chelato.com.uy/build/assets/popper-DNZnuk_L.js" data-navigate-track="reload"></script><script type="module" src="https://chelato.com.uy/build/assets/bootstrap-GdKxPxfJ.js" data-navigate-track="reload"></script><script type="module" src="https://chelato.com.uy/build/assets/perfect-scrollbar-CLUWhEAQ.js" data-navigate-track="reload"></script><script type="module" src="https://chelato.com.uy/build/assets/hammer-DbFOON0O.js" data-navigate-track="reload"></script><script type="module" src="https://chelato.com.uy/build/assets/typeahead-BKwBoP4T.js" data-navigate-track="reload"></script><script type="module" src="https://chelato.com.uy/build/assets/menu-CY9lYqyY.js" data-navigate-track="reload"></script><script type="module" src="https://chelato.com.uy/build/assets/datatables-bootstrap5-CCREYXYt.js" data-navigate-track="reload"></script>
+<!-- END: Page Vendor JS-->
+<!-- BEGIN: Theme JS-->
+<link rel="modulepreload" href="https://chelato.com.uy/build/assets/main-0FN1n-0y.js" /><script type="module" src="https://chelato.com.uy/build/assets/main-0FN1n-0y.js" data-navigate-track="reload"></script>
+<!-- END: Theme JS-->
+<!-- Pricing Modal JS-->
+<!-- END: Pricing Modal JS-->
+<!-- BEGIN: Page JS-->
+<!-- END: Page JS-->
+
+<!-- Livewire Scripts -->
+<script src="/livewire/livewire.js?id=36c381f7"   data-csrf="4TAxi2d3KXiwzCs0ak2oWtR1TLC6lMSXP8MsDq23" data-update-uri="/livewire/update" data-navigate-once="true"></script>
+
+</body>
+
+</html>
