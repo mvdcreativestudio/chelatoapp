@@ -13,6 +13,12 @@ use App\Services\Mail\NativeMailer;
 use App\Services\POS\PosIntegrationInterface;
 use App\Services\POS\ScanntechIntegrationService;
 use App\Services\POS\ScanntechAuthService;
+use App\Services\Billing\BillingServiceResolver;
+use App\Services\Billing\PymoBillingService;
+use App\Services\Billing\SicfeBillingService;
+use App\Services\Billing\Sicfe\SicfeDtoBuilder;
+use App\Services\Billing\Sicfe\SicfeSoapClient;
+use App\Repositories\SicfeRepository;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Facades\Log;
 
@@ -48,6 +54,32 @@ class AppServiceProvider extends ServiceProvider
             $app->make(MailProviderInterface::class),
             $app->make(StoresEmailConfigRepository::class)
         );
+    });
+
+    // Cliente SOAP de SICFE
+    $this->app->bind(SicfeSoapClient::class, function ($app) {
+        return new SicfeSoapClient([
+            'endpoint' => config('services.sicfe.endpoint'),
+            'usuario'  => config('services.sicfe.usuario'),
+            'clave'    => config('services.sicfe.clave'),
+            'tenant'   => config('services.sicfe.tenant'),
+        ]);
+    });
+
+    // Servicio de facturación SICFE
+    $this->app->bind('sicfe', function ($app) {
+        return new SicfeBillingService(
+            $app->make(SicfeDtoBuilder::class),
+            $app->make(SicfeRepository::class)
+        );
+    });
+
+    // Resolver de servicios de facturación (PyMo vs SICFE)
+    $this->app->singleton(BillingServiceResolver::class, function ($app) {
+        return new BillingServiceResolver([
+            'pymo'  => $app->make(PymoBillingService::class),
+            'sicfe' => $app->make(SicfeBillingService::class),
+        ]);
     });
   }
 

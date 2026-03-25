@@ -18,6 +18,7 @@ use App\Http\Requests\CheckoutStoreOrderRequest;
 use Illuminate\Http\RedirectResponse;
 use App\Events\OrderCreatedEvent;
 use App\Repositories\PedidosYaRepository;
+use App\Services\Billing\BillingServiceResolver;
 
 use Exception;
 
@@ -31,30 +32,27 @@ class CheckoutRepository
     protected $emailNotificationsRepository;
 
     /**
-     * Repositorio de contabilidad.
-     *
-     * @var AccountingRepository
-    */
-    protected $accountingRepository;
-
-    /**
      * El repositorio de PedidosYa para la gestión de envíos.
      *
      * @var PedidosYaRepository
     */
     protected $pedidosYaRepository;
 
+    protected BillingServiceResolver $billingServiceResolver;
+
     /**
      * Inicializa el repositorio de notificaciones de correo electrónico.
      *
      * @param EmailNotificationsRepository $emailNotificationsRepository
-     * @param AccountingRepository $accountingRepository
-    */
-    public function __construct(PedidosYaRepository $pedidosYaRepository, EmailNotificationsRepository $emailNotificationsRepository, AccountingRepository $accountingRepository)
-    {
+     */
+    public function __construct(
+        PedidosYaRepository $pedidosYaRepository,
+        EmailNotificationsRepository $emailNotificationsRepository,
+        BillingServiceResolver $billingServiceResolver
+    ) {
         $this->pedidosYaRepository = $pedidosYaRepository;
         $this->emailNotificationsRepository = $emailNotificationsRepository;
-        $this->accountingRepository = $accountingRepository;
+        $this->billingServiceResolver = $billingServiceResolver;
     }
 
     /**
@@ -172,8 +170,23 @@ class CheckoutRepository
             $store = $order->store;
 
             if ($store->automatic_billing) {
-                $this->accountingRepository->emitCFE($order);
-                $order->update(['is_billed' => true]);
+                try {
+                    $store->loadMissing('billingProvider');
+                    if (! $store->billingProvider) {
+                        Log::warning('Facturación automática sin proveedor de facturación en tienda.', ['store_id' => $store->id]);
+                        $order->update(['is_billed' => false]);
+                    } else {
+                        $this->billingServiceResolver->resolve($store)->emitCFE($order, null, 1, null, null);
+                        $order->refresh();
+                        $order->update(['is_billed' => $order->invoices()->exists()]);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Fallo facturación automática en checkout.', [
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $order->update(['is_billed' => false]);
+                }
             } else {
                 $order->update(['is_billed' => false]);
             }

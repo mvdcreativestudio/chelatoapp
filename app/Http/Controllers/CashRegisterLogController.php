@@ -338,7 +338,8 @@ class CashRegisterLogController extends Controller
      */
     public function getStoreId()
     {
-        $id = session('store_id', []);
+        $id = session('store_id');
+
         return response()->json(['id' => $id]);
     }
 }

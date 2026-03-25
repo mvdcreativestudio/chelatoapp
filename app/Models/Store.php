@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Sluggable\HasSlug;
@@ -31,6 +32,7 @@ class Store extends Model
         'pymo_branch_office',
         'accepts_peya_envios',
         'peya_envios_key',
+        'billing_provider_id',
     ];
 
     /**
@@ -138,5 +140,20 @@ class Store extends Model
      {
          return $this->hasOne(StoresEmailConfig::class, 'store_id');
      }
+
+    public function billingProvider(): BelongsTo
+    {
+        return $this->belongsTo(BillingProvider::class);
+    }
+
+    public function billingCredential(): HasOne
+    {
+        return $this->hasOne(BillingCredential::class);
+    }
+
+    public function billingCredentials(): HasMany
+    {
+        return $this->hasMany(BillingCredential::class);
+    }
 
 }

@@ -29,6 +29,10 @@ class StoreOrderRequest extends FormRequest
           'phone' => 'required',
           'email' => 'required|email',
           'payment_method' => 'required',
+          'client_id' => 'nullable|integer|exists:clients,id',
+          'doc_type' => 'nullable|integer',
+          'document' => 'nullable|string|max:32',
+          'client_type' => 'nullable|string|in:company,individual,no-client',
         ];
     }
 }

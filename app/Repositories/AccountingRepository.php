@@ -369,23 +369,23 @@ class AccountingRepository
 
         $cookies = $this->login($store);
 
-        if (!$cookies) {
+        if (! $cookies) {
             Log::error('No se pudo iniciar sesión para emitir el CFE.');
-            return;
+            throw new \RuntimeException('No se pudo iniciar sesión en PyMo para emitir el CFE.');
         }
 
         $rut = $store->rut;
 
         $branchOffice = $store->pymo_branch_office;
 
-        if (!$store || !$store->rut) {
+        if (! $store || ! $store->rut) {
             Log::error('No se encontró el RUT de la empresa para emitir el CFE.');
-            return;
+            throw new \RuntimeException('No se encontró el RUT de la empresa para emitir el CFE (PyMo).');
         }
 
-        if (!$branchOffice) {
+        if (! $branchOffice) {
             Log::error('No se encontró la sucursal de la empresa para emitir el CFE.');
-            return;
+            throw new \RuntimeException('No se encontró la sucursal PyMo (pymo_branch_office) para emitir el CFE.');
         }
 
         if ($rut) {
@@ -424,6 +424,14 @@ class AccountingRepository
 
                     $responseData = $response->json();
 
+                    if (
+                        ! isset($responseData['payload']['cfesIds'])
+                        || ! is_array($responseData['payload']['cfesIds'])
+                        || count($responseData['payload']['cfesIds']) === 0
+                    ) {
+                        throw new \RuntimeException('PyMo respondió OK pero no devolvió CFEs en la respuesta.');
+                    }
+
                     foreach ($responseData['payload']['cfesIds'] as $cfe) {
                         try {
                             $invoice = CFE::create([
@@ -452,13 +460,15 @@ class AccountingRepository
                     }
                 } else {
                     Log::error('Error al emitir CFE: ' . $response->body());
+                    throw new \RuntimeException('Error al emitir CFE en PyMo: ' . $response->body());
                 }
             } catch (\Exception $e) {
-                throw new \Exception('Error al emitir CFE: ' . $e->getMessage());
                 Log::error('Excepción al emitir CFE: ' . $e->getMessage());
+                throw $e;
             }
         } else {
             Log::error('No se encontró el RUT de la empresa para emitir el CFE.');
+            throw new \RuntimeException('No se encontró el RUT de la empresa para emitir el CFE.');
         }
     }
 

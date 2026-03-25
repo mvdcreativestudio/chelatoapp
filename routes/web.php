@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\IntegrationController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CashRegisterController;
 use App\Http\Controllers\CashRegisterLogController;
@@ -247,6 +248,10 @@ Route::middleware([
     Route::get('/accounting/settings', [AccountingController::class, 'settings'])->name('accounting.settings');
     Route::post('/accounting/save-rut', [AccountingController::class, 'saveRut'])->name('accounting.saveRut');
     Route::post('/accounting/upload-logo', [AccountingController::class, 'uploadLogo'])->name('accounting.uploadLogo');
+
+    // Integraciones SICFE
+    Route::post('/integrations/{store}/sicfe', [IntegrationController::class, 'handleSicfeIntegration'])->name('integration.sicfe');
+    Route::get('/integrations/{store}/sicfe-connection', [IntegrationController::class, 'checkSicfeConnection'])->name('integration.sicfe-connection');
 
     // Ajustes de Comercio Electrónico
     Route::get('/ecommerce/marketing', [EcommerceController::class, 'marketing'])->name('marketing');

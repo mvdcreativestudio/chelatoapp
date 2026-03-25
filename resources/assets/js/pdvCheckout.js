@@ -302,6 +302,19 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDa
     $('#errorContainer').addClass('d-none'); // Ocultar el contenedor de errores
   }
 
+  function mostrarToast(mensaje, tipo = 'success') {
+    const toast = document.createElement('div');
+    toast.className = 'pdv-toast pdv-toast-' + tipo;
+    toast.innerHTML = '<i class="ti ti-check me-2"></i>' + mensaje;
+    toast.style.cssText = 'position:fixed;top:20px;right:20px;z-index:99999;padding:12px 20px;border-radius:8px;color:#fff;font-size:14px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);opacity:0;transition:opacity 0.3s ease;' + (tipo === 'success' ? 'background:#28a745;' : 'background:#dc3545;');
+    document.body.appendChild(toast);
+    setTimeout(() => toast.style.opacity = '1', 10);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
   function obtenerCashRegisterLogId() {
     if (cashRegisterId) {
       $.ajax({
@@ -365,7 +378,10 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDa
       type: 'GET',
       dataType: 'json',
       success: function (response) {
-        sessionStoreId = response.id;
+        const id = response.id;
+        if (id != null && id !== '' && !Array.isArray(id)) {
+          sessionStoreId = id;
+        }
       },
       error: function (xhr) {
         mostrarError('Error al cargar el cliente desde la sesión: ' + xhr.responseText);
@@ -796,23 +812,6 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDa
           showError(apellido, 'El apellido es obligatorio para clientes individuales');
           hasError = true;
       }
-
-      if (ci.value.trim() === '') {
-          showError(ci, 'El documento de identidad es obligatorio para clientes individuales');
-          hasError = true;
-      }
-    }
-
-    // Validar que el campo "email" no esté vacío
-    if (email.value.trim() === '') {
-      showError(email, 'Este campo es obligatorio');
-      hasError = true;
-    }
-
-    // Validar que "dirección" no esté vacía (si es aplicable a ambos tipos de cliente)
-    if (direccion.value.trim() === '') {
-      showError(direccion, 'Este campo es obligatorio');
-      hasError = true;
     }
 
     if (tipo.value === 'company') {
@@ -859,13 +858,22 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDa
         body: JSON.stringify(data)
     })
     .then(response => response.json())
-    .then(data => {
+    .then(responseData => {
                 let offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('crearClienteOffcanvas'));
                 offcanvas.hide();
 
                 // Limpiar el formulario de creación de cliente
                 document.getElementById('formCrearCliente').reset();
 
+                // Seleccionar automáticamente el cliente creado
+                if (responseData.success && responseData.client) {
+                  client = responseData.client;
+                  showClientInfo(client);
+                  saveClientToSession(client);
+                }
+
+                // Mostrar notificación de éxito
+                mostrarToast('Cliente creado correctamente');
     })
     .catch(error => {
         mostrarError('Error al guardar el cliente: ' + error);

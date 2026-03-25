@@ -4,6 +4,7 @@
 
 @section('page-script')
     @vite(['resources/assets/js/edit-store.js'])
+    @vite(['resources/assets/js/app-integration-sicfe.js'])
     <script
         src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsApiKey }}&libraries=places&callback=initAutocomplete"
         async defer></script>
@@ -429,6 +430,113 @@
                                                     </div>
                                                 @endforeach
                                             @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Integración SICFE -->
+                                <div class="col-lg-3 col-sm-6 mb-4">
+                                    <div class="card position-relative border">
+                                        <div class="card-header text-center bg-light">
+                                            <div class="border-0 rounded-circle mx-auto" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;">
+                                                <h4 class="mb-0 fw-bold text-primary">SICFE</h4>
+                                            </div>
+
+                                            @if ($store->billing_provider_id == 2 && $store->invoices_enabled)
+                                                <span class="position-absolute top-0 end-0 translate-middle p-2 bg-success rounded-circle">
+                                                    <i class="bx bx-check text-white"></i>
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <h3 class="card-title mb-1 me-2">SICFE</h3>
+                                            <small class="d-block mb-2">Facturación Electrónica a través de SICFE</small>
+                                            <div class="form-check form-switch d-flex justify-content-center">
+                                                <input class="form-check-input" type="checkbox"
+                                                    id="sicfeSwitch-{{ $store->id }}"
+                                                    data-store-id="{{ $store->id }}"
+                                                    {{ $store->invoices_enabled && $store->billing_provider_id == 2 && $store->billingCredential ? 'checked' : '' }}>
+                                            </div>
+
+                                            @if (!($store->billing_provider_id == 2 && $store->invoices_enabled))
+                                                <div class="mt-4">
+                                                    <small>Activá el switch para configurar SICFE</small>
+                                                </div>
+                                            @endif
+
+                                            @if ($store->billing_provider_id == 2 && $store->invoices_enabled && $store->billingCredential)
+                                                <div class="mt-3">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="checkSicfeConnection({{ $store->id }})">
+                                                        <i class="bx bx-link"></i> Verificar Conexión
+                                                    </button>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal de Configuración SICFE -->
+                                <div class="modal fade" id="sicfeConfigModal-{{ $store->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Configuración de SICFE</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="sicfeTenant-{{ $store->id }}">Tenant</label>
+                                                    <input type="text" class="form-control" id="sicfeTenant-{{ $store->id }}"
+                                                        value="{{ optional($store->billingCredential)->tenant }}" placeholder="Tenant de SICFE">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="sicfeUser-{{ $store->id }}">Usuario SICFE</label>
+                                                    <input type="text" class="form-control" id="sicfeUser-{{ $store->id }}"
+                                                        value="{{ optional($store->billingCredential)->user }}" placeholder="Usuario de SICFE">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="sicfePassword-{{ $store->id }}">Contraseña SICFE</label>
+                                                    <input type="password" class="form-control" id="sicfePassword-{{ $store->id }}"
+                                                        placeholder="Contraseña de SICFE">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label" for="sicfeBranchOffice-{{ $store->id }}">Sucursal SICFE</label>
+                                                    <input type="number" class="form-control" id="sicfeBranchOffice-{{ $store->id }}"
+                                                        value="{{ optional($store->billingCredential)->branch_office }}" placeholder="Número de sucursal">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                <button type="button" class="btn btn-primary" onclick="saveSicfeConfig({{ $store->id }}, true)">Guardar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal de Conexión SICFE -->
+                                <div class="modal fade" id="sicfeConnectionModal-{{ $store->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Información de Conexión SICFE</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div id="sicfeConnectionLoader-{{ $store->id }}" class="text-center my-3">
+                                                    <div class="spinner-border text-primary" role="status">
+                                                        <span class="visually-hidden">Cargando...</span>
+                                                    </div>
+                                                </div>
+                                                <div id="sicfeConnectionData-{{ $store->id }}" style="display: none;">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-bordered">
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                                <div id="sicfeConnectionError-{{ $store->id }}" class="alert alert-danger" style="display: none;"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

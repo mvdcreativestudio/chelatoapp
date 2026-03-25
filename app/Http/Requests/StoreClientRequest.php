@@ -74,16 +74,7 @@ class StoreClientRequest extends FormRequest
                     }
                 },
             ],
-            'ci' => [
-              'nullable',
-              'string',
-              'max:255',
-              function ($attribute, $value, $fail) {
-                  if ($this->type === 'individual' && is_null($value)) {
-                      $fail('La CI es obligatoria para clientes individuales.');
-                  }
-              },
-            ],
+            'ci' => 'nullable|string|max:255',
             'type' => 'required|string|max:255',
             'rut' => [
               'nullable',
@@ -110,7 +101,7 @@ class StoreClientRequest extends FormRequest
             'state' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:255',
-            'email' => 'required|string|email|max:255',
+            'email' => 'nullable|string|email|max:255',
             'website' => 'nullable|string|max:255',
             'logo' => 'nullable|string|max:255',
             'store_id' => 'nullable|integer',

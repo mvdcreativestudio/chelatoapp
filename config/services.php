@@ -52,4 +52,11 @@ return [
     'flavorUnit' => [
         'unit' => 5,
     ],
+
+    'sicfe' => [
+        'endpoint' => env('SICFE_ENDPOINT', ''),
+        'usuario' => env('SICFE_USUARIO', ''),
+        'clave' => env('SICFE_CLAVE', ''),
+        'tenant' => env('SICFE_TENANT', ''),
+    ],
 ];

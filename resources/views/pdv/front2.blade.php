@@ -265,7 +265,7 @@
 
       <!-- Campo CI para Persona -->
       <div class="mb-3" id="ciField">
-        <label for="ciCliente" class="form-label">CI <span class="text-danger">*</span></label>
+        <label for="ciCliente" class="form-label">CI</label>
         <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el CI">
       </div>
 
@@ -280,16 +280,16 @@
         <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
       </div>
 
-      <!-- Campo Dirección (requerido para ambos tipos de cliente) -->
+      <!-- Campo Dirección -->
       <div class="mb-3">
-        <label for="direccionCliente" class="form-label">Dirección <span class="text-danger">*</span></label>
-        <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección" required>
+        <label for="direccionCliente" class="form-label">Dirección</label>
+        <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección">
       </div>
 
-      <!-- Campo Email (requerido para ambos) -->
+      <!-- Campo Email -->
       <div class="mb-3">
-        <label for="emailCliente" class="form-label">Correo Electrónico <span class="text-danger">*</span></label>
-        <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico" required>
+        <label for="emailCliente" class="form-label">Correo Electrónico</label>
+        <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico">
       </div>
 
       <button type="button" class="btn btn-primary" id="guardarCliente">Guardar</button>

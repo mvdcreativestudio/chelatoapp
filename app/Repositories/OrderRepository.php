@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Enums\CurrentAccounts\StatusPaymentEnum;
 use App\Enums\CurrentAccounts\TransactionTypeEnum;
 use App\Helpers\Helpers;
+use App\Models\CashRegisterLog;
 use App\Models\Client;
 use App\Models\CurrentAccount;
 use App\Models\CurrentAccountInitialCredit;
@@ -12,7 +13,8 @@ use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\OrderStatusChange;
 use App\Models\Product;
-use App\Repositories\AccountingRepository;
+use App\Http\Requests\StoreOrderRequest;
+use App\Services\Billing\BillingServiceResolver;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,21 +24,11 @@ use Yajra\DataTables\Facades\DataTables;
 
 class OrderRepository
 {
-    /**
-     * El repositorio de contabilidad.
-     *
-     * @var AccountingRepository
-     */
-    protected $accountingRepository;
+    protected BillingServiceResolver $billingServiceResolver;
 
-    /**
-     * Inyecta el repositorio de contabilidad.
-     *
-     * @param AccountingRepository $accountingRepository
-     */
-    public function __construct(AccountingRepository $accountingRepository)
+    public function __construct(BillingServiceResolver $billingServiceResolver)
     {
-        $this->accountingRepository = $accountingRepository;
+        $this->billingServiceResolver = $billingServiceResolver;
     }
 
     /**
@@ -71,22 +63,25 @@ class OrderRepository
      * @param  StoreOrderRequest  $request
      * @return Order
      */
-    public function store($request)
+    public function store(StoreOrderRequest $request)
     {
         Log::info('Iniciando el proceso de creación de orden', ['request' => $request->all()]);
 
-        $clientData = $this->extractClientData($request->validated());
         $orderData = $this->prepareOrderData($request->payment_method, $request);
 
         DB::beginTransaction();
 
         try {
-            // Depurar la información del cliente y los datos de la orden antes de guardar
-            Log::info('Datos del cliente extraídos', ['clientData' => $clientData]);
-            Log::info('Datos de la orden preparados', ['orderData' => $orderData]);
+            if ($request->filled('client_id')) {
+                $client = Client::findOrFail($request->client_id);
+                Log::info('Cliente de la venta tomado por ID (PDV/ecommerce)', ['client_id' => $client->id]);
+            } else {
+                $clientData = $this->extractClientData($request);
+                $client = Client::firstOrCreate(['email' => $clientData['email']], $clientData);
+                Log::info('Cliente creado o encontrado por email', ['client_id' => $client->id]);
+            }
 
-            $client = Client::firstOrCreate(['email' => $clientData['email']], $clientData);
-            Log::info('Cliente creado o encontrado', ['client_id' => $client->id]);
+            Log::info('Datos de la orden preparados', ['orderData' => $orderData]);
 
             $order = new Order($orderData);
             $order->client()->associate($client);
@@ -115,11 +110,25 @@ class OrderRepository
             $store = $order->store;
             Log::info('Información de la tienda recuperada', ['store' => $store]);
 
-            // Verificar si se debe emitir una factura electrónica (CFE)
             if ($store->automatic_billing) {
-                $this->accountingRepository->emitCFE($order);
-                Log::info('Factura electrónica emitida', ['order_id' => $order->id]);
-                $order->update(['is_billed' => true]);
+                try {
+                    $store->loadMissing('billingProvider');
+                    if (! $store->billingProvider) {
+                        Log::warning('Facturación automática activada pero la tienda no tiene proveedor de facturación.', ['store_id' => $store->id]);
+                        $order->update(['is_billed' => false]);
+                    } else {
+                        $this->billingServiceResolver->resolve($store)->emitCFE($order, null, 1, null, null);
+                        $order->refresh();
+                        $order->update(['is_billed' => $order->invoices()->exists()]);
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('Fallo la facturación automática al crear la orden.', [
+                        'order_id' => $order->id,
+                        'store_id' => $store->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    $order->update(['is_billed' => false]);
+                }
             } else {
                 Log::info('No se emite factura electrónica para esta orden');
                 $order->update(['is_billed' => false]);
@@ -133,29 +142,73 @@ class OrderRepository
     }
 
     /**
-     * Prepar los datos del cliente para ser almacenados en la base de datos.
-     *
-     * @param array $validatedData
-     * @return array
+     * Datos para firstOrCreate cuando no se envía client_id (consumidor final / datos genéricos).
      */
-    private function extractClientData(array $validatedData): array
+    private function extractClientData(StoreOrderRequest $request): array
     {
-        Log::info('Extrayendo datos del cliente', ['validatedData' => $validatedData]);
+        $validated = $request->validated();
+
+        Log::info('Extrayendo datos del cliente', ['validated' => $validated, 'input' => $request->only(['doc_type', 'document', 'client_type'])]);
+
+        $docType = (int) ($request->input('doc_type') ?? 3);
+        $isCompany = $request->input('client_type') === 'company' || $docType === 2;
 
         $clientData = [
-            'name' => $validatedData['name'],
-            'lastname' => $validatedData['lastname'],
-            'type' => 'individual',
+            'name' => $validated['name'] ?? '',
+            'lastname' => $validated['lastname'] ?? '',
+            'type' => $isCompany ? 'company' : 'individual',
             'state' => 'Montevideo',
             'country' => 'Uruguay',
-            'address' => $validatedData['address'],
-            'phone' => $validatedData['phone'],
-            'email' => $validatedData['email'],
+            'address' => $validated['address'] ?? '',
+            'phone' => $validated['phone'] ?? '',
+            'email' => $validated['email'],
         ];
+
+        if ($isCompany) {
+            $rutDigits = preg_replace('/\D/', '', (string) ($request->input('document') ?? ''));
+            if ($rutDigits !== '') {
+                $clientData['rut'] = strlen($rutDigits) > 12 ? substr($rutDigits, 0, 12) : str_pad($rutDigits, 12, '0', STR_PAD_LEFT);
+            }
+            $clientData['company_name'] = $request->input('company_name')
+                ?? ($validated['name'] ?? '');
+        } else {
+            $ciDigits = preg_replace('/\D/', '', (string) ($request->input('document') ?? ''));
+            if (strlen($ciDigits) === 8) {
+                $clientData['ci'] = $ciDigits;
+            }
+        }
 
         Log::info('Datos del cliente procesados', ['clientData' => $clientData]);
 
         return $clientData;
+    }
+
+    /**
+     * PDV envía store_id vía JS asíncrono; si aún es null, se obtiene del log de caja o del usuario.
+     */
+    private function resolveStoreIdForOrder($request): int
+    {
+        $raw = $request->input('store_id');
+        if ($raw !== null && $raw !== '' && ! is_array($raw)) {
+            $id = (int) $raw;
+            if ($id > 0) {
+                return $id;
+            }
+        }
+
+        if ($request->filled('cash_register_log_id')) {
+            $log = CashRegisterLog::with('cashRegister')->find($request->cash_register_log_id);
+            if ($log?->cashRegister?->store_id) {
+                return (int) $log->cashRegister->store_id;
+            }
+        }
+
+        $userStore = Auth::user()?->store_id;
+        if ($userStore) {
+            return (int) $userStore;
+        }
+
+        throw new \InvalidArgumentException('No se pudo determinar la tienda del pedido (store_id).');
     }
 
     /**
@@ -177,7 +230,7 @@ class OrderRepository
             'date' => now(),
             'time' => now()->format('H:i:s'),
             'origin' => 'physical',
-            'store_id' => $request->store_id,
+            'store_id' => $this->resolveStoreIdForOrder($request),
             'subtotal' => $subtotal,
             'tax' => 0,
             'shipping' => session('costoEnvio', 0),
@@ -429,9 +482,13 @@ class OrderRepository
 
         $payType = $request->payType ?? 1;
 
-        $this->accountingRepository->emitCFE($order, $amountToBill, $payType);
+        $store = $order->store;
+        $store->loadMissing('billingProvider');
 
-        $order->update(['is_billed' => true]);
+        $this->billingServiceResolver->resolve($store)->emitCFE($order, $amountToBill, $payType, null, null);
+
+        $order->refresh();
+        $order->update(['is_billed' => $order->invoices()->exists()]);
     }
 
     public function getOrdersForExport($client, $company, $payment, $billed, $startDate, $endDate)

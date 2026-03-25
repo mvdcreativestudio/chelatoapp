@@ -175,7 +175,7 @@
                     </div>
                     <div class="form-group">
                         <label for="emailCliente">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="emailCliente" required>
+                        <input type="email" class="form-control" id="emailCliente">
                     </div>
                 </form>
             </div>

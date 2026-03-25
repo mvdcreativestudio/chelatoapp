@@ -188,7 +188,7 @@ $currencySymbol = $settings->currency_symbol;
       </div>
       <div class="mb-3">
         <label for="emailCliente" class="form-label">Correo Electrónico</label>
-        <input type="email" class="form-control" id="emailCliente" required>
+        <input type="email" class="form-control" id="emailCliente">
       </div>
       <button type="button" class="btn btn-primary" id="guardarCliente">Guardar</button>
     </form>

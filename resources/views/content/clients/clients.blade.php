@@ -112,8 +112,8 @@
 
         <!-- Campo CI para Persona -->
         <div class="mb-3" id="ciField">
-          <label class="form-label" for="ci">CI <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="ci" placeholder="Ingrese el CI" name="ci" required />
+          <label class="form-label" for="ci">CI</label>
+          <input type="text" class="form-control" id="ci" placeholder="Ingrese el CI" name="ci" />
         </div>
 
         <!-- Campo Razón Social y RUT para Empresa -->
@@ -127,10 +127,10 @@
           <input type="text" class="form-control" id="rut" placeholder="Ingrese el RUT" name="rut" />
         </div>
 
-        <!-- Campo Email (requerido para ambos) -->
+        <!-- Campo Email -->
         <div class="mb-3">
-          <label class="form-label" for="ecommerce-customer-add-email">Email <span class="text-danger">*</span></label>
-          <input type="email" id="ecommerce-customer-add-email" class="form-control" placeholder="mail@empresa.com" name="email" required />
+          <label class="form-label" for="ecommerce-customer-add-email">Email</label>
+          <input type="email" id="ecommerce-customer-add-email" class="form-control" placeholder="mail@empresa.com" name="email" />
         </div>
 
         <!-- Campo Teléfono (opcional) -->
@@ -143,8 +143,8 @@
       <!-- Campos adicionales compartidos -->
       <div class="ecommerce-customer-add-shiping mb-3 pt-2">
         <div class="mb-3">
-          <label class="form-label" for="address">Dirección <span id="direccionAsterisk" class="text-danger">*</span></label>
-          <input type="text" id="ecommerce-customer-add-address" class="form-control" placeholder="Ingrese la dirección" name="address" required/>
+          <label class="form-label" for="address">Dirección</label>
+          <input type="text" id="ecommerce-customer-add-address" class="form-control" placeholder="Ingrese la dirección" name="address" />
         </div>
         <div class="mb-3">
           <label class="form-label" for="city">Ciudad <span id="ciudadAsterisk" class="text-danger" style="display: none;">*</span></label>

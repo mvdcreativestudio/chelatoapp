@@ -13,6 +13,7 @@ use App\Http\Requests\EmitNoteRequest;
 use Illuminate\Support\Facades\Log;
 use App\Models\CFE;
 use App\Models\Store;
+use App\Services\Billing\BillingServiceResolver;
 use Illuminate\Http\Request;
 
 class AccountingController extends Controller
@@ -153,17 +154,32 @@ class AccountingController extends Controller
     }
 
     /**
-     * Descarga el PDF de un CFE.
+     * Descarga el PDF de un CFE (PyMo o SICFE según el proveedor de la tienda).
      *
-     * @param int $cfeId
-     * @return mixed
-    */
+     * @param int|string $cfeId
+     * @return \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\Response
+     */
     public function downloadCfePdf($cfeId)
     {
         try {
-            return $this->accountingRepository->getCfePdf($cfeId);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            $cfe = CFE::query()
+                ->with(['order.store.billingProvider', 'store.billingProvider'])
+                ->findOrFail($cfeId);
+
+            $store = $cfe->order?->store ?? $cfe->store;
+            if (! $store) {
+                abort(500, 'No se pudo determinar la tienda del CFE.');
+            }
+
+            return app(BillingServiceResolver::class)->resolve($store)->getCfePdf((int) $cfeId);
+        } catch (\Throwable $e) {
+            Log::error('Error al descargar PDF del CFE.', [
+                'cfe_id' => $cfeId,
+                'error' => $e->getMessage(),
+            ]);
+
+            // target="_blank" no tiene "back"; evitar redirect que deja la pestaña vacía
+            return response($e->getMessage(), 500)->header('Content-Type', 'text/plain; charset=UTF-8');
         }
     }
 

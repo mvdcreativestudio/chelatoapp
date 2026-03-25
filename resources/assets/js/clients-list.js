@@ -233,7 +233,7 @@ $(document).ready(function () {
     clearErrors();
     if (this.value == 'individual') {
       $('#ciField').show();
-      $('#ci').attr('required', true);
+      $('#ci').removeAttr('required');
       $('#rutField').hide();
       $('#company_name').removeAttr('required');
       $('#rut').removeAttr('required');
@@ -285,22 +285,7 @@ document.getElementById('guardarCliente').addEventListener('click', function (e)
       hasError = true;
   }
 
-  if (email.value.trim() === '') {
-      showError(email, 'Este campo es obligatorio');
-      hasError = true;
-  }
-
-  if (direccion.value.trim() === '') {
-      showError(direccion, 'Este campo es obligatorio');
-      hasError = true;
-  }
-
   if (tipo.value === 'individual') {
-      // Validar CI para personas individuales
-      if (ci.value.trim() === '') {
-          showError(ci, 'Este campo es obligatorio');
-          hasError = true;
-      }
       // Ocultar RUT y Razón Social si es individual
       document.getElementById('rutField').style.display = 'none';
       document.getElementById('ciField').style.display = 'block';

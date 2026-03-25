@@ -135,15 +135,34 @@ $changeTypeTranslations = [
 
   </div>
   <div class="d-flex align-content-center flex-wrap gap-2">
-    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=print" target="_blank" onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=800,height=600').print(); return false;">
+    {{-- Imprimir recibo --}}
+
+    {{--<a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=print" target="_blank" onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=800,height=600').print(); return false;">
         <button class="btn btn-primary">Imprimir</button>
-    </a>
-    @if(!$order->is_billed && $store->invoices_enabled)
-      <button type="button" class="btn btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
-        Emitir Factura
-      </button>
+    </a> --}}
+    @if($store->invoices_enabled)
+      @if($order->is_billed && $order->invoices->count() > 0)
+        @php $lastInvoice = $order->invoices->last(); @endphp
+        <div class="btn-group">
+          <button type="button" class="btn btn-label-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="ti ti-file-invoice me-1"></i> Factura
+          </button>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="{{ route('invoices.download', ['id' => $lastInvoice->id]) }}" target="_blank">
+                <i class="ti ti-download me-1"></i> Descargar PDF (A4)
+              </a>
+            </li>
+          </ul>
+        </div>
+      @else
+        <button type="button" class="btn btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
+          Emitir Factura
+        </button>
+      @endif
     @endif
-    <a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download" class="btn btn-label-primary">Descargar Recibo</a>
+    {{-- Descargar recibo --}}
+    {{--<a href="{{ route('orders.pdf', ['order' => $order->uuid]) }}?action=download" class="btn btn-label-primary">Descargar Recibo</a> --}}
     <button class="btn btn-label-danger delete-order">Eliminar</button>
   </div>
 </div>

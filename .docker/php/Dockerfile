@@ -25,6 +25,11 @@ RUN apt-get update && apt-get install -y netcat-openbsd
 # redis
 RUN pecl install redis && docker-php-ext-enable redis
 
+# SOAP (SICFE / \SoapClient)
+RUN apt-get update && apt-get install -y libxml2-dev \
+  && docker-php-ext-install soap \
+  && rm -rf /var/lib/apt/lists/*
+
 # pcov
 RUN pecl install pcov && docker-php-ext-enable pcov
 

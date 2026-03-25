@@ -106,6 +106,8 @@ class StoreController extends Controller
 
         Log::info('Store: ' . $store->rut);
 
+        $store->load('billingCredential', 'billingProvider');
+
         if ($store->invoices_enabled && $store->pymo_user && $store->pymo_password) {
             $companyInfo = $this->accountingRepository->getCompanyInfo($store);
             $logoUrl = $this->accountingRepository->getCompanyLogo($store);
