@@ -13,7 +13,11 @@ $(function () {
           // Imagen del producto
           data: 'image',
           render: function(data, type, full, meta) {
-            var imagePath = `${baseUrl}${data}`;
+            var raw = data != null && String(data).trim() !== '' ? String(data).trim() : '';
+            var imagePath = raw.indexOf('http') === 0 ? raw : `${baseUrl}${raw.replace(/^\//, '')}`;
+            if (!raw) {
+              imagePath = `${baseUrl}admin/default-image.png`;
+            }
             return `
               <img src="${imagePath}"
                    onerror="this.onerror=null; this.src='${baseUrl}admin/default-image.png';"

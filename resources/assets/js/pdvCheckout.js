@@ -999,6 +999,7 @@ function consultarEstadoTransaccion(transactionId, sTransactionId, transactionDa
         name: item.name,
         price: item.price,
         quantity: item.quantity,
+        image: item.image ?? '',
         is_composite: item.isComposite || false  // Identificar si es un producto compuesto
       }))),
       subtotal: subtotal,

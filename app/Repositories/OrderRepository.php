@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Enums\CurrentAccounts\StatusPaymentEnum;
 use App\Enums\CurrentAccounts\TransactionTypeEnum;
 use App\Helpers\Helpers;
+use App\Http\Requests\StoreOrderRequest;
 use App\Models\CashRegisterLog;
 use App\Models\Client;
 use App\Models\CurrentAccount;
@@ -13,7 +14,6 @@ use App\Models\Order;
 use App\Models\OrderProduct;
 use App\Models\OrderStatusChange;
 use App\Models\Product;
-use App\Http\Requests\StoreOrderRequest;
 use App\Services\Billing\BillingServiceResolver;
 use Exception;
 use Illuminate\Http\Request;
@@ -33,8 +33,6 @@ class OrderRepository
 
     /**
      * Obtiene todos los pedidos y las estadísticas necesarias para las cards.
-     *
-     * @return array
      */
     public function getAllOrders(): array
     {
@@ -60,7 +58,6 @@ class OrderRepository
     /**
      * Almacena un nuevo pedido en la base de datos.
      *
-     * @param  StoreOrderRequest  $request
      * @return Order
      */
     public function store(StoreOrderRequest $request)
@@ -133,6 +130,7 @@ class OrderRepository
                 Log::info('No se emite factura electrónica para esta orden');
                 $order->update(['is_billed' => false]);
             }
+
             return $order;
         } catch (\Exception $e) {
             Log::error('Error durante la creación de la orden', ['exception' => $e->getMessage()]);
@@ -214,9 +212,7 @@ class OrderRepository
     /**
      * Prepara los datos del pedido para ser almacenados en la base de datos.
      *
-     * @param string $paymentMethod
-     * @param Request $request
-     * @return array
+     * @param  Request  $request
      */
     private function prepareOrderData(string $paymentMethod, $request): array
     {
@@ -251,7 +247,6 @@ class OrderRepository
     /**
      * Carga las relaciones de un pedido.
      *
-     * @param Order $order
      * @return Order
      */
     public function loadOrderRelations(Order $order)
@@ -267,10 +262,47 @@ class OrderRepository
     }
 
     /**
+     * Completa la ruta de imagen desde el catálogo cuando el JSON del pedido no la trae (p. ej. ventas PDV antiguas).
+     *
+     * @param  array<int, array<string, mixed>>|null  $products
+     * @return array<int, array<string, mixed>>
+     */
+    public function enrichOrderProductsForDisplay(?array $products): array
+    {
+        if ($products === null || $products === []) {
+            return [];
+        }
+
+        $idsNeedingImage = [];
+        foreach ($products as $item) {
+            if (! empty($item['id']) && empty($item['image'])) {
+                $idsNeedingImage[] = (int) $item['id'];
+            }
+        }
+        $idsNeedingImage = array_values(array_unique($idsNeedingImage));
+        if ($idsNeedingImage === []) {
+            return $products;
+        }
+
+        $images = Product::whereIn('id', $idsNeedingImage)->pluck('image', 'id');
+
+        foreach ($products as $idx => $item) {
+            if (empty($item['image']) && ! empty($item['id'])) {
+                $id = (int) $item['id'];
+                if (isset($images[$id]) && $images[$id] !== '') {
+                    $products[$idx]['image'] = $images[$id];
+                }
+            }
+        }
+
+        return $products;
+    }
+
+    /**
      * Elimina un pedido específico y reintegra el stock de los productos.
      *
-     * @param int $orderId
-     * @return void
+     * @param  int  $orderId
+     *
      * @throws \Exception
      */
     public function destroyOrder($orderId): void
@@ -296,15 +328,13 @@ class OrderRepository
             Log::info("Orden {$orderId} eliminada y stock reintegrado correctamente.");
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error al eliminar la orden {$orderId}: " . $e->getMessage());
+            Log::error("Error al eliminar la orden {$orderId}: ".$e->getMessage());
             throw $e;
         }
     }
 
     /**
      * Obtiene los pedidos para la DataTable.
-     *
-     * @return mixed
      */
     public function getOrdersForDataTable(Request $request): mixed
     {
@@ -333,11 +363,11 @@ class OrderRepository
             'stores.name as store_name',
             DB::raw("CONCAT(clients.name, ' ', clients.lastname) as client_name"),
         ])
-        ->join('clients', 'orders.client_id', '=', 'clients.id')
-        ->join('stores', 'orders.store_id', '=', 'stores.id');
+            ->join('clients', 'orders.client_id', '=', 'clients.id')
+            ->join('stores', 'orders.store_id', '=', 'stores.id');
 
         // Verificar permisos del usuario
-        if (!Auth::user()->can('view_all_ecommerce')) {
+        if (! Auth::user()->can('view_all_ecommerce')) {
             $query->where('orders.store_id', Auth::user()->store_id);
         }
 
@@ -350,18 +380,16 @@ class OrderRepository
 
         // Aplicar siempre el orden descendente por fecha y hora
         $query->orderBy('orders.date', 'desc')
-              ->orderBy('orders.time', 'desc'); // Orden adicional por hora si las fechas son iguales
+            ->orderBy('orders.time', 'desc'); // Orden adicional por hora si las fechas son iguales
 
         $dataTable = DataTables::of($query)->make(true);
 
         return $dataTable;
     }
 
-
     /**
      * Obtiene los productos de un pedido para la DataTable.
      *
-     * @param Order $order
      * @return mixed
      */
     public function getOrderProductsForDataTable(Order $order)
@@ -378,7 +406,8 @@ class OrderRepository
             ->addColumn('product_name', function ($orderProduct) {
                 $productName = $orderProduct->product->name;
                 $flavors = $orderProduct->product->flavors->pluck('name')->implode(', ');
-                return $flavors ? $productName . "<br><small>$flavors</small>" : $productName;
+
+                return $flavors ? $productName."<br><small>$flavors</small>" : $productName;
             })
             ->addColumn('category', function ($orderProduct) {
                 return $orderProduct->product->categories->implode('name', ', ');
@@ -395,9 +424,6 @@ class OrderRepository
 
     /**
      * Obtiene el conteo de ordenes del cliente.
-     *
-     * @param int $clientId
-     * @return int
      */
     public function getClientOrdersCount(int $clientId): int
     {
@@ -406,10 +432,6 @@ class OrderRepository
 
     /**
      * Actualiza el estado del pago de un pedido.
-     *
-     * @param int $orderId
-     * @param string $paymentStatus
-     * @return Order
      */
     public function updatePaymentStatus(int $orderId, string $paymentStatus): Order
     {
@@ -435,10 +457,6 @@ class OrderRepository
 
     /**
      * Actualiza el estado del envío de un pedido.
-     *
-     * @param int $orderId
-     * @param string $shippingStatus
-     * @return Order
      */
     public function updateShippingStatus(int $orderId, string $shippingStatus): Order
     {
@@ -465,9 +483,6 @@ class OrderRepository
     /**
      * Emite un CFE para una orden.
      *
-     * @param int $orderId
-     * @param Request $request
-     * @return void
      * @throws Exception
      */
     public function emitCFE(int $orderId, Request $request): void
