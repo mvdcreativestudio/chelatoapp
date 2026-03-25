@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\CFE;
 use App\Models\Store;
 use App\Services\Billing\BillingServiceResolver;
+use App\Repositories\SicfeRepository;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -339,26 +340,33 @@ class AccountingController extends Controller
 
     /**
      * Actualiza el estado de todos los CFEs para la empresa del usuario autenticado.
+     * Detecta automáticamente el proveedor (PyMo o SICFE) y consulta el estado correspondiente.
      *
      * @return JsonResponse
     */
     public function updateAllCfesStatus(): JsonResponse
     {
         try {
-            // Obtener la empresa del usuario autenticado
             $store = auth()->user()->store;
 
             if (!$store) {
                 return response()->json(['error' => 'No se encontró la empresa para el usuario autenticado.'], 404);
             }
 
-            // Llamar al método del repositorio para actualizar los CFEs
-            $this->accountingRepository->updateAllCfesForStore($store);
+            $store->loadMissing('billingProvider');
+            $providerCode = strtolower($store->billingProvider->code ?? '');
 
-            return response()->json(['success' => 'Los estados de los CFEs se han actualizado correctamente.']);
+            if ($providerCode === 'sicfe') {
+                $sicfeRepo = app(SicfeRepository::class);
+                $updated = $sicfeRepo->updateCfeStatuses($store);
+                return response()->json(['success' => "Estados actualizados correctamente. {$updated} CFE(s) actualizados vía SICFE."]);
+            } else {
+                $this->accountingRepository->updateAllCfesForStore($store);
+                return response()->json(['success' => 'Los estados de los CFEs se han actualizado correctamente.']);
+            }
         } catch (\Exception $e) {
             Log::error('Excepción al actualizar los CFEs: ' . $e->getMessage());
-            return response()->json(['error' => 'Ocurrió un error al actualizar los CFEs.'], 500);
+            return response()->json(['error' => 'Ocurrió un error al actualizar los CFEs: ' . $e->getMessage()], 500);
         }
     }
 
@@ -381,6 +389,7 @@ class AccountingController extends Controller
 
     /**
      * Muestra la vista de CFEs recibidos.
+     * Detecta automáticamente el proveedor (PyMo o SICFE).
      *
      * @return RedirectResponse | View
     */
@@ -393,16 +402,24 @@ class AccountingController extends Controller
         }
 
         try {
-            $cfes = $this->accountingRepository->processReceivedCfes($store);
+            $store->loadMissing('billingProvider');
+            $providerCode = strtolower($store->billingProvider->code ?? '');
 
-            if (!$cfes) {
-                return redirect()->back()->with('error', 'No se encontraron CFE recibidos.');
+            if ($providerCode === 'sicfe') {
+                $sicfeRepo = app(SicfeRepository::class);
+                $cfes = $sicfeRepo->processReceivedCfes($store);
+            } else {
+                $cfes = $this->accountingRepository->processReceivedCfes($store);
+            }
+
+            if ($cfes === null) {
+                return redirect()->back()->with('error', 'Error al consultar CFEs recibidos.');
             }
 
             return view('content.accounting.received_cfes', compact('cfes'));
         } catch (\Exception $e) {
             Log::error('Error al obtener los CFE recibidos: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Error al obtener los CFE recibidos.');
+            return redirect()->back()->with('error', 'Error al obtener los CFE recibidos: ' . $e->getMessage());
         }
     }
 

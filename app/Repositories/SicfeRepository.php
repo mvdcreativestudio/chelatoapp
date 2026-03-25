@@ -238,8 +238,128 @@ class SicfeRepository
 
     public function emitReceipt(int $invoiceId, ?string $emissionDate): void
     {
-        // TODO: Implementar emisión de recibos vía SICFE
         throw new \Exception('Emisión de recibos vía SICFE aún no implementada.');
+    }
+
+    /**
+     * Actualiza el estado DGI de todos los CFEs emitidos de una tienda que no tienen estado final.
+     */
+    public function updateCfeStatuses(Store $store): int
+    {
+        $credentials = $this->buildSicfeCredentialsFromStore($store);
+        $soapClient = new SicfeSoapClient($credentials);
+
+        // Obtener CFEs emitidos sin estado final (AE=aceptado, BE=rechazado, NA=no aplica)
+        $finalStatuses = ['AE', 'BE', 'NA', 'PROCESSED_ACCEPTED', 'PROCESSED_REJECTED'];
+        $cfes = CFE::where('store_id', $store->id)
+            ->where('received', false)
+            ->whereNotIn('status', $finalStatuses)
+            ->whereNotNull('nro')
+            ->whereNotNull('serie')
+            ->get();
+
+        $updated = 0;
+
+        foreach ($cfes as $cfe) {
+            try {
+                $result = $soapClient->obtenerEstadoCFE([
+                    'Numero'    => $cfe->nro,
+                    'Serie'     => $cfe->serie,
+                    'Tipo'      => $cfe->type,
+                    'observado' => 1,
+                    'rucemisor' => $store->rut,
+                ]);
+
+                $estado = $result['Estado'] ?? '';
+
+                if ($estado !== '' && $estado !== $cfe->status) {
+                    $cfe->status = $estado;
+                    $cfe->save();
+                    $updated++;
+                    Log::info("[SICFE] Estado actualizado CFE #{$cfe->id}: {$estado}");
+                }
+            } catch (\Exception $e) {
+                Log::warning("[SICFE] No se pudo consultar estado del CFE #{$cfe->id}: " . $e->getMessage());
+            }
+        }
+
+        return $updated;
+    }
+
+    /**
+     * Obtiene y almacena los CFEs recibidos (comprobantes de proveedores) desde SICFE.
+     */
+    public function processReceivedCfes(Store $store): ?array
+    {
+        $credentials = $this->buildSicfeCredentialsFromStore($store);
+        $soapClient = new SicfeSoapClient($credentials);
+
+        // Traer últimos 6 meses por defecto
+        $fechaDesde = Carbon::now()->subMonths(6)->format('Y-m-d');
+        $fechaHasta = Carbon::now()->format('Y-m-d');
+
+        try {
+            $cfesRecibidos = $soapClient->obtenerCFEsRecibidosExtendido($fechaDesde, $fechaHasta);
+
+            if (empty($cfesRecibidos)) {
+                Log::info('[SICFE] No se encontraron CFEs recibidos.');
+                return [];
+            }
+
+            foreach ($cfesRecibidos as $cfeData) {
+                $tipo = $cfeData['Tipo'] ?? null;
+                $serie = $cfeData['Serie'] ?? null;
+                $numero = $cfeData['Numero'] ?? null;
+
+                if (!$tipo || !$serie || !$numero) {
+                    Log::warning('[SICFE] CFE recibido sin datos mínimos, omitiendo.', $cfeData);
+                    continue;
+                }
+
+                $cfeEntry = [
+                    'store_id'          => $store->id,
+                    'type'              => $tipo,
+                    'serie'             => $serie,
+                    'nro'               => $numero,
+                    'caeNumber'         => $cfeData['NumeroAutorizacionCAE'] ?? null,
+                    'caeRange'          => json_encode([
+                        'desde' => $cfeData['DesdeNroCAE'] ?? null,
+                        'hasta' => $cfeData['HastaNroCAE'] ?? null,
+                    ]),
+                    'caeExpirationDate' => $cfeData['FechaVencimientoCAE'] ?? null,
+                    'total'             => $cfeData['MntPagar'] ?? 0,
+                    'currency'          => $cfeData['Moneda'] ?? 'UYU',
+                    'status'            => $cfeData['Estado'] ?? 'IN',
+                    'balance'           => $cfeData['MntPagar'] ?? 0,
+                    'received'          => true,
+                    'emitionDate'       => $cfeData['FechaEmision'] ?? null,
+                    'issuer_name'       => $cfeData['NombreComercial'] ?? $cfeData['RazonSocial'] ?? null,
+                    'reason'            => $cfeData['RucEmisor'] ?? null,
+                    'is_receipt'        => false,
+                ];
+
+                CFE::updateOrCreate(
+                    [
+                        'type'      => $tipo,
+                        'serie'     => $serie,
+                        'nro'       => $numero,
+                        'store_id'  => $store->id,
+                        'received'  => true,
+                    ],
+                    $cfeEntry
+                );
+            }
+
+            return CFE::where('received', true)
+                ->where('store_id', $store->id)
+                ->orderBy('emitionDate', 'desc')
+                ->get()
+                ->toArray();
+
+        } catch (\Exception $e) {
+            Log::error('[SICFE] Error al procesar CFEs recibidos: ' . $e->getMessage());
+            return null;
+        }
     }
 
     protected function buildSicfeCredentialsFromStore(Store $store): array

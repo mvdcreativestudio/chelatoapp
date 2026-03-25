@@ -115,13 +115,8 @@
         </p>
       </div>
       <button id="btn-update-cfes" class="btn btn-primary">
-        Actualizar estado de CFEs
+        <i class="bx bx-refresh me-1"></i> Actualizar estados
       </button>
-      @if (auth()->user()->can('access_update_all_invoices'))
-        <button id="btn-update-all-cfes" class="btn btn-primary">
-          Actualizar estado de todos los CFEs
-        </button>
-      @endif
       <div class="collapse" id="columnSwitches">
         <div class="mt-0 d-flex flex-wrap">
           <div class="mx-3">

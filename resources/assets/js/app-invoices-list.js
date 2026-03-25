@@ -214,9 +214,38 @@ $(function () {
                   badgeClass = 'badge bg-secondary';
                   translatedStatus = 'Eliminado - Falta CAE';
                   break;
+                // Estados DGI (SICFE)
+                case 'AE':
+                  badgeClass = 'badge bg-success';
+                  translatedStatus = 'Aceptado (DGI)';
+                  break;
+                case 'BE':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Rechazado (DGI)';
+                  break;
+                case 'CE':
+                  badgeClass = 'badge bg-warning';
+                  translatedStatus = 'Observado (DGI)';
+                  break;
+                case 'PE':
+                  badgeClass = 'badge bg-secondary';
+                  translatedStatus = 'Pendiente (DGI)';
+                  break;
+                case 'EN':
+                  badgeClass = 'badge bg-info';
+                  translatedStatus = 'Enviado (DGI)';
+                  break;
+                case 'RE':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Rechazado sobre (DGI)';
+                  break;
+                case 'NA':
+                  badgeClass = 'badge bg-label-info';
+                  translatedStatus = 'No aplica (DGI)';
+                  break;
                 default:
                   badgeClass = 'badge bg-secondary';
-                  translatedStatus = 'Estado Desconocido';
+                  translatedStatus = data || 'Estado Desconocido';
               }
 
               return '<span class="' + badgeClass + '">' + translatedStatus + '</span>';
@@ -367,44 +396,20 @@ $(function () {
       type: 'POST',
       headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
       beforeSend: function () {
-        $('#btn-update-cfes').prop('disabled', true).text('Actualizando...');
+        $('#btn-update-cfes').prop('disabled', true).html('<i class="bx bx-loader-alt bx-spin me-1"></i> Actualizando...');
       },
       success: function (response) {
-        $('#btn-update-cfes').prop('disabled', false).text('Actualizar CFEs');
+        $('#btn-update-cfes').prop('disabled', false).html('<i class="bx bx-refresh me-1"></i> Actualizar estados');
         if (response.success) {
-          // Actualizar la tabla con los nuevos datos
           dt_invoices.ajax.reload();
         } else if (response.error) {
           toastr.error(response.error, 'Error');
         }
       },
-      error: function (xhr, status, error) {
-        $('#btn-update-cfes').prop('disabled', false).text('Actualizar CFEs');
-        toastr.error('Ocurrió un error durante la actualización de los CFEs.', 'Error');
-      }
-    });
-  });
-
-  $('#btn-update-all-cfes').on('click', function () {
-    $.ajax({
-      url: baseUrl + 'admin/invoices/update-all-cfes',
-      type: 'POST',
-      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-      beforeSend: function () {
-        $('#btn-update-all-cfes').prop('disabled', true).text('Actualizando...');
-      },
-      success: function (response) {
-        $('#btn-update-all-cfes').prop('disabled', false).text('Actualizar todos los CFEs');
-        if (response.success) {
-          // Actualizar la tabla con los nuevos datos
-          dt_invoices.ajax.reload();
-        } else if (response.error) {
-          toastr.error(response.error, 'Error');
-        }
-      },
-      error: function (xhr, status, error) {
-        $('#btn-update-all-cfes').prop('disabled', false).text('Actualizar todos los CFEs');
-        toastr.error('Ocurrió un error durante la actualización de los CFEs.', 'Error');
+      error: function (xhr) {
+        $('#btn-update-cfes').prop('disabled', false).html('<i class="bx bx-refresh me-1"></i> Actualizar estados');
+        var msg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Ocurrió un error durante la actualización.';
+        toastr.error(msg, 'Error');
       }
     });
   });

@@ -126,6 +126,102 @@ class SicfeSoapClient
         }
     }
 
+    /**
+     * Consulta el estado DGI de un CFE emitido.
+     */
+    public function obtenerEstadoCFE(array $idCfe): array
+    {
+        $params = [
+            'pUsuario' => $this->usuario,
+            'pClave'   => $this->clave,
+            'pTenant'  => $this->tenant,
+            'pIDCFE'   => [
+                'Numero'    => $idCfe['Numero'],
+                'Serie'     => $idCfe['Serie'],
+                'Tipo'      => $idCfe['Tipo'],
+                'observado' => $idCfe['observado'] ?? 1,
+                'rucemisor' => $idCfe['rucemisor'],
+            ],
+        ];
+
+        try {
+            Log::info('[SICFE] ObtenerEstadoCFE params:', $params);
+
+            $client = new \SoapClient($this->wsdlLocation(), [
+                'trace' => true,
+                'exceptions' => true,
+            ]);
+
+            $result = $client->ObtenerEstadoCFE($params);
+            $parsed = $result->ObtenerEstadoCFEResult ?? null;
+
+            $response = [
+                'Estado'     => $parsed->Estado ?? '',
+                'CodRechazo' => $parsed->CodRechazo ?? '',
+                'MotRechazo' => $parsed->MotRechazo ?? '',
+            ];
+
+            Log::info('[SICFE] ObtenerEstadoCFE respuesta:', $response);
+
+            return $response;
+        } catch (\SoapFault $e) {
+            Log::error('[SICFE] Error al obtener estado CFE: ' . $e->getMessage());
+            throw new \Exception('Error al consultar estado del CFE en SICFE: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtiene los CFEs recibidos (comprobantes de proveedores) con datos extendidos.
+     */
+    public function obtenerCFEsRecibidosExtendido(?string $fechaDesde = null, ?string $fechaHasta = null, string $estado = ''): array
+    {
+        $params = [
+            'nomusuario'         => $this->usuario,
+            'clave'              => $this->clave,
+            'param_tenant'       => $this->tenant,
+            'fecha_desde'        => $fechaDesde,
+            'fecha_hasta'        => $fechaHasta,
+            'estado'             => $estado,
+            'devolverXML'        => false,
+            'rucEmisor'          => '',
+            'consideraCobranzas' => '',
+        ];
+
+        try {
+            Log::info('[SICFE] ObtenerCFEsRecibidosExtendido params:', $params);
+
+            $client = new \SoapClient($this->wsdlLocation(), [
+                'trace' => true,
+                'exceptions' => true,
+            ]);
+
+            $result = $client->ObtenerCFEsRecibidosExtendido($params);
+            $parsed = $result->ObtenerCFEsRecibidosExtendidoResult ?? null;
+
+            if (!$parsed || (isset($parsed->Codigo) && $parsed->Codigo != 0)) {
+                $msg = $parsed->Descripcion ?? 'Error desconocido';
+                Log::error('[SICFE] Error en ObtenerCFEsRecibidosExtendido: ' . $msg);
+                return [];
+            }
+
+            $cfes = $parsed->CFEsRecibidos->CFERecibidoExtendidoDTO ?? [];
+
+            // Si es un solo objeto, convertirlo a array
+            if (!is_array($cfes)) {
+                $cfes = [$cfes];
+            }
+
+            $formatted = json_decode(json_encode($cfes), true);
+
+            Log::info('[SICFE] CFEs recibidos encontrados: ' . count($formatted));
+
+            return $formatted;
+        } catch (\SoapFault $e) {
+            Log::error('[SICFE] Error al obtener CFEs recibidos: ' . $e->getMessage());
+            throw new \Exception('Error al obtener CFEs recibidos de SICFE: ' . $e->getMessage());
+        }
+    }
+
     public function obtenerDatosRucDgi(array $params): array
     {
         try {

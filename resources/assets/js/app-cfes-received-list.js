@@ -105,9 +105,43 @@ $(function () {
                   badgeClass = 'badge bg-warning';
                   translatedStatus = 'Pendiente de Revisión';
                   break;
+                // Estados SICFE/DGI
+                case 'IN':
+                case 'IO':
+                  badgeClass = 'badge bg-info';
+                  translatedStatus = 'Ingresado';
+                  break;
+                case 'AE':
+                  badgeClass = 'badge bg-success';
+                  translatedStatus = 'Aceptado';
+                  break;
+                case 'BE':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Rechazado';
+                  break;
+                case 'BN':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Rechazado Comercial';
+                  break;
+                case 'AM':
+                  badgeClass = 'badge bg-success';
+                  translatedStatus = 'Aceptado Comercial';
+                  break;
+                case 'BM':
+                  badgeClass = 'badge bg-danger';
+                  translatedStatus = 'Rechazado Comercial';
+                  break;
+                case 'PE':
+                  badgeClass = 'badge bg-secondary';
+                  translatedStatus = 'Pendiente';
+                  break;
+                case 'SP':
+                  badgeClass = 'badge bg-label-info';
+                  translatedStatus = 'Secreto Profesional';
+                  break;
                 default:
                   badgeClass = 'badge bg-secondary';
-                  translatedStatus = 'Estado Desconocido';
+                  translatedStatus = data || 'Estado Desconocido';
               }
 
               return '<span class="' + badgeClass + '">' + translatedStatus + '</span>';
