@@ -218,6 +218,16 @@ class SicfeRepository
             $invoice->save();
             Log::info("Balance del CFE original {$invoice->id} actualizado.", ['nuevo_balance' => $invoice->balance]);
 
+            // Si el balance queda en 0 con nota de crédito, marcar la orden como reembolsada
+            if ($noteType === 'credit' && $newBalance == 0) {
+                $order = $invoice->order;
+                if ($order) {
+                    $order->payment_status = 'refunded';
+                    $order->save();
+                    Log::info("Orden #{$order->id} marcada como reembolsada por nota de crédito total.");
+                }
+            }
+
         } catch (\Throwable $e) {
             Log::error('[SICFE] Error al guardar la nota o actualizar balance: ' . $e->getMessage(), [
                 'invoice_id' => $invoice->id,

@@ -1,6 +1,6 @@
 @extends('layouts.layoutMaster')
 
-@section('title', 'Pago - Sumeria')
+@section('title', 'Checkout - PDV')
 
 @section('vendor-style')
 @vite([
@@ -8,9 +8,181 @@
     'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
     'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
     'resources/assets/vendor/libs/select2/select2.scss',
-    // 'resources/assets/vendor/libs/bootstrap/bootstrap.min.css',
-    // 'resources/assets/vendor/libs/fontawesome/fontawesome.min.css'
 ])
+<style>
+  .pdv-checkout-wrap {
+    max-width: 100%;
+    padding: 0 .5rem;
+  }
+  /* Cart item */
+  .cart-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .cart-item:last-child { border-bottom: none; }
+  .cart-item-img {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #f5f5f9;
+    flex-shrink: 0;
+  }
+  .cart-item-info { flex: 1; min-width: 0; }
+  .cart-item-name {
+    font-weight: 600;
+    font-size: .9rem;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cart-item-price { color: #888; font-size: .82rem; }
+  .cart-item-total {
+    font-weight: 700;
+    font-size: .95rem;
+    min-width: 80px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  /* Qty control */
+  .qty-control {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    height: 34px;
+  }
+  .qty-control .qty-btn {
+    background: none;
+    border: none;
+    width: 32px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #555;
+    transition: background .15s;
+  }
+  .qty-control .qty-btn:hover { background: #f0f0f5; }
+  .qty-control .qty-value {
+    width: 36px;
+    text-align: center;
+    font-weight: 600;
+    font-size: .9rem;
+    border-left: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0;
+    line-height: 34px;
+  }
+  .cart-item-remove {
+    background: none;
+    border: none;
+    color: #d44;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .cart-item-remove:hover { background: #fdeaea; }
+  /* Summary card sticky */
+  @media (min-width: 992px) {
+    .summary-col { position: sticky; top: 80px; align-self: flex-start; }
+  }
+  /* Payment pills */
+  .payment-pills { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .payment-pill {
+    flex: 1 1 calc(50% - .25rem);
+    min-width: 120px;
+  }
+  .payment-pill input { display: none; }
+  .payment-pill label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .6rem .75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: .85rem;
+    transition: all .2s;
+    width: 100%;
+    text-align: center;
+  }
+  .payment-pill input:checked + label {
+    border-color: var(--bs-primary, #7367f0);
+    background: rgba(115, 103, 240, .08);
+    color: var(--bs-primary, #7367f0);
+  }
+  /* Discount toggle */
+  .discount-toggle {
+    cursor: pointer;
+    user-select: none;
+  }
+  .discount-toggle .bx { transition: transform .2s; }
+  .discount-toggle.collapsed .bx { transform: rotate(-90deg); }
+  /* Empty cart */
+  .empty-cart {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #aaa;
+  }
+  .empty-cart i { font-size: 3rem; margin-bottom: .5rem; }
+  /* Client mini card */
+  .client-mini {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+    background: #f5f5f9;
+    border-radius: 10px;
+  }
+  .client-mini-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bs-primary, #7367f0);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: .9rem;
+    flex-shrink: 0;
+  }
+  .client-mini-info { flex: 1; min-width: 0; }
+  .client-mini-name { font-weight: 600; font-size: .9rem; }
+  .client-mini-doc { font-size: .78rem; color: #888; }
+  /* Mobile finalize bar */
+  @media (max-width: 991.98px) {
+    .mobile-finalize-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1050;
+      background: #fff;
+      border-top: 1px solid #e0e0e0;
+      padding: .75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+    }
+    .pdv-checkout-wrap { padding-bottom: 80px; }
+  }
+  @media (min-width: 992px) {
+    .mobile-finalize-bar { display: none !important; }
+  }
+</style>
 @endsection
 
 @php
@@ -21,7 +193,6 @@
     window.cashRegisterId = "{{ Session::get('open_cash_register_id') }}";
     window.baseUrl = "{{ url('') }}/";
     window.frontRoute = "{{ route('pdv.front') }}";
-    // Configuración de las respuestas del POS Scanntech
     const posResponsesConfig = @json(config('posResponses'));
     window.currencySymbol = '{{ $currencySymbol }}';
     window.userPermissions = @json(auth()->user()->getAllPermissions()->pluck('name')->toArray());
@@ -29,185 +200,204 @@
 
 @section('content')
 
-<div class="p-1 ">
-  <div id="errorContainer" class="alert alert-danger d-none" role="alert"></div>
+<div class="pdv-checkout-wrap">
+  <div id="errorContainer" class="alert alert-danger d-none mb-3" role="alert"></div>
 
-  <div class="row">
-    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
-      <h5 class="mb-0">
-        <button class="btn m-0 p-0">
-          <a href="{{ route('pdv.front') }}"><i class="bx bx-chevron-left fs-2"></i></a>
-        </button> Atras
-      </h5>
+  {{-- Header --}}
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{{ route('pdv.front') }}" class="btn btn-icon btn-outline-secondary rounded-circle">
+      <i class="bx bx-arrow-back"></i>
+    </a>
+    <div>
+      <h5 class="mb-0">Checkout</h5>
+      <small class="text-muted">Revisá los productos y completá la venta</small>
     </div>
+  </div>
 
-    <div class="col-md-8">
-      <div class="row">
-        <div class="col-12 mb-3" id="client-selection-container">
-          <div class="card shadow-sm p-3 rounded-lg client-card-custom">
+  <div class="row g-4">
+    {{-- ===================== LEFT COLUMN ===================== --}}
+    <div class="col-lg-8">
+
+      {{-- Client section --}}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          {{-- No client selected --}}
+          <div id="client-selection-container">
             <div class="d-flex justify-content-between align-items-center">
-              <h5 class="m-0 text-secondary">Cliente</h5>
-              <button class="btn btn-outline-primary btn-sm d-flex align-items-center" data-bs-toggle="offcanvas" data-bs-target="#offcanvasEnd">
-                <i class="bx bx-plus me-1"></i>
-                <span>Seleccionar Cliente</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar rounded-circle bg-label-secondary d-flex align-items-center justify-content-center" style="width:36px;height:36px;">
+                  <i class="bx bx-user" style="font-size:1.1rem;"></i>
+                </span>
+                <span class="fw-semibold">Consumidor Final</span>
+              </div>
+              <button class="btn btn-sm btn-primary" data-bs-toggle="offcanvas" data-bs-target="#offcanvasEnd">
+                <i class="bx bx-user-plus me-1"></i> Asignar cliente
               </button>
             </div>
           </div>
-        </div>
-
-        <div class="col-12 mb-3">
-          <div id="client-info" class="card shadow-sm p-4 mb-3 rounded-lg border-0 client-info-card" style="display: block;">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="m-0">Información del Cliente</h5>
-              <button id="deselect-client" class="btn btn-outline-danger btn-sm">
-                <span class="d-none d-md-inline">Deseleccionar</span>
-                <i class="bx bx-x d-inline d-md-none"></i>
-              </button>
-            </div>
-            <div class="client-details">
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">ID:</strong> <span id="client-id" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">Nombre:</strong> <span id="client-name" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1"><strong class="text-muted">Tipo de Cliente:</strong> <span id="client-type" class="text-body fw-bold">-</span></p>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <p class="mb-1" id="client-company" style="display:none;"></p>
-                  <p class="mb-1"><strong id="client-doc-label" class="text-muted">CI:</strong> <span id="client-doc" class="text-body fw-bold">-</span></p>
+          {{-- Client selected --}}
+          <div id="client-info" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="client-mini flex-grow-1">
+                <div class="client-mini-avatar" id="client-avatar">--</div>
+                <div class="client-mini-info">
+                  <div class="client-mini-name" id="client-name">-</div>
+                  <div class="client-mini-doc">
+                    <span id="client-type-label">Persona</span> &middot;
+                    <span id="client-doc-label">CI</span>: <span id="client-doc">-</span>
+                    <span id="client-company" style="display:none;"> &middot; <span id="client-company-name"></span></span>
+                  </div>
                 </div>
               </div>
+              <button id="deselect-client" class="btn btn-sm btn-icon btn-outline-danger ms-2" title="Quitar cliente">
+                <i class="bx bx-x"></i>
+              </button>
             </div>
-          </div>
-          <div class="card shadow-sm p-4 border-0">
-            <h5 class="mb-3">Productos de la venta</h5>
-            <!-- Listado de items seleccionados -->
-            <ul class="list-group list-group-flush" id="cart-items">
-              <!-- Aquí se insertarán los items del carrito dinámicamente -->
-            </ul>
+            <input type="hidden" id="client-id" value="">
           </div>
         </div>
-        <div class="col-12">
-          <div class="card shadow-sm p-3">
-            <h5>Observación</h5>
-            <textarea class="form-control" placeholder="Digite la observación aquí"></textarea>
-            {{-- Campo para mostrar la nota en el recibo --}}
-            {{-- <div class="form-check mt-2">
-              <input class="form-check-input" type="checkbox" id="mostrarRecibo">
-              <label class="form-check-label" for="mostrarRecibo">Mostrar en el recibo</label>
-            </div> --}}
+      </div>
+
+      {{-- Cart items --}}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3">
+          <h6 class="mb-0"><i class="bx bx-cart me-1"></i> Productos <span class="badge bg-label-primary ms-1" id="cart-count">0</span></h6>
+        </div>
+        <div class="card-body pt-0">
+          <div id="cart-items">
+            {{-- Items render dynamically --}}
           </div>
+          <div id="cart-empty" class="empty-cart" style="display:none;">
+            <i class="bx bx-cart"></i>
+            <p class="mb-0">El carrito está vacío</p>
+            <a href="{{ route('pdv.front') }}" class="btn btn-sm btn-outline-primary mt-2">Agregar productos</a>
+          </div>
+        </div>
+      </div>
+
+      {{-- Notes --}}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <label class="form-label fw-semibold mb-2"><i class="bx bx-note me-1"></i> Observación</label>
+          <textarea class="form-control" rows="2" placeholder="Nota interna sobre esta venta (opcional)" id="orderNotes"></textarea>
         </div>
       </div>
     </div>
 
-    <div class="col-md-4">
-      <div class="card shadow-sm p-3 mb-3">
-        <h5>Resumen de la venta</h5>
-        <div class="d-flex justify-content-between">
-          <span>Subtotal de productos</span>
-          <span class="subtotal">$0.00</span>
-        </div>
-        <div class="d-flex justify-content-between">
-          <span>Descuentos</span>
-          <span class="discount-amount">$0.00</span>
-        </div>
-        <hr>
-        <div class="d-flex justify-content-between">
-          <strong>Total</strong>
-          <strong class="total">$0.00</strong>
+    {{-- ===================== RIGHT COLUMN ===================== --}}
+    <div class="col-lg-4 summary-col">
+
+      {{-- Summary --}}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h6 class="mb-3">Resumen</h6>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Subtotal</span>
+            <span class="subtotal fw-semibold">{{ $currencySymbol }}0.00</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Descuento</span>
+            <span class="discount-amount text-danger">-{{ $currencySymbol }}0.00</span>
+          </div>
+          <hr class="my-2">
+          <div class="d-flex justify-content-between">
+            <span class="fw-bold fs-5">Total</span>
+            <span class="total fw-bold fs-5">{{ $currencySymbol }}0.00</span>
+          </div>
         </div>
       </div>
 
-      <div class="discount-section mt-3">
-        <div class="card shadow-sm p-3 mb-3 border-0">
-            <h5 class="mb-3 font-weight-bold">Descuentos</h5>
-            <div class="form-group mb-3">
-                <label for="coupon-code" class="text-muted small">Cupón de descuento</label>
-                <input type="text" id="coupon-code" class="form-control form-control-sm" placeholder="Ingresa código de cupón">
+      {{-- Discounts --}}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <div class="discount-toggle d-flex justify-content-between align-items-center collapsed" data-bs-toggle="collapse" data-bs-target="#discountCollapse">
+            <h6 class="mb-0"><i class="bx bx-purchase-tag me-1"></i> Descuentos</h6>
+            <i class="bx bx-chevron-down"></i>
+          </div>
+          <div class="collapse" id="discountCollapse">
+            <div class="mt-3">
+              <label class="form-label small text-muted">Cupón</label>
+              <div class="input-group input-group-sm mb-3">
+                <input type="text" id="coupon-code" class="form-control" placeholder="Código de cupón">
+                <button class="btn btn-outline-primary" type="button" id="apply-coupon-btn">Aplicar</button>
+              </div>
+              <label class="form-label small text-muted">Descuento manual</label>
+              <div class="input-group input-group-sm mb-2">
+                <input type="number" id="fixed-discount" class="form-control" placeholder="Valor" min="0" step=".01">
+                <button class="btn btn-outline-secondary discount-type-btn active" data-type="fixed" type="button">$</button>
+                <button class="btn btn-outline-secondary discount-type-btn" data-type="percentage" type="button">%</button>
+                <button class="btn btn-outline-primary" type="button" id="apply-fixed-btn">OK</button>
+              </div>
+              <input type="hidden" id="discount-type-value" value="fixed">
+              <button class="btn btn-sm btn-outline-danger w-100 mt-2" id="quitarDescuento" style="display:none;">
+                <i class="bx bx-x me-1"></i>Quitar descuento
+              </button>
             </div>
-            <div class="form-group mb-3">
-                <label for="fixed-discount" class="text-muted small">Descuento fijo</label>
-                <div class="input-group">
-                    <input type="number" id="fixed-discount" class="form-control form-control-sm" placeholder="Ingresa cantidad o porcentaje">
-                    <div class="input-group-append">
-                        <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                            <label class="btn btn-outline-secondary btn-sm">
-                                <input type="radio" name="discount-type" value="fixed" autocomplete="off"> Monto
-                            </label>
-                            <label class="btn btn-outline-secondary btn-sm">
-                                <input type="radio" name="discount-type" value="percentage" autocomplete="off"> %
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <button class="btn btn-primary btn-sm w-100" id="apply-discount-btn">Aplicar</button>
-            <button class="btn btn-danger btn-sm w-100 mt-1" id="quitarDescuento" style="display: none;">Eliminar descuento</button>
+          </div>
         </div>
       </div>
 
-      <div class="card shadow-sm p-4 bg-light">
-        <h5 class="card-title mb-4 text-primary">Método de pago</h5>
-
-        <div class="payment-options">
-          <div class="payment-option mb-3">
-            <input class="btn-check" type="radio" name="paymentMethod" id="cash" autocomplete="off" checked>
-            <label class="btn btn-outline-primary w-100 text-start" for="cash">
-              <i class="bx bx-money me-2"></i> Efectivo
-            </label>
-            <div class="mt-3 cash-details" id="cashDetails">
-              <input type="number" id="valorRecibido" min="0" step=".01" class="form-control form-control-lg mb-2" placeholder="Valor recibido">
-              <p class="text-muted mb-0">Vuelto: <span id="vuelto" class="fw-bold">0</span></p>
-              <small id="mensajeError" class="text-danger d-none">El valor recibido es insuficiente.</small>
+      {{-- Payment method --}}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h6 class="mb-3"><i class="bx bx-wallet me-1"></i> Método de pago</h6>
+          <div class="payment-pills">
+            <div class="payment-pill">
+              <input type="radio" name="paymentMethod" id="cash" checked>
+              <label for="cash"><i class="bx bx-money"></i> Efectivo</label>
+            </div>
+            <div class="payment-pill">
+              <input type="radio" name="paymentMethod" id="debit">
+              <label for="debit"><i class="bx bx-credit-card"></i> Débito</label>
+            </div>
+            <div class="payment-pill">
+              <input type="radio" name="paymentMethod" id="credit">
+              <label for="credit"><i class="bx bx-credit-card-front"></i> Crédito</label>
+            </div>
+            <div class="payment-pill">
+              <input type="radio" name="paymentMethod" id="internalCredit">
+              <label for="internalCredit"><i class="bx bx-transfer"></i> Crédito Int.</label>
             </div>
           </div>
-
-          <div class="payment-option mb-3">
-            <input class="btn-check" type="radio" name="paymentMethod" id="debit" autocomplete="off">
-            <label class="btn btn-outline-primary w-100 text-start" for="debit">
-              <i class="bx bx-credit-card me-2"></i> Débito
-            </label>
-          </div>
-
-          <div class="payment-option mb-3">
-            <input class="btn-check" type="radio" name="paymentMethod" id="credit" autocomplete="off">
-            <label class="btn btn-outline-primary w-100 text-start" for="credit">
-              <i class="bx bx-credit-card-front me-2"></i> Crédito
-            </label>
-          </div>
-
-          {{-- Credito interno --}}
-
-          <div class="payment-option">
-            <input class="btn-check" type="radio" name="paymentMethod" id="internalCredit" autocomplete="off">
-            <label class="btn btn-outline-primary w-100 text-start" for="internalCredit">
-              <i class="bx bx-credit-card-front me-2"></i> Crédito Interno
-            </label>
+          {{-- Cash details --}}
+          <div id="cashDetails" class="mt-3">
+            <label class="form-label small text-muted">Valor recibido</label>
+            <input type="number" id="valorRecibido" min="0" step=".01" class="form-control form-control-lg mb-2" placeholder="0.00">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="text-muted">Vuelto:</span>
+              <span id="vuelto" class="fw-bold fs-5">{{ $currencySymbol }}0</span>
+            </div>
+            <small id="mensajeError" class="text-danger d-none">El valor recibido es insuficiente.</small>
           </div>
         </div>
+      </div>
 
-        <!-- Nuevo selector de estado de entrega -->
-        <div class="mt-4">
-          <h5 class="card-title mb-3 text-primary">Estado de entrega</h5>
-          <select id="shippingStatus" class="form-select">
+      {{-- Shipping status --}}
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h6 class="mb-3"><i class="bx bx-package me-1"></i> Entrega</h6>
+          <select id="shippingStatus" class="form-select form-select-sm">
             <option value="delivered">Entregado</option>
             <option value="shipped">Enviado</option>
             <option value="pending">Pendiente</option>
           </select>
         </div>
       </div>
-      <div class="demo-inline-spacing d-flex justify-content-between">
-        <a href="{{ route('pdv.front') }}" id="descartarVentaBtn" class="btn btn-outline-danger"><i class="bx bx-x"></i>Descartar</a>
-        <button class="btn btn-success w-100"><i class="bx bx-check"></i> Finalizar venta</button>
+
+      {{-- Action buttons (desktop) --}}
+      <div class="d-none d-lg-flex gap-2">
+        <a href="{{ route('pdv.front') }}" id="descartarVentaBtn" class="btn btn-outline-danger">
+          <i class="bx bx-x me-1"></i>Descartar
+        </a>
+        <button class="btn btn-success flex-grow-1" id="finalizarVentaBtn">
+          <i class="bx bx-check me-1"></i> Finalizar venta
+        </button>
       </div>
-      <!-- Contenedor para el estado de la transacción -->
-      <div id="transaction-status" style="display: none;">
-        <div class="spinner-border text-primary" role="status" id="transaction-spinner" style="display: none;">
-            <span class="sr-only">Procesando...</span>
+
+      {{-- Transaction status --}}
+      <div id="transaction-status" style="display:none;" class="mt-3">
+        <div class="spinner-border text-primary" role="status" id="transaction-spinner" style="display:none;">
+          <span class="sr-only">Procesando...</span>
         </div>
         <div id="transaction-message" class="mt-3"></div>
       </div>
@@ -215,31 +405,38 @@
   </div>
 </div>
 
-<!-- Offcanvas Seleccionar Cliente -->
+{{-- Mobile bottom bar --}}
+<div class="mobile-finalize-bar">
+  <div>
+    <small class="text-muted">Total</small>
+    <div class="total fw-bold fs-5">{{ $currencySymbol }}0.00</div>
+  </div>
+  <button class="btn btn-success" id="finalizarVentaMobileBtn">
+    <i class="bx bx-check me-1"></i> Finalizar
+  </button>
+</div>
+
+{{-- ===================== OFFCANVAS: Seleccionar Cliente ===================== --}}
 <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasEnd" aria-labelledby="offcanvasEndLabel">
   <div class="offcanvas-header">
-      <h5 id="offcanvasEndLabel" class="offcanvas-title">Seleccionar Cliente</h5>
-      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    <h5 id="offcanvasEndLabel" class="offcanvas-title">Seleccionar Cliente</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
-  <!-- Contenedor principal con flexbox para alinear los elementos al inicio -->
   <div class="offcanvas-body d-flex flex-column">
-      <!-- Contenedor del contenido superior -->
-      <div class="d-flex flex-column align-items-start mb-3">
-          <p class="text-center w-100">Selecciona un cliente o crea uno nuevo.</p>
-          <button type="button" class="btn btn-primary mb-2 d-grid w-100" data-bs-toggle="offcanvas" data-bs-target="#crearClienteOffcanvas">Crear Cliente</button>
-          <!-- Contenedor de la barra de búsqueda -->
-          <div id="search-client-container" class="w-100" style="display: none;">
-              <input type="search" class="form-control" id="search-client" placeholder="Nombre, Razón Social, CI, RUT...">
-          </div>
+    <div class="d-flex flex-column align-items-start mb-3">
+      <p class="text-center w-100">Selecciona un cliente o crea uno nuevo.</p>
+      <button type="button" class="btn btn-primary mb-2 d-grid w-100" data-bs-toggle="offcanvas" data-bs-target="#crearClienteOffcanvas">
+        <i class="bx bx-plus me-1"></i> Crear Cliente
+      </button>
+      <div id="search-client-container" class="w-100" style="display:none;">
+        <input type="search" class="form-control" id="search-client" placeholder="Nombre, Razón Social, CI, RUT...">
       </div>
-      <!-- Lista de clientes, que será scrollable si hay muchos clientes -->
-      <ul id="client-list" class="list-group flex-grow-1 ">
-          <!-- Aquí se cargarán los clientes -->
-      </ul>
+    </div>
+    <ul id="client-list" class="list-group flex-grow-1 overflow-auto"></ul>
   </div>
 </div>
 
-<!-- Offcanvas Crear Cliente -->
+{{-- ===================== OFFCANVAS: Crear Cliente ===================== --}}
 <div class="offcanvas offcanvas-end" tabindex="-1" id="crearClienteOffcanvas" aria-labelledby="crearClienteOffcanvasLabel">
   <div class="offcanvas-header">
     <h5 id="crearClienteOffcanvasLabel" class="offcanvas-title">Crear Cliente</h5>
@@ -262,58 +459,30 @@
         <label for="apellidoCliente" class="form-label">Apellido <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="apellidoCliente" placeholder="Ingrese el apellido" required>
       </div>
-
-      <!-- Campo CI para Persona -->
       <div class="mb-3" id="ciField">
         <label for="ciCliente" class="form-label">CI</label>
         <input type="text" class="form-control" id="ciCliente" placeholder="Ingrese el CI">
       </div>
-
-      <!-- Campo RUT y Razón Social para Empresa -->
-      <div class="mb-3" id="razonSocialField" style="display: none;">
+      <div class="mb-3" id="razonSocialField" style="display:none;">
         <label for="razonSocialCliente" class="form-label">Razón Social <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="razonSocialCliente" placeholder="Ingrese la razón social">
       </div>
-
-      <div class="mb-3" id="rutField" style="display: none;">
+      <div class="mb-3" id="rutField" style="display:none;">
         <label for="rutCliente" class="form-label">RUT <span class="text-danger">*</span></label>
         <input type="text" class="form-control" id="rutCliente" placeholder="Ingrese el RUT">
       </div>
-
-      <!-- Campo Dirección -->
       <div class="mb-3">
         <label for="direccionCliente" class="form-label">Dirección</label>
         <input type="text" class="form-control" id="direccionCliente" placeholder="Ingrese la dirección">
       </div>
-
-      <!-- Campo Email -->
       <div class="mb-3">
         <label for="emailCliente" class="form-label">Correo Electrónico</label>
         <input type="email" class="form-control" id="emailCliente" placeholder="Ingrese el correo electrónico">
       </div>
-
-      <button type="button" class="btn btn-primary" id="guardarCliente">Guardar</button>
+      <button type="button" class="btn btn-primary w-100" id="guardarCliente">
+        <i class="bx bx-save me-1"></i> Guardar
+      </button>
     </form>
-  </div>
-</div>
-
-<!-- Modal de venta exitosa -->
-<div class="modal fade" id="ventaExitosaModal" tabindex="-1" aria-labelledby="ventaExitosaModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="ventaExitosaModalLabel">Venta Realizada con Éxito</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <p>La venta se ha realizado exitosamente.</p>
-        <p>¿Desea ver la venta?</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-        <button type="button" id="verOrdenBtn" class="btn btn-primary">Ver Venta</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -321,9 +490,6 @@
 
 @section('vendor-script')
 @vite([
-    // 'resources/assets/vendor/libs/jquery/jquery.min.js',
-    // 'resources/assets/vendor/libs/popper/popper.min.js',
-    // 'resources/assets/vendor/libs/bootstrap/bootstrap.min.js',
     'resources/assets/js/pdvCheckout.js'
 ])
 @endsection

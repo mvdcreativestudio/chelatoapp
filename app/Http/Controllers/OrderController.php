@@ -79,11 +79,17 @@ class OrderController extends Controller
             $order = $this->orderRepository->store($request);
 
             if ($request->ajax()) {
+                $store = $order->store;
+                $lastInvoice = $order->invoices()->latest()->first();
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Pedido realizado con éxito.',
                     'order_id' => $order->id,
                     'order_uuid' => $order->uuid,
+                    'is_billed' => (bool) $order->is_billed,
+                    'invoice_id' => $lastInvoice ? $lastInvoice->id : null,
+                    'auto_print_ticket' => (bool) $store->auto_print_ticket,
                 ]);
             }
 

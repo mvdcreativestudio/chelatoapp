@@ -39,7 +39,7 @@ class PymoBillingService implements BillingServiceInterface
 
     public function printCfePdf(int $cfeId)
     {
-        return $this->accountingRepository->getCfePdf($cfeId);
+        return $this->accountingRepository->printCfePdf($cfeId);
     }
 
     public function consultarDatosRuc(string $ruc, Store $store): array

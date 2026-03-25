@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\CFE;
 use App\Models\Store;
 use App\Services\Billing\BillingServiceResolver;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class AccountingController extends Controller
@@ -139,17 +140,47 @@ class AccountingController extends Controller
      *
      * @param EmitNoteRequest $request
      * @param int $invoiceId
-     * @return RedirectResponse
+     * @return RedirectResponse|JsonResponse
      */
-    public function emitNote(EmitNoteRequest $request, int $invoiceId): RedirectResponse
+    public function emitNote(EmitNoteRequest $request, int $invoiceId): RedirectResponse|JsonResponse
     {
         try {
-            $this->accountingRepository->emitNote($invoiceId, $request);
+            // Buscar el CFE original y resolver el servicio de facturación
+            $cfe = CFE::with('store.billingProvider')->findOrFail($invoiceId);
+            $store = $cfe->order?->store ?? $cfe->store;
+
+            if (!$store) {
+                throw new \Exception('No se encontró la tienda para este CFE.');
+            }
+
+            $billingService = app(BillingServiceResolver::class)->resolve($store);
+            $billingService->emitNote($invoiceId, $request);
+
             Log::info("Nota emitida correctamente para la factura {$invoiceId}");
+
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Nota emitida correctamente.']);
+            }
+
             return redirect()->back()->with('success', 'Nota emitida correctamente.');
-        } catch (\Exception $e) {
-            Log::error("Error al emitir nota para la factura {$invoiceId}: {$e->getMessage()}");
-            return redirect()->back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Error al emitir nota:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'invoice_id' => $invoiceId,
+                'request_data' => $request->all(),
+            ]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ocurrió un error al emitir la nota.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()->withErrors(['error' => 'Ocurrió un error al emitir la nota.']);
         }
     }
 
@@ -179,6 +210,72 @@ class AccountingController extends Controller
             ]);
 
             // target="_blank" no tiene "back"; evitar redirect que deja la pestaña vacía
+            return response($e->getMessage(), 500)->header('Content-Type', 'text/plain; charset=UTF-8');
+        }
+    }
+
+    /**
+     * Genera e imprime el ticket 80mm de un CFE.
+     * Usa business_name (razón social) del store para el encabezado fiscal.
+     *
+     * @param int|string $cfeId
+     * @return \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\Response
+     */
+    public function printCfePdf($cfeId)
+    {
+        try {
+            $cfe = CFE::query()
+                ->with(['order.client', 'order.store', 'store', 'mainCfe'])
+                ->findOrFail($cfeId);
+
+            $order = $cfe->order;
+            $store = $order?->store ?? $cfe->store;
+
+            if (!$store) {
+                abort(500, 'No se pudo determinar la tienda del CFE.');
+            }
+
+            // Obtener logo desde PyMo o local
+            $logo = null;
+            try {
+                $logo = $this->accountingRepository->getCompanyLogo($store);
+            } catch (\Exception $e) {
+                // Silenciar
+            }
+            if (!$logo && $store->logo) {
+                $logoPath = storage_path('app/public/' . $store->logo);
+                if (file_exists($logoPath)) {
+                    $logo = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+                }
+            }
+
+            $html = view('invoices.pdf.cfe_80mm', [
+                'cfe'   => $cfe,
+                'order' => $order,
+                'store' => $store,
+                'logo'  => $logo,
+            ])->render();
+
+            $paperWidth = 204.094; // 72mm en puntos
+
+            $pdf = Pdf::loadHTML($html)
+                ->setPaper([0, 0, $paperWidth, 1000], 'portrait')
+                ->setOption('isHtml5ParserEnabled', true)
+                ->setOption('isRemoteEnabled', true)
+                ->setOption('defaultPaperSize', 'custom')
+                ->setOption('enable_auto_height', true)
+                ->setOption('margin-top', 0)
+                ->setOption('margin-bottom', 0)
+                ->setOption('margin-left', 0)
+                ->setOption('margin-right', 0);
+
+            return $pdf->stream("ticket_{$cfe->id}.pdf");
+        } catch (\Throwable $e) {
+            Log::error('Error al imprimir PDF 80mm del CFE.', [
+                'cfe_id' => $cfeId,
+                'error'  => $e->getMessage(),
+            ]);
+
             return response($e->getMessage(), 500)->header('Content-Type', 'text/plain; charset=UTF-8');
         }
     }

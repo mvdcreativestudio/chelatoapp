@@ -86,6 +86,8 @@ $changeTypeTranslations = [
         <span class="badge bg-label-danger me-2 ms-2">Pago pendiente</span>
       @elseif($order->payment_status === 'failed')
         <span class="badge bg-label-danger me-2 ms-2">Pago fallido</span>
+      @elseif($order->payment_status === 'refunded')
+        <span class="badge bg-label-warning me-2 ms-2">Reembolsado</span>
       @endif
       @if($order->shipping_status === 'pending' && $order->shipping_method !== 'pickup')
         <span class="badge bg-label-warning">No enviado</span>
@@ -153,8 +155,20 @@ $changeTypeTranslations = [
                 <i class="ti ti-download me-1"></i> Descargar PDF (A4)
               </a>
             </li>
+            <li>
+              <a class="dropdown-item" href="{{ route('invoices.printCfePdf', ['id' => $lastInvoice->id]) }}" target="_blank"
+                onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=400,height=600').print(); return false;">
+                <i class="ti ti-printer me-1"></i> Imprimir en 80mm
+              </a>
+            </li>
           </ul>
         </div>
+        <!-- Botón Emitir Nota (crédito/débito) -->
+        <button type="button" class="btn btn-outline-warning emitirNotaBtn"
+          data-invoice-id="{{ $lastInvoice->id }}"
+          data-total="{{ $lastInvoice->balance }}">
+          <i class="ti ti-receipt me-1"></i>Emitir Nota
+        </button>
       @else
         <button type="button" class="btn btn-label-info" data-bs-toggle="modal" data-bs-target="#emitirFacturaModal">
           Emitir Factura
@@ -359,6 +373,7 @@ $changeTypeTranslations = [
         <h6 class="card-title m-0">Datos del Cliente</h6>
       </div>
       <div class="card-body">
+        @if($order->client)
         <div class="d-flex justify-content-start align-items-center mb-3">
           <div class="d-flex flex-column">
             <a href="{{ url('app/user/view/account') }}" class="text-body text-nowrap">
@@ -396,6 +411,17 @@ $changeTypeTranslations = [
             </p>
           </div>
         </div>
+        @else
+        <div class="d-flex justify-content-start align-items-center">
+          <span class="avatar rounded-circle bg-label-secondary me-2 d-flex align-items-center justify-content-center">
+            <i class="bx bx-user bx-sm lh-sm"></i>
+          </span>
+          <div>
+            <h5 class="mb-0">Consumidor Final</h5>
+            <small class="text-muted">Sin cliente asignado</small>
+          </div>
+        </div>
+        @endif
       </div>
     </div>
 
@@ -404,7 +430,107 @@ $changeTypeTranslations = [
   </div>
 </div>
 
+<!-- Historial de Facturación -->
+@if($store->invoices_enabled && $order->invoices->count() > 0)
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0"><i class="ti ti-file-invoice me-1"></i> Historial de Facturación</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Serie / Nro</th>
+              <th>Fecha</th>
+              <th>Monto</th>
+              <th>Balance</th>
+              <th>Estado DGI</th>
+              <th>Razón</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach($order->invoices->sortByDesc('created_at') as $cfe)
+            <tr class="{{ in_array($cfe->type, [102, 112, 122]) ? 'table-warning' : (in_array($cfe->type, [103, 113, 123]) ? 'table-info' : '') }}">
+              <td>
+                @if(in_array($cfe->type, [101, 111]))
+                  <span class="badge bg-success">
+                    {{ $cfe->type == 101 ? 'e-Ticket' : 'e-Factura' }}
+                  </span>
+                @elseif(in_array($cfe->type, [102, 112]))
+                  <span class="badge bg-warning">
+                    NC {{ $cfe->type == 102 ? 'e-Ticket' : 'e-Factura' }}
+                  </span>
+                @elseif(in_array($cfe->type, [103, 113]))
+                  <span class="badge bg-info">
+                    ND {{ $cfe->type == 103 ? 'e-Ticket' : 'e-Factura' }}
+                  </span>
+                @else
+                  <span class="badge bg-secondary">CFE {{ $cfe->type }}</span>
+                @endif
+              </td>
+              <td>{{ $cfe->serie }} {{ $cfe->nro }}</td>
+              <td>{{ $cfe->emitionDate ? \Carbon\Carbon::parse($cfe->emitionDate)->format('d/m/Y H:i') : '-' }}</td>
+              <td class="fw-bold">{{ $store->currency_symbol ?? '$' }} {{ number_format($cfe->total, 2) }}</td>
+              <td>
+                @if($cfe->balance !== null)
+                  {{ $store->currency_symbol ?? '$' }} {{ number_format($cfe->balance, 2) }}
+                @else
+                  -
+                @endif
+              </td>
+              <td>
+                @if($cfe->dgiStatus === 'AE')
+                  <span class="badge bg-label-success">Aceptado</span>
+                @elseif($cfe->dgiStatus === 'BE')
+                  <span class="badge bg-label-danger">Rechazado</span>
+                @elseif($cfe->dgiStatus === 'CE')
+                  <span class="badge bg-label-warning">Observado</span>
+                @elseif($cfe->dgiStatus === 'PE' || $cfe->dgiStatus === 'EN')
+                  <span class="badge bg-label-secondary">Pendiente</span>
+                @elseif($cfe->dgiStatus === 'NA')
+                  <span class="badge bg-label-info">N/A</span>
+                @else
+                  <span class="badge bg-label-secondary">{{ $cfe->dgiStatus ?? '-' }}</span>
+                @endif
+              </td>
+              <td>
+                @if($cfe->reason)
+                  <small class="text-muted">{{ Str::limit($cfe->reason, 30) }}</small>
+                @else
+                  -
+                @endif
+              </td>
+              <td>
+                <div class="d-flex gap-1">
+                  <a href="{{ route('invoices.download', ['id' => $cfe->id]) }}" target="_blank"
+                    class="btn btn-sm btn-icon btn-outline-primary" title="Descargar PDF A4">
+                    <i class="bx bx-download"></i>
+                  </a>
+                  <a href="{{ route('invoices.printCfePdf', ['id' => $cfe->id]) }}" target="_blank"
+                    onclick="window.open(this.href, 'print_window', 'left=100,top=100,width=400,height=600').print(); return false;"
+                    class="btn btn-sm btn-icon btn-outline-secondary" title="Imprimir 80mm">
+                    <i class="bx bx-printer"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+@endif
+
 <!-- Modals -->
 @include('content/e-commerce/backoffice/orders/bill-order')
+@if($order->is_billed && $order->invoices->count() > 0)
+@include('content/e-commerce/backoffice/orders/modal-emitir-nota')
+@endif
 
 @endsection

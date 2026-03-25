@@ -25,9 +25,9 @@ class StoreOrderRequest extends FormRequest
         // Se desactivó por el cambio en PDV guarde en 'orders', desactivar en caso de que tenga eCommerce.
           'name' => 'nullable|max:255',
           'lastname' => 'nullable|max:255',
-          'address' => 'required',
-          'phone' => 'required',
-          'email' => 'required|email',
+          'address' => 'nullable|max:255',
+          'phone' => 'nullable|max:255',
+          'email' => 'nullable|email',
           'payment_method' => 'required',
           'client_id' => 'nullable|integer|exists:clients,id',
           'doc_type' => 'nullable|integer',

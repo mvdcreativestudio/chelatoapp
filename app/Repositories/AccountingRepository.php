@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\CurrencyRate;
 use Illuminate\Support\Facades\Crypt;
 use App\Models\Store;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AccountingRepository
 {
@@ -123,9 +124,9 @@ class AccountingRepository
           return [
               'id' => $invoice->id,
               'store_name' => $invoice->order->store->name ?? 'N/A',
-              'client_name' => $invoice->order->client->name ?? 'N/A',
-              'client_email' => $invoice->order->client->email ?? 'N/A',
-              'client_lastname' => $invoice->order->client->lastname ?? 'N/A',
+              'client_name' => $invoice->order->client->name ?? 'Consumidor',
+              'client_email' => $invoice->order->client->email ?? '',
+              'client_lastname' => $invoice->order->client->lastname ?? 'Final',
               'date' => $invoice->emitionDate,
               'order_id' => $invoice->order->id,
               'type' => $typeCFEs[$invoice->type] ?? 'N/A',
@@ -189,9 +190,9 @@ class AccountingRepository
           return [
               'id' => $invoice->id,
               'store_name' => $invoice->order->store->name ?? 'N/A',
-              'client_name' => $invoice->order->client->name ?? 'N/A',
-              'client_email' => $invoice->order->client->email ?? 'N/A',
-              'client_lastname' => $invoice->order->client->lastname ?? 'N/A',
+              'client_name' => $invoice->order->client->name ?? 'Consumidor',
+              'client_email' => $invoice->order->client->email ?? '',
+              'client_lastname' => $invoice->order->client->lastname ?? 'Final',
               'date' => $invoice->emitionDate,
               'order_id' => $invoice->order->id,
               'type' => $typeCFEs[$invoice->type] ?? 'N/A',
@@ -738,6 +739,16 @@ class AccountingRepository
                     // Actualizar el balance del CFE principal
                     $invoice->balance = $newBalance;
                     $invoice->save();
+
+                    // Si el balance queda en 0 con nota de crédito, marcar la orden como reembolsada
+                    if ($noteType === 'credit' && $newBalance == 0) {
+                        $order = $invoice->order;
+                        if ($order) {
+                            $order->payment_status = 'refunded';
+                            $order->save();
+                            Log::info("Orden #{$order->id} marcada como reembolsada por nota de crédito total.");
+                        }
+                    }
                 }
             } else {
                 throw new \Exception('Error al emitir nota: ' . $response->body());
@@ -894,6 +905,79 @@ class AccountingRepository
             Log::error('Excepción al obtener el PDF del CFE: ' . $e->getMessage());
             throw new \Exception('Error al obtener el PDF del CFE: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Imprime el PDF de un CFE en formato 80mm o devuelve el PDF estándar (A4).
+     *
+     * @param int $cfeId ID del CFE
+     * @return \Illuminate\View\View|Response
+     * @throws \Exception
+     */
+    public function printCfePdf(int $cfeId)
+    {
+        $cfe = CFE::findOrFail($cfeId);
+        $store = $cfe->order->store;
+        $qrUrl = $cfe->qrUrl;
+
+        $rut = $store->rut;
+        $branchOffice = $store->pymo_branch_office;
+
+        if (!$store || !$rut) {
+            throw new \Exception('No se encontró el RUT de la empresa.');
+        }
+
+        if (!$branchOffice) {
+            throw new \Exception('No se encontró la sucursal de la empresa.');
+        }
+
+        $cookies = $this->login($store);
+        if (!$cookies) {
+            throw new \Exception('Error de autenticación al imprimir CFE.');
+        }
+
+        // Obtener datos del CFE desde PyMo (endpoint sentCfes)
+        $url = env('PYMO_HOST') . ':' . env('PYMO_PORT') . '/' . env('PYMO_VERSION') . '/companies/' . $rut . '/sentCfes/?id=' . $cfe->cfeId;
+
+        $response = Http::withCookies($cookies, parse_url(env('PYMO_HOST'), PHP_URL_HOST))
+            ->asJson()
+            ->get($url);
+
+        if (!$response->successful()) {
+            Log::error('Error al obtener datos 80mm: ' . $response->body());
+            throw new \Exception('No se pudo obtener el CFE para imprimir.');
+        }
+
+        $data = $response->json()['payload']['companySentCfes'][0] ?? null;
+
+        if (!$data) {
+            throw new \Exception('Datos del CFE no encontrados en PyMo para impresión.');
+        }
+
+        // Obtener logo de la empresa
+        $logo = $this->getCompanyLogo($store);
+
+        // Renderizar la vista 80mm
+        $html = view('invoices.pdf.cfe_80mm', [
+            'cfe' => $data,
+            'qrUrl' => $qrUrl,
+            'logo' => $logo,
+        ])->render();
+
+        $paperWidth = 204.094; // 72mm en puntos
+
+        $pdf = Pdf::loadHTML($html)
+            ->setPaper([0, 0, $paperWidth, 1000], 'portrait')
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('defaultPaperSize', 'custom')
+            ->setOption('enable_auto_height', true)
+            ->setOption('margin-top', 0)
+            ->setOption('margin-bottom', 0)
+            ->setOption('margin-left', 0)
+            ->setOption('margin-right', 0);
+
+        return $pdf->stream("ticket_{$cfe->id}.pdf");
     }
 
     /**

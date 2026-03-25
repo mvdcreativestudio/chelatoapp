@@ -30,6 +30,12 @@
             </div>
 
             <div class="mb-3">
+              <label class="form-label" for="store-business-name">Razón Social</label>
+              <input type="text" class="form-control" id="store-business-name" name="business_name"
+                placeholder="Razón social (para facturación)">
+            </div>
+
+            <div class="mb-3">
               <label class="form-label" for="store-description">Descripción</label>
               <input type="text" class="form-control" id="store-description" name="description"
                 placeholder="Descripción de la Empresa">

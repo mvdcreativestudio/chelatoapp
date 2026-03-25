@@ -69,6 +69,13 @@
                                     placeholder="Nombre de la tienda" value="{{ $store->name }}">
                             </div>
 
+                            <!-- Razón Social -->
+                            <div class="mb-3">
+                                <label class="form-label" for="store-business-name">Razón Social</label>
+                                <input type="text" class="form-control" id="store-business-name" name="business_name"
+                                    placeholder="Razón social (para facturación)" value="{{ $store->business_name }}">
+                            </div>
+
                             <!-- Descripción -->
                             <div class="mb-3">
                               <label class="form-label" for="store-description">Descripción</label>
@@ -540,6 +547,49 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Configuración de Facturación -->
+                                @if($store->invoices_enabled)
+                                <div class="col-12 mb-4">
+                                    <div class="card border">
+                                        <div class="card-header bg-light">
+                                            <h6 class="card-title mb-0"><i class="bx bx-cog me-1"></i> Configuración de Facturación</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-1">Facturación Automática</h6>
+                                                            <small class="text-muted">Al registrar una venta, se emite la factura automáticamente</small>
+                                                        </div>
+                                                        <div class="form-check form-switch">
+                                                            <input type="hidden" name="automatic_billing" value="0">
+                                                            <input class="form-check-input" type="checkbox" id="automaticBillingSwitch"
+                                                                name="automatic_billing" value="1"
+                                                                {{ $store->automatic_billing ? 'checked' : '' }}>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-1">Impresión automática de ticket</h6>
+                                                            <small class="text-muted">Imprime el ticket 80mm automáticamente después de cada venta en el PDV</small>
+                                                        </div>
+                                                        <div class="form-check form-switch">
+                                                            <input type="hidden" name="auto_print_ticket" value="0">
+                                                            <input class="form-check-input" type="checkbox" id="autoPrintTicketSwitch"
+                                                                name="auto_print_ticket" value="1"
+                                                                {{ $store->auto_print_ticket ? 'checked' : '' }}>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
 
                                 <!-- Integración Configuración de Correo -->
                                 @include('stores.partials.configuracion-correo')

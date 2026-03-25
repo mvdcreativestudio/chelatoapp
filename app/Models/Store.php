@@ -15,6 +15,7 @@ class Store extends Model
 
     protected $fillable = [
         'name',
+        'business_name',
         'description',
         'phone',
         'address',
@@ -26,6 +27,7 @@ class Store extends Model
         'closed',
         'manual_override_at',
         'automatic_billing',
+        'auto_print_ticket',
         'invoices_enabled',
         'pymo_user',
         'pymo_password',

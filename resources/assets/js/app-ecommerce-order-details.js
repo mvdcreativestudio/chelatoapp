@@ -69,4 +69,94 @@ $(function () {
       dom: 't'
     });
   }
+
+
+  // --- Emitir Nota (Crédito/Débito) ---
+  const emitirNotaModalEl = document.getElementById('emitirNotaModal');
+  const emitirNotaForm = document.getElementById('emitirNotaForm');
+
+  if (emitirNotaModalEl && emitirNotaForm) {
+    const emitirNotaModal = new bootstrap.Modal(emitirNotaModalEl);
+
+    document.querySelectorAll('.emitirNotaBtn').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        const invoiceId = this.getAttribute('data-invoice-id');
+        const balance = this.getAttribute('data-total');
+        emitirNotaForm.setAttribute('action', `${baseUrl}admin/invoices/${invoiceId}/emit-note`);
+        const noteAmountInput = document.getElementById('noteAmount');
+        if (noteAmountInput) {
+          noteAmountInput.setAttribute('max', balance);
+          noteAmountInput.value = balance;
+        }
+        emitirNotaModal.show();
+      });
+    });
+
+    // Manejar la sumisión del formulario de nota
+    emitirNotaForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+      const actionUrl = form.getAttribute('action');
+
+      // Mostrar Swal de "Emitiendo nota..."
+      Swal.fire({
+        title: 'Emitiendo nota...',
+        text: 'Por favor, espera mientras procesamos la nota.',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      fetch(actionUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        },
+        body: formData
+      })
+      .then(response => response.json()
+        .then(data => ({ ok: response.ok, data }))
+        .catch(() => ({ ok: false, data: { message: `Error ${response.status}` } }))
+      )
+      .then(({ ok, data }) => {
+        Swal.close();
+        if (!ok) {
+          throw new Error(data?.message || data?.error || 'Error al emitir la nota');
+        }
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Nota emitida',
+            text: data.message || 'Nota emitida correctamente.',
+            showConfirmButton: false,
+            timer: 2000
+          }).then(() => {
+            location.reload();
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al emitir nota',
+            text: data.message || 'Ocurrió un error. Inténtalo nuevamente.',
+            showConfirmButton: true
+          });
+        }
+      })
+      .catch(error => {
+        Swal.close();
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al emitir nota',
+          text: error.message || 'Hubo un problema al procesar la solicitud. Inténtalo nuevamente.',
+          showConfirmButton: true
+        });
+      });
+    });
+  }
 });

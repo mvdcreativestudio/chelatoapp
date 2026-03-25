@@ -69,20 +69,18 @@ class OrderRepository
         DB::beginTransaction();
 
         try {
+            $order = new Order($orderData);
+
             if ($request->filled('client_id')) {
                 $client = Client::findOrFail($request->client_id);
+                $order->client()->associate($client);
                 Log::info('Cliente de la venta tomado por ID (PDV/ecommerce)', ['client_id' => $client->id]);
             } else {
-                $clientData = $this->extractClientData($request);
-                $client = Client::firstOrCreate(['email' => $clientData['email']], $clientData);
-                Log::info('Cliente creado o encontrado por email', ['client_id' => $client->id]);
+                $order->client_id = null;
+                Log::info('Orden sin cliente asignado (Consumidor Final)');
             }
 
             Log::info('Datos de la orden preparados', ['orderData' => $orderData]);
-
-            $order = new Order($orderData);
-            $order->client()->associate($client);
-            Log::info('Orden creada, asociada al cliente', ['order' => $order]);
 
             $order->save();
             Log::info('Orden guardada en la base de datos', ['order_id' => $order->id]);
@@ -359,11 +357,11 @@ class OrderRepository
             'orders.payment_method',
             'orders.shipping_method',
             'orders.shipping_tracking',
-            'clients.email as client_email',
+            DB::raw("COALESCE(clients.email, '') as client_email"),
             'stores.name as store_name',
-            DB::raw("CONCAT(clients.name, ' ', clients.lastname) as client_name"),
+            DB::raw("COALESCE(CONCAT(clients.name, ' ', clients.lastname), 'Consumidor Final') as client_name"),
         ])
-            ->join('clients', 'orders.client_id', '=', 'clients.id')
+            ->leftJoin('clients', 'orders.client_id', '=', 'clients.id')
             ->join('stores', 'orders.store_id', '=', 'stores.id');
 
         // Verificar permisos del usuario
@@ -425,8 +423,11 @@ class OrderRepository
     /**
      * Obtiene el conteo de ordenes del cliente.
      */
-    public function getClientOrdersCount(int $clientId): int
+    public function getClientOrdersCount(?int $clientId): int
     {
+        if ($clientId === null) {
+            return 0;
+        }
         return Order::where('client_id', $clientId)->count();
     }
 
