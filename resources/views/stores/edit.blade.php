@@ -255,8 +255,11 @@
                                                     alt="Pymo Logo" class="img-fluid" style="width: 80px;">
                                             </div>
 
+                                            @php
+                                                $pymoActive = $store->invoices_enabled && (!$store->billing_provider_id || $store->billing_provider_id == 1);
+                                            @endphp
                                             <!-- Icono de check para mostrar la vinculación activa -->
-                                            @if ($store->invoices_enabled)
+                                            @if ($pymoActive)
                                                 <span
                                                     class="position-absolute top-0 end-0 translate-middle p-2 bg-success rounded-circle">
                                                     <i class="bx bx-check text-white"></i>
@@ -271,10 +274,10 @@
                                                 <input type="hidden" name="invoices_enabled" value="0">
                                                 <input class="form-check-input" type="checkbox"
                                                     id="invoicesEnabledSwitch" name="invoices_enabled" value="1"
-                                                    {{ $store->invoices_enabled ? 'checked' : '' }}>
+                                                    {{ $pymoActive ? 'checked' : '' }}>
                                             </div>
 
-                                            @if ($store->invoices_enabled == 0)
+                                            @if (!$pymoActive)
                                                 <div class="mt-4">
                                                     <small class="">¿Aún no tienes cuenta? <a
                                                             href="https://pymo.uy/" target="_blank">Registrate
@@ -549,11 +552,11 @@
                                 </div>
 
                                 <!-- Configuración de Facturación -->
-                                @if($store->invoices_enabled)
+                                @if($store->invoices_enabled || $store->billing_provider_id)
                                 <div class="col-12 mb-4">
                                     <div class="card border">
                                         <div class="card-header bg-light">
-                                            <h6 class="card-title mb-0"><i class="bx bx-cog me-1"></i> Configuración de Facturación</h6>
+                                            <h6 class="card-title mb-0"><i class="bx bx-cog me-1"></i> Configuracion de Facturacion</h6>
                                         </div>
                                         <div class="card-body">
                                             <div class="row">

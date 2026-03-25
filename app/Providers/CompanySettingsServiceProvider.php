@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Repositories\CashRegisterLogRepository;
 use App\Repositories\ClientRepository;
 use App\Models\CompanySettings;
+use App\Services\EventHandlers\EventService;
 
 class CompanySettingsServiceProvider extends ServiceProvider
 {
@@ -20,10 +21,15 @@ class CompanySettingsServiceProvider extends ServiceProvider
             }
         });
 
-        // Inyecta el companySettings al CashRegisterLogRepository
+        // Inyecta el companySettings y EventService al CashRegisterLogRepository
         $this->app->bind(CashRegisterLogRepository::class, function ($app) {
             $companySettings = $app->make('companySettings');
-            return new CashRegisterLogRepository($companySettings);
+            try {
+                $eventService = $app->make(EventService::class);
+            } catch (\Exception $e) {
+                $eventService = null;
+            }
+            return new CashRegisterLogRepository($companySettings, $eventService);
         });
 
         // Inyecta el companySettings al ClientRepository

@@ -21,7 +21,15 @@ class DashboardController extends Controller
         $stores = $this->storeRepository->getStoresWithStatus();
         $user = auth()->user();
 
-        return view('content.dashboard.index', compact('stores', 'user'));
+        // Saludo dinámico según hora actual
+        $currentHour = (int) now()->format('H');
+        $greeting = match (true) {
+            $currentHour >= 20 || $currentHour < 4 => 'Buenas noches',
+            $currentHour < 12 => 'Buen dia',
+            default => 'Buenas tardes',
+        };
+
+        return view('content.dashboard.index', compact('stores', 'user', 'greeting'));
     }
 
 }

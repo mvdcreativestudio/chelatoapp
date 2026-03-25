@@ -38,13 +38,14 @@ class UpdateStoreRequest extends FormRequest
             'accepts_mercadopago' => 'required|boolean',
             'invoices_enabled' => 'boolean',
             'accepts_peya_envios' => 'sometimes|boolean',
+            'automatic_billing' => 'sometimes|boolean',
+            'auto_print_ticket' => 'sometimes|boolean',
         ];
 
         if ($this->boolean('invoices_enabled')) {
             $rules += [
                 'pymo_user' => 'required|string|max:255',
                 'pymo_password' => 'required|string|max:255',
-                'automatic_billing' => 'boolean',
             ];
         }
 

@@ -846,6 +846,184 @@ public function getSalesPercentByProduct(string $startDate, string $endDate, int
         })->toArray();
     }
 
+    // ==========================================
+    // GASTOS / EXPENSES
+    // ==========================================
 
+    /**
+     * Obtiene el resumen de gastos por estado.
+     */
+    public function getExpensesSummary($startDate, $endDate, $storeId = null): array
+    {
+        $query = \App\Models\Expense::query();
 
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        if ($storeId) {
+            $query->where('store_id', $storeId);
+        }
+
+        $total = (clone $query)->sum('amount');
+        $paid = (clone $query)->where('status', 'Paid')->sum('amount');
+        $partial = (clone $query)->where('status', 'Partial')->sum('amount');
+        $unpaid = (clone $query)->where('status', 'Unpaid')->sum('amount');
+        $count = (clone $query)->count();
+
+        return [
+            'total' => number_format($total, 0, ',', '.'),
+            'total_raw' => $total,
+            'paid' => number_format($paid, 0, ',', '.'),
+            'partial' => number_format($partial, 0, ',', '.'),
+            'unpaid' => number_format($unpaid, 0, ',', '.'),
+            'count' => $count,
+        ];
+    }
+
+    /**
+     * Obtiene el promedio mensual de gastos.
+     */
+    public function averageMonthlyExpenses($storeId = null): string
+    {
+        $query = \App\Models\Expense::query();
+
+        if ($storeId) {
+            $query->where('store_id', $storeId);
+        }
+
+        $firstExpense = (clone $query)->orderBy('created_at', 'asc')->first();
+
+        if (!$firstExpense) {
+            return '0';
+        }
+
+        $monthsSince = max(1, Carbon::parse($firstExpense->created_at)->diffInMonths(Carbon::now()));
+        $totalExpenses = (clone $query)->sum('amount');
+
+        return number_format($totalExpenses / $monthsSince, 0, ',', '.');
+    }
+
+    /**
+     * Obtiene gastos agrupados por proveedor.
+     */
+    public function getExpensesBySupplier($startDate, $endDate, $storeId = null): array
+    {
+        $query = \App\Models\Expense::query()
+            ->join('suppliers', 'expenses.supplier_id', '=', 'suppliers.id')
+            ->select('suppliers.name as supplier', DB::raw('SUM(expenses.amount) as total'))
+            ->groupBy('suppliers.name')
+            ->orderBy('total', 'desc');
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('expenses.created_at', [$startDate, $endDate]);
+        }
+
+        if ($storeId) {
+            $query->where('expenses.store_id', $storeId);
+        }
+
+        return $query->get()->map(function ($item) {
+            return [
+                'supplier' => $item->supplier,
+                'total' => $item->total,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Obtiene gastos agrupados por categoría.
+     */
+    public function getExpensesByCategory($startDate, $endDate, $storeId = null): array
+    {
+        $query = \App\Models\Expense::query()
+            ->leftJoin('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
+            ->select(
+                DB::raw("COALESCE(expense_categories.name, 'Sin categoría') as category"),
+                DB::raw('SUM(expenses.amount) as total'),
+                DB::raw('COUNT(expenses.id) as count')
+            )
+            ->groupBy('category')
+            ->orderBy('total', 'desc');
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('expenses.created_at', [$startDate, $endDate]);
+        }
+
+        if ($storeId) {
+            $query->where('expenses.store_id', $storeId);
+        }
+
+        return $query->get()->map(function ($item) {
+            return [
+                'category' => $item->category,
+                'total' => $item->total,
+                'count' => $item->count,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Obtiene gastos de cajas registradoras específicamente.
+     */
+    public function getCashRegisterExpenses($startDate, $endDate, $storeId = null): array
+    {
+        $query = \App\Models\Expense::query()
+            ->whereNotNull('cash_register_log_id');
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('expenses.created_at', [$startDate, $endDate]);
+        }
+
+        if ($storeId) {
+            $query->where('store_id', $storeId);
+        }
+
+        $total = $query->sum('amount');
+        $count = $query->count();
+
+        return [
+            'total' => number_format($total, 0, ',', '.'),
+            'total_raw' => $total,
+            'count' => $count,
+        ];
+    }
+
+    /**
+     * Obtiene datos de gastos mensuales para gráfica.
+     */
+    public function getMonthlyExpensesData($startDate, $endDate, $storeId = null, $period = 'year'): array
+    {
+        $query = \App\Models\Expense::query();
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        if ($storeId) {
+            $query->where('store_id', $storeId);
+        }
+
+        if ($period === 'year' || $period === 'always') {
+            $data = $query->select(
+                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as period"),
+                DB::raw('SUM(amount) as total')
+            )->groupBy('period')->orderBy('period')->get();
+        } elseif ($period === 'month') {
+            $data = $query->select(
+                DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d') as period"),
+                DB::raw('SUM(amount) as total')
+            )->groupBy('period')->orderBy('period')->get();
+        } else {
+            $data = $query->select(
+                DB::raw("DATE_FORMAT(created_at, '%Y-%m-%d') as period"),
+                DB::raw('SUM(amount) as total')
+            )->groupBy('period')->orderBy('period')->get();
+        }
+
+        return [
+            'labels' => $data->pluck('period')->toArray(),
+            'data' => $data->pluck('total')->map(fn($v) => (float) $v)->toArray(),
+        ];
+    }
 }

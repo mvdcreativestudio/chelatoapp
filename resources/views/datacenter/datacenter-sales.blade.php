@@ -608,7 +608,126 @@ document.getElementById('timePeriodSelector').addEventListener('change', functio
 
 </div>
 
+<!-- ==========================================
+     SECCION DE GASTOS
+     ========================================== -->
+<h5 class="mt-5 mb-4"><i class="bx bx-wallet me-2"></i>Gastos</h5>
 
+<!-- Cards de resumen de gastos -->
+<div class="row">
+    @include('datacenter.sections.expenses.expense-card-sales')
+</div>
+
+<!-- Gráfica de gastos + Reporte lateral -->
+@include('datacenter.sections.expenses.expense-graphic-sales')
+
+<!-- Gastos por categoría y cajas registradoras -->
+<div class="row g-4 mb-4">
+    <!-- Gastos por categoría -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Gastos por Categoria</h5>
+            </div>
+            <div class="card-body">
+                @if(count($categoryExpensesData) > 0)
+                <div class="table-responsive">
+                    <table class="table table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Categoria</th>
+                                <th>Cantidad</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($categoryExpensesData as $catData)
+                            <tr>
+                                <td>{{ $catData['category'] }}</td>
+                                <td><span class="badge bg-label-primary">{{ $catData['count'] }}</span></td>
+                                <td class="text-end">{{ $settings->currency_symbol }}{{ number_format((float) $catData['total'], 0, ',', '.') }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <p class="text-muted text-center py-4">No hay gastos por categoria en este periodo</p>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <!-- Gastos por proveedor -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Gastos por Proveedor</h5>
+            </div>
+            <div class="card-body">
+                @if(count($suppliersExpensesData) > 0)
+                <div class="table-responsive">
+                    <table class="table table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Proveedor</th>
+                                <th class="text-end">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($suppliersExpensesData as $supplierData)
+                            <tr>
+                                <td>{{ $supplierData['supplier'] }}</td>
+                                <td class="text-end">{{ $settings->currency_symbol }}{{ number_format((float) $supplierData['total'], 0, ',', '.') }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <p class="text-muted text-center py-4">No hay gastos por proveedor en este periodo</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Balance: Ingresos vs Gastos -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-2 border-primary">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="bx bx-bar-chart-alt-2 me-2"></i>Balance General</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Ingresos Totales</h6>
+                        <h3 class="text-success">{{ $settings->currency_symbol }}{{ $totalIncomes }}</h3>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Gastos Totales</h6>
+                        <h3 class="text-danger">{{ $settings->currency_symbol }}{{ $expenses['total'] }}</h3>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Gastos de Caja</h6>
+                        <h3 class="text-warning">{{ $settings->currency_symbol }}{{ $cashRegisterExpenses['total'] }} <small class="fs-6 text-muted">({{ $cashRegisterExpenses['count'] }})</small></h3>
+                    </div>
+                    <div class="col-md-3">
+                        @php
+                            $totalIncomesRaw = str_replace(['.', ','], ['', '.'], $totalIncomes);
+                            $balance = floatval($totalIncomesRaw) - $expenses['total_raw'];
+                        @endphp
+                        <h6 class="text-muted">Balance</h6>
+                        <h3 class="{{ $balance >= 0 ? 'text-success' : 'text-danger' }}">
+                            {{ $settings->currency_symbol }}{{ number_format($balance, 0, ',', '.') }}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
   $(document).ready(function() {

@@ -67,7 +67,12 @@ class DatacenterController extends Controller
         }
         $averageOrdersByHour = $this->datacenterRepo->getAverageOrdersByHour($startDate, $endDate, $storeIdForChart);
 
-
+        // Gastos
+        $expenses = $this->datacenterRepo->getExpensesSummary($startDate, $endDate, $storeIdForView);
+        $averageMonthlyExpenses = $this->datacenterRepo->averageMonthlyExpenses($storeIdForView);
+        $suppliersExpensesData = $this->datacenterRepo->getExpensesBySupplier($startDate, $endDate, $storeIdForView);
+        $categoryExpensesData = $this->datacenterRepo->getExpensesByCategory($startDate, $endDate, $storeIdForView);
+        $cashRegisterExpenses = $this->datacenterRepo->getCashRegisterExpenses($startDate, $endDate, $storeIdForView);
 
         return view('datacenter.datacenter-sales', compact(
             'storesCount',
@@ -88,9 +93,14 @@ class DatacenterController extends Controller
             'period',
             'startDate',
             'endDate',
-            'storeIdForView', // Este es para la vista
-            'stores', // Pasamos los locales a la vista para el filtro
-            'averageOrdersByHour' // Pasamos los datos de la gráfica a la vista
+            'storeIdForView',
+            'stores',
+            'averageOrdersByHour',
+            'expenses',
+            'averageMonthlyExpenses',
+            'suppliersExpensesData',
+            'categoryExpensesData',
+            'cashRegisterExpenses'
         ));
     }
 
@@ -164,7 +174,22 @@ class DatacenterController extends Controller
         return response()->json($salesBySeller);
     }
 
+    // Gráfica de línea - Gastos Mensuales
+    public function monthlyExpenses(Request $request)
+    {
+        $period = $request->input('time_range', 'year');
+        $storeId = $request->input('store_id');
 
+        if (!auth()->user()->can('view_all_datacenter')) {
+            $storeId = auth()->user()->store_id;
+        }
+
+        list($startDate, $endDate) = $this->datacenterRepo->getDateRange($period, null, null);
+
+        $expenseData = $this->datacenterRepo->getMonthlyExpensesData($startDate, $endDate, $storeId, $period);
+
+        return response()->json($expenseData);
+    }
 
 
 

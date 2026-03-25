@@ -65,6 +65,11 @@ class CreatePermissions extends Command
                     'view_all' => false,
                 ],
                 [
+                    'slug' => 'internal-orders',
+                    'module' => 'stock',
+                    'view_all' => true,
+                ],
+                [
                     'slug' => 'accounting',
                     'module' => 'accounting',
                     'submenus' => [

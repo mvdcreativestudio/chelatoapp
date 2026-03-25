@@ -10,9 +10,8 @@
 'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
 'resources/assets/vendor/libs/select2/select2.scss',
 'resources/assets/vendor/libs/toastr/toastr.scss',
-'resources/assets/vendor/libs/animate-css/animate.scss'
-// 'resources/assets/vendor/libs/bootstrap/bootstrap.min.css',
-// 'resources/assets/vendor/libs/fontawesome/fontawesome.min.css'
+'resources/assets/vendor/libs/animate-css/animate.scss',
+'resources/assets/vendor/libs/sweetalert2/sweetalert2.scss'
 ])
 
 @endsection
@@ -26,6 +25,7 @@
 
 'resources/assets/vendor/libs/select2/select2.js',
 'resources/assets/vendor/libs/toastr/toastr.js',
+'resources/assets/vendor/libs/sweetalert2/sweetalert2.js',
 'resources/assets/js/pdv.js'
 ])
 
@@ -36,7 +36,7 @@ $currencySymbol = $settings->currency_symbol;
 
 <script>
   window.cashRegisterId = "{{ Session::get('open_cash_register_id') }}";
-    window.baseUrl = "{{ url('') }}/";
+  window.baseUrl = "{{ url('') }}/";
   window.currencySymbol = '{{ $currencySymbol }}';
 </script>
 
@@ -50,10 +50,16 @@ $currencySymbol = $settings->currency_symbol;
   <div class="row">
     <div class="col-12 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-center">
       <h2 class="text-center text-md-start mb-2 mb-md-0">Punto de Venta</h2>
-      {{-- Botón para cerrar caja --}}
-      <button type="button" id="submit-cerrar-caja" class="btn btn-outline-danger btn-sm d-flex align-items-center">
-        <i class="bx bx-lock-alt me-2"></i> Cerrar Caja
-      </button>
+      <div class="d-flex gap-2">
+        {{-- Botón para registrar egreso --}}
+        <button id="registrar-egreso-btn" class="btn btn-info btn-sm d-flex align-items-center">
+          <i class="fas fa-money-bill-wave me-1"></i> Registrar Egreso
+        </button>
+        {{-- Botón para cerrar caja --}}
+        <button type="button" id="btn-show-close-modal" class="btn btn-outline-danger btn-sm d-flex align-items-center">
+          <i class="bx bx-lock-alt me-2"></i> Cerrar Caja
+        </button>
+      </div>
     </div>
 
     <div class="col-12">
@@ -218,6 +224,141 @@ $currencySymbol = $settings->currency_symbol;
     </div>
   </div>
 </div>
+
+<!-- Modal de cierre de caja con verificación -->
+<div class="modal fade" id="closeCashRegisterModal" tabindex="-1" aria-labelledby="closeCashRegisterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="closeCashRegisterModalLabel"><i class="bx bx-lock me-2"></i>Cerrar Caja Registradora</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="cash-register-details" class="p-3">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección para confirmar efectivo -->
+                <div id="cash-confirmation-section" class="mb-4 px-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="bx bx-info-circle me-2"></i>
+                        <strong>Verificacion de Efectivo:</strong> Cuente el efectivo fisico en caja e ingrese el monto exacto.
+                    </div>
+
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <label for="actual_cash" class="form-label fw-bold">Efectivo contado en caja:</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text">{{ $settings->currency_symbol ?? '$' }}</span>
+                                <input type="number" id="actual_cash" class="form-control" step="0.01" min="0" placeholder="0.00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resultado de la verificación -->
+                    <div id="verification-result" class="mt-4" style="display: none;">
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted">Efectivo Esperado</small>
+                                        <h4 class="mb-0 text-primary" id="expected-cash-display">{{ $settings->currency_symbol ?? '$' }}0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-info">
+                                    <div class="card-body text-center">
+                                        <small class="text-muted">Efectivo Contado</small>
+                                        <h4 class="mb-0 text-info" id="actual-cash-display">{{ $settings->currency_symbol ?? '$' }}0</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="cash-difference-alert" class="alert mt-3" style="display: none;">
+                            <i class="bx bx-error-circle me-2"></i>
+                            <span id="cash-difference-message"></span>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="expected_cash">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="verify-cash-btn" class="btn btn-primary" style="display: none;">
+                    <i class="bx bx-check me-1"></i>Verificar Efectivo
+                </button>
+                <button type="button" id="submit-cerrar-caja" class="btn btn-outline-danger btn-sm align-items-center" style="display: none;">
+                  <i class="bx bx-lock-alt me-1"></i><span>Cerrar Caja</span>
+                </button>
+                <button type="button" id="force-close-btn" class="btn btn-warning" style="display: none;">
+                    <i class="bx bx-error me-1"></i>Cerrar con Diferencia
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de egreso de caja -->
+<div class="modal fade" id="registrarEgresoModal" tabindex="-1" aria-labelledby="registrarEgresoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registrarEgresoLabel">Registrar Egreso de Caja</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="registrarEgresoForm">
+                    <div class="mb-3">
+                        <label for="egreso_concepto" class="form-label">Concepto <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="egreso_concepto" required placeholder="Concepto del egreso">
+                    </div>
+                    <div class="mb-3">
+                        <label for="egreso_monto" class="form-label">Monto <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="egreso_monto" required step="0.01" min="0.01" placeholder="Monto">
+                    </div>
+                    <div class="mb-3">
+                        <label for="egreso_currency" class="form-label">Moneda <span class="text-danger">*</span></label>
+                        <select class="form-select" id="egreso_currency" required>
+                            <option value="Peso" selected>Peso</option>
+                            <option value="Dolar">Dolar</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="egreso_currency_rate_field" style="display: none;">
+                        <label for="egreso_currency_rate" class="form-label">Cotizacion <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="egreso_currency_rate" step="0.01" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="egreso_categoria" class="form-label">Categoria</label>
+                        <select class="form-select" id="egreso_categoria">
+                            <option value="" selected>Sin categoria</option>
+                            @foreach(\App\Models\ExpenseCategory::all() as $categoria)
+                                <option value="{{ $categoria->id }}">{{ $categoria->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="egreso_observaciones" class="form-label">Observaciones</label>
+                        <textarea id="egreso_observaciones" class="form-control" rows="2" placeholder="Observaciones adicionales"></textarea>
+                    </div>
+                    <input type="hidden" id="egreso_cash_register_log_id">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="submit-registrar-egreso" class="btn btn-primary">Guardar Egreso</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @else
 

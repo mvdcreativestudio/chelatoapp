@@ -130,8 +130,8 @@ class StoreController extends Controller
     {
         $storeData = $request->validated();
 
-        // Actualización de la tienda excluyendo los datos de integraciones específicas
-        $this->storeRepository->update($store, Arr::except($storeData, [
+        // Campos a excluir del update general (se manejan por separado)
+        $excludeFields = [
             'mercadoPagoPublicKey',
             'mercadoPagoAccessToken',
             'mercadoPagoSecretKey',
@@ -149,7 +149,16 @@ class StoreController extends Controller
             'mail_encryption',
             'mail_from_address',
             'mail_from_name',
-        ]));
+        ];
+
+        // Si SICFE está activo, excluir invoices_enabled del update general
+        // para que el toggle de Pymo no sobreescriba el estado de SICFE
+        if ($store->billing_provider_id == 2) {
+            $excludeFields[] = 'invoices_enabled';
+        }
+
+        // Actualización de la tienda excluyendo los datos de integraciones específicas
+        $this->storeRepository->update($store, Arr::except($storeData, $excludeFields));
 
         // Manejo de la integración de MercadoPago
         $this->handleMercadoPagoIntegration($request, $store);
@@ -161,15 +170,20 @@ class StoreController extends Controller
         $this->handleEmailConfigIntegration($request, $store);
 
         // Manejo de la integración de Pymo (Facturación Electrónica)
-        if ($request->boolean('invoices_enabled')) {
-          $this->accountingRepository->updateStoreWithPymo($store, $request->input('pymo_branch_office'), $request->input('callbackNotificationUrl'), $request->input('pymo_user'), $request->input('pymo_password'));
-        } else {
-            $store->update([
-                'pymo_user' => null,
-                'pymo_password' => null,
-                'pymo_branch_office' => null,
-            ]);
+        // Solo procesar Pymo si SICFE no está activo (billing_provider_id != 2)
+        if ($store->billing_provider_id != 2) {
+            if ($request->boolean('invoices_enabled')) {
+                $this->accountingRepository->updateStoreWithPymo($store, $request->input('pymo_branch_office'), $request->input('callbackNotificationUrl'), $request->input('pymo_user'), $request->input('pymo_password'));
+            } else {
+                $store->update([
+                    'invoices_enabled' => false,
+                    'pymo_user' => null,
+                    'pymo_password' => null,
+                    'pymo_branch_office' => null,
+                ]);
+            }
         }
+        // Si SICFE está activo, ignorar el campo invoices_enabled del form de Pymo
 
 
         return redirect()->route('stores.index')->with('success', 'Empresa actualizada con éxito.');

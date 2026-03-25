@@ -31,7 +31,9 @@ class Product extends Model
         'stock',
         'safety_margin',
         'bar_code',
-        'build_price'
+        'build_price',
+        'allow_internal_order',
+        'ecommerce'
       ];
 
 

@@ -8,21 +8,26 @@ use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\StoreCashRegisterLogRequest;
 use App\Http\Requests\UpdateCashRegisterLogRequest;
 use App\Repositories\CashRegisterLogRepository;
+use App\Repositories\CashRegisterRepository;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\StoreClientRequest;
 use App\Models\Product;
+use App\Models\CashRegister;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class CashRegisterLogController extends Controller
 {
 
     protected $cashRegisterLogRepository;
+    protected $cashRegisterRepository;
 
-    public function __construct(CashRegisterLogRepository $cashRegisterLogRepository)
+    public function __construct(CashRegisterLogRepository $cashRegisterLogRepository, CashRegisterRepository $cashRegisterRepository)
     {
         $this->cashRegisterLogRepository = $cashRegisterLogRepository;
+        $this->cashRegisterRepository = $cashRegisterRepository;
     }
 
     /**
@@ -64,16 +69,25 @@ class CashRegisterLogController extends Controller
     {
 
         $cashRegisterId = $request->input('cash_register_id');
+        $name = $request->input('name');
 
-        // Verificar si hay un log existente sin fecha de cierre
-        if ($this->cashRegisterLogRepository->hasOpenLogForUser(Auth::id())) {
-            return response()->json(['message' => 'Ya existe una caja registradora abierta para este usuario.'], 400);
+        $storeId = CashRegister::findOrFail($cashRegisterId)->store_id;
+
+        // Verificar si el usuario ya tiene una caja registradora abierta en esta tienda
+        if ($this->cashRegisterLogRepository->hasOpenLogForUserInStore(Auth::id(), $storeId)) {
+            return response()->json(['message' => 'Ya existe una caja registradora abierta para este usuario y sucursal.'], 400);
         }
 
-        $request['open_time'] = now();
-        $request['cash_sales'] = 0;
-        $request['pos_sales'] = 0;
         $validatedData = $request->validated();
+        $validatedData['name'] = $name;
+        $validatedData['open_time'] = now();
+        $validatedData['cash_sales'] = 0;
+        $validatedData['pos_sales'] = 0;
+        $validatedData['mercadopago_sales'] = 0;
+        $validatedData['bank_transfer_sales'] = 0;
+        $validatedData['internal_credit_sales'] = 0;
+        $validatedData['cash_expenses'] = 0;
+
         $cashRegisterLog = $this->cashRegisterLogRepository->createCashRegisterLog($validatedData);
         Session::put('open_cash_register_id', $cashRegisterId);
         return response()->json($cashRegisterLog, 201);
@@ -135,15 +149,33 @@ class CashRegisterLogController extends Controller
     /**
      * Cierre de caja.
      *
+     * @param Request $request
      * @param string $id
      */
-    public function closeCashRegister(string $id)
+    public function closeCashRegister(Request $request, string $id)
     {
-        $closed = $this->cashRegisterLogRepository->closeCashRegister($id);
+        $actualCash = $request->input('actual_cash');
+        $cashDifference = $request->input('cash_difference', 0);
+
+        $closed = $this->cashRegisterLogRepository->closeCashRegister($id, $actualCash, $cashDifference);
 
         if ($closed) {
+            // Enviar email de cierre de caja
+            try {
+                $this->cashRegisterLogRepository->sendCashRegisterClosedEmail($id);
+            } catch (\Exception $e) {
+                \Log::warning('No se pudo enviar email de cierre: ' . $e->getMessage());
+            }
+
             Session::forget('open_cash_register_id');
-            return response()->json(['message' => 'Caja registradora cerrada correctamente.']);
+
+            $message = 'Caja registradora cerrada correctamente.';
+            if ($cashDifference != 0) {
+                $differenceText = $cashDifference > 0 ? 'Sobrante' : 'Faltante';
+                $message .= " (Diferencia registrada: {$differenceText} de $" . abs($cashDifference) . ")";
+            }
+
+            return response()->json(['message' => $message]);
         } else {
             return response()->json(['message' => 'Ha ocurrido un error intentando cerrar la caja registradora.'], 404);
         }
@@ -341,5 +373,159 @@ class CashRegisterLogController extends Controller
         $id = session('store_id');
 
         return response()->json(['id' => $id]);
+    }
+
+    /**
+     * Setea la caja registradora activa en la sesión.
+     */
+    public function setCashRegister(Request $request)
+    {
+        $request->validate([
+            'cash_register_id' => 'required|exists:cash_registers,id',
+        ]);
+
+        $cashRegisterId = $request->input('cash_register_id');
+        $storeId = $this->cashRegisterRepository->findStoreByCashRegisterId($cashRegisterId);
+
+        Session::put('open_cash_register_id', $cashRegisterId);
+        Session::put('store_id', $storeId);
+
+        return response()->json(['status' => 'success']);
+    }
+
+    /**
+     * Devuelve los tax rates.
+     */
+    public function taxRates()
+    {
+        try {
+            if (class_exists('\App\Models\TaxRate')) {
+                $taxRates = \App\Models\TaxRate::all();
+            } else {
+                $taxRates = [];
+            }
+            return response()->json(['taxRates' => $taxRates]);
+        } catch (\Exception $e) {
+            return response()->json(['taxRates' => []]);
+        }
+    }
+
+    /**
+     * Obtiene una lista paginada de clientes con búsqueda opcional.
+     */
+    public function getPaginatedClients(Request $request): JsonResponse
+    {
+        $page = $request->get('page', 1);
+        $perPage = $request->get('per_page', 12);
+        $search = $request->get('search', '') ?? '';
+
+        $query = $this->cashRegisterLogRepository->getClientsQuery($search);
+
+        $clients = $query->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'clients' => $clients->items(),
+            'current_page' => $clients->currentPage(),
+            'last_page' => $clients->lastPage(),
+            'total' => $clients->total(),
+            'has_more' => $clients->hasMorePages()
+        ]);
+    }
+
+    /**
+     * Obtiene los detalles de un registro de caja específico (para el modal de cierre).
+     */
+    public function getDetails($id)
+    {
+        try {
+            $cashRegisterLog = \App\Models\CashRegisterLog::with(['expenses', 'cashRegister.store'])->findOrFail($id);
+
+            // Calcular ventas dinámicamente si la caja está abierta
+            if ($cashRegisterLog->close_time) {
+                $cashSales = $cashRegisterLog->cash_sales ?? 0;
+                $posSales = $cashRegisterLog->pos_sales ?? 0;
+                $mercadopagoSales = $cashRegisterLog->mercadopago_sales ?? 0;
+                $bankTransferSales = $cashRegisterLog->bank_transfer_sales ?? 0;
+                $internalCreditSales = $cashRegisterLog->internal_credit_sales ?? 0;
+            } else {
+                $sales = DB::table('orders')
+                    ->selectRaw("
+                        SUM(CASE WHEN payment_method = 'cash' THEN total ELSE 0 END) as total_cash_sales,
+                        SUM(CASE WHEN payment_method IN ('credit', 'debit', 'card') THEN total ELSE 0 END) as total_pos_sales,
+                        SUM(CASE WHEN payment_method = 'mercadopago' THEN total ELSE 0 END) as total_mercadopago_sales,
+                        SUM(CASE WHEN payment_method = 'bankTransfer' THEN total ELSE 0 END) as total_bank_transfer_sales,
+                        SUM(CASE WHEN payment_method = 'internalCredit' THEN total ELSE 0 END) as total_internal_credit_sales
+                    ")
+                    ->where('cash_register_log_id', $cashRegisterLog->id)
+                    ->first();
+
+                $cashSales = $sales->total_cash_sales ?? 0;
+                $posSales = $sales->total_pos_sales ?? 0;
+                $mercadopagoSales = $sales->total_mercadopago_sales ?? 0;
+                $bankTransferSales = $sales->total_bank_transfer_sales ?? 0;
+                $internalCreditSales = $sales->total_internal_credit_sales ?? 0;
+            }
+
+            // Calcular el total de gastos convertidos a pesos
+            $totalExpenses = 0;
+            foreach ($cashRegisterLog->expenses as $expense) {
+                if ($expense->currency === 'Dólar') {
+                    $rate = $expense->currency_rate ?? $this->getDollarExchangeRate();
+                    $totalExpenses += $expense->amount * $rate;
+                } else {
+                    $totalExpenses += $expense->amount;
+                }
+            }
+
+            // Calcular el efectivo final
+            $cashFloat = $cashRegisterLog->cash_float ?? 0;
+            $finalCashBalance = $cashFloat + $cashSales - $totalExpenses;
+            $totalSalesAmount = $cashSales + $posSales + $mercadopagoSales + $bankTransferSales + $internalCreditSales;
+
+            $details = [
+                'id' => $cashRegisterLog->id,
+                'name' => $cashRegisterLog->name ?? 'Sin nombre',
+                'open_time' => $cashRegisterLog->open_time ? $cashRegisterLog->open_time->format('d/m/Y H:i') : 'No disponible',
+                'close_time' => $cashRegisterLog->close_time ? $cashRegisterLog->close_time->format('d/m/Y H:i') : null,
+                'cash_float' => $cashFloat,
+                'cash_sales' => $cashSales,
+                'pos_sales' => $posSales,
+                'mercadopago_sales' => $mercadopagoSales,
+                'bank_transfer_sales' => $bankTransferSales,
+                'internal_credit_sales' => $internalCreditSales,
+                'total_expenses' => $totalExpenses,
+                'final_cash_balance' => $finalCashBalance,
+                'total_sales' => $totalSalesAmount,
+                'store_name' => $cashRegisterLog->cashRegister->store->name ?? 'Sin tienda'
+            ];
+
+            return response()->json(['success' => true, 'details' => $details]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener los detalles de la caja: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error al obtener los detalles de la caja.'], 500);
+        }
+    }
+
+    /**
+     * Obtiene la cotización actual del dólar.
+     */
+    private function getDollarExchangeRate(): float
+    {
+        try {
+            $dollarRate = \App\Models\CurrencyRate::where('name', 'Dólar')->first();
+
+            if (!$dollarRate) {
+                return 1;
+            }
+
+            $latestRate = \App\Models\CurrencyRateHistory::where('currency_rate_id', $dollarRate->id)
+                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            return $latestRate ? $latestRate->sell : 1;
+        } catch (\Exception $e) {
+            return 1;
+        }
     }
 }

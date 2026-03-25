@@ -89,6 +89,124 @@
     </div>
   @endif
 
+  <!-- Acciones rapidas -->
+  <div class="col-12 mb-4">
+    @php
+      $greetingIcon = str_starts_with($greeting, 'Buen d') ? 'bx-sun' : (str_starts_with($greeting, 'Buenas tardes') ? 'bx-time-five' : 'bx-moon');
+    @endphp
+    <div class="card border-0 greeting-card overflow-hidden">
+      <div class="card-body d-flex flex-wrap align-items-center justify-content-between position-relative p-4">
+        <div class="d-flex align-items-center gap-3">
+          <div class="greeting-avatar d-flex align-items-center justify-content-center">
+            <i class="bx {{ $greetingIcon }}"></i>
+          </div>
+          <div class="d-flex flex-column">
+            <h4 class="mb-1 text-white fw-semibold">{{ $greeting }}, {{ auth()->user()->name }}</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid de acciones -->
+      <div class="row g-3 mt-2 px-4 pb-4">
+        @can('access_point-of-sale')
+        <div class="col-6 col-md-3">
+          <a href="{{ route('pdv.front') }}" class="text-decoration-none">
+          <div class="card h-100 border-0 shadow-sm quick-action-card">
+            <div class="card-body p-3 text-center">
+                <div class="quick-action-icon bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2">
+                  <i class="bx bx-plus-circle text-primary" style="font-size: 1.5rem;"></i>
+                </div>
+                <h6 class="mb-1 text-dark">Nueva Venta</h6>
+                <small class="text-muted">Ir al punto de venta</small>
+            </div>
+          </div>
+          </a>
+        </div>
+        @endcan
+
+        @can('access_products')
+        <div class="col-6 col-md-3">
+          <a href="{{ route('products.create') }}" class="text-decoration-none">
+          <div class="card h-100 border-0 shadow-sm quick-action-card">
+            <div class="card-body p-3 text-center">
+                <div class="quick-action-icon bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2">
+                  <i class="bx bx-package text-info" style="font-size: 1.5rem;"></i>
+                </div>
+                <h6 class="mb-1 text-dark">Crear Producto</h6>
+                <small class="text-muted">Agregar nuevo producto</small>
+            </div>
+          </div>
+          </a>
+        </div>
+        @endcan
+
+        @can('access_clients')
+        <div class="col-6 col-md-3">
+          <a href="{{ route('clients.index') }}" class="text-decoration-none">
+          <div class="card h-100 border-0 shadow-sm quick-action-card">
+            <div class="card-body p-3 text-center">
+                <div class="quick-action-icon bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2">
+                  <i class="bx bx-user-plus text-success" style="font-size: 1.5rem;"></i>
+                </div>
+                <h6 class="mb-1 text-dark">Gestionar Clientes</h6>
+                <small class="text-muted">Ver y crear clientes</small>
+            </div>
+          </div>
+          </a>
+        </div>
+        @endcan
+
+        @can('access_expenses')
+        <div class="col-6 col-md-3">
+          <a href="{{ route('expenses.index') }}" class="text-decoration-none">
+          <div class="card h-100 border-0 shadow-sm quick-action-card">
+            <div class="card-body p-3 text-center">
+                <div class="quick-action-icon bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2">
+                  <i class="bx bx-receipt text-warning" style="font-size: 1.5rem;"></i>
+                </div>
+                <h6 class="mb-1 text-dark">Gestionar Gastos</h6>
+                <small class="text-muted">Ver y registrar gastos</small>
+            </div>
+          </div>
+          </a>
+        </div>
+        @endcan
+
+        @can('access_orders')
+        <div class="col-6 col-md-3">
+          <a href="{{ route('orders.index') }}" class="text-decoration-none">
+          <div class="card h-100 border-0 shadow-sm quick-action-card">
+            <div class="card-body p-3 text-center">
+                <div class="quick-action-icon bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2">
+                  <i class="bx bx-cart text-danger" style="font-size: 1.5rem;"></i>
+                </div>
+                <h6 class="mb-1 text-dark">Ver Ventas</h6>
+                <small class="text-muted">Historial de ventas</small>
+            </div>
+          </div>
+          </a>
+        </div>
+        @endcan
+
+        @can('access_cash-registers')
+        <div class="col-6 col-md-3">
+          <a href="{{ route('points-of-sales.index') }}" class="text-decoration-none">
+          <div class="card h-100 border-0 shadow-sm quick-action-card">
+            <div class="card-body p-3 text-center">
+                <div class="quick-action-icon bg-secondary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-2">
+                  <i class="fas fa-cash-register text-secondary" style="font-size: 1.5rem;"></i>
+                </div>
+                <h6 class="mb-1 text-dark">Cajas Registradoras</h6>
+                <small class="text-muted">Gestionar cajas</small>
+            </div>
+          </div>
+          </a>
+        </div>
+        @endcan
+      </div>
+    </div>
+  </div>
+
   {{-- <!-- Single Card -->
   <div class="col-12" id="tour-single-card">
     <div class="card mb-4">
@@ -626,4 +744,49 @@
   </div>
   <!-- /Reasons for delivery exceptions -->
 </div> --}}
+
+<style>
+/* Acciones rapidas */
+.quick-action-card {
+  transition: all 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.quick-action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+}
+.quick-action-icon {
+  width: 60px;
+  height: 60px;
+  transition: all 0.3s ease;
+}
+.quick-action-card:hover .quick-action-icon {
+  transform: scale(1.1);
+}
+/* Greeting card */
+.greeting-card {
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(37, 117, 252, 0.25);
+}
+.greeting-card::after {
+  content: '';
+  position: absolute;
+  right: -60px;
+  bottom: -60px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.25), transparent 60%);
+  filter: blur(12px);
+}
+.greeting-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 1.5rem;
+}
+</style>
 @endsection

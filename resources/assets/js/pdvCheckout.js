@@ -736,8 +736,8 @@ $(document).ready(function () {
     const total = parseFloat($('.total').first().text().replace(/[^\d.-]/g, '')) || 0;
     const subtotal = parseFloat($('.subtotal').first().text().replace(/[^\d.-]/g, '')) || 0;
 
-    if (total > 600 && (!client || !client.id)) {
-      mostrarError('Para ventas mayores a USD600, es necesario tener un cliente asignado a la venta.');
+    if (total > 25000 && (!client || !client.id)) {
+      mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
       return;
     }
 

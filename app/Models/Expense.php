@@ -16,6 +16,8 @@ class Expense extends Model
 
     protected $fillable = [
         'amount',
+        'concept',
+        'observations',
         'status',
         'due_date',
         'temporal_status',
@@ -23,6 +25,9 @@ class Expense extends Model
         'expense_category_id',
         'currency_id',
         'store_id',
+        'cash_register_log_id',
+        'currency',
+        'currency_rate',
     ];
 
     protected $casts = [
@@ -34,6 +39,16 @@ class Expense extends Model
     protected $appends = ['total_payments'];
 
     public $timestamps = true;
+
+    /**
+     * Obtiene el log de caja registradora asociado al gasto.
+     *
+     * @return BelongsTo
+     */
+    public function cashRegisterLog(): BelongsTo
+    {
+        return $this->belongsTo(CashRegisterLog::class);
+    }
 
     /**
      * Obtiene el proveedor asociado al gasto.

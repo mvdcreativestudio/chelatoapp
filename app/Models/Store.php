@@ -35,6 +35,8 @@ class Store extends Model
         'accepts_peya_envios',
         'peya_envios_key',
         'billing_provider_id',
+        'can_receive_internal_orders',
+        'can_create_internal_orders_to_all_stores',
     ];
 
     /**

@@ -45,6 +45,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EventStoreConfigurationController;
+use App\Http\Controllers\InternalOrderController;
 
 // Ruta raíz redirige a la tienda (Shop)
 Route::get('/', [EcommerceController::class, 'index'])->name('shop');
@@ -179,6 +180,16 @@ Route::middleware([
     Route::post('/pdv/client-session', [CashRegisterLogController::class, 'saveClient']);
     Route::get('/pdv/client-session', [CashRegisterLogController::class, 'getClient']);
     Route::get('/pdv/storeid-session', [CashRegisterLogController::class, 'getStoreId']);
+    Route::get('/pdv/tax-rates', [CashRegisterLogController::class, 'taxRates']);
+    Route::get('/pdv/clients/paginated', [CashRegisterLogController::class, 'getPaginatedClients']);
+    Route::post('/pdv/set-cash-register', [CashRegisterLogController::class, 'setCashRegister']);
+
+    // Cash register log details (for close modal)
+    Route::get('/cash-register-logs/{id}/details', [CashRegisterLogController::class, 'getDetails']);
+
+    // Egresos de caja registradora
+    Route::post('/cash-register/expense', [CashRegisterController::class, 'storeExpense']);
+    Route::get('/cash-register/{id}/expenses', [CashRegisterController::class, 'getExpenses']);
 
     // Datacenter
     Route::get('/datacenter-sales', [DatacenterController::class, 'sales'])->name('datacenter.sales');
@@ -373,6 +384,15 @@ Route::middleware([
     Route::group(['prefix' => 'incomes'], function () {
         Route::post('/delete-multiple', [IncomeController::class, 'deleteMultiple'])->name('income-clients.deleteMultiple');
     });
+
+    // Ordenes Internas (pedidos entre locales/franquicias)
+    Route::get('/internal-orders/create', [InternalOrderController::class, 'create'])->name('internal-orders.create');
+    Route::post('/internal-orders', [InternalOrderController::class, 'store'])->name('internal-orders.store');
+    Route::get('/internal-orders/products/{store}', [InternalOrderController::class, 'getStoreProducts']);
+    Route::get('/internal-orders/received', [InternalOrderController::class, 'received'])->name('internal-orders.received');
+    Route::get('/internal-orders/{order}', [InternalOrderController::class, 'show'])->name('internal-orders.show');
+    Route::put('/internal-orders/{order}', [InternalOrderController::class, 'update'])->name('internal-orders.update');
+    Route::get('/internal-orders/{order}/pdf', [InternalOrderController::class, 'generatePdf'])->name('internal-orders.pdf');
 });
 
 // Recursos con acceso público

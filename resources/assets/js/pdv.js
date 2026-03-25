@@ -719,29 +719,294 @@ $(document).ready(function() {
       searchProducts(query);
   });
 
-  // Mostrar el modal de cerrar caja al hacer clic en el botón correspondiente
-  $('#btn-cerrar-caja').click(function() {
-      var cashRegisterId = $(this).data('id');
-      $('#cash_register_id_close').val(cashRegisterId);
-      $('#cerrarCajaModal').modal('show');
+  // ==========================================
+  // FLUJO DE CIERRE DE CAJA CON VERIFICACION
+  // ==========================================
+
+  // Obtener el cashRegisterLogId al cargar
+  var cashRegisterLogId = null;
+  $.ajax({
+      url: 'log/' + cashRegisterId,
+      type: 'GET',
+      async: false,
+      success: function(data) {
+          if (data && data.cash_register_log_id) {
+              cashRegisterLogId = data.cash_register_log_id;
+              window.cashRegisterLogId = cashRegisterLogId;
+          }
+      }
   });
 
-  // Enviar la solicitud para cerrar la caja registradora
-  $('#submit-cerrar-caja').click(function() {
+  // Abrir modal de cierre y cargar detalles
+  $('#btn-show-close-modal').click(function () {
+      if (!cashRegisterLogId) {
+          toastr.error('No se encontro un registro de caja abierto.');
+          return;
+      }
+
+      $('#closeCashRegisterModal').modal('show');
+
+      $.ajax({
+          url: `${window.baseUrl}admin/cash-register-logs/${cashRegisterLogId}/details`,
+          type: 'GET',
+          success: function (response) {
+              if (response.success) {
+                  const details = response.details;
+                  const expectedCash = parseFloat(details.final_cash_balance || 0);
+                  const cs = window.currencySymbol;
+                  const fmt = (v) => parseFloat(v || 0).toLocaleString('es-UY', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+
+                  $('#cash-register-details').html(`
+                      <div class="card border-0">
+                          <div class="card-header"><h6 class="mb-0"><i class="bx bx-info-circle me-2"></i>${details.store_name} - ${details.name}</h6></div>
+                          <div class="card-body">
+                              <div class="row g-3">
+                                  <div class="col-6"><div class="d-flex align-items-center"><i class="bx bx-calendar text-success me-2"></i><div><small class="text-muted">Apertura</small><div class="fw-semibold">${details.open_time}</div></div></div></div>
+                                  <div class="col-6"><div class="d-flex align-items-center"><i class="bx bx-calculator text-info me-2"></i><div><small class="text-muted">Fondo de Caja</small><div class="fw-semibold">${cs}${fmt(details.cash_float)}</div></div></div></div>
+                                  <div class="col-6"><div class="d-flex align-items-center"><i class="bx bx-money text-success me-2"></i><div><small class="text-muted">Efectivo</small><div class="fw-semibold">${cs}${fmt(details.cash_sales)}</div></div></div></div>
+                                  <div class="col-6"><div class="d-flex align-items-center"><i class="bx bx-credit-card text-warning me-2"></i><div><small class="text-muted">POS (Cred/Deb)</small><div class="fw-semibold">${cs}${fmt(details.pos_sales)}</div></div></div></div>
+                                  <div class="col-6"><div class="d-flex align-items-center"><i class="bx bxl-paypal text-primary me-2"></i><div><small class="text-muted">Mercadopago</small><div class="fw-semibold">${cs}${fmt(details.mercadopago_sales)}</div></div></div></div>
+                                  <div class="col-6"><div class="d-flex align-items-center"><i class="bx bx-transfer text-info me-2"></i><div><small class="text-muted">Transferencias</small><div class="fw-semibold">${cs}${fmt(details.bank_transfer_sales)}</div></div></div></div>
+                                  <div class="col-6"><div class="d-flex align-items-center"><i class="bx bx-notepad text-secondary me-2"></i><div><small class="text-muted">Cuenta Corriente</small><div class="fw-semibold">${cs}${fmt(details.internal_credit_sales)}</div></div></div></div>
+                                  <div class="col-6"><div class="d-flex align-items-center"><i class="bx bx-wallet text-danger me-2"></i><div><small class="text-muted">Gastos</small><div class="fw-semibold">${cs}${fmt(details.total_expenses)}</div></div></div></div>
+                              </div>
+                              <hr class="my-3">
+                              <div class="d-flex justify-content-between align-items-center">
+                                  <h5 class="mb-0">Total de Ventas:</h5>
+                                  <h4 class="mb-0 text-success">${cs}${fmt(details.total_sales)}</h4>
+                              </div>
+                          </div>
+                      </div>
+                  `);
+
+                  $('#expected_cash').val(expectedCash.toFixed(2));
+                  $('#actual_cash').val('');
+                  $('#cash-confirmation-section').show();
+                  $('#verification-result').hide();
+                  $('#verify-cash-btn').show();
+                  $('#submit-cerrar-caja').hide().css('display', 'none');
+                  $('#force-close-btn').hide().css('display', 'none');
+                  $('#cash-difference-alert').hide();
+              } else {
+                  $('#cash-register-details').html('<div class="alert alert-danger">Error al cargar los detalles.</div>');
+              }
+          },
+          error: function () {
+              $('#cash-register-details').html('<div class="alert alert-danger">Error al cargar los detalles de la caja.</div>');
+          }
+      });
+  });
+
+  // Verificar efectivo ingresado
+  $(document).off('click', '#verify-cash-btn').on('click', '#verify-cash-btn', function () {
+      const expectedCash = parseFloat($('#expected_cash').val()) || 0;
+      const actualCash = parseFloat($('#actual_cash').val());
+
+      if (isNaN(actualCash)) {
+          toastr.error('Por favor ingrese el monto de efectivo real.');
+          return;
+      }
+
+      const difference = actualCash - expectedCash;
+      const differenceAbs = Math.abs(difference);
+      const cs = window.currencySymbol;
+
+      $('#expected-cash-display').text(`${cs}${expectedCash.toFixed(2)}`);
+      $('#actual-cash-display').text(`${cs}${actualCash.toFixed(2)}`);
+      $('#verification-result').show();
+
+      if (differenceAbs < 0.01) {
+          $('#cash-difference-alert')
+              .removeClass('alert-warning alert-danger')
+              .addClass('alert-success')
+              .html('<i class="bx bx-check-circle me-2"></i><strong>Perfecto!</strong> El efectivo coincide con lo esperado.')
+              .show();
+          $('#verify-cash-btn').hide();
+          $('#submit-cerrar-caja').show().css('display', 'inline-flex');
+          $('#force-close-btn').hide().css('display', 'none');
+          toastr.success('Efectivo verificado correctamente!');
+      } else {
+          const differenceText = difference > 0 ?
+              `<strong>Sobrante:</strong> ${cs}${difference.toFixed(2)}` :
+              `<strong>Faltante:</strong> ${cs}${differenceAbs.toFixed(2)}`;
+
+          $('#cash-difference-message').html(differenceText);
+          $('#cash-difference-alert')
+              .removeClass('alert-success alert-warning alert-danger')
+              .addClass(difference > 0 ? 'alert-warning' : 'alert-danger')
+              .show();
+          $('#verify-cash-btn').hide();
+          $('#submit-cerrar-caja').hide().css('display', 'none');
+          $('#force-close-btn').show().css('display', 'inline-block');
+          toastr[difference > 0 ? 'warning' : 'error'](`Diferencia detectada: ${cs}${differenceAbs.toFixed(2)}`);
+      }
+  });
+
+  // Reintentar verificación al modificar monto
+  $(document).off('input', '#actual_cash').on('input', '#actual_cash', function () {
+      $('#verification-result').hide();
+      $('#verify-cash-btn').show();
+      $('#submit-cerrar-caja').hide().css('display', 'none');
+      $('#force-close-btn').hide().css('display', 'none');
+  });
+
+  // Cerrar caja sin diferencia
+  $('#submit-cerrar-caja').click(function () {
+      const actualCash = parseFloat($('#actual_cash').val());
       var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
       $.ajax({
           url: 'close/' + cashRegisterId,
           type: 'POST',
           data: {
-              _token: csrfToken
+              _token: csrfToken,
+              actual_cash: actualCash,
+              cash_difference: 0
           },
-          success: function(response) {
-              $('#cerrarCajaModal').modal('hide');
-              location.reload(); // Recargar la página para reflejar los cambios
+          success: function (response) {
+              $('#closeCashRegisterModal').modal('hide');
+              toastr.success('Caja cerrada correctamente.');
+              setTimeout(() => location.reload(), 1000);
           },
-          error: function(xhr, status, error) {
+          error: function (xhr) {
               alert('Error al cerrar la caja registradora: ' + xhr.responseText);
+          }
+      });
+  });
+
+  // Cerrar caja con diferencia (force close)
+  $(document).off('click', '#force-close-btn').on('click', '#force-close-btn', function () {
+      const expectedCash = parseFloat($('#expected_cash').val());
+      const actualCash = parseFloat($('#actual_cash').val());
+      const difference = actualCash - expectedCash;
+      const differenceAbs = Math.abs(difference);
+      const cs = window.currencySymbol;
+      const differenceText = difference > 0 ?
+          `Sobrante de ${cs}${difference.toFixed(2)}` :
+          `Faltante de ${cs}${differenceAbs.toFixed(2)}`;
+
+      Swal.fire({
+          title: 'Confirmar cierre con diferencia?',
+          html: `
+              <div class="alert alert-warning mb-3">
+                  <strong>Diferencia detectada:</strong> ${differenceText}
+              </div>
+              <p>Esta accion quedara registrada en el sistema.</p>
+          `,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ffc107',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Si, cerrar con diferencia',
+          cancelButtonText: 'Cancelar'
+      }).then((result) => {
+          if (result.isConfirmed) {
+              const csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+              Swal.fire({ title: 'Cerrando caja...', text: 'Por favor, espere.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+              $.ajax({
+                  url: 'close/' + cashRegisterId,
+                  type: 'POST',
+                  data: {
+                      _token: csrfToken,
+                      actual_cash: actualCash,
+                      cash_difference: difference
+                  },
+                  success: function (response) {
+                      Swal.close();
+                      $('#closeCashRegisterModal').modal('hide');
+                      Swal.fire({
+                          icon: 'warning',
+                          title: 'Caja cerrada con diferencia',
+                          html: `<div class="alert alert-warning"><strong>Diferencia registrada:</strong> ${differenceText}</div>`,
+                          confirmButtonText: 'Entendido'
+                      }).then(() => { location.reload(); });
+                  },
+                  error: function (xhr) {
+                      Swal.close();
+                      Swal.fire({ icon: 'error', title: 'Error al cerrar la caja', text: 'Intente nuevamente.' });
+                  }
+              });
+          }
+      });
+  });
+
+  // ==========================================
+  // FLUJO DE EGRESOS DE CAJA
+  // ==========================================
+
+  $(document).on('click', '#registrar-egreso-btn', function () {
+      if (!cashRegisterLogId) {
+          Swal.fire({ title: 'Error', text: 'No hay cajas abiertas para registrar egresos', icon: 'error' });
+          return;
+      }
+      $('#registrarEgresoForm')[0].reset();
+      $('#egreso_currency_rate_field').hide();
+      $('#egreso_cash_register_log_id').val(cashRegisterLogId);
+      $('#registrarEgresoModal').modal('show');
+  });
+
+  $('#egreso_currency').on('change', function() {
+      if ($(this).val() === 'Dolar') {
+          $('#egreso_currency_rate_field').show();
+          $('#egreso_currency_rate').prop('required', true);
+      } else {
+          $('#egreso_currency_rate_field').hide();
+          $('#egreso_currency_rate').prop('required', false).val(0);
+      }
+  });
+
+  $('#submit-registrar-egreso').click(function () {
+      var monto = $('#egreso_monto').val();
+      var concepto = $('#egreso_concepto').val();
+      var currency = $('#egreso_currency').val();
+      var currencyRate = $('#egreso_currency_rate').val();
+      var logId = $('#egreso_cash_register_log_id').val();
+      var categoria = $('#egreso_categoria').val();
+      var observaciones = $('#egreso_observaciones').val();
+      var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+      if (!monto || !concepto || !currency || !logId) {
+          Swal.fire({ title: 'Error', text: 'Complete todos los campos requeridos (Concepto, Monto, Moneda)', icon: 'error' });
+          return;
+      }
+
+      if (currency === 'Dolar' && (!currencyRate || currencyRate <= 0)) {
+          Swal.fire({ title: 'Error', text: 'Ingrese una cotizacion valida para el dolar', icon: 'error' });
+          return;
+      }
+
+      var requestData = {
+          _token: csrfToken,
+          amount: monto,
+          concept: concepto,
+          currency: currency,
+          expense_category_id: categoria || null,
+          observations: observaciones || null,
+          cash_register_log_id: logId
+      };
+
+      if (currency === 'Dolar') {
+          requestData.currency_rate = currencyRate;
+      }
+
+      $.ajax({
+          url: `${window.baseUrl}admin/cash-register/expense`,
+          type: 'POST',
+          data: requestData,
+          success: function (response) {
+              $('#registrarEgresoModal').modal('hide');
+              Swal.fire({ title: 'Exito', text: 'Egreso registrado correctamente', icon: 'success' });
+              $('#registrarEgresoForm')[0].reset();
+              $('#egreso_currency_rate_field').hide();
+          },
+          error: function (xhr) {
+              let errorMessage = 'Error al registrar el egreso';
+              if (xhr.responseJSON && xhr.responseJSON.message) {
+                  errorMessage = xhr.responseJSON.message;
+              }
+              Swal.fire({ title: 'Error', text: errorMessage, icon: 'error' });
           }
       });
   });

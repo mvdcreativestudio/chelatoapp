@@ -5,22 +5,18 @@ use App\Models\Store;
 
 use App\Models\CashRegister;
 use App\Models\CashRegisterLog;
-use App\Models\PosOrder;
-use Yajra\DataTables\DataTables;
+use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Flavor;
 use App\Models\Product;
 use App\Models\ProductCategory;
 
 
-
 class CashRegisterRepository
 {
     /**
      * Obtiene todos los registros de caja registradora para la tabla de datos.
-     *
-     * @return mixed
-    */
+     */
     public function getCashRegistersForDatatable($userId): mixed
     {
         $query = CashRegister::select([
@@ -29,8 +25,9 @@ class CashRegisterRepository
                 'cash_registers.user_id',
                 'stores.name as store_name',
                 'users.name as user_name',
-                'cash_register_logs.open_time',  // Último open_time
-                'cash_register_logs.close_time'  // Último close_time
+                'cash_register_logs.id as cash_register_log_id',
+                'cash_register_logs.open_time',
+                'cash_register_logs.close_time',
             ])
             ->join('stores', 'cash_registers.store_id', '=', 'stores.id')
             ->join('users', 'cash_registers.user_id', '=', 'users.id')
@@ -52,7 +49,7 @@ class CashRegisterRepository
         $cashRegister = CashRegister::find($cashRegisterId);
 
         if ($cashRegister) {
-            return $cashRegister->store_id;
+            return $cashRegister->store;
         }
 
         return null;
@@ -60,10 +57,7 @@ class CashRegisterRepository
 
     /**
      * Crea un nuevo registro de caja.
-     *
-     * @param array $data
-     * @return CashRegister
-    */
+     */
     public function createCashRegister(array $data): CashRegister
     {
         return CashRegister::create($data);
@@ -71,10 +65,7 @@ class CashRegisterRepository
 
     /**
      * Obtiene un registro de caja por su ID.
-     *
-     * @param int $id
-     * @return CashRegister|null
-    */
+     */
     public function getCashRegisterById(int $id): ?CashRegister
     {
         return CashRegister::find($id);
@@ -82,11 +73,7 @@ class CashRegisterRepository
 
     /**
      * Actualiza un registro de caja existente.
-     *
-     * @param int $id
-     * @param array $data
-     * @return bool
-    */
+     */
     public function updateCashRegister(int $id, array $data): bool
     {
         $cashRegister = CashRegister::find($id);
@@ -98,10 +85,7 @@ class CashRegisterRepository
 
     /**
      * Elimina un registro de caja por su ID.
-     *
-     * @param int $id
-     * @return bool
-    */
+     */
     public function deleteCashRegister(int $id): bool
     {
         $cashRegister = CashRegister::find($id);
@@ -112,7 +96,7 @@ class CashRegisterRepository
     }
 
     /**
-     * Devuelve la(s) tienda(s) a las cuales le puede abrir una caha registradora.
+     * Devuelve la(s) tienda(s) a las cuales le puede abrir una caja registradora.
      */
     public function storesForCashRegister()
     {
@@ -123,34 +107,121 @@ class CashRegisterRepository
         }
     }
 
-
     /**
-     * Devuelve los balances y ventas de la caja registradora.
-     *
-     * @param $cashRegisterId
+     * Devuelve los balances y ventas de la caja registradora con cálculos dinámicos.
      */
     public function getDetails($cashRegisterId){
-        return CashRegisterLog::where('cash_register_id', $cashRegisterId)
+        $details = CashRegisterLog::where('cash_register_id', $cashRegisterId)
+                    ->with('expenses')
                     ->orderBy('open_time', 'DESC')
-                      ->get();;
+                    ->get();
+
+        foreach ($details as $detail) {
+            if ($detail->close_time) {
+                $detail->cash_sales = $detail->cash_sales ?? 0;
+                $detail->pos_sales = $detail->pos_sales ?? 0;
+            } else {
+                $sales = \DB::table('orders')
+                    ->selectRaw("
+                        SUM(CASE
+                            WHEN payment_method = 'cash' THEN total
+                            ELSE 0
+                        END) as total_cash_sales,
+                        SUM(CASE
+                            WHEN payment_method IN ('credit', 'debit', 'card') THEN total
+                            ELSE 0
+                        END) as total_pos_sales,
+                        SUM(CASE
+                            WHEN payment_method = 'mercadopago' THEN total
+                            ELSE 0
+                        END) as total_mercadopago_sales,
+                        SUM(CASE
+                            WHEN payment_method = 'bankTransfer' THEN total
+                            ELSE 0
+                        END) as total_bank_transfer_sales,
+                        SUM(CASE
+                            WHEN payment_method = 'internalCredit' THEN total
+                            ELSE 0
+                        END) as total_internal_credit_sales
+                    ")
+                    ->where('cash_register_log_id', $detail->id)
+                    ->first();
+
+                $detail->cash_sales = $sales->total_cash_sales ?? 0;
+                $detail->pos_sales = $sales->total_pos_sales ?? 0;
+                $detail->mercadopago_sales = $sales->total_mercadopago_sales ?? 0;
+                $detail->bank_transfer_sales = $sales->total_bank_transfer_sales ?? 0;
+                $detail->internal_credit_sales = $sales->total_internal_credit_sales ?? 0;
+            }
+
+            // Calcular gastos convertidos a pesos
+            $totalExpenses = 0;
+            foreach ($detail->expenses as $expense) {
+                if ($expense->currency === 'Dólar') {
+                    $rate = $expense->currency_rate ?? $this->getDollarExchangeRate();
+                    $totalExpenses += $expense->amount * $rate;
+                } else {
+                    $totalExpenses += $expense->amount;
+                }
+            }
+            $detail->setAttribute('total_expenses', $totalExpenses);
+        }
+
+        return $details;
     }
 
     /**
-     * Devuelve las ventas realizadas por una caja registradora.
-     *
-     * @param $id
-     * @return JsonResponse
+     * Obtiene la cotización actual del dólar.
+     */
+    private function getDollarExchangeRate(): float
+    {
+        try {
+            $dollarRate = \App\Models\CurrencyRate::where('name', 'Dólar')->first();
+
+            if (!$dollarRate) {
+                return 1;
+            }
+
+            $latestRate = \App\Models\CurrencyRateHistory::where('currency_rate_id', $dollarRate->id)
+                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            return $latestRate ? $latestRate->sell : 1;
+        } catch (\Exception $e) {
+            return 1;
+        }
+    }
+
+    /**
+     * Obtiene la consulta base de los detalles de una caja registradora.
+     */
+    public function getDetailsQuery(string $cashRegisterId)
+    {
+        return CashRegisterLog::where('cash_register_id', $cashRegisterId)
+            ->orderBy('open_time', 'desc');
+    }
+
+    /**
+     * Devuelve las ventas realizadas por una caja registradora (usando Orders).
      */
     public function getSales($id)
     {
-        $sales = PosOrder::where('cash_register_log_id', $id)->get();
+        $sales = Order::where('cash_register_log_id', $id)
+            ->with('client')
+            ->get();
 
-        // Iterar sobre cada venta para decodificar los productos
         foreach ($sales as $sale) {
-            $sale->products = json_decode($sale->products, true); // Decodificar el JSON a un array
+            $sale->products = json_decode($sale->products, true);
+
+            // Calcular cash_sales y pos_sales dinámicamente basado en payment_method
+            $sale->cash_sales = $sale->payment_method === 'cash' ? $sale->total : 0;
+            $sale->pos_sales = in_array($sale->payment_method, ['credit', 'debit', 'mercadopago', 'card']) ? $sale->total : 0;
+
+            // Agregar hour para compatibilidad
+            $sale->hour = $sale->time;
         }
 
         return $sales;
     }
-
 }

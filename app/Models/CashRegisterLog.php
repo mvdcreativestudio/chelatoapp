@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Carbon\Carbon;
 
 class CashRegisterLog extends Model
 {
@@ -12,17 +14,27 @@ class CashRegisterLog extends Model
 
     protected $fillable = [
         'cash_register_id',
+        'name',
         'open_time',
         'close_time',
         'cash_sales',
         'pos_sales',
+        'mercadopago_sales',
+        'bank_transfer_sales',
+        'internal_credit_sales',
         'cash_float',
+        'cash_expenses',
+        'actual_cash',
+        'cash_difference',
+    ];
+
+    protected $casts = [
+        'open_time' => 'datetime',
+        'close_time' => 'datetime',
     ];
 
     /**
      * Obtiene la caja registradora asociada al log.
-     *
-     * @return BelongsTo
      */
     public function cashRegister(): BelongsTo
     {
@@ -31,11 +43,157 @@ class CashRegisterLog extends Model
 
     /**
      * Obtiene las ordenes asociadas al log de la caja registradora.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function orders()
     {
-        return $this->hasMany(PosOrder::class);
+        return $this->hasMany(\App\Models\Order::class, 'cash_register_log_id');
+    }
+
+    /**
+     * Obtiene los gastos asociados al log de la caja registradora.
+     */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    /**
+     * Calcula el total de egresos de esta caja convertidos a pesos.
+     */
+    public function getTotalExpenses()
+    {
+        $totalExpenses = 0;
+
+        foreach ($this->expenses as $expense) {
+            if ($expense->currency === 'Dólar') {
+                $rate = $expense->currency_rate ?? $this->getDollarExchangeRate();
+                $totalExpenses += $expense->amount * $rate;
+            } else {
+                $totalExpenses += $expense->amount;
+            }
+        }
+
+        return $totalExpenses;
+    }
+
+    /**
+     * Obtiene las ventas en efectivo calculadas dinámicamente si la caja está abierta.
+     */
+    public function getCurrentCashSales()
+    {
+        if ($this->close_time) {
+            return $this->cash_sales ?? 0;
+        }
+
+        return $this->orders()
+            ->where('payment_method', 'cash')
+            ->sum('total') ?? 0;
+    }
+
+    /**
+     * Obtiene las ventas POS calculadas dinámicamente si la caja está abierta.
+     */
+    public function getCurrentPosSales()
+    {
+        if ($this->close_time) {
+            return $this->pos_sales ?? 0;
+        }
+
+        return $this->orders()
+            ->whereIn('payment_method', ['credit', 'debit', 'card'])
+            ->sum('total') ?? 0;
+    }
+
+    /**
+     * Obtiene las ventas por Mercadopago calculadas dinámicamente si la caja está abierta.
+     */
+    public function getCurrentMercadopagoSales()
+    {
+        if ($this->close_time) {
+            return $this->mercadopago_sales ?? 0;
+        }
+
+        return $this->orders()
+            ->where('payment_method', 'mercadopago')
+            ->sum('total') ?? 0;
+    }
+
+    /**
+     * Obtiene las ventas por transferencia bancaria calculadas dinámicamente si la caja está abierta.
+     */
+    public function getCurrentBankTransferSales()
+    {
+        if ($this->close_time) {
+            return $this->bank_transfer_sales ?? 0;
+        }
+
+        return $this->orders()
+            ->where('payment_method', 'bankTransfer')
+            ->sum('total') ?? 0;
+    }
+
+    /**
+     * Obtiene las ventas por crédito interno calculadas dinámicamente si la caja está abierta.
+     */
+    public function getCurrentInternalCreditSales()
+    {
+        if ($this->close_time) {
+            return $this->internal_credit_sales ?? 0;
+        }
+
+        return $this->orders()
+            ->where('payment_method', 'internalCredit')
+            ->sum('total') ?? 0;
+    }
+
+    /**
+     * Obtiene el total de ventas (todos los métodos de pago).
+     */
+    public function getTotalSales()
+    {
+        return $this->getCurrentCashSales()
+             + $this->getCurrentPosSales()
+             + $this->getCurrentMercadopagoSales()
+             + $this->getCurrentBankTransferSales()
+             + $this->getCurrentInternalCreditSales();
+    }
+
+    /**
+     * Calcula el saldo final en efectivo considerando egresos convertidos a pesos.
+     */
+    public function getFinalCashBalance()
+    {
+        return ($this->cash_float ?? 0) + $this->getCurrentCashSales() - $this->getTotalExpenses();
+    }
+
+    /**
+     * Obtiene el efectivo final formateado para mostrar en vistas.
+     */
+    public function getFormattedFinalCashBalance()
+    {
+        return number_format($this->getFinalCashBalance(), 0, ',', '.');
+    }
+
+    /**
+     * Obtiene la cotización actual del dólar.
+     */
+    private function getDollarExchangeRate(): float
+    {
+        try {
+            $dollarRate = \App\Models\CurrencyRate::where('name', 'Dólar')->first();
+
+            if (!$dollarRate) {
+                return 1;
+            }
+
+            $latestRate = \App\Models\CurrencyRateHistory::where('currency_rate_id', $dollarRate->id)
+                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            return $latestRate ? $latestRate->sell : 1;
+        } catch (\Exception $e) {
+            return 1;
+        }
     }
 }
