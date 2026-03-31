@@ -186,6 +186,7 @@ Route::middleware([
 
     // Cash register log details (for close modal)
     Route::get('/cash-register-logs/{id}/details', [CashRegisterLogController::class, 'getDetails']);
+    Route::get('/cash-register-logs/{id}/print80mm', [CashRegisterLogController::class, 'printCloseSummary'])->name('cashRegisterLog.print80mm');
 
     // Egresos de caja registradora
     Route::post('/cash-register/expense', [CashRegisterController::class, 'storeExpense']);

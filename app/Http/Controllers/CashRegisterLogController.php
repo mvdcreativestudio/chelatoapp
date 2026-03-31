@@ -17,6 +17,7 @@ use App\Models\CashRegister;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CashRegisterLogController extends Controller
 {
@@ -181,6 +182,64 @@ class CashRegisterLogController extends Controller
         }
     }
 
+
+    /**
+     * Genera e imprime el ticket 80mm del cierre de caja.
+     */
+    public function printCloseSummary($id)
+    {
+        try {
+            $log = \App\Models\CashRegisterLog::with(['cashRegister.store', 'expenses'])->findOrFail($id);
+            $store = $log->cashRegister->store;
+
+            if (!$log->close_time) {
+                return response('La caja aún no ha sido cerrada.', 400);
+            }
+
+            $logo = null;
+            if ($store->logo) {
+                $logoPath = storage_path('app/public/' . $store->logo);
+                if (file_exists($logoPath)) {
+                    $logo = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
+                }
+            }
+
+            $closedBy = null;
+            if ($log->user_id) {
+                $user = \App\Models\User::find($log->user_id);
+                $closedBy = $user ? $user->name : null;
+            }
+
+            $html = view('pdv.cash-register-close-80mm', [
+                'log'      => $log,
+                'store'    => $store,
+                'logo'     => $logo,
+                'closedBy' => $closedBy,
+            ])->render();
+
+            $paperWidth = 204.094; // 72mm en puntos
+
+            $pdf = Pdf::loadHTML($html)
+                ->setPaper([0, 0, $paperWidth, 1000], 'portrait')
+                ->setOption('isHtml5ParserEnabled', true)
+                ->setOption('isRemoteEnabled', true)
+                ->setOption('defaultPaperSize', 'custom')
+                ->setOption('enable_auto_height', true)
+                ->setOption('margin-top', 0)
+                ->setOption('margin-bottom', 0)
+                ->setOption('margin-left', 0)
+                ->setOption('margin-right', 0);
+
+            return $pdf->stream("cierre_caja_{$log->id}.pdf");
+        } catch (\Throwable $e) {
+            Log::error('Error al imprimir PDF 80mm del cierre de caja.', [
+                'log_id' => $id,
+                'error'  => $e->getMessage(),
+            ]);
+
+            return response($e->getMessage(), 500)->header('Content-Type', 'text/plain; charset=UTF-8');
+        }
+    }
 
     /**
      * Toma los productos de la empresa de la caja registradora.

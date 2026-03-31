@@ -850,6 +850,27 @@ $(document).ready(function() {
       $('#force-close-btn').hide().css('display', 'none');
   });
 
+  function showPrintCloseModal() {
+      const printUrl = `${window.baseUrl}admin/cash-register-logs/${cashRegisterLogId}/print80mm`;
+      Swal.fire({
+          icon: 'success',
+          title: 'Caja cerrada correctamente',
+          text: 'Desea imprimir el resumen del cierre?',
+          showCancelButton: true,
+          confirmButtonText: 'Imprimir',
+          cancelButtonText: 'No, cerrar',
+          allowOutsideClick: false,
+      }).then((result) => {
+          if (result.isConfirmed) {
+              const printWindow = window.open(printUrl, 'print_cierre', 'width=350,height=600,left=100,top=100');
+              if (printWindow) {
+                  printWindow.onload = function () { printWindow.print(); };
+              }
+          }
+          location.reload();
+      });
+  }
+
   // Cerrar caja sin diferencia
   $('#submit-cerrar-caja').click(function () {
       const actualCash = parseFloat($('#actual_cash').val());
@@ -865,8 +886,7 @@ $(document).ready(function() {
           },
           success: function (response) {
               $('#closeCashRegisterModal').modal('hide');
-              toastr.success('Caja cerrada correctamente.');
-              setTimeout(() => location.reload(), 1000);
+              showPrintCloseModal();
           },
           error: function (xhr) {
               alert('Error al cerrar la caja registradora: ' + xhr.responseText);
@@ -916,12 +936,7 @@ $(document).ready(function() {
                   success: function (response) {
                       Swal.close();
                       $('#closeCashRegisterModal').modal('hide');
-                      Swal.fire({
-                          icon: 'warning',
-                          title: 'Caja cerrada con diferencia',
-                          html: `<div class="alert alert-warning"><strong>Diferencia registrada:</strong> ${differenceText}</div>`,
-                          confirmButtonText: 'Entendido'
-                      }).then(() => { location.reload(); });
+                      showPrintCloseModal();
                   },
                   error: function (xhr) {
                       Swal.close();

@@ -738,6 +738,7 @@ $(document).ready(function () {
 
     if (total > 25000 && (!client || !client.id)) {
       mostrarError('Para ventas mayores a $25000, es necesario tener un cliente asignado a la venta.');
+      setFinalizarBtnsDisabled(false);
       return;
     }
 
@@ -747,6 +748,7 @@ $(document).ready(function () {
     if (paymentMethod === 'internalCredit') {
       if (!client || !client.id) {
         mostrarError('Para ventas con crédito interno, es necesario tener un cliente asignado.');
+        setFinalizarBtnsDisabled(false);
         return;
       }
     }
@@ -848,6 +850,7 @@ $(document).ready(function () {
           error: function (xhr) {
             console.error('Error al guardar la orden:', xhr.responseText);
             mostrarError('Error al guardar la orden: ' + xhr.responseText);
+            setFinalizarBtnsDisabled(false);
           }
         });
       },
@@ -861,6 +864,7 @@ $(document).ready(function () {
         } else {
           mostrarError(xhr.responseJSON ? xhr.responseJSON.error : 'Error desconocido');
         }
+        setFinalizarBtnsDisabled(false);
       }
     });
   }
@@ -892,12 +896,17 @@ $(document).ready(function () {
 
   // ==================== FINALIZE ====================
 
+  function setFinalizarBtnsDisabled(disabled) {
+    $('#finalizarVentaBtn, #finalizarVentaMobileBtn').prop('disabled', disabled);
+  }
+
   function handleFinalize() {
     const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
     if (!paymentMethod) {
       mostrarError('Por favor, seleccione un método de pago.');
       return;
     }
+    setFinalizarBtnsDisabled(true);
     postOrder();
     /** Descomentar para usar el POS
     if (paymentMethod !== 'cash') {
