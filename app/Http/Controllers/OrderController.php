@@ -181,14 +181,25 @@ class OrderController extends Controller
     /**
      * Maneja la emisión de la factura (CFE).
      */
-    public function emitCFE(Request $request, int $orderId): RedirectResponse
+    public function emitCFE(Request $request, int $orderId): JsonResponse|RedirectResponse
     {
         try {
             $this->orderRepository->emitCFE($orderId, $request);
 
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Factura emitida correctamente.']);
+            }
+
             return redirect()->back()->with('success', 'Factura emitida correctamente.');
         } catch (\Exception $e) {
             Log::error("Error al emitir CFE para la orden {$orderId}: {$e->getMessage()}");
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 500);
+            }
 
             return redirect()->back()->with('error', 'Error al emitir la factura. Por favor, intente nuevamente.');
         }

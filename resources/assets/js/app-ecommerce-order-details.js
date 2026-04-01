@@ -71,6 +71,80 @@ $(function () {
   }
 
 
+  // --- Emitir Factura (CFE) ---
+  const emitirFacturaForm = document.getElementById('emitirFacturaForm');
+  const emitirFacturaModalEl = document.getElementById('emitirFacturaModal');
+
+  if (emitirFacturaForm && emitirFacturaModalEl) {
+    emitirFacturaForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+      const actionUrl = form.getAttribute('action');
+
+      // Cerrar el modal de Bootstrap
+      const bsModal = bootstrap.Modal.getInstance(emitirFacturaModalEl);
+      if (bsModal) bsModal.hide();
+
+      Swal.fire({
+        title: 'Emitiendo factura...',
+        text: 'Por favor, espera mientras procesamos la factura.',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      fetch(actionUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        },
+        body: formData
+      })
+      .then(response => response.json()
+        .then(data => ({ ok: response.ok, data }))
+        .catch(() => ({ ok: false, data: { message: `Error ${response.status}` } }))
+      )
+      .then(({ ok, data }) => {
+        Swal.close();
+        if (!ok) {
+          throw new Error(data?.message || data?.error || 'Error al emitir la factura');
+        }
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Factura emitida',
+            text: data.message || 'Factura emitida correctamente.',
+            showConfirmButton: false,
+            timer: 2000
+          }).then(() => {
+            location.reload();
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error al emitir factura',
+            text: data.message || 'Ocurrió un error. Inténtalo nuevamente.',
+            showConfirmButton: true
+          });
+        }
+      })
+      .catch(error => {
+        Swal.close();
+        Swal.fire({
+          icon: 'error',
+          title: 'Error al emitir factura',
+          text: error.message || 'Hubo un problema al procesar la solicitud. Inténtalo nuevamente.',
+          showConfirmButton: true
+        });
+      });
+    });
+  }
+
   // --- Emitir Nota (Crédito/Débito) ---
   const emitirNotaModalEl = document.getElementById('emitirNotaModal');
   const emitirNotaForm = document.getElementById('emitirNotaForm');

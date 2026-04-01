@@ -1,7 +1,7 @@
 <div class="modal fade" id="emitirFacturaModal" tabindex="-1" aria-labelledby="emitirFacturaLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form action="{{ route('orders.emitCFE', ['order' => $order->id]) }}" method="POST">
+      <form id="emitirFacturaForm" action="{{ route('orders.emitCFE', ['order' => $order->id]) }}" method="POST">
         @csrf
         <div class="modal-header">
           <h5 class="modal-title" id="emitirFacturaLabel">Emitir Factura</h5>
