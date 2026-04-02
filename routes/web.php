@@ -46,6 +46,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EventStoreConfigurationController;
 use App\Http\Controllers\InternalOrderController;
+use App\Http\Controllers\StockMovementController;
 
 // Ruta raíz redirige a la tienda (Shop)
 Route::get('/', [EcommerceController::class, 'index'])->name('shop');
@@ -95,6 +96,7 @@ Route::middleware([
     Route::get('/incomes/datatable', [IncomeController::class, 'datatable'])->name('income.datatable');
     // Stock de productos
     Route::get('/products/stock', [ProductController::class, 'stock'])->name('products.stock');
+    Route::get('/stock-movements', [StockMovementController::class, 'index'])->name('stock-movements.index');
 
     // Exportaciones
     Route::get('/products/export', [ProductController::class, 'exportToExcel'])->name('products.export');

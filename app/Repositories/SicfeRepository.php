@@ -218,13 +218,18 @@ class SicfeRepository
             $invoice->save();
             Log::info("Balance del CFE original {$invoice->id} actualizado.", ['nuevo_balance' => $invoice->balance]);
 
-            // Si el balance queda en 0 con nota de crédito, marcar la orden como reembolsada
-            if ($noteType === 'credit' && $newBalance == 0) {
+            // Si se emite nota de crédito, actualizar estado de pago de la orden
+            if ($noteType === 'credit') {
                 $order = $invoice->order;
                 if ($order) {
-                    $order->payment_status = 'refunded';
+                    $order->payment_status = $newBalance == 0 ? 'refunded' : 'partial_refunded';
                     $order->save();
-                    Log::info("Orden #{$order->id} marcada como reembolsada por nota de crédito total.");
+                    Log::info("Orden #{$order->id} marcada como {$order->payment_status} por emisión de nota de crédito.");
+
+                    // Si es reembolso total, reintegrar stock de los productos
+                    if ($newBalance == 0) {
+                        $this->restoreOrderStock($order);
+                    }
                 }
             }
 
@@ -234,6 +239,30 @@ class SicfeRepository
             ]);
             throw new \Exception('Error al procesar la nota después de la emisión.');
         }
+    }
+
+    /**
+     * Reintegra el stock de los productos de una orden tras nota de crédito total.
+     */
+    private function restoreOrderStock(\App\Models\Order $order): void
+    {
+        $products = is_array($order->products) ? $order->products : json_decode($order->products, true);
+        if (!is_array($products)) return;
+
+        foreach ($products as $item) {
+            $isComposite = isset($item['is_composite']) && ($item['is_composite'] === true || $item['is_composite'] == 1);
+            $productModel = $isComposite
+                ? \App\Models\CompositeProduct::find($item['id'])
+                : \App\Models\Product::find($item['id']);
+
+            if ($productModel && $productModel->stock !== null) {
+                $oldStock = $productModel->stock;
+                $productModel->stock += $item['quantity'];
+                $productModel->save();
+                \App\Models\StockMovement::record($productModel, 'credit_note', $item['quantity'], $oldStock, $productModel->stock, "NC total - Orden #{$order->id}");
+            }
+        }
+        Log::info("Stock reintegrado por nota de crédito total de la orden #{$order->id}");
     }
 
     public function emitReceipt(int $invoiceId, ?string $emissionDate): void

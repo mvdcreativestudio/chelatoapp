@@ -13,6 +13,7 @@ use App\Models\Flavor;
 use App\Models\Recipe;
 use App\Http\Requests\UpdateProductRequest;
 use App\Http\Requests\StoreFlavorRequest;
+use App\Models\StockMovement;
 use App\Http\Requests\StoreMultipleFlavorsRequest;
 use App\Http\Requests\UpdateFlavorRequest;
 use Illuminate\Support\Facades\Auth;
@@ -246,11 +247,17 @@ class ProductRepository
     $product = Product::findOrFail($id);
 
     $originalType = $product->type;
+    $oldStock = $product->stock;
 
     $product->update($request->only([
         'name', 'sku', 'description', 'type', 'max_flavors', 'old_price',
         'price', 'discount', 'store_id', 'status', 'stock', 'safety_margin', 'bar_code', 'build_price'
     ]));
+
+    // Registrar movimiento de stock si cambió
+    if ($oldStock !== null && $product->stock !== null && $oldStock != $product->stock) {
+        StockMovement::record($product, 'manual', $product->stock - $oldStock, $oldStock, $product->stock);
+    }
 
     // Manejo de la imagen si se ha subido un archivo
     if ($request->hasFile('image')) {

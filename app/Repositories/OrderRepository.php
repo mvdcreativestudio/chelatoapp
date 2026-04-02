@@ -313,9 +313,11 @@ class OrderRepository
                 $products = json_decode($order->products, true);
                 foreach ($products as $product) {
                     $productModel = Product::find($product['id']);
-                    if ($productModel) {
+                    if ($productModel && $productModel->stock !== null) {
+                        $oldStock = $productModel->stock;
                         $productModel->stock += $product['quantity'];
                         $productModel->save();
+                        \App\Models\StockMovement::record($productModel, 'order_delete', $product['quantity'], $oldStock, $productModel->stock, "Orden #{$orderId} eliminada");
                     }
                 }
             }
@@ -438,6 +440,11 @@ class OrderRepository
     {
         $order = Order::findOrFail($orderId);
         $oldStatus = $order->payment_status;
+
+        // Los estados refunded y partial_refunded solo se alcanzan mediante notas de crédito
+        if (in_array($paymentStatus, ['refunded', 'partial_refunded'])) {
+            throw new \InvalidArgumentException('Los estados "refunded" y "partial_refunded" solo se asignan automáticamente al emitir una nota de crédito.');
+        }
 
         // Verificar si hay un cambio en el estado de pago
         if ($oldStatus !== $paymentStatus) {

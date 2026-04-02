@@ -188,8 +188,10 @@ class PosOrderRepository
 
                 // Si hay suficiente stock, actualizarlo
                 Log::info('Actualizando stock');
+                $oldStock = $product->stock;
                 $product->stock -= $productData['quantity'];
                 $product->save();
+                \App\Models\StockMovement::record($product, 'sale', -$productData['quantity'], $oldStock, $product->stock);
                 Log::info('Stock actualizado');
             } else {
                 // Si el producto no se encuentra, retornar false

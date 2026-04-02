@@ -88,6 +88,8 @@ $changeTypeTranslations = [
         <span class="badge bg-label-danger me-2 ms-2">Pago fallido</span>
       @elseif($order->payment_status === 'refunded')
         <span class="badge bg-label-warning me-2 ms-2">Reembolsado</span>
+      @elseif($order->payment_status === 'partial_refunded')
+        <span class="badge bg-label-warning me-2 ms-2">Reembolso parcial</span>
       @endif
       @if($order->shipping_status === 'pending' && $order->shipping_method !== 'pickup')
         <span class="badge bg-label-warning">No enviado</span>
@@ -348,11 +350,18 @@ $changeTypeTranslations = [
           @csrf
           <div class="mb-3">
             <label for="payment_status" class="form-label">Estado del Pago:</label>
-            <select name="payment_status" id="payment_status" class="form-select">
-              <option value="pending" {{ $order->payment_status === 'pending' ? 'selected' : '' }}>Pendiente</option>
-              <option value="paid" {{ $order->payment_status === 'paid' ? 'selected' : '' }}>Pagado</option>
-              <option value="failed" {{ $order->payment_status === 'failed' ? 'selected' : '' }}>Fallido</option>
-            </select>
+            @if(in_array($order->payment_status, ['refunded', 'partial_refunded']))
+              <select id="payment_status" class="form-select" disabled>
+                <option selected>{{ $order->payment_status === 'refunded' ? 'Reembolsado (por nota de crédito)' : 'Reembolso parcial (por nota de crédito)' }}</option>
+              </select>
+              <input type="hidden" name="payment_status" value="{{ $order->payment_status }}">
+            @else
+              <select name="payment_status" id="payment_status" class="form-select">
+                <option value="pending" {{ $order->payment_status === 'pending' ? 'selected' : '' }}>Pendiente</option>
+                <option value="paid" {{ $order->payment_status === 'paid' ? 'selected' : '' }}>Pagado</option>
+                <option value="failed" {{ $order->payment_status === 'failed' ? 'selected' : '' }}>Fallido</option>
+              </select>
+            @endif
           </div>
           <div class="mb-3">
             <label for="shipping_status" class="form-label">Estado del Envío:</label>

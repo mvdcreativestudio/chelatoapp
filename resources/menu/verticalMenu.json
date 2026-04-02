@@ -65,6 +65,13 @@
           "url": "/admin/products/stock"
         },
         {
+          "id": "stock-movements",
+          "name": "Movimientos de Stock",
+          "icon": "menu-icon tf-icons bx bx-transfer",
+          "slug": "stock-movements",
+          "url": "/admin/stock-movements"
+        },
+        {
           "id": "tour-productos-compuestos",
           "name": "Productos Compuestos",
           "icon": "menu-icon tf-icons bx bx-box",

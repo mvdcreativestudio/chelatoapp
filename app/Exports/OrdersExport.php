@@ -36,6 +36,10 @@ class OrdersExport implements FromCollection, WithHeadings
                 $paymenStatus = 'Pendiente';
             } elseif ($order['payment_status'] == 'failed') {
                 $paymenStatus = 'Cancelado';
+            } elseif ($order['payment_status'] == 'refunded') {
+                $paymenStatus = 'Reembolsado';
+            } elseif ($order['payment_status'] == 'partial_refunded') {
+                $paymenStatus = 'Reembolso parcial';
             }
 
             return [

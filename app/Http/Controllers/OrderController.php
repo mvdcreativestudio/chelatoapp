@@ -171,6 +171,8 @@ class OrderController extends Controller
             $this->orderRepository->updateShippingStatus($orderId, $request->input('shipping_status'));
 
             return redirect()->back()->with('success', 'Estado del pedido actualizado correctamente.');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error($e->getMessage());
 

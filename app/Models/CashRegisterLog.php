@@ -85,9 +85,7 @@ class CashRegisterLog extends Model
             return $this->cash_sales ?? 0;
         }
 
-        return $this->orders()
-            ->where('payment_method', 'cash')
-            ->sum('total') ?? 0;
+        return $this->getEffectiveSalesByPaymentMethod(['cash']);
     }
 
     /**
@@ -99,9 +97,7 @@ class CashRegisterLog extends Model
             return $this->pos_sales ?? 0;
         }
 
-        return $this->orders()
-            ->whereIn('payment_method', ['credit', 'debit', 'card'])
-            ->sum('total') ?? 0;
+        return $this->getEffectiveSalesByPaymentMethod(['credit', 'debit', 'card']);
     }
 
     /**
@@ -113,9 +109,7 @@ class CashRegisterLog extends Model
             return $this->mercadopago_sales ?? 0;
         }
 
-        return $this->orders()
-            ->where('payment_method', 'mercadopago')
-            ->sum('total') ?? 0;
+        return $this->getEffectiveSalesByPaymentMethod(['mercadopago']);
     }
 
     /**
@@ -127,9 +121,7 @@ class CashRegisterLog extends Model
             return $this->bank_transfer_sales ?? 0;
         }
 
-        return $this->orders()
-            ->where('payment_method', 'bankTransfer')
-            ->sum('total') ?? 0;
+        return $this->getEffectiveSalesByPaymentMethod(['bankTransfer']);
     }
 
     /**
@@ -141,9 +133,33 @@ class CashRegisterLog extends Model
             return $this->internal_credit_sales ?? 0;
         }
 
-        return $this->orders()
-            ->where('payment_method', 'internalCredit')
-            ->sum('total') ?? 0;
+        return $this->getEffectiveSalesByPaymentMethod(['internalCredit']);
+    }
+
+    /**
+     * Calcula las ventas efectivas para los métodos de pago indicados,
+     * excluyendo órdenes reembolsadas y descontando notas de crédito en reembolsos parciales.
+     */
+    private function getEffectiveSalesByPaymentMethod(array $paymentMethods): float
+    {
+        $total = $this->orders()
+            ->whereIn('payment_method', $paymentMethods)
+            ->where('payment_status', '!=', 'refunded')
+            ->sum('total');
+
+        $partialRefundedOrderIds = $this->orders()
+            ->whereIn('payment_method', $paymentMethods)
+            ->where('payment_status', 'partial_refunded')
+            ->pluck('id');
+
+        if ($partialRefundedOrderIds->isNotEmpty()) {
+            $creditNotesTotal = \App\Models\CFE::whereIn('order_id', $partialRefundedOrderIds)
+                ->whereIn('type', [102, 112])
+                ->sum('total');
+            $total -= $creditNotesTotal;
+        }
+
+        return (float) $total;
     }
 
     /**

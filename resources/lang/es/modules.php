@@ -11,4 +11,9 @@ return [
   'marketing' => 'Marketing',
   'crm' => 'CRM',
   'point-of-sale' => 'Punto de Venta',
+  'orders' => 'Pedidos',
+  'expenses' => 'Gastos',
+  'entries' => 'Asientos Contables',
+  'current-accounts' => 'Cuentas Corrientes',
+  'incomes' => 'Ingresos',
 ];

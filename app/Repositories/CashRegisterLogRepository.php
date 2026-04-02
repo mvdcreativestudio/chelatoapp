@@ -132,31 +132,37 @@ class CashRegisterLogRepository
             $openTime = $openLog->open_time;
             $closeTime = now();
 
-            // Calcular ventas por método de pago
+            // Calcular ventas por método de pago (excluyendo reembolsadas, descontando NC en parciales)
             $totalSales = DB::table('orders')
                 ->selectRaw("
-                    SUM(CASE
-                        WHEN payment_method = 'cash' THEN total
-                        ELSE 0
-                    END) as total_cash_sales,
-                    SUM(CASE
-                        WHEN payment_method IN ('credit', 'debit', 'card') THEN total
-                        ELSE 0
-                    END) as total_pos_sales,
-                    SUM(CASE
-                        WHEN payment_method = 'mercadopago' THEN total
-                        ELSE 0
-                    END) as total_mercadopago_sales,
-                    SUM(CASE
-                        WHEN payment_method = 'bankTransfer' THEN total
-                        ELSE 0
-                    END) as total_bank_transfer_sales,
-                    SUM(CASE
-                        WHEN payment_method = 'internalCredit' THEN total
-                        ELSE 0
-                    END) as total_internal_credit_sales
+                    SUM(CASE WHEN payment_method = 'cash' THEN
+                        CASE WHEN payment_status = 'partial_refunded' THEN
+                            total - COALESCE((SELECT SUM(c.total) FROM cfes c WHERE c.order_id = orders.id AND c.type IN (102, 112)), 0)
+                        ELSE total END
+                    ELSE 0 END) as total_cash_sales,
+                    SUM(CASE WHEN payment_method IN ('credit', 'debit', 'card') THEN
+                        CASE WHEN payment_status = 'partial_refunded' THEN
+                            total - COALESCE((SELECT SUM(c.total) FROM cfes c WHERE c.order_id = orders.id AND c.type IN (102, 112)), 0)
+                        ELSE total END
+                    ELSE 0 END) as total_pos_sales,
+                    SUM(CASE WHEN payment_method = 'mercadopago' THEN
+                        CASE WHEN payment_status = 'partial_refunded' THEN
+                            total - COALESCE((SELECT SUM(c.total) FROM cfes c WHERE c.order_id = orders.id AND c.type IN (102, 112)), 0)
+                        ELSE total END
+                    ELSE 0 END) as total_mercadopago_sales,
+                    SUM(CASE WHEN payment_method = 'bankTransfer' THEN
+                        CASE WHEN payment_status = 'partial_refunded' THEN
+                            total - COALESCE((SELECT SUM(c.total) FROM cfes c WHERE c.order_id = orders.id AND c.type IN (102, 112)), 0)
+                        ELSE total END
+                    ELSE 0 END) as total_bank_transfer_sales,
+                    SUM(CASE WHEN payment_method = 'internalCredit' THEN
+                        CASE WHEN payment_status = 'partial_refunded' THEN
+                            total - COALESCE((SELECT SUM(c.total) FROM cfes c WHERE c.order_id = orders.id AND c.type IN (102, 112)), 0)
+                        ELSE total END
+                    ELSE 0 END) as total_internal_credit_sales
                 ")
                 ->where('cash_register_log_id', $openLog->id)
+                ->where('payment_status', '!=', 'refunded')
                 ->first();
 
             // Actualizar ventas por cada método de pago
