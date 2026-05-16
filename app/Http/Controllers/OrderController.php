@@ -43,6 +43,7 @@ class OrderController extends Controller
                 'destroy',
                 'datatable',
                 'orderProductsDatatable',
+                'exportExcel',
             ]
         );
 

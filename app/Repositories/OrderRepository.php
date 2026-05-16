@@ -537,31 +537,49 @@ class OrderRepository
             'orders.payment_method',
             'orders.shipping_method',
             'orders.shipping_tracking',
-            'clients.email as client_email',
+            DB::raw("COALESCE(clients.email, '') as client_email"),
             'stores.name as store_name',
-            DB::raw("CONCAT(clients.name, ' ', clients.lastname) as client_name"),
+            DB::raw("COALESCE(CONCAT(clients.name, ' ', clients.lastname), 'Consumidor Final') as client_name"),
         ])
-            ->join('clients', 'orders.client_id', '=', 'clients.id')
+            ->leftJoin('clients', 'orders.client_id', '=', 'clients.id')
             ->join('stores', 'orders.store_id', '=', 'stores.id');
+
+        // Aplicar el mismo scope de permisos que la DataTable: si el usuario no
+        // puede ver todo el ecommerce, limitar al store_id del usuario.
+        if (! Auth::user()->can('view_all_ecommerce')) {
+            $query->where('orders.store_id', Auth::user()->store_id);
+        }
 
         // Aplicar los filtros
         if ($client) {
-            $query->where(DB::raw("CONCAT(clients.name, ' ', clients.lastname)"), 'like', "%$client%");
+            $query->where(
+                DB::raw("COALESCE(CONCAT(clients.name, ' ', clients.lastname), 'Consumidor Final')"),
+                'like',
+                "%{$client}%"
+            );
         }
         if ($company) {
-            $query->where('stores.name', 'like', "%$company%");
+            $query->where('stores.name', 'like', "%{$company}%");
         }
         if ($payment) {
-            $query->where('orders.payment_status', $payment);
+            $paymentMap = [
+                'PAGO' => 'paid',
+                'PENDIENTE' => 'pending',
+                'FALLIDO' => 'failed',
+            ];
+            $paymentValue = $paymentMap[strtoupper($payment)] ?? $payment;
+            $query->where('orders.payment_status', $paymentValue);
         }
-        if ($billed !== null) {
+        if ($billed !== null && $billed !== '') {
             $query->where('orders.is_billed', $billed == 'Facturado' ? 1 : 0);
         }
         if ($startDate && $endDate) {
             $query->whereBetween('orders.date', [$startDate, $endDate]);
         }
 
-        return $query->get(); // Retornar los resultados
+        $query->orderBy('orders.date', 'desc')->orderBy('orders.time', 'desc');
+
+        return $query->get();
     }
 
     private function createInternalCredit(Order $order)
