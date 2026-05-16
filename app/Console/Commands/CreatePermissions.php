@@ -308,6 +308,17 @@ class CreatePermissions extends Command
                     'module' => 'management',
                     'view_all' => true,
                 ],
+                [
+                    'slug' => 'price-lists',
+                    'module' => 'ecommerce',
+                    'view_all' => true,
+                    'submenus' => [
+                        'create_price-lists',
+                        'edit_price-lists',
+                        'delete_price-lists',
+                        'show_price-lists',
+                    ],
+                ],
             ],
         ];
 

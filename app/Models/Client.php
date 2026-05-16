@@ -54,4 +54,15 @@ class Client extends Model
         return $this->hasOne(CurrentAccount::class);
     }
 
+    /**
+     * Listas de precios asignadas al cliente.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function priceLists()
+    {
+        return $this->belongsToMany(PriceList::class, 'client_price_lists')
+                    ->withTimestamps();
+    }
+
 }

@@ -80,6 +80,18 @@ class Product extends Model
     }
 
     /**
+     * Listas de precios en las que el producto tiene un precio especial.
+     *
+     * @return BelongsToMany
+     */
+    public function priceLists(): BelongsToMany
+    {
+        return $this->belongsToMany(PriceList::class, 'price_list_products')
+                    ->withPivot('price')
+                    ->withTimestamps();
+    }
+
+    /**
      * Obtiene las recetas asociadas al producto.
      *
      * @return HasMany

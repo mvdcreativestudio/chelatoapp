@@ -228,6 +228,60 @@
   <!-- /User Card -->
 </div>
 
+<!-- Lista de precios asignada -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <div>
+        <h5 class="mb-1"><i class="bx bx-list-ol me-1"></i> Lista de precios</h5>
+        <small class="text-muted">Si se asigna una lista, sus precios aplican en el POS al seleccionar este cliente.</small>
+      </div>
+      <div class="d-flex align-items-center gap-2" style="min-width: 320px;">
+        <select id="clientPriceListSelect" class="form-select" {{ auth()->user()->can('access_edit_price-lists') ? '' : 'disabled' }}>
+          <option value="">— Sin lista asignada —</option>
+          @foreach($priceLists as $pl)
+            <option value="{{ $pl->id }}" @selected($assignedPriceList && $assignedPriceList->id == $pl->id)>{{ $pl->name }} ({{ $pl->currency }})</option>
+          @endforeach
+        </select>
+        @can('access_edit_price-lists')
+          <button id="savePriceListBtn" type="button" class="btn btn-primary">Guardar</button>
+        @endcan
+      </div>
+    </div>
+    <div id="priceListFeedback" class="mt-2"></div>
+  </div>
+</div>
+
+@can('access_edit_price-lists')
+<script>
+(function() {
+  const btn = document.getElementById('savePriceListBtn');
+  const select = document.getElementById('clientPriceListSelect');
+  const feedback = document.getElementById('priceListFeedback');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const fd = new FormData();
+    if (select.value) fd.append('price_list_id', select.value);
+    fetch("{{ route('clients.assign-price-list', $client->id) }}", {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+      body: fd
+    })
+    .then(r => r.json())
+    .then(j => {
+      feedback.innerHTML = j.success
+        ? '<span class="text-success"><i class="bx bx-check"></i> Lista asignada.</span>'
+        : '<span class="text-danger">Error al asignar la lista.</span>';
+      setTimeout(() => feedback.innerHTML = '', 3000);
+    })
+    .catch(() => {
+      feedback.innerHTML = '<span class="text-danger">Error de red.</span>';
+    });
+  });
+})();
+</script>
+@endcan
+
 <!-- Modal -->
 <div class="modal fade" id="editUser" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-simple modal-edit-user">

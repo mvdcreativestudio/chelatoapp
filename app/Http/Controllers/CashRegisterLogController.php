@@ -9,6 +9,7 @@ use App\Http\Requests\StoreCashRegisterLogRequest;
 use App\Http\Requests\UpdateCashRegisterLogRequest;
 use App\Repositories\CashRegisterLogRepository;
 use App\Repositories\CashRegisterRepository;
+use App\Repositories\PriceListRepository;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use App\Http\Requests\StoreClientRequest;
@@ -251,6 +252,19 @@ class CashRegisterLogController extends Controller
     {
         $products = $this->cashRegisterLogRepository->getAllProductsForPOS($id);
         return response()->json(['products' => $products]);
+    }
+
+    /**
+     * Devuelve el mapa de precios que aplica al cliente según su lista de precios.
+     * Respuesta: { price_list_id, currency, prices: { product_id: price } }.
+     * Si el cliente no tiene lista asignada, devuelve prices vacío.
+     *
+     * @param int $clientId
+     * @return JsonResponse
+     */
+    public function getClientPriceMap(int $clientId, PriceListRepository $priceListRepo): JsonResponse
+    {
+        return response()->json($priceListRepo->getPriceMapForClient($clientId));
     }
 
     /**

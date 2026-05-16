@@ -86,6 +86,13 @@
           "url": "/admin/product-categories"
         },
         {
+          "id": "tour-listas-de-precios",
+          "name": "Listas de Precios",
+          "icon": "menu-icon tf-icons bx bx-list-ol",
+          "slug": "price-lists",
+          "url": "/admin/price-lists"
+        },
+        {
           "id": "tour-productos-crear-en-masa",
           "name": "Crear en Masa",
           "icon": "menu-icon tf-icons bx bx-plus",

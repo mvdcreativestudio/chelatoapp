@@ -12,6 +12,8 @@ $(document).ready(function() {
     let flavors = [];
     let productCategory = [];
     let clients = [];
+    let activePriceMap = {}; // { product_id: price } según lista del cliente
+    let activePriceListId = null;
 
 
     // Inicializar Select2 en elementos con clase .select2
@@ -177,6 +179,9 @@ $(document).ready(function() {
           success: function(response) {
               if (response && response.products) {
                   products = response.products;
+                  // Guardar precio base original para poder restaurar al cambiar cliente
+                  products.forEach(p => { if (p._originalPrice === undefined) p._originalPrice = p.price; });
+                  applyPriceListToProducts();
                   if (isListView) {
                       displayProductsList(products); // Mostrar la vista de lista por defecto
                   } else {
@@ -367,6 +372,7 @@ $(document).ready(function() {
                   name: product.name,
                   image: product.image,
                   price: priceToUse,
+                  originalPrice: (product._originalPrice !== undefined) ? product._originalPrice : priceToUse,
                   flavors: selectedFlavors,
                   quantity: quantity, // Usar la cantidad deseada
                   category_id: category_id,
@@ -400,10 +406,11 @@ $(document).ready(function() {
                   name: product.name,
                   image: product.image,
                   price: priceToUse,
+                  originalPrice: (product._originalPrice !== undefined) ? product._originalPrice : priceToUse,
                   flavors: [],
                   quantity: quantity, // Usar la cantidad deseada
                   category_id: category_id,
-                  isComposite: product.is_composite ? 1 : 0 
+                  isComposite: product.is_composite ? 1 : 0
               });
           }
 
@@ -600,6 +607,76 @@ $(document).ready(function() {
               _token: $('meta[name="csrf-token"]').attr('content'),
               client: client
           },
+      });
+      // Cargar lista de precios del cliente y aplicarla
+      if (client && client.id) {
+          loadClientPriceMap(client.id);
+      } else {
+          clearActivePriceList();
+      }
+  }
+
+  // Carga el mapa de precios del cliente (si tiene lista asignada) y lo aplica
+  function loadClientPriceMap(clientId) {
+      $.ajax({
+          url: `/admin/pdv/client-price-map/${clientId}`,
+          type: 'GET',
+          dataType: 'json',
+          success: function(response) {
+              activePriceMap = (response && response.prices) ? response.prices : {};
+              activePriceListId = response ? response.price_list_id : null;
+              applyPriceListToProducts();
+              reapplyPricesToCart();
+              if (isListView) {
+                  displayProductsList(products);
+              } else {
+                  displayProducts(products);
+              }
+              renderCart && typeof renderCart === 'function' ? renderCart() : null;
+          },
+          error: function() {
+              clearActivePriceList();
+          }
+      });
+  }
+
+  function clearActivePriceList() {
+      activePriceMap = {};
+      activePriceListId = null;
+      applyPriceListToProducts();
+      reapplyPricesToCart();
+      if (isListView) {
+          displayProductsList(products);
+      } else {
+          displayProducts(products);
+      }
+  }
+
+  // Sobrescribe product.price con el precio de la lista (si existe) o restaura el original
+  function applyPriceListToProducts() {
+      if (!Array.isArray(products)) return;
+      products.forEach(p => {
+          const base = (p._originalPrice !== undefined) ? p._originalPrice : p.price;
+          if (activePriceMap && activePriceMap[p.id] !== undefined) {
+              p.price = parseFloat(activePriceMap[p.id]);
+          } else {
+              p.price = base;
+          }
+      });
+  }
+
+  // Actualiza los precios de los items que ya están en el carrito
+  function reapplyPricesToCart() {
+      if (!Array.isArray(cart)) return;
+      cart.forEach(item => {
+          if (activePriceMap && activePriceMap[item.id] !== undefined) {
+              item.price = parseFloat(activePriceMap[item.id]);
+          } else if (item.originalPrice !== undefined) {
+              item.price = item.originalPrice;
+          } else {
+              const prod = products.find(p => p.id === item.id);
+              if (prod) item.price = (prod._originalPrice !== undefined) ? prod._originalPrice : prod.price;
+          }
       });
   }
 

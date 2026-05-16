@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
+use App\Models\PriceList;
 use App\Repositories\ClientRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -74,7 +75,22 @@ class ClientController extends Controller
     public function show(int $id): View
     {
         $client = $this->clientRepository->getClientById($id);
-        return view('content.clients.show', compact('client'));
+
+        // Listas de precios disponibles (scope por tienda del cliente o todas si tiene permiso global)
+        $priceListsQuery = PriceList::select('id', 'name', 'currency', 'store_id');
+        if (Auth::user()->can('view_all_price-lists')) {
+            if ($client->store_id) {
+                $priceListsQuery->where(function ($q) use ($client) {
+                    $q->where('store_id', $client->store_id)->orWhereNull('store_id');
+                });
+            }
+        } else {
+            $priceListsQuery->where('store_id', Auth::user()->store_id);
+        }
+        $priceLists = $priceListsQuery->orderBy('name')->get();
+        $assignedPriceList = $client->priceLists()->first();
+
+        return view('content.clients.show', compact('client', 'priceLists', 'assignedPriceList'));
     }
 
     /**

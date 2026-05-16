@@ -31,6 +31,7 @@ use App\Http\Controllers\OmnichannelController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderPdfController;
 use App\Http\Controllers\PosOrderController;
+use App\Http\Controllers\PriceListController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductionController;
@@ -154,6 +155,21 @@ Route::middleware([
         'current-account-payments' => CurrentAccountPaymentController::class,
         'incomes' => IncomeController::class,
     ]);
+
+    // Listas de precios
+    Route::get('/price-lists/datatable', [PriceListController::class, 'datatable'])->name('price-lists.datatable');
+    Route::get('/price-lists', [PriceListController::class, 'index'])->name('price-lists.index');
+    Route::get('/price-lists/create', [PriceListController::class, 'create'])->name('price-lists.create');
+    Route::post('/price-lists', [PriceListController::class, 'store'])->name('price-lists.store');
+    Route::get('/price-lists/{id}', [PriceListController::class, 'show'])->whereNumber('id')->name('price-lists.show');
+    Route::get('/price-lists/{id}/edit', [PriceListController::class, 'edit'])->whereNumber('id')->name('price-lists.edit');
+    Route::put('/price-lists/{id}', [PriceListController::class, 'update'])->whereNumber('id')->name('price-lists.update');
+    Route::delete('/price-lists/{id}', [PriceListController::class, 'destroy'])->whereNumber('id')->name('price-lists.destroy');
+    Route::get('/price-lists/{storeId}/{priceListId}/products', [PriceListController::class, 'getProducts'])->name('price-lists.products');
+    Route::post('/clients/{clientId}/assign-price-list', [PriceListController::class, 'assignToClient'])->name('clients.assign-price-list');
+    Route::get('/clients/{clientId}/price-list', [PriceListController::class, 'getClientPriceList'])->name('clients.price-list');
+    Route::get('/pdv/client-prices/{clientId}', [PriceListController::class, 'getClientPriceList'])->name('pdv.client-prices.meta');
+    Route::get('/pdv/client-price-map/{clientId}', [CashRegisterLogController::class, 'getClientPriceMap'])->name('pdv.client-price-map');
 
     // Puntos de venta
 

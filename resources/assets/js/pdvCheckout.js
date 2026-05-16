@@ -10,7 +10,51 @@ $(document).ready(function () {
   let coupon = null;
   let currencySymbol = window.currencySymbol;
   let posResponsesConfig = {};
+  let activePriceMap = {};
+  let activePriceListId = null;
   $('#client-info').hide();
+
+  // Carga la lista de precios del cliente y la aplica al carrito
+  function loadClientPriceMapAndApply(clientId) {
+    if (!clientId) {
+      activePriceMap = {};
+      activePriceListId = null;
+      applyPriceMapToCart();
+      saveCartToSession();
+      updateCheckoutCart();
+      return;
+    }
+    $.ajax({
+      url: `/admin/pdv/client-price-map/${clientId}`,
+      type: 'GET',
+      dataType: 'json',
+      success: function (response) {
+        activePriceMap = (response && response.prices) ? response.prices : {};
+        activePriceListId = response ? response.price_list_id : null;
+        applyPriceMapToCart();
+        saveCartToSession();
+        updateCheckoutCart();
+      },
+      error: function () {
+        activePriceMap = {};
+        activePriceListId = null;
+        applyPriceMapToCart();
+        updateCheckoutCart();
+      }
+    });
+  }
+
+  function applyPriceMapToCart() {
+    if (!Array.isArray(cart)) return;
+    cart.forEach(item => {
+      if (item.originalPrice === undefined) item.originalPrice = item.price;
+      if (activePriceMap && activePriceMap[item.id] !== undefined) {
+        item.price = parseFloat(activePriceMap[item.id]);
+      } else {
+        item.price = item.originalPrice;
+      }
+    });
+  }
 
 
   function limitTwoDecimals(event) {
@@ -272,14 +316,18 @@ $(document).ready(function () {
     });
   }
 
-  function loadClientFromSession() {
+  function loadClientFromSession(retried) {
     $.ajax({
       url: `client-session`, type: 'GET', dataType: 'json',
       success: function (response) {
-        client = response.client;
-        if (client && client.id) {
+        if (response.client && response.client.id) {
+          client = response.client;
           showClientInfo(client);
           $('#client-selection-container').hide();
+        } else if (!retried) {
+          // Race condition: pdv.js puede haber persistido el cliente justo antes de
+          // redirigir al checkout. Reintentamos una vez con un pequeño delay.
+          setTimeout(function () { loadClientFromSession(true); }, 400);
         }
       },
       error: function (xhr) { mostrarError('Error al cargar el cliente desde la sesión: ' + xhr.responseText); }
@@ -324,6 +372,11 @@ $(document).ready(function () {
 
     $('#client-info').show();
     $('#client-selection-container').hide();
+
+    // Aplicar lista de precios del cliente al carrito
+    if (client && client.id) {
+      loadClientPriceMapAndApply(client.id);
+    }
   }
 
   function saveCartToSession() {
@@ -601,7 +654,10 @@ $(document).ready(function () {
     $('.btn-select-client').on('click', function () {
       const selectedClient = $(this).data('client');
       showClientInfo(selectedClient);
-      saveClientToSession(selectedClient).done(function () { loadClientFromSession(); });
+      // Persistimos en session pero no re-leemos: re-leer corría una condición de carrera
+      // que pisaba `client` con [] cuando la session aún no había escrito, dejando la UI con
+      // el cliente visible pero client_id null al finalizar la venta.
+      saveClientToSession(selectedClient);
     });
   }
 
@@ -714,6 +770,7 @@ $(document).ready(function () {
     saveClientToSession(client);
     $('#client-info').hide();
     $('#client-selection-container').show();
+    loadClientPriceMapAndApply(null);
   }
 
   // ==================== INIT ====================
@@ -727,6 +784,16 @@ $(document).ready(function () {
 
   function postOrder() {
     ocultarError();
+
+    // Fallback: si por algún race condition la variable `client` se quedó vacía pero el DOM
+    // todavía tiene el id del cliente seleccionado, lo recuperamos del hidden input.
+    if ((!client || !client.id) && $('#client-id').val()) {
+      const fallbackId = parseInt($('#client-id').val(), 10);
+      if (fallbackId) {
+        client = (client && typeof client === 'object' && !Array.isArray(client)) ? client : {};
+        client.id = fallbackId;
+      }
+    }
 
     const paymentMethod = $('input[name="paymentMethod"]:checked').attr('id');
     const shippingStatus = $('#shippingStatus').val();

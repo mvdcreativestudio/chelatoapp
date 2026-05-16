@@ -8,11 +8,200 @@
     'resources/assets/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.scss',
     'resources/assets/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.scss',
     'resources/assets/vendor/libs/select2/select2.scss',
+    'resources/assets/vendor/libs/animate-css/animate.scss',
 ])
 <style>
   .pdv-checkout-wrap {
     max-width: 100%;
     padding: 0 .5rem;
+  }
+
+  /* Sticky header */
+  .pdv-checkout-header {
+    background: #fff;
+    border-radius: 12px;
+    padding: .9rem 1.25rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .pdv-checkout-header__title {
+    margin: 0;
+    font-weight: 700;
+    color: #2c2c43;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .pdv-checkout-header__title i { color: var(--bs-primary, #7367f0); }
+  .pdv-checkout-header__sub {
+    color: #888;
+    font-size: .85rem;
+  }
+
+  /* Section labels */
+  .pdv-section-label {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: .5rem;
+  }
+
+  /* Cards */
+  .pdv-checkout-wrap .card {
+    border-radius: 12px;
+  }
+  #client-info {
+    border-left: 3px solid var(--bs-primary, #7367f0) !important;
+  }
+
+  /* Offcanvas Seleccionar Cliente — más ancho y prolijo */
+  #offcanvasEnd {
+    width: 480px;
+    max-width: 100vw;
+  }
+  @media (max-width: 575.98px) {
+    #offcanvasEnd { width: 100vw; }
+  }
+  #offcanvasEnd .offcanvas-header {
+    border-bottom: 1px solid #ececf2;
+    padding: 1rem 1.25rem;
+  }
+  #offcanvasEnd .offcanvas-title {
+    font-weight: 700;
+    color: #2c2c43;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  #offcanvasEnd .offcanvas-title::before {
+    content: '\ec85'; /* bx-user */
+    font-family: 'boxicons';
+    font-weight: normal;
+    color: var(--bs-primary, #7367f0);
+    font-size: 1.3rem;
+  }
+  #offcanvasEnd .offcanvas-body {
+    padding: 1rem 1.25rem 1.25rem;
+    gap: 1rem;
+  }
+
+  /* Buscador */
+  #search-client-container {
+    position: relative;
+  }
+  #search-client-container::before {
+    content: '\ee2a'; /* bx-search */
+    font-family: 'boxicons';
+    position: absolute;
+    left: .85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #888;
+    font-size: 1.1rem;
+    z-index: 2;
+  }
+  #search-client {
+    height: 42px;
+    padding-left: 2.5rem;
+    border-radius: 10px;
+    border-color: #e6e6f0;
+    background: #fafbfd;
+    font-size: .9rem;
+  }
+  #search-client:focus {
+    background: #fff;
+    border-color: var(--bs-primary, #7367f0);
+    box-shadow: 0 0 0 .15rem rgba(115,103,240,.15);
+  }
+
+  /* Lista de clientes */
+  #client-list {
+    overflow-y: auto;
+    padding-right: 4px;
+    margin: 0;
+    list-style: none;
+  }
+  #client-list::-webkit-scrollbar { width: 6px; }
+  #client-list::-webkit-scrollbar-thumb { background: #d9d9e3; border-radius: 3px; }
+
+  /* Card de cliente (renderizada por JS) */
+  #client-list .client-card {
+    border: 1px solid #ececf2 !important;
+    border-radius: 12px !important;
+    margin-bottom: .65rem;
+    transition: all .15s ease;
+    background: #fff;
+    box-shadow: none !important;
+  }
+  #client-list .client-card:hover {
+    border-color: var(--bs-primary, #7367f0) !important;
+    box-shadow: 0 4px 14px rgba(115,103,240,.12) !important;
+    transform: translateY(-1px);
+  }
+  #client-list .client-card .card-body {
+    padding: .85rem 1rem !important;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+  #client-list .client-card .client-details {
+    flex: 1;
+    min-width: 0;
+  }
+  #client-list .client-card .card-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #2c2c43;
+    margin-bottom: .25rem !important;
+    line-height: 1.25;
+  }
+  #client-list .client-card .client-info {
+    font-size: .78rem;
+    color: #888;
+    line-height: 1.4;
+  }
+  #client-list .client-card .client-info strong {
+    color: #555;
+    font-weight: 600;
+  }
+  #client-list .client-card .btn-select-client {
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: .8rem;
+    padding: .4rem .85rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Botón Crear Cliente del offcanvas */
+  #offcanvasEnd .btn-primary[data-bs-target="#crearClienteOffcanvas"] {
+    border-radius: 10px;
+    font-weight: 600;
+    padding: .6rem;
+    box-shadow: 0 2px 8px rgba(115,103,240,.25);
+  }
+
+  /* Offcanvas Crear Cliente */
+  #crearClienteOffcanvas {
+    width: 480px;
+    max-width: 100vw;
+  }
+  @media (max-width: 575.98px) {
+    #crearClienteOffcanvas { width: 100vw; }
+  }
+  #crearClienteOffcanvas .offcanvas-header {
+    border-bottom: 1px solid #ececf2;
+  }
+  #crearClienteOffcanvas .form-control,
+  #crearClienteOffcanvas .form-select {
+    border-radius: 8px;
   }
   /* Cart item */
   .cart-item {
@@ -200,17 +389,17 @@
 
 @section('content')
 
-<div class="pdv-checkout-wrap">
+<div class="pdv-checkout-wrap animate__animated animate__fadeIn">
   <div id="errorContainer" class="alert alert-danger d-none mb-3" role="alert"></div>
 
-  {{-- Header --}}
-  <div class="d-flex align-items-center gap-3 mb-4">
-    <a href="{{ route('pdv.front') }}" class="btn btn-icon btn-outline-secondary rounded-circle">
+  {{-- Header sticky --}}
+  <div class="pdv-checkout-header">
+    <a href="{{ route('pdv.front') }}" class="btn btn-icon btn-outline-secondary rounded-circle" data-bs-toggle="tooltip" title="Volver al catálogo">
       <i class="bx bx-arrow-back"></i>
     </a>
-    <div>
-      <h5 class="mb-0">Checkout</h5>
-      <small class="text-muted">Revisá los productos y completá la venta</small>
+    <div class="flex-grow-1">
+      <h5 class="pdv-checkout-header__title"><i class="bx bx-receipt"></i> Checkout</h5>
+      <div class="pdv-checkout-header__sub">Revisá los productos y completá la venta</div>
     </div>
   </div>
 
@@ -423,16 +612,16 @@
     <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
   <div class="offcanvas-body d-flex flex-column">
-    <div class="d-flex flex-column align-items-start mb-3">
-      <p class="text-center w-100">Selecciona un cliente o crea uno nuevo.</p>
-      <button type="button" class="btn btn-primary mb-2 d-grid w-100" data-bs-toggle="offcanvas" data-bs-target="#crearClienteOffcanvas">
-        <i class="bx bx-plus me-1"></i> Crear Cliente
-      </button>
-      <div id="search-client-container" class="w-100" style="display:none;">
-        <input type="search" class="form-control" id="search-client" placeholder="Nombre, Razón Social, CI, RUT...">
-      </div>
+    {{-- Acciones superiores --}}
+    <button type="button" class="btn btn-primary w-100 mb-3" data-bs-toggle="offcanvas" data-bs-target="#crearClienteOffcanvas">
+      <i class="bx bx-user-plus me-1"></i> Crear nuevo cliente
+    </button>
+
+    <div id="search-client-container" class="w-100 mb-3" style="display:none;">
+      <input type="search" class="form-control" id="search-client" placeholder="Buscar por nombre, RUT o CI...">
     </div>
-    <ul id="client-list" class="list-group flex-grow-1 overflow-auto"></ul>
+
+    <ul id="client-list" class="flex-grow-1"></ul>
   </div>
 </div>
 
