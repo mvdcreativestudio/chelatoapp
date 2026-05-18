@@ -386,7 +386,7 @@ class CashRegisterLogRepository
     public function getAllClients(): \Illuminate\Database\Eloquent\Collection
     {
         if ($this->companySettings && $this->companySettings->clients_has_store == 1) {
-            return Client::select('id', 'name', 'lastname', 'ci', 'rut', 'type', 'company_name', 'phone', 'address', 'email', 'branch')
+            return Client::select('id', 'name', 'lastname', 'ci', 'rut', 'type', 'company_name', 'phone', 'address', 'email')
                 /* ->with('priceLists:id,name') */
                 ->where('store_id', Auth::user()->store_id)
                 ->get()
@@ -396,7 +396,7 @@ class CashRegisterLogRepository
                     return $client;
                 });
         } else {
-            return Client::select('id', 'name', 'lastname', 'ci', 'rut', 'type', 'company_name', 'phone', 'address', 'email', 'branch')
+            return Client::select('id', 'name', 'lastname', 'ci', 'rut', 'type', 'company_name', 'phone', 'address', 'email')
                 /* ->with('priceLists:id,name') */
                 ->get()
                 ->map(function ($client) {
@@ -414,7 +414,7 @@ class CashRegisterLogRepository
     {
         $search = $search ?? '';
 
-        $query = Client::select('id', 'name', 'lastname', 'ci', 'rut', 'type', 'company_name', 'phone', 'address', 'email', 'branch')
+        $query = Client::select('id', 'name', 'lastname', 'ci', 'rut', 'type', 'company_name', 'phone', 'address', 'email')
             /* ->with('priceLists:id,name') */;
 
         if ($this->companySettings && $this->companySettings->clients_has_store == 1) {
@@ -427,8 +427,7 @@ class CashRegisterLogRepository
                   ->orWhere('lastname', 'like', "%{$search}%")
                   ->orWhere('company_name', 'like', "%{$search}%")
                   ->orWhere('ci', 'like', "%{$search}%")
-                  ->orWhere('rut', 'like', "%{$search}%")
-                  ->orWhere('branch', 'like', "%{$search}%");
+                  ->orWhere('rut', 'like', "%{$search}%");
             });
         }
 

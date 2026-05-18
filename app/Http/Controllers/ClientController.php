@@ -62,6 +62,9 @@ class ClientController extends Controller
             $this->clientRepository->createClient($validatedData);
             return redirect()->route('clients.index')->with('success', 'Cliente creado correctamente.');
         } catch (\Throwable $th) {
+            \Log::error('Error al crear cliente: ' . $th->getMessage(), [
+                'data' => $validatedData ?? $request->all(),
+            ]);
             return redirect()->route('clients.index')->with('error', 'Error al crear el cliente.');
         }
     }
