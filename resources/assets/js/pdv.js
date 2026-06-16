@@ -47,6 +47,35 @@ $(document).ready(function() {
       extendedTimeOut: 1000            // Tiempo adicional antes de que desaparezca al hacer hover
     };
 
+    // Precio base EFECTIVO de un producto: si 'price' es 0/null el precio real vive en 'old_price'.
+    // (En varias tiendas la columna 'price' queda en 0 y el precio se carga en 'old_price'.)
+    function effectiveBasePrice(p) {
+        if (!p) return 0;
+        const pr = parseFloat(p.price);
+        const op = parseFloat(p.old_price);
+        if (!isNaN(pr) && pr > 0) return pr;
+        return !isNaN(op) ? op : 0;
+    }
+
+    // El PDV opera siempre SIN cliente (se limpia al entrar), por lo que los precios del
+    // carrito deben reflejar el precio base de cada producto. Reconciliamos contra los
+    // productos cargados para revertir cualquier precio de lista que haya quedado del
+    // checkout y reparar items con originalPrice corrupto (ej. 0).
+    function reconcileCartToBase() {
+        if (!Array.isArray(cart) || cart.length === 0) return;
+        if (!Array.isArray(products) || products.length === 0) return;
+        let changed = false;
+        cart.forEach(function(item) {
+            const prod = products.find(p => p.id === item.id);
+            if (!prod) return;
+            const base = (prod._originalPrice !== undefined) ? prod._originalPrice : effectiveBasePrice(prod);
+            if (item.price !== base || item.originalPrice !== base) changed = true;
+            item.price = base;
+            item.originalPrice = base;
+        });
+        if (changed) updateCart(); // updateCart re-renderiza y persiste el carrito
+    }
+
     // Cargar el carrito desde el servidor
     function loadCart() {
         $.ajax({
@@ -56,6 +85,11 @@ $(document).ready(function() {
             success: function(response) {
                 // Asegúrate de que 'cart' es un array
                 cart = Array.isArray(response.cart) ? response.cart : [];
+                // Sanear items: el guardado form-encoded viejo del checkout descartaba
+                // 'flavors: []' (jQuery omite arrays vacíos), dejándolo undefined y rompiendo
+                // addToCart al hacer item.flavors.length. Garantizamos que siempre sea array.
+                cart.forEach(function(item) { if (!Array.isArray(item.flavors)) item.flavors = []; });
+                reconcileCartToBase();
                 updateCart();
             },
             error: function(xhr, status, error) {
@@ -179,9 +213,12 @@ $(document).ready(function() {
           success: function(response) {
               if (response && response.products) {
                   products = response.products;
-                  // Guardar precio base original para poder restaurar al cambiar cliente
-                  products.forEach(p => { if (p._originalPrice === undefined) p._originalPrice = p.price; });
+                  // Guardar precio base EFECTIVO original (price si > 0, sino old_price) para poder
+                  // restaurar al cambiar de cliente/lista. Tomar p.price dejaba el base en 0 cuando
+                  // el precio real estaba en old_price.
+                  products.forEach(p => { if (p._originalPrice === undefined) p._originalPrice = effectiveBasePrice(p); });
                   applyPriceListToProducts();
+                  reconcileCartToBase();
                   if (isListView) {
                       displayProductsList(products); // Mostrar la vista de lista por defecto
                   } else {
@@ -244,7 +281,7 @@ $(document).ready(function() {
 
       let productsHtml = '';
       productsToDisplay.forEach(product => {
-          const priceToDisplay = product.price ? product.price : product.old_price;
+          const priceToDisplay = effectiveBasePrice(product);
           const inactiveLabel = product.status == 2 ? `<span class="badge bg-warning text-dark position-absolute top-0 start-0 m-1">Inactivo</span>` : '';
           const oldPriceHtml = product.price && product.old_price ? `<span class="text-muted" style="font-size: 0.8em;"><del>${currencySymbol}${product.old_price}</del></span>` : '';
 
@@ -295,7 +332,7 @@ $(document).ready(function() {
       }
       let productsHtml = '<ul class="list-group w-100">';
       productsToDisplay.forEach(product => {
-          const priceToDisplay = product.price ? product.price.toLocaleString('es-ES') : product.old_price.toLocaleString('es-ES');
+          const priceToDisplay = effectiveBasePrice(product).toLocaleString('es-ES');
           const oldPriceFormatted = product.old_price ? product.old_price.toLocaleString('es-ES') : '';
           const inactiveText = product.status == 0 ? '<span class="badge bg-danger text-white ms-2">Inactivo</span>' : '';
           const oldPriceHtml = product.price && product.old_price ? `<small class="text-muted"><del>${currencySymbol}${oldPriceFormatted}</del></small>` : '';
@@ -339,8 +376,9 @@ $(document).ready(function() {
     function addToCart(productId, productType) {
       const product = products.find(p => p.id === productId);
 
-      // Determinar el precio a usar
-      const priceToUse = product.price ? product.price : product.old_price;
+      // Determinar el precio a usar (efectivo y SIEMPRE numérico: evita null cuando
+      // price=0 y old_price es null, ej. productos compuestos o mal cargados).
+      const priceToUse = effectiveBasePrice(product);
 
       // Verificar si el producto tiene stock suficiente antes de agregar
       if (product.stock !== null && product.stock <= 0) {
@@ -372,7 +410,7 @@ $(document).ready(function() {
                   name: product.name,
                   image: product.image,
                   price: priceToUse,
-                  originalPrice: (product._originalPrice !== undefined) ? product._originalPrice : priceToUse,
+                  originalPrice: priceToUse, // en el PDV no hay lista activa: priceToUse ES el precio base efectivo
                   flavors: selectedFlavors,
                   quantity: quantity, // Usar la cantidad deseada
                   category_id: category_id,
@@ -384,7 +422,7 @@ $(document).ready(function() {
               toastr.success(`<strong>${product.name}</strong> agregado correctamente`);
           });
       } else {
-          const cartItem = cart.find(item => item.id === productId && item.flavors.length === 0);
+          const cartItem = cart.find(item => item.id === productId && (!item.flavors || item.flavors.length === 0));
           var category = categories.find(category => category.product_id == product.id);
           var category_id = category ? category.category_id : null;
 
@@ -406,7 +444,7 @@ $(document).ready(function() {
                   name: product.name,
                   image: product.image,
                   price: priceToUse,
-                  originalPrice: (product._originalPrice !== undefined) ? product._originalPrice : priceToUse,
+                  originalPrice: priceToUse, // en el PDV no hay lista activa: priceToUse ES el precio base efectivo
                   flavors: [],
                   quantity: quantity, // Usar la cantidad deseada
                   category_id: category_id,
@@ -463,9 +501,15 @@ $(document).ready(function() {
       let totalItems = 0;  // Contador de productos
 
       cart.forEach(item => {
-          const itemTotal = item.price * item.quantity;
+          // Coerción defensiva: nunca confiar en que price/quantity sean números válidos
+          // (sesiones viejas podían traer null o strings). Auto-saneamos el item.
+          const price = parseFloat(item.price) || 0;
+          const qty = parseInt(item.quantity) || 0;
+          item.price = price;
+          item.quantity = qty;
+          const itemTotal = price * qty;
           subtotal += itemTotal;
-          totalItems += item.quantity;
+          totalItems += qty;
 
           cartHtml += `
             <div class="col-12">
@@ -481,8 +525,8 @@ $(document).ready(function() {
                         <span class="product-cart-remove" data-id="${item.id}"><i class="bx bx-trash"></i></span>
                       </div>
                     </div>
-                    <p class="product-cart-price">${currencySymbol}${item.price.toLocaleString('es-ES')}</p>
-                    <p class="product-cart-quantity">Cantidad: ${item.quantity}</p>
+                    <p class="product-cart-price">${currencySymbol}${price.toLocaleString('es-ES')}</p>
+                    <p class="product-cart-quantity">Cantidad: ${qty}</p>
                     <p><strong>Total: ${currencySymbol}${itemTotal.toLocaleString('es-ES')}</strong></p>
                   </div>
                 </div>
@@ -1145,7 +1189,22 @@ $(document).ready(function() {
               </div>`;
   }
 
+  // El PDV siempre opera SIN cliente: al entrar limpiamos el cliente que el checkout
+  // pudiera haber dejado en sesión, para que no quede "pegado" ni arrastre su lista de
+  // precios. Si el operador quiere asignar cliente/lista lo hace en el checkout.
+  function clearClientOnPdvEntry() {
+      $.ajax({
+          url: 'client-session',
+          type: 'POST',
+          data: {
+              _token: $('meta[name="csrf-token"]').attr('content'),
+              client: []
+          }
+      });
+  }
+
   // Inicializar funciones
+  clearClientOnPdvEntry();
   loadProducts();
   cargarCategorias();
   cargarVariaciones();

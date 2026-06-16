@@ -380,9 +380,13 @@ $(document).ready(function () {
   }
 
   function saveCartToSession() {
+    // JSON (igual que pdv.js) para que los precios/cantidades se guarden como números y no
+    // como strings: el form-encoding previo corrompía los tipos del carrito en la sesión.
     return $.ajax({
       url: 'cart', type: 'POST',
-      data: { _token: $('meta[name="csrf-token"]').attr('content'), cart: cart }
+      contentType: 'application/json',
+      data: JSON.stringify({ cart: cart }),
+      headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
     }).fail(function (xhr) { mostrarError('Error al guardar el carrito en la sesión: ' + xhr.responseText); });
   }
 
