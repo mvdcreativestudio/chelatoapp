@@ -306,7 +306,9 @@ class CashRegisterLogRepository
             ->get()
             ->map(function ($product) {
                 $product->is_composite = 0;
-                $product->image = $product->image ? asset($product->image) : asset('assets/img/ecommerce-images/placeholder.png');
+                // Ruta RELATIVA: el frontend antepone baseUrl. Usar asset() acá generaba
+                // doble URL (baseUrl + URL absoluta) -> imagen rota -> loop de onerror.
+                $product->image = $product->image ?: 'assets/img/ecommerce-images/placeholder.png';
                 return $product;
             });
 
@@ -314,7 +316,8 @@ class CashRegisterLogRepository
             ->get()
             ->map(function ($compositeProduct) {
                 $compositeProduct->is_composite = 1;
-                $compositeProduct->image = $compositeProduct->image ? asset($compositeProduct->image) : asset('assets/img/ecommerce-images/placeholder.png');
+                // Ruta RELATIVA (ver nota arriba): evita el doble-prefijo de baseUrl.
+                $compositeProduct->image = $compositeProduct->image ?: 'assets/img/ecommerce-images/placeholder.png';
                 return $compositeProduct;
             });
 
