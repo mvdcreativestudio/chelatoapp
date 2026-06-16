@@ -52,13 +52,8 @@ use App\Http\Controllers\StockMovementController;
 // Ruta raíz redirige a la tienda (Shop)
 Route::get('/', [EcommerceController::class, 'index'])->name('shop');
 
-// Redirigir /admin al login si no está autenticado
-Route::get('/admin', function () {
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
-    return redirect()->route('dashboard');
-    })->name('admin');
+// Redirigir /admin al login/dashboard (controlador, no closure, para permitir route:cache)
+Route::get('/admin', \App\Http\Controllers\AdminRedirectController::class)->name('admin');
 
 // Middleware de autenticación y verificación de email
 Route::middleware([
