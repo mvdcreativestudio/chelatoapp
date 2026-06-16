@@ -849,7 +849,9 @@ $(document).ready(function() {
   $.ajax({
       url: 'log/' + cashRegisterId,
       type: 'GET',
-      async: false,
+      // async (antes era síncrono y bloqueaba el navegador en la carga). El
+      // cashRegisterLogId solo se usa en acciones posteriores del usuario
+      // (cerrar caja / registrar egreso), que ocurren mucho después de la carga.
       success: function(data) {
           if (data && data.cash_register_log_id) {
               cashRegisterLogId = data.cash_register_log_id;

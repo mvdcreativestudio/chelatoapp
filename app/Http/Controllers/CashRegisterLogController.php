@@ -42,8 +42,8 @@ class CashRegisterLogController extends Controller
 
     public function front()
     {
-      $products = Product::all();
-      return view('pdv.front', compact('products'));
+      // El catálogo se carga por AJAX desde pdv.js; no hace falta pasar productos a la vista.
+      return view('pdv.front');
     }
 
 
