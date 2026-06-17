@@ -938,7 +938,7 @@ class MercadoPagoRepository
       try {
           $client = new Client();
 
-          $webhookUrl = 'https://n8n.srv1206881.hstgr.cloud/webhook/7a1b73ba-b9f2-47ce-b727-02c300ed1bae';
+          $webhookUrl = 'https://n8n.mvdstudio.com.uy/webhook/7a1b73ba-b9f2-47ce-b727-02c300ed1bae';
 
           // Preparar los datos a enviar
           $data = [
